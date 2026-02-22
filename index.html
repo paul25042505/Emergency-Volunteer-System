@@ -1,0 +1,2625 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>救護義消出勤紀錄表</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #c0392b;
+  --red-dark: #922b21;
+  --red-mid: #e74c3c;
+  --red-faint: #fdf0ee;
+  --cream: #faf7f2;
+  --warm: #f4ede3;
+  --border: #e0d5c8;
+  --border-dark: #c8b9a8;
+  --text: #1e1a17;
+  --text-mid: #5a4f46;
+  --text-light: #9c8c80;
+  --white: #ffffff;
+  --section-gap: 24px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--cream);
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Pages ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Overlay ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 90;
+}
+.overlay.open { display: block; }
+
+/* ── Drawer ── */
+.drawer {
+  position: fixed; top: 0; left: 0; height: 100%; width: 260px;
+  background: var(--text); z-index: 100;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display: flex; flex-direction: column;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-header {
+  background: var(--red-dark); padding: 32px 24px 24px; position: relative;
+}
+.drawer-header .cross { font-size: 2rem; color: rgba(255,255,255,0.3); display: block; margin-bottom: 10px; }
+.drawer-header h2 {
+  font-family: 'Noto Serif TC', serif; font-size: 1rem;
+  color: white; font-weight: 600; letter-spacing: 0.12em;
+}
+.drawer-close {
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px; border-radius: 3px; transition: color 0.15s;
+}
+.drawer-close:hover { color: white; }
+.drawer nav { padding: 16px 0; }
+.drawer nav button {
+  display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+  text-decoration: none; color: rgba(255,255,255,0.75); font-size: 0.9rem;
+  letter-spacing: 0.05em; border-left: 3px solid transparent;
+  transition: all 0.15s; cursor: pointer; background: none; width: 100%;
+  font-family: 'Noto Sans TC', sans-serif;
+  border-top: none; border-right: none; border-bottom: none;
+}
+.drawer nav button:hover, .drawer nav button.active-nav {
+  color: white; background: rgba(255,255,255,0.07); border-left-color: var(--red-mid);
+}
+.drawer nav button .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+/* ── Header ── */
+.header {
+  background: var(--red); color: white; padding: 0; position: relative; overflow: hidden;
+}
+.header-inner {
+  position: relative; z-index: 2; display: flex; align-items: center;
+  padding: 28px 24px 24px 70px;
+}
+.header-deco { position: absolute; right: -20px; top: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.05); border-radius: 50%; z-index: 1; }
+.header-deco2 { position: absolute; right: 60px; bottom: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.04); border-radius: 50%; z-index: 1; }
+.header-cross { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 160px; opacity: 0.05; z-index: 1; pointer-events: none; line-height: 1; }
+.menu-btn {
+  position: absolute; top: 50%; left: 18px; transform: translateY(-50%);
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 4px; color: white; width: 38px; height: 38px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; z-index: 5; transition: background 0.15s;
+}
+.menu-btn:hover { background: rgba(255,255,255,0.25); }
+.menu-btn span { display: block; width: 18px; height: 2px; background: white; border-radius: 2px; }
+.header-text h1 { font-family: 'Noto Serif TC', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1.2; }
+.header-text p { margin-top: 4px; font-size: 0.78rem; opacity: 0.75; letter-spacing: 0.12em; font-weight: 300; }
+
+/* ── Form / Members wrap ── */
+.form-wrap, .members-wrap {
+  max-width: 700px; margin: 0 auto; padding: 28px 16px 64px;
+}
+
+/* ── Section ── */
+.section { margin-bottom: var(--section-gap); }
+.section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.section-num {
+  width: 26px; height: 26px; background: var(--red); color: white; border-radius: 50%;
+  font-size: 0.72rem; font-weight: 700; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.section-title { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.14em; color: var(--text); }
+.section-line { flex: 1; height: 1px; background: var(--border); }
+
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.card-divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+/* ── Fields ── */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.05em; }
+label .req { color: var(--red); margin-left: 2px; }
+
+input[type="text"], input[type="date"], input[type="time"], select, textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text); background: #fafaf8;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  appearance: none; -webkit-appearance: none;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239c8c80' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.1); background: white;
+}
+textarea { resize: vertical; min-height: 82px; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.time-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: end; }
+.time-dash { text-align: center; padding: 0 8px 10px; color: var(--text-light); font-size: 1.1rem; }
+
+/* ── Checkboxes ── */
+.checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+.cb-item {
+  display: flex; align-items: center; gap: 9px; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 5px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  font-size: 0.88rem; color: var(--text-mid); user-select: none; background: #fafaf8;
+}
+.cb-item:hover { border-color: var(--red); background: var(--red-faint); color: var(--text); }
+.cb-item input[type="checkbox"] { accent-color: var(--red); flex-shrink: 0; width: auto; border: none; padding: 0; background: none; box-shadow: none; }
+.cb-item.checked { border-color: var(--red); background: var(--red-faint); color: var(--text); box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+
+/* ── Signature ── */
+.sig-wrap { border: 1.5px solid var(--border); border-radius: 5px; overflow: hidden; background: #fafaf8; }
+.sig-wrap canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(--warm); border-top: 1px solid var(--border); }
+.sig-footer span { font-size: 0.73rem; color: var(--text-light); letter-spacing: 0.04em; }
+.btn-clear { background: none; border: 1px solid var(--border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(--text-mid); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; }
+.btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+
+/* ── Submit ── */
+.submit-section { margin-top: 8px; }
+.btn-submit {
+  width: 100%; background: var(--red); color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(192,57,43,0.25); position: relative; overflow: hidden;
+}
+.btn-submit::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
+.btn-submit:hover { background: var(--red-dark); box-shadow: 0 6px 20px rgba(192,57,43,0.35); }
+.btn-submit:active { transform: scale(0.99); }
+.btn-submit:disabled { background: #bba09a; box-shadow: none; cursor: not-allowed; }
+
+/* ── Success ── */
+.success-msg { display: none; text-align: center; padding: 24px; background: #eafaf1; border: 1px solid #a9dfbf; border-radius: 6px; margin-top: 16px; }
+.success-msg.show { display: block; }
+.success-icon { width: 48px; height: 48px; background: #27ae60; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 1.4rem; color: white; }
+.success-msg h3 { font-family: 'Noto Serif TC', serif; color: #1a6b35; font-size: 1rem; letter-spacing: 0.08em; margin-bottom: 4px; }
+.success-msg p { font-size: 0.83rem; color: #2d8a4a; }
+
+/* ── Footer ── */
+.form-footer { text-align: center; margin-top: 28px; font-size: 0.72rem; color: var(--text-light); letter-spacing: 0.04em; line-height: 1.8; }
+
+/* ── Member shortcut link ── */
+.member-shortcut {
+  margin-top: 8px; background: none; border: none; font-size: 0.76rem;
+  color: var(--text-light); cursor: pointer; padding: 0; letter-spacing: 0.04em;
+  font-family: 'Noto Sans TC', sans-serif; transition: color 0.15s; display: inline-block;
+}
+.member-shortcut:hover { color: var(--red); }
+
+/* ── Members Page ── */
+.member-add-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.add-row { display: flex; gap: 10px; }
+.add-row input { flex: 1; }
+.btn-add {
+  background: var(--red); color: white; border: none; border-radius: 4px;
+  padding: 10px 20px; font-size: 0.88rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
+}
+.btn-add:hover { background: var(--red-dark); }
+
+.member-list-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.member-list-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.member-list-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
+.member-count { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; }
+.member-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.85rem; letter-spacing: 0.05em; }
+.member-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+.member-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+.member-item:last-child { border-bottom: none; }
+.member-item:hover { background: #fdfcfb; }
+.member-avatar { width: 36px; height: 36px; background: var(--red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 700; flex-shrink: 0; margin-right: 14px; font-family: 'Noto Serif TC', serif; }
+.member-name { flex: 1; font-size: 0.95rem; color: var(--text); letter-spacing: 0.03em; }
+.member-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.member-info .member-name { flex: unset; }
+.member-title { font-size: 0.75rem; color: var(--text-light); letter-spacing: 0.04em; }
+.btn-delete { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 5px 12px; font-size: 0.75rem; color: var(--text-light); cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; }
+.btn-delete:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+
+.drag-handle {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 10px 8px 0; cursor: grab; flex-shrink: 0; opacity: 0.35;
+  transition: opacity 0.15s;
+}
+.drag-handle:active { cursor: grabbing; }
+.drag-handle span { display: block; width: 16px; height: 2px; background: var(--text-mid); border-radius: 2px; }
+.member-item:hover .drag-handle { opacity: 0.7; }
+.member-item.dragging { opacity: 0.4; background: var(--warm); }
+.member-item.drag-over { border-top: 2px solid var(--red); background: var(--red-faint); }
+
+
+/* ── Query Page ── */
+.query-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
+
+.filter-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
+.filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.filter-actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn-search {
+  flex: 1; background: var(--red); color: white; border: none; border-radius: 4px;
+  padding: 11px; font-size: 0.9rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s;
+}
+.btn-search:hover { background: var(--red-dark); }
+.btn-reset {
+  background: none; border: 1px solid var(--border-dark); border-radius: 4px;
+  padding: 11px 18px; font-size: 0.88rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text-mid); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-num { font-family: 'Noto Serif TC', serif; font-size: 1.8rem; font-weight: 700; color: var(--red); line-height: 1; }
+.stat-label { font-size: 0.72rem; color: var(--text-light); margin-top: 6px; letter-spacing: 0.06em; }
+
+/* Result table */
+.result-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.result-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.result-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
+.btn-csv {
+  background: none; border: 1px solid var(--border-dark); border-radius: 4px;
+  padding: 5px 14px; font-size: 0.75rem; cursor: pointer; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
+}
+.btn-csv:hover { border-color: #27ae60; color: #27ae60; background: #eafaf1; }
+
+.result-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+th { background: var(--warm); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text-mid); border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.04em; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fdfcfb; }
+.tag { display: inline-block; background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 3px; padding: 1px 6px; font-size: 0.72rem; margin: 1px; white-space: nowrap; }
+
+.query-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.85rem; }
+.query-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+.loading-msg { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85rem; }
+
+
+/* ── Attendance Page ── */
+.attendance-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
+.status-banner {
+  border-radius: 6px; padding: 14px 20px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px; font-size: 0.88rem; font-weight: 500;
+}
+.status-banner.idle { background: var(--warm); border: 1px solid var(--border); color: var(--text-mid); }
+.status-banner.checked-in { background: #eafaf1; border: 1px solid #a9dfbf; color: #1a6b35; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.status-banner.idle .status-dot { background: var(--text-light); }
+.status-banner.checked-in .status-dot { background: #27ae60; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.att-extra-fields { display: none; }
+.att-extra-fields.show { display: block; }
+.btn-checkin {
+  width: 100%; background: #27ae60; color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(39,174,96,0.3);
+}
+.btn-checkin:hover { background: #219a52; }
+.btn-checkout {
+  width: 100%; background: var(--red); color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(192,57,43,0.25);
+}
+.btn-checkout:hover { background: var(--red-dark); }
+.time-badge {
+  display: inline-block; background: var(--red-faint); color: var(--red-dark);
+  border: 1px solid #f0bab4; border-radius: 4px; padding: 3px 10px;
+  font-size: 0.82rem; font-weight: 600; font-family: 'Noto Serif TC', serif;
+  letter-spacing: 0.06em;
+}
+.num-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.att-status-badge {
+  font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.att-status-badge.idle { background: var(--warm); color: var(--text-light); border: 1px solid var(--border); }
+.att-status-badge.in { background: #eafaf1; color: #1a6b35; border: 1px solid #a9dfbf; }
+.att-status-badge.done { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; }
+.att-member-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 14px; font-size: 0.78rem; cursor: pointer; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; white-space: nowrap;
+}
+.att-member-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+.att-member-btn.checkin-btn { border-color: #27ae60; color: #27ae60; }
+.att-member-btn.checkin-btn:hover { background: #eafaf1; }
+@media (max-width: 520px) {
+  .row-2 { grid-template-columns: 1fr; }
+  .header-text h1 { font-size: 1.2rem; }
+  .checkbox-grid { grid-template-columns: 1fr 1fr; }
+  .form-wrap, .members-wrap { padding: 20px 12px 48px; }
+  .card { padding: 16px; }
+  .add-row { flex-direction: column; }
+  .filter-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .stat-num { font-size: 1.4rem; }
+}
+
+/* ── Duty Toggle ── */
+.duty-toggle { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; }
+.duty-btn {
+  flex: 1; padding: 10px 0; font-size: 0.95rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; letter-spacing: 0.12em; border: none; background: #fafaf8;
+  color: var(--text-mid); cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.duty-btn:first-child { border-right: 1px solid var(--border); }
+.duty-btn.active { background: var(--red); color: white; }
+.duty-btn:not(.active):hover { background: var(--red-faint); color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<!-- Drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="cross">✚</span>
+    <h2>救護義消系統</h2>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <nav>
+    <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
+    <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
+    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>出勤紀錄表</button>
+    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>出勤記錄查詢</button>
+    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍️</span>簽到簽退表</button>
+    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到/退記錄查詢</button>
+    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表</button>
+  </nav>
+</div>
+
+<!-- ══════ SHARED HEADER ══════ -->
+<div class="header">
+  <div class="header-deco"></div>
+  <div class="header-deco2"></div>
+  <div class="header-cross">✚</div>
+  <div class="header-inner">
+    <button class="menu-btn" onclick="openDrawer()" aria-label="選單">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="header-text">
+      <h1 id="pageTitle">救護義消出勤紀錄表</h1>
+      <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE 0：儀表板 ══════ -->
+<div class="page active" id="dashboardPage">
+  <div class="form-wrap">
+
+    <!-- 今日統計 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">今</div>
+        <div class="section-title">今日概況</div>
+        <div class="section-line"></div>
+        <span id="dashDate" style="font-size:0.75rem;color:var(--text-light);white-space:nowrap;"></span>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodayAtt">—</div>
+          <div class="stat-label">今日出勤筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodayMembers">—</div>
+          <div class="stat-label">今日出勤人數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodaySignin">—</div>
+          <div class="stat-label">今日簽到人數</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 本月統計 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">月</div>
+        <div class="section-title">本月累計</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(2,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthAtt">—</div>
+          <div class="stat-label">出勤總筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthHours">—</div>
+          <div class="stat-label">協勤總時數</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速入口 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">⚡</div>
+        <div class="section-title">快速入口</div>
+        <div class="section-line"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <button onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.8rem;margin-bottom:8px;">✍️</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">簽到簽退</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">現場簽到使用</div>
+        </button>
+        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.8rem;margin-bottom:8px;">📊</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">簽到/退查詢</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">查詢簽到紀錄</div>
+        </button>
+        <button onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.8rem;margin-bottom:8px;">📋</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">出勤紀錄表</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">填寫出勤資料</div>
+        </button>
+        <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.8rem;margin-bottom:8px;">🔍</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">出勤記錄查詢</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">查詢歷史出勤</div>
+        </button>
+        <button onclick="navTo('reportPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.5rem;margin-bottom:6px;">📑</div>
+          <div style="font-size:0.82rem;font-weight:600;color:var(--text);">報表</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">產生 Word 報表</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-footer" style="margin-top:28px;">
+      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE 1：出勤紀錄 ══════ -->
+<div class="page" id="formPage">
+  <div class="form-wrap">
+    <form id="recordForm" novalidate>
+
+      <!-- § 1 基本資訊 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">1</div>
+          <div class="section-title">基本資訊</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="date">出勤日期 <span class="req">*</span></label>
+            <input type="date" id="date" required>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>出勤類別 <span class="req">*</span></label>
+            <div class="duty-toggle">
+              <button type="button" class="duty-btn active" id="dutyAssist" onclick="setDuty('協勤')">協勤</button>
+              <button type="button" class="duty-btn" id="dutyPublic" onclick="setDuty('公差')">公差</button>
+            </div>
+            <input type="hidden" id="dutyType" value="協勤">
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>出勤時間 <span class="req">*</span></label>
+            <div class="time-row">
+              <input type="time" id="timeOut" required>
+              <div class="time-dash">—</div>
+              <input type="time" id="timeBack" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- § 2 出勤地點 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">2</div>
+          <div class="section-title">出勤地點</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="district">行政區 <span class="req">*</span></label>
+            <select id="district" required>
+              <option value="">— 請選擇區域 —</option>
+              <option value="臺中市潭子區">臺中市潭子區</option>
+              <option value="臺中市豐原區">臺中市豐原區</option>
+              <option value="臺中市神岡區">臺中市神岡區</option>
+              <option value="臺中市大雅區">臺中市大雅區</option>
+              <option value="臺中市北屯區">臺中市北屯區</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="address">詳細地址 <span class="req">*</span></label>
+            <input type="text" id="address" placeholder="路名、號碼或地標" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- § 3 服務內容 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">3</div>
+          <div class="section-title">服務內容</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label>服務項目 <span class="req">*</span>（可複選）</label>
+            <div class="checkbox-grid" id="serviceGrid">
+              <label class="cb-item"><input type="checkbox" value="保暖"> 保暖</label>
+              <label class="cb-item"><input type="checkbox" value="心理支持"> 心理支持</label>
+              <label class="cb-item"><input type="checkbox" value="量測生命徵象"> 量測生命徵象</label>
+              <label class="cb-item"><input type="checkbox" value="CPR"> CPR</label>
+              <label class="cb-item"><input type="checkbox" value="AED"> AED</label>
+              <label class="cb-item"><input type="checkbox" value="給氧"> 給氧</label>
+              <label class="cb-item"><input type="checkbox" value="OneTouch血糖"> OneTouch 血糖</label>
+            </div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label for="note">備註說明</label>
+            <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- § 4 出勤義消簽名 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">4</div>
+          <div class="section-title">出勤義消簽名</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="memberSelect">出勤義消姓名 <span class="req">*</span></label>
+            <select id="memberSelect" required>
+              <option value="">— 請選擇義消成員 —</option>
+            </select>
+            <button type="button" class="member-shortcut" onclick="navTo('membersPage')">
+              ＋ 找不到姓名？前往成員管理新增
+            </button>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>義消簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="sigCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-section">
+        <button type="submit" class="btn-submit">送　出　紀　錄</button>
+      </div>
+
+      <div class="success-msg" id="successMsg">
+        <div class="success-icon">✓</div>
+        <h3>紀錄已成功送出</h3>
+        <p>感謝您的服務，出勤資料已記錄完成。</p>
+      </div>
+
+      <div class="form-footer">
+        臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════ PAGE 2：成員管理 ══════ -->
+<div class="page" id="membersPage">
+  <div class="members-wrap">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:1rem;">＋</div>
+        <div class="section-title">新增成員</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="member-add-card">
+        <div class="add-row">
+          <input type="text" id="newMemberName" placeholder="義消姓名" maxlength="20">
+          <input type="text" id="newMemberTitle" placeholder="職稱（如：隊長）" maxlength="20" style="flex:1;">
+          <button type="button" class="btn-add" onclick="addMember()">新　增</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.85rem;">名</div>
+        <div class="section-title">成員名單</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="member-list-card">
+        <div class="member-list-head">
+          <h3>目前成員</h3>
+          <span class="member-count" id="memberCount">0 人</span>
+        </div>
+        <div id="memberList">
+          <div class="member-empty">
+            <span class="empty-icon">👥</span>
+            尚未新增任何成員
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════ PAGE 3：出勤查詢 ══════ -->
+<div class="page" id="queryPage">
+  <div class="query-wrap">
+
+    <!-- 篩選條件 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">篩選條件</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="qDateFrom">日期（起）</label>
+            <input type="date" id="qDateFrom">
+          </div>
+          <div class="field">
+            <label for="qDateTo">日期（迄）</label>
+            <input type="date" id="qDateTo">
+          </div>
+          <div class="field">
+            <label for="qMember">義消姓名</label>
+            <select id="qMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qDistrict">行政區</label>
+            <select id="qDistrict">
+              <option value="">— 全部區域 —</option>
+              <option value="臺中市潭子區">臺中市潭子區</option>
+              <option value="臺中市豐原區">臺中市豐原區</option>
+              <option value="臺中市神岡區">臺中市神岡區</option>
+              <option value="臺中市大雅區">臺中市大雅區</option>
+              <option value="臺中市北屯區">臺中市北屯區</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qDuty">出勤類別</label>
+            <select id="qDuty">
+              <option value="">— 全部類別 —</option>
+              <option value="協勤">協勤</option>
+              <option value="公差">公差</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="qService">服務項目</label>
+            <select id="qService">
+              <option value="">— 全部項目 —</option>
+              <option value="保暖">保暖</option>
+              <option value="心理支持">心理支持</option>
+              <option value="量測生命徵象">量測生命徵象</option>
+              <option value="CPR">CPR</option>
+              <option value="AED">AED</option>
+              <option value="給氧">給氧</option>
+              <option value="OneTouch血糖">OneTouch 血糖</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-search" onclick="doQuery()">查　詢</button>
+          <button class="btn-reset" onclick="resetQuery()">清除條件</button>
+          <button class="btn-reset" onclick="debugData()" title="顯示原始資料供除錯">🔧</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 統計數字 -->
+    <div class="stats-row" id="statsRow" style="display:none;">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">出勤總筆數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statMembers">0</div>
+        <div class="stat-label">出勤人數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statDays">0</div>
+        <div class="stat-label">出勤天數</div>
+      </div>
+    </div>
+
+    <!-- 結果列表 -->
+    <div class="result-card" id="resultCard" style="display:none;">
+      <div class="result-head">
+        <h3>查詢結果</h3>
+        <button class="btn-csv" onclick="exportCSV()">匯出 CSV</button>
+      </div>
+      <div class="result-table-wrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>類別</th>
+              <th>出勤時間</th>
+              <th>行政區</th>
+              <th>地址</th>
+              <th>服務項目</th>
+              <th>義消姓名</th>
+              <th>備註</th>
+              <th>簽名</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="queryInitMsg" class="query-empty">
+      <span class="empty-icon">🔍</span>
+      請設定篩選條件後按「查詢」
+    </div>
+
+    <div class="form-footer" style="margin-top:28px;">
+      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════ PAGE 4：簽到簽退 ══════ -->
+<div class="page" id="attendancePage">
+  <div class="attendance-wrap">
+
+    <!-- ── 主畫面 ── -->
+    <div id="attMain">
+      <!-- 日期 + 簽到表單 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">✍</div>
+          <div class="section-title">簽到</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="row-2">
+            <div class="field">
+              <label for="attDate">日期</label>
+              <input type="date" id="attDate">
+            </div>
+            <div class="field">
+              <label for="attCheckinTime">簽到時間 <span class="req">*</span></label>
+              <select id="attCheckinTime" style="width:100%;">
+<option value="00:00">00:00</option>
+<option value="00:15">00:15</option>
+<option value="00:30">00:30</option>
+<option value="00:45">00:45</option>
+<option value="01:00">01:00</option>
+<option value="01:15">01:15</option>
+<option value="01:30">01:30</option>
+<option value="01:45">01:45</option>
+<option value="02:00">02:00</option>
+<option value="02:15">02:15</option>
+<option value="02:30">02:30</option>
+<option value="02:45">02:45</option>
+<option value="03:00">03:00</option>
+<option value="03:15">03:15</option>
+<option value="03:30">03:30</option>
+<option value="03:45">03:45</option>
+<option value="04:00">04:00</option>
+<option value="04:15">04:15</option>
+<option value="04:30">04:30</option>
+<option value="04:45">04:45</option>
+<option value="05:00">05:00</option>
+<option value="05:15">05:15</option>
+<option value="05:30">05:30</option>
+<option value="05:45">05:45</option>
+<option value="06:00">06:00</option>
+<option value="06:15">06:15</option>
+<option value="06:30">06:30</option>
+<option value="06:45">06:45</option>
+<option value="07:00">07:00</option>
+<option value="07:15">07:15</option>
+<option value="07:30">07:30</option>
+<option value="07:45">07:45</option>
+<option value="08:00">08:00</option>
+<option value="08:15">08:15</option>
+<option value="08:30">08:30</option>
+<option value="08:45">08:45</option>
+<option value="09:00">09:00</option>
+<option value="09:15">09:15</option>
+<option value="09:30">09:30</option>
+<option value="09:45">09:45</option>
+<option value="10:00">10:00</option>
+<option value="10:15">10:15</option>
+<option value="10:30">10:30</option>
+<option value="10:45">10:45</option>
+<option value="11:00">11:00</option>
+<option value="11:15">11:15</option>
+<option value="11:30">11:30</option>
+<option value="11:45">11:45</option>
+<option value="12:00">12:00</option>
+<option value="12:15">12:15</option>
+<option value="12:30">12:30</option>
+<option value="12:45">12:45</option>
+<option value="13:00">13:00</option>
+<option value="13:15">13:15</option>
+<option value="13:30">13:30</option>
+<option value="13:45">13:45</option>
+<option value="14:00">14:00</option>
+<option value="14:15">14:15</option>
+<option value="14:30">14:30</option>
+<option value="14:45">14:45</option>
+<option value="15:00">15:00</option>
+<option value="15:15">15:15</option>
+<option value="15:30">15:30</option>
+<option value="15:45">15:45</option>
+<option value="16:00">16:00</option>
+<option value="16:15">16:15</option>
+<option value="16:30">16:30</option>
+<option value="16:45">16:45</option>
+<option value="17:00">17:00</option>
+<option value="17:15">17:15</option>
+<option value="17:30">17:30</option>
+<option value="17:45">17:45</option>
+<option value="18:00">18:00</option>
+<option value="18:15">18:15</option>
+<option value="18:30">18:30</option>
+<option value="18:45">18:45</option>
+<option value="19:00">19:00</option>
+<option value="19:15">19:15</option>
+<option value="19:30">19:30</option>
+<option value="19:45">19:45</option>
+<option value="20:00">20:00</option>
+<option value="20:15">20:15</option>
+<option value="20:30">20:30</option>
+<option value="20:45">20:45</option>
+<option value="21:00">21:00</option>
+<option value="21:15">21:15</option>
+<option value="21:30">21:30</option>
+<option value="21:45">21:45</option>
+<option value="22:00">22:00</option>
+<option value="22:15">22:15</option>
+<option value="22:30">22:30</option>
+<option value="22:45">22:45</option>
+<option value="23:00">23:00</option>
+<option value="23:15">23:15</option>
+<option value="23:30">23:30</option>
+<option value="23:45">23:45</option>
+</select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="attMemberSel">義消成員 <span class="req">*</span></label>
+            <select id="attMemberSel">
+              <option value="">— 請選擇 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>簽到簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="attCheckinCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
+              </div>
+            </div>
+          </div>
+          <div class="submit-section">
+            <button type="button" class="btn-checkin" onclick="doCheckin()">確認簽到</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 已簽到名單 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.8rem;">名</div>
+          <div class="section-title">已簽到名單</div>
+          <div class="section-line"></div>
+          <span style="font-size:0.75rem;color:var(--text-light);">點擊成員進行簽退</span>
+        </div>
+        <div class="member-list-card">
+          <div id="attCheckinList">
+            <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer" style="margin-top:28px;">
+        臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+      </div>
+    </div>
+
+    <!-- ── 簽退畫面（點選名單後進入）── -->
+    <div id="attCheckoutView" style="display:none;">
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.9rem;">←</div>
+          <div class="section-title" id="attCheckoutName">成員姓名</div>
+          <div class="section-line"></div>
+          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">← 返回</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">✓</div>
+          <div class="section-title">簽退</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field" style="background:var(--warm);border-radius:4px;padding:10px 14px;margin-bottom:16px;">
+            <span style="font-size:0.78rem;color:var(--text-mid);">簽到時間：</span>
+            <span class="time-badge" id="attCheckinTimeRef"></span>
+          </div>
+          <div class="field">
+            <label>簽退時間 <span class="req">*</span></label>
+            <select id="attCheckoutTime" style="width:100%;">
+<option value="00:00">00:00</option>
+<option value="00:15">00:15</option>
+<option value="00:30">00:30</option>
+<option value="00:45">00:45</option>
+<option value="01:00">01:00</option>
+<option value="01:15">01:15</option>
+<option value="01:30">01:30</option>
+<option value="01:45">01:45</option>
+<option value="02:00">02:00</option>
+<option value="02:15">02:15</option>
+<option value="02:30">02:30</option>
+<option value="02:45">02:45</option>
+<option value="03:00">03:00</option>
+<option value="03:15">03:15</option>
+<option value="03:30">03:30</option>
+<option value="03:45">03:45</option>
+<option value="04:00">04:00</option>
+<option value="04:15">04:15</option>
+<option value="04:30">04:30</option>
+<option value="04:45">04:45</option>
+<option value="05:00">05:00</option>
+<option value="05:15">05:15</option>
+<option value="05:30">05:30</option>
+<option value="05:45">05:45</option>
+<option value="06:00">06:00</option>
+<option value="06:15">06:15</option>
+<option value="06:30">06:30</option>
+<option value="06:45">06:45</option>
+<option value="07:00">07:00</option>
+<option value="07:15">07:15</option>
+<option value="07:30">07:30</option>
+<option value="07:45">07:45</option>
+<option value="08:00">08:00</option>
+<option value="08:15">08:15</option>
+<option value="08:30">08:30</option>
+<option value="08:45">08:45</option>
+<option value="09:00">09:00</option>
+<option value="09:15">09:15</option>
+<option value="09:30">09:30</option>
+<option value="09:45">09:45</option>
+<option value="10:00">10:00</option>
+<option value="10:15">10:15</option>
+<option value="10:30">10:30</option>
+<option value="10:45">10:45</option>
+<option value="11:00">11:00</option>
+<option value="11:15">11:15</option>
+<option value="11:30">11:30</option>
+<option value="11:45">11:45</option>
+<option value="12:00">12:00</option>
+<option value="12:15">12:15</option>
+<option value="12:30">12:30</option>
+<option value="12:45">12:45</option>
+<option value="13:00">13:00</option>
+<option value="13:15">13:15</option>
+<option value="13:30">13:30</option>
+<option value="13:45">13:45</option>
+<option value="14:00">14:00</option>
+<option value="14:15">14:15</option>
+<option value="14:30">14:30</option>
+<option value="14:45">14:45</option>
+<option value="15:00">15:00</option>
+<option value="15:15">15:15</option>
+<option value="15:30">15:30</option>
+<option value="15:45">15:45</option>
+<option value="16:00">16:00</option>
+<option value="16:15">16:15</option>
+<option value="16:30">16:30</option>
+<option value="16:45">16:45</option>
+<option value="17:00">17:00</option>
+<option value="17:15">17:15</option>
+<option value="17:30">17:30</option>
+<option value="17:45">17:45</option>
+<option value="18:00">18:00</option>
+<option value="18:15">18:15</option>
+<option value="18:30">18:30</option>
+<option value="18:45">18:45</option>
+<option value="19:00">19:00</option>
+<option value="19:15">19:15</option>
+<option value="19:30">19:30</option>
+<option value="19:45">19:45</option>
+<option value="20:00">20:00</option>
+<option value="20:15">20:15</option>
+<option value="20:30">20:30</option>
+<option value="20:45">20:45</option>
+<option value="21:00">21:00</option>
+<option value="21:15">21:15</option>
+<option value="21:30">21:30</option>
+<option value="21:45">21:45</option>
+<option value="22:00">22:00</option>
+<option value="22:15">22:15</option>
+<option value="22:30">22:30</option>
+<option value="22:45">22:45</option>
+<option value="23:00">23:00</option>
+<option value="23:15">23:15</option>
+<option value="23:30">23:30</option>
+<option value="23:45">23:45</option>
+</select>
+          </div>
+          <div class="field">
+            <label>簽退簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="attCheckoutCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>協勤時數 / 出勤次數 / 服務人次</label>
+            <div class="num-row">
+              <div>
+                <label style="font-size:0.72rem;margin-bottom:4px;">協勤時數</label>
+                <input type="number" id="attHours" min="0" step="0.5" placeholder="自動">
+              </div>
+              <div>
+                <label style="font-size:0.72rem;margin-bottom:4px;">出勤次數</label>
+                <input type="number" id="attCount" min="0" step="1" placeholder="自動">
+              </div>
+              <div>
+                <label style="font-size:0.72rem;margin-bottom:4px;">服務人次</label>
+                <input type="number" id="attService" min="0" step="1" placeholder="0">
+              </div>
+            </div>
+          </div>
+          <div class="submit-section" style="margin-top:16px;">
+            <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-msg" id="attSuccessMsg">
+        <div class="success-icon">✓</div>
+        <h3>簽退完成</h3>
+        <p id="attSuccessDetail">紀錄已成功儲存。</p>
+        <button type="button" onclick="attBackToMain()" style="margin-top:12px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">返回名單</button>
+      </div>
+
+      <div class="form-footer" style="margin-top:28px;">
+        臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════ PAGE 5：簽到簽退查詢 ══════ -->
+<div class="page" id="attQueryPage">
+  <div class="query-wrap">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">篩選條件</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="aqDateFrom">日期（起）</label>
+            <input type="date" id="aqDateFrom">
+          </div>
+          <div class="field">
+            <label for="aqDateTo">日期（迄）</label>
+            <input type="date" id="aqDateTo">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label for="aqMember">義消姓名</label>
+            <select id="aqMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-search" onclick="doAttQuery()">查　詢</button>
+          <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-card" id="aqResultCard" style="display:none;">
+      <div class="result-head">
+        <h3>查詢結果</h3>
+        <button class="btn-csv" onclick="exportAttCSV()">匯出 CSV</button>
+
+      </div>
+      <div class="result-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th><th>姓名</th><th>職稱</th>
+              <th>簽到</th><th>簽退</th><th>協勤時數</th>
+              <th>出勤次數</th><th>服務人次</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="aqResultBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="aqInitMsg" class="query-empty">
+      <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
+    </div>
+
+    <div class="form-footer" style="margin-top:28px;">
+      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
+    </div>
+  </div>
+</div>
+
+<!-- 編輯 Modal -->
+
+
+
+<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:16px;color:var(--text);">編輯紀錄</h3>
+    <input type="hidden" id="aqEditRow">
+    <div class="field">
+      <label>日期</label>
+      <input type="date" id="aqEditDate">
+    </div>
+    <div class="field">
+      <label>姓名</label>
+      <input type="text" id="aqEditName" readonly style="background:#f5f5f5;">
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>簽到時間</label>
+        <select id="aqEditCheckin" style="width:100%;"></select>
+      </div>
+      <div class="field">
+        <label>簽退時間</label>
+        <select id="aqEditCheckout" style="width:100%;"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>協勤時數</label>
+      <input type="number" id="aqEditHours" min="0" step="0.5" style="width:100%;">
+    </div>
+    <div class="field">
+      <label>出勤次數</label>
+      <input type="number" id="aqEditCount" min="0" step="1" style="width:100%;">
+    </div>
+    <div class="field">
+      <label>服務人次</label>
+      <input type="number" id="aqEditService" min="0" step="1" style="width:100%;">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
+      <button onclick="closeAttEdit()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Navigation ──
+function navTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.drawer nav button').forEach(btn => btn.classList.remove('active-nav'));
+
+  if (pageId === 'dashboardPage') {
+    document.getElementById('pageTitle').textContent = '救護義消系統';
+    document.getElementById('pageSubEn').textContent = 'Emergency Volunteer System';
+    document.getElementById('nav-dashboard').classList.add('active-nav');
+    loadDashboard();
+  } else if (pageId === 'formPage') {
+    document.getElementById('pageTitle').textContent = '救護義消出勤紀錄表';
+    document.getElementById('pageSubEn').textContent = 'Emergency Volunteer Attendance Record';
+    document.getElementById('nav-form').classList.add('active-nav');
+  } else if (pageId === 'membersPage') {
+    document.getElementById('pageTitle').textContent = '成員管理';
+    document.getElementById('pageSubEn').textContent = 'Member Management';
+    document.getElementById('nav-members').classList.add('active-nav');
+    loadMembers();
+  } else if (pageId === 'queryPage') {
+    document.getElementById('pageTitle').textContent = '出勤查詢';
+    document.getElementById('pageSubEn').textContent = 'Attendance Query';
+    document.getElementById('nav-query').classList.add('active-nav');
+    updateQueryMemberSelect();
+  } else if (pageId === 'attendancePage') {
+    document.getElementById('pageTitle').textContent = '簽到簽退';
+    document.getElementById('pageSubEn').textContent = 'Sign In / Sign Out';
+    document.getElementById('nav-attendance').classList.add('active-nav');
+    initAttendancePage();
+  } else if (pageId === 'reportPage') {
+    document.getElementById('pageTitle').textContent = '報表';
+    document.getElementById('pageSubEn').textContent = 'Reports';
+    (function(){
+      const t = new Date();
+      const curY = t.getFullYear() - 1911;
+      const curM = t.getMonth() + 1;
+      const sel = document.getElementById('rpt1Year');
+      if (!sel.options.length) {
+        for (let y = curY + 1; y >= 100; y--) {
+          const opt = document.createElement('option');
+          opt.value = y;
+          opt.textContent = y + ' 年';
+          sel.appendChild(opt);
+        }
+      }
+      sel.value = curY;
+      document.getElementById('rpt1Month').value = curM;
+      // rpt2 年份
+      const sel2 = document.getElementById('rpt2Year');
+      if (!sel2.options.length) {
+        for (let y2 = curY + 1; y2 >= 100; y2--) {
+          const opt = document.createElement('option');
+          opt.value = y2; opt.textContent = y2 + ' 年';
+          sel2.appendChild(opt);
+        }
+      }
+      sel2.value = curY;
+      document.getElementById('rpt2Month').value = curM;
+    })();
+  } else if (pageId === 'attQueryPage') {
+    document.getElementById('pageTitle').textContent = '簽到/退記錄查詢';
+    document.getElementById('pageSubEn').textContent = 'Attendance Log';
+    document.getElementById('nav-attquery').classList.add('active-nav');
+    initAttQuery();
+  }
+  closeDrawer();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Drawer ──
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+
+// ── Dashboard ──
+async function loadDashboard() {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const monthStr = todayStr.substring(0, 7); // yyyy-MM
+
+  document.getElementById('dashDate').textContent =
+    today.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+
+  try {
+    // 出勤紀錄
+    const res1 = await fetch(GET_URL);
+    const att = await res1.json();
+    const todayAtt = att.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0,10) : '';
+      return d === todayStr;
+    });
+    const monthAtt = att.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0,7) : '';
+      return d === monthStr;
+    });
+    document.getElementById('dashTodayAtt').textContent = todayAtt.length;
+    document.getElementById('dashTodayMembers').textContent = new Set(todayAtt.map(r => r['姓名'])).size;
+    document.getElementById('dashMonthAtt').textContent = monthAtt.length;
+  } catch(e) {
+    ['dashTodayAtt','dashTodayMembers','dashMonthAtt'].forEach(id => document.getElementById(id).textContent = '—');
+  }
+
+  try {
+    // 簽到簽退紀錄（本月協勤時數）
+    const res2 = await fetch(GET_URL + '?action=getAttendance');
+    const signin = await res2.json();
+    const todaySignin = signin.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0,10) : '';
+      return d === todayStr;
+    });
+    const monthSignin = signin.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0,7) : '';
+      return d === monthStr;
+    });
+    document.getElementById('dashTodaySignin').textContent = new Set(todaySignin.map(r => r['姓名'])).size;
+    const totalHours = monthSignin.reduce((sum, r) => sum + (parseFloat(r['協勤時數']) || 0), 0);
+    document.getElementById('dashMonthHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+  } catch(e) {
+    ['dashTodaySignin','dashMonthHours'].forEach(id => document.getElementById(id).textContent = '—');
+  }
+}
+
+// ── Members (Google Sheets) ──
+const MEMBERS_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+let members = [];
+
+async function loadMembers() {
+  try {
+    const res = await fetch(MEMBERS_URL + '?action=getMembers');
+    members = await res.json();
+  } catch(e) { members = []; }
+  updateMemberSelect();
+  renderMemberList();
+}
+
+async function saveMembers() {
+  try {
+    await fetch(MEMBERS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'saveMember', members })
+    });
+  } catch(e) {}
+}
+
+function renderMemberList() {
+  const list = document.getElementById('memberList');
+  document.getElementById('memberCount').textContent = members.length + ' 人';
+  if (members.length === 0) {
+    list.innerHTML = '<div class="member-empty"><span class="empty-icon">👥</span>尚未新增任何成員</div>';
+    return;
+  }
+  list.innerHTML = members.map((m, i) => `
+    <div class="member-item" draggable="true" data-index="${i}">
+      <div class="drag-handle" title="拖曳排序"><span></span><span></span><span></span></div>
+      <div class="member-avatar">${m.name.charAt(0)}</div>
+      <div class="member-info">
+        <div class="member-name">${m.name}</div>
+        ${m.title ? `<div class="member-title">${m.title}</div>` : ''}
+      </div>
+      <button class="btn-delete" onclick="deleteMember(${i})">刪除</button>
+    </div>
+  `).join('');
+
+  // ── Drag & Drop ──
+  let dragSrc = null;
+
+  list.querySelectorAll('.member-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      dragSrc = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (item !== dragSrc) {
+        list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over'));
+        item.classList.add('drag-over');
+      }
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === item) return;
+      const fromIdx = parseInt(dragSrc.dataset.index);
+      const toIdx = parseInt(item.dataset.index);
+      const moved = members.splice(fromIdx, 1)[0];
+      members.splice(toIdx, 0, moved);
+      saveMembers();
+      updateMemberSelect();
+      renderMemberList();
+    });
+
+    // ── Touch drag (mobile) ──
+    const handle = item.querySelector('.drag-handle');
+    let touchClone = null, startY = 0, startScrollY = 0;
+
+    handle.addEventListener('touchstart', e => {
+      const touch = e.touches[0];
+      startY = touch.clientY;
+      startScrollY = window.scrollY;
+      dragSrc = item;
+      item.classList.add('dragging');
+
+      touchClone = item.cloneNode(true);
+      touchClone.style.cssText = `position:fixed;left:${item.getBoundingClientRect().left}px;top:${item.getBoundingClientRect().top}px;width:${item.offsetWidth}px;opacity:0.85;pointer-events:none;z-index:999;background:white;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.15);`;
+      document.body.appendChild(touchClone);
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const dy = touch.clientY - startY;
+      if (touchClone) touchClone.style.top = (item.getBoundingClientRect().top + dy) + 'px';
+
+      const els = [...list.querySelectorAll('.member-item:not(.dragging)')];
+      list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over'));
+      const target = els.find(el => {
+        const r = el.getBoundingClientRect();
+        return touch.clientY >= r.top && touch.clientY <= r.bottom;
+      });
+      if (target) target.classList.add('drag-over');
+    }, { passive: false });
+
+    handle.addEventListener('touchend', e => {
+      if (touchClone) { touchClone.remove(); touchClone = null; }
+      item.classList.remove('dragging');
+      const touch = e.changedTouches[0];
+      const els = [...list.querySelectorAll('.member-item:not(.dragging)')];
+      list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over'));
+      const target = els.find(el => {
+        const r = el.getBoundingClientRect();
+        return touch.clientY >= r.top && touch.clientY <= r.bottom;
+      });
+      if (target && target !== dragSrc) {
+        const fromIdx = parseInt(dragSrc.dataset.index);
+        const toIdx = parseInt(target.dataset.index);
+        const moved = members.splice(fromIdx, 1)[0];
+        members.splice(toIdx, 0, moved);
+        saveMembers();
+        updateMemberSelect();
+        renderMemberList();
+      }
+    });
+  });
+}
+
+function updateMemberSelect() {
+  const sel = document.getElementById('memberSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>';
+  members.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name;
+    opt.textContent = m.title ? `${m.name}（${m.title}）` : m.name;
+    if (m.name === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function addMember() {
+  const inp = document.getElementById('newMemberName');
+  const titleInp = document.getElementById('newMemberTitle');
+  const btn = document.querySelector('.btn-add');
+  const name = inp.value.trim();
+  const title = titleInp.value.trim();
+  if (!name) { inp.focus(); return; }
+  if (members.some(m => m.name === name)) { alert('此成員姓名已存在'); return; }
+  members.push({ name, title });
+  btn.textContent = '儲存中...'; btn.disabled = true;
+  await saveMembers();
+  btn.textContent = '新　增'; btn.disabled = false;
+  updateMemberSelect();
+  renderMemberList();
+  inp.value = '';
+  titleInp.value = '';
+  inp.focus();
+}
+
+async function deleteMember(i) {
+  if (!confirm(`確定要刪除「${members[i].name}」嗎？`)) return;
+  members.splice(i, 1);
+  await saveMembers();
+  updateMemberSelect();
+  renderMemberList();
+}
+
+document.getElementById('newMemberName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addMember(); }
+});
+
+// init - 從 Sheets 載入成員
+loadMembers();
+
+// ── Default date ──
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    setDuty('協勤');
+
+// ── Checkbox style ──
+document.querySelectorAll('.cb-item input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    cb.closest('.cb-item').classList.toggle('checked', cb.checked);
+  });
+});
+
+// ── Signature ──
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false, hasSig = false;
+
+function resizeCanvas() {
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * ratio;
+  canvas.height = rect.height * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+resizeCanvas();
+window.addEventListener('resize', () => { clearSig(); resizeCanvas(); });
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; });
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mouseleave', () => drawing = false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; }, { passive: false });
+canvas.addEventListener('touchend', () => drawing = false);
+
+
+// ── Duty Type Toggle ──
+function setDuty(type) {
+  document.getElementById('dutyType').value = type;
+  document.getElementById('dutyAssist').classList.toggle('active', type === '協勤');
+  document.getElementById('dutyPublic').classList.toggle('active', type === '公差');
+}
+function clearSig() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSig = false;
+}
+
+// ── Submit ──
+document.getElementById('recordForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const checked = [...document.querySelectorAll('#serviceGrid input:checked')];
+  if (checked.length === 0) { alert('請至少選擇一項服務內容'); return; }
+  if (!document.getElementById('memberSelect').value) { alert('請選擇出勤義消姓名'); return; }
+  if (!hasSig) { alert('請完成義消簽名'); return; }
+
+  const data = {
+    date: document.getElementById('date').value,
+    dutyType: document.getElementById('dutyType').value,
+    timeOut: document.getElementById('timeOut').value,
+    timeBack: document.getElementById('timeBack').value,
+    district: document.getElementById('district').value,
+    address: document.getElementById('address').value,
+    services: checked.map(cb => cb.value).join('、'),
+    note: document.getElementById('note').value,
+    memberName: document.getElementById('memberSelect').value,
+    signature: canvas.toDataURL('image/png')
+  };
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+  const btn = document.querySelector('.btn-submit');
+  btn.textContent = '送出中，請稍候...';
+  btn.disabled = true;
+
+  fetch(SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(() => {
+    document.getElementById('successMsg').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('recordForm').reset();
+    clearSig();
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('.cb-item').forEach(el => el.classList.remove('checked'));
+    updateMemberSelect();
+  })
+  .catch(() => alert('送出失敗，請檢查網路連線後再試。'))
+  .finally(() => { btn.textContent = '送　出　紀　錄'; btn.disabled = false; });
+});
+
+// ── Query Page ──
+const GET_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+let allRecords = [];
+let filteredRecords = [];
+
+function updateQueryMemberSelect() {
+  const sel = document.getElementById('qMember');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 全部成員 —</option>';
+  members.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name; opt.textContent = m.name;
+    if (m.name === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function doQuery() {
+  const btn = document.querySelector('.btn-search');
+  btn.textContent = '查詢中...'; btn.disabled = true;
+  document.getElementById('queryInitMsg').style.display = 'none';
+  document.getElementById('statsRow').style.display = 'none';
+  document.getElementById('resultCard').style.display = 'none';
+
+  try {
+    const res = await fetch(GET_URL);
+    allRecords = await res.json();
+  } catch(e) {
+    alert('無法取得資料，請確認 Google Apps Script 已正確部署並允許任何人存取。');
+    btn.textContent = '查　詢'; btn.disabled = false;
+    return;
+  }
+
+  const dateFrom = document.getElementById('qDateFrom').value;
+  const dateTo   = document.getElementById('qDateTo').value;
+  const member   = document.getElementById('qMember').value;
+  const district = document.getElementById('qDistrict').value;
+  const service  = document.getElementById('qService').value;
+  const duty     = document.getElementById('qDuty').value;
+
+  // 正規化欄位（中文 key → 英文 key）
+  allRecords = allRecords.map(r => {
+    // 日期格式處理：可能是 "2026-02-18" 或 Date 物件序列化後的字串
+    let dateVal = r['日期'] || r.date || '';
+    if (dateVal && dateVal.toString().includes('Date')) {
+      // Apps Script 有時會回傳 Date(timestamp) 格式
+      const ts = parseInt(dateVal.replace(/[^0-9]/g,''));
+      if (ts) dateVal = new Date(ts).toISOString().split('T')[0];
+    } else if (dateVal) {
+      // 嘗試標準化日期字串
+      const d = new Date(dateVal);
+      if (!isNaN(d)) dateVal = d.toISOString().split('T')[0];
+    }
+    // 時間格式處理：Sheets 回傳 1899-12-30THH:MM:SS.000Z 格式
+    const fmtTime = v => {
+      if (!v) return '';
+      v = String(v);
+      // ISO 格式：取 T 後面的 HH:MM
+      const isoMatch = v.match(/T(\d{2}:\d{2})/);
+      if (isoMatch) return isoMatch[1];
+      // 一般 HH:MM 格式
+      const hmMatch = v.match(/(\d{1,2}:\d{2})/);
+      if (hmMatch) return hmMatch[1];
+      return v;
+    };
+    // 列出所有 key 找到簽名欄位（不管叫什麼名字，找含 base64 的值）
+    return {
+      date:       dateVal,
+      timeOut:    fmtTime(r['出勤時間'] || r.timeOut),
+      timeBack:   fmtTime(r['返勤時間'] || r.timeBack),
+      district:   String(r['行政區']  || r.district   || '').replace(/^台中/,'臺中'),
+      address:    r['詳細地址'] || r.address    || '',
+      services:   r['服務內容'] || r.services   || '',
+      note:       r['備註']     || r.note       || '',
+      dutyType:   String(r['出勤類別'] || r.dutyType || ''),
+      memberName: String(r['姓名'] || ''),
+      signature:  String(r['簽名'] || ''),
+    };
+  });
+
+  filteredRecords = allRecords.filter(r => {
+    if (dateFrom && r.date < dateFrom) return false;
+    if (dateTo   && r.date > dateTo)   return false;
+    if (member   && r.memberName !== member) return false;
+    if (district && r.district !== district) return false;
+    if (service  && !(r.services || '').includes(service)) return false;
+    if (duty     && r.dutyType !== duty) return false;
+    return true;
+  });
+
+  renderQueryResults(filteredRecords);
+  btn.textContent = '查　詢'; btn.disabled = false;
+}
+
+function renderQueryResults(records) {
+  // Stats
+  const uniqueMembers = new Set(records.map(r => r.memberName)).size;
+  const uniqueDays    = new Set(records.map(r => r.date)).size;
+  document.getElementById('statTotal').textContent   = records.length;
+  document.getElementById('statMembers').textContent = uniqueMembers;
+  document.getElementById('statDays').textContent    = uniqueDays;
+  document.getElementById('statsRow').style.display  = 'grid';
+
+  // Table
+  const tbody = document.getElementById('resultBody');
+  if (records.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
+  } else {
+    tbody.innerHTML = records.map((r, i) => {
+      const tags = (r.services || '').split('、').filter(Boolean)
+        .map(s => `<span class="tag">${s}</span>`).join('');
+      const timeStr = r.timeOut && r.timeBack ? `${r.timeOut} — ${r.timeBack}` : (r.timeOut || '');
+      const sigCell = r.signature
+        ? `<img data-sig="${i}" style="height:40px;cursor:pointer;border:1px solid var(--border);border-radius:3px;" title="點擊放大">`
+        : '—';
+      const dutyTag = r.dutyType
+        ? `<span class="tag" style="${r.dutyType === '公差' ? 'background:#eaf4ff;color:#1a5fa8;border-color:#a8c9f0;' : ''}">${r.dutyType}</span>`
+        : '';
+      return `<tr>
+        <td style="white-space:nowrap;">${r.date || ''}</td>
+        <td style="white-space:nowrap;">${dutyTag}</td>
+        <td style="white-space:nowrap;">${timeStr}</td>
+        <td style="white-space:nowrap;">${r.district || ''}</td>
+        <td>${r.address || ''}</td>
+        <td>${tags}</td>
+        <td style="white-space:nowrap;">${r.memberName || ''}</td>
+        <td>${r.note || ''}</td>
+        <td>${sigCell}</td>
+      </tr>`;
+    }).join('');
+
+    // 用 JS 設定 src，避免 base64 破壞 HTML 屬性
+    tbody.querySelectorAll('img[data-sig]').forEach(img => {
+      const idx = parseInt(img.getAttribute('data-sig'));
+      img.src = records[idx].signature;
+      img.addEventListener('click', () => {
+        document.getElementById('sigModalImg').src = records[idx].signature;
+        document.getElementById('sigModal').style.display = 'flex';
+      });
+    });
+  }
+  document.getElementById('resultCard').style.display = 'block';
+}
+
+function resetQuery() {
+  document.getElementById('qDateFrom').value = '';
+  document.getElementById('qDateTo').value   = '';
+  document.getElementById('qMember').value   = '';
+  document.getElementById('qDistrict').value = '';
+  document.getElementById('qService').value  = '';
+  document.getElementById('qDuty').value     = '';
+  document.getElementById('statsRow').style.display  = 'none';
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('queryInitMsg').style.display = 'block';
+  filteredRecords = [];
+}
+
+// ── Signature modal ──
+function showSig(_, imgEl) {
+  const src = imgEl.src;
+  const modal = document.getElementById('sigModal');
+  document.getElementById('sigModalImg').src = src;
+  modal.style.display = 'flex';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('sigModal').addEventListener('click', () => {
+    document.getElementById('sigModal').style.display = 'none';
+  });
+});
+
+async function debugData() {
+  try {
+    const res = await fetch(GET_URL);
+    const raw = await res.json();
+    if (!raw.length) { alert('沒有資料'); return; }
+    const r = raw[0];
+    const keys = Object.keys(r);
+    let msg = '【欄位名稱】\n';
+    keys.forEach((k, i) => {
+      const v = String(r[k] || '');
+      const preview = v.startsWith('data:image') ? '[base64圖片]' : v.substring(0, 30);
+      msg += `${i+1}. "${k}" = ${preview}\n`;
+    });
+    alert(msg);
+  } catch(e) {
+    alert('錯誤：' + e.message);
+  }
+}
+
+
+// ── Attendance Page ──
+const ATT_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+
+// attSessions: { memberName: { checkinTime, checkinSig } }
+let attSessions = {};
+let attCheckoutTarget = null; // 目前要簽退的成員
+let attCheckinHasSig = false;
+let attCheckoutHasSig = false;
+let attCheckinCtx, attCheckoutCtx;
+
+function roundTo15(date) {
+  const h = date.getHours();
+  const m = Math.round(date.getMinutes() / 15) * 15;
+  const adjM = m === 60 ? 0 : m;
+  const adjH = m === 60 ? (h + 1) % 24 : h;
+  return `${String(adjH).padStart(2,'0')}:${String(adjM).padStart(2,'0')}`;
+}
+async function initAttendancePage() {
+  const now = new Date();
+  document.getElementById('attDate').value = now.toISOString().split('T')[0];
+  document.getElementById('attCheckinTime').value = roundTo15(now);
+
+  await loadMembers();
+
+  const sel = document.getElementById('attMemberSel');
+  sel.innerHTML = '<option value="">— 請選擇 —</option>';
+  members.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name;
+    opt.textContent = m.title ? `${m.name}（${m.title}）` : m.name;
+    sel.appendChild(opt);
+  });
+
+  attCheckinHasSig = false;
+  document.getElementById('attSuccessMsg').classList.remove('show');
+  setTimeout(() => initAttCanvas('checkin'), 100);
+  renderCheckinList();
+}
+
+function renderCheckinList() {
+  const list = document.getElementById('attCheckinList');
+  const sessions = Object.entries(attSessions);
+  if (sessions.length === 0) {
+    list.innerHTML = '<div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>';
+    return;
+  }
+  // 未簽退在前，已完成在後
+  const sorted = [...sessions].sort((a, b) => {
+    const aDone = a[1].done ? 1 : 0;
+    const bDone = b[1].done ? 1 : 0;
+    return aDone - bDone;
+  });
+  list.innerHTML = sorted.map(([name, s]) => {
+    const m = members.find(x => x.name === name) || { name, title: '' };
+    if (s.done) {
+      return `<div class="member-item">
+        <div class="member-avatar" style="background:#95a5a6;">${name.charAt(0)}</div>
+        <div class="member-info">
+          <div class="member-name">${name}</div>
+          <div class="member-title">${s.checkinTime} → ${s.checkoutTime}</div>
+        </div>
+        <span class="att-status-badge done">已完成</span>
+      </div>`;
+    }
+    return `<div class="member-item">
+      <div class="member-avatar" style="background:#27ae60;">${name.charAt(0)}</div>
+      <div class="member-info">
+        <div class="member-name">${name}</div>
+        ${m.title ? `<div class="member-title">${m.title}</div>` : ''}
+      </div>
+      <span class="att-status-badge in">簽到 ${s.checkinTime}</span>
+      <div style="width:8px;"></div>
+      <button class="att-member-btn" style="border-color:var(--red);color:var(--red);" onclick="openCheckout('${name}')">簽退</button>
+    </div>`;
+  }).join('');
+}
+
+function openCheckout(memberName) {
+  attCheckoutTarget = memberName;
+  const session = attSessions[memberName];
+  document.getElementById('attCheckoutName').textContent = memberName;
+  document.getElementById('attCheckinTimeRef').textContent = session.checkinTime;
+  document.getElementById('attCheckoutTime').value = roundTo15(new Date());
+  document.getElementById('attHours').value = '';
+  document.getElementById('attCount').value = '';
+  document.getElementById('attService').value = '';
+  document.getElementById('attSuccessMsg').classList.remove('show');
+  document.getElementById('attMain').style.display = 'none';
+  document.getElementById('attCheckoutView').style.display = 'block';
+  attCheckoutHasSig = false;
+
+  // 自動查詢出勤次數
+  const date = document.getElementById('attDate').value;
+  fetch(ATT_URL + '?action=getMembers')  // reuse same url, just need any fetch to not block
+  fetch(ATT_URL).then(r => r.json()).then(raw => {
+    const count = raw.filter(r => {
+      const d = r['日期'] ? new Date(r['日期']).toISOString().split('T')[0] : '';
+      return d === date && r['姓名'] === memberName;
+    }).length;
+    document.getElementById('attCount').value = count;
+  }).catch(() => {});
+
+  setTimeout(() => initAttCanvas('checkout'), 100);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function attBackToMain() {
+  attCheckoutTarget = null;
+  document.getElementById('attMain').style.display = 'block';
+  document.getElementById('attCheckoutView').style.display = 'none';
+  document.getElementById('attSuccessMsg').classList.remove('show');
+  renderCheckinList();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initAttCanvas(type) {
+  const id = type === 'checkin' ? 'attCheckinCanvas' : 'attCheckoutCanvas';
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+
+  const ctx = newCanvas.getContext('2d');
+  if (type === 'checkin') attCheckinCtx = ctx;
+  else attCheckoutCtx = ctx;
+
+  requestAnimationFrame(() => {
+    const ratio = window.devicePixelRatio || 1;
+    const w = newCanvas.offsetWidth || newCanvas.parentElement.offsetWidth || 300;
+    newCanvas.width = w * ratio;
+    newCanvas.height = 160 * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  });
+
+  function getPos(e) {
+    const r = newCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  let drawing = false;
+  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  newCanvas.addEventListener('mousemove', e => {
+    if (!drawing) return;
+    const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') attCheckinHasSig = true;
+    else attCheckoutHasSig = true;
+  });
+  newCanvas.addEventListener('mouseup', () => drawing = false);
+  newCanvas.addEventListener('mouseleave', () => drawing = false);
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchmove', e => {
+    e.preventDefault(); if (!drawing) return;
+    const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') attCheckinHasSig = true;
+    else attCheckoutHasSig = true;
+  }, { passive: false });
+  newCanvas.addEventListener('touchend', () => drawing = false);
+}
+
+function clearAttCanvas(type) {
+  const ctx = type === 'checkin' ? attCheckinCtx : attCheckoutCtx;
+  if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  if (type === 'checkin') attCheckinHasSig = false;
+  else attCheckoutHasSig = false;
+}
+
+function doCheckin() {
+  const memberName = document.getElementById('attMemberSel').value;
+  const timeVal = document.getElementById('attCheckinTime').value;
+  if (!memberName) { alert('請選擇義消成員'); return; }
+  if (!timeVal) { alert('請填入簽到時間'); return; }
+  if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
+  if (attSessions[memberName]) {
+    if (!confirm(`${memberName} 已有簽到紀錄（${attSessions[memberName].checkinTime}），要重新簽到嗎？`)) return;
+  }
+
+  attSessions[memberName] = {
+    checkinTime: timeVal,
+    checkinSig: attCheckinCtx.canvas.toDataURL('image/png')
+  };
+
+  // 重置簽到表單
+  document.getElementById('attMemberSel').value = '';
+  attCheckinHasSig = false;
+  clearAttCanvas('checkin');
+  document.getElementById('attCheckinTime').value = new Date().toTimeString().substring(0,5);
+  renderCheckinList();
+  window.scrollTo({ top: document.getElementById('attCheckinList').offsetTop - 80, behavior: 'smooth' });
+}
+
+function calcHours(inTime, outTime) {
+  const [inH, inM] = inTime.split(':').map(Number);
+  const [outH, outM] = outTime.split(':').map(Number);
+  let mins = (outH * 60 + outM) - (inH * 60 + inM);
+  if (mins <= 0) return 0;
+  return Math.ceil(mins / 30) * 0.5;
+}
+
+async function doCheckout() {
+  const checkoutTime = document.getElementById('attCheckoutTime').value;
+  if (!checkoutTime) { alert('請填入簽退時間'); return; }
+  if (!attCheckoutHasSig) { alert('請完成簽退簽名'); return; }
+
+  const session = attSessions[attCheckoutTarget];
+  const hours = calcHours(session.checkinTime, checkoutTime);
+  document.getElementById('attHours').value = hours;
+
+  const memberObj = members.find(m => m.name === attCheckoutTarget);
+  const data = {
+    action: 'attendance',
+    date:         document.getElementById('attDate').value,
+    title:        memberObj ? (memberObj.title || '') : '',
+    memberName:   attCheckoutTarget,
+    checkinSig:   session.checkinSig,
+    checkinTime:  session.checkinTime,
+    checkoutSig:  attCheckoutCtx.canvas.toDataURL('image/png'),
+    checkoutTime: checkoutTime,
+    hours:        String(hours),
+    count:        document.getElementById('attCount').value || '0',
+    service:      document.getElementById('attService').value || '0',
+  };
+
+  const btn = document.querySelector('#attCheckoutView .btn-checkout');
+  btn.textContent = '送出中...'; btn.disabled = true;
+
+  try {
+    await fetch(ATT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    // 標記完成但保留在名單
+    attSessions[attCheckoutTarget].done = true;
+    attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
+    document.getElementById('attSuccessDetail').textContent =
+      `${attCheckoutTarget} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
+    document.getElementById('attSuccessMsg').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e) {
+    alert('送出失敗，請檢查網路連線後再試。');
+  } finally {
+    btn.textContent = '確認簽退送出'; btn.disabled = false;
+  }
+}
+
+function attResetAll() {
+  attSessions = {};
+  attCheckoutTarget = null;
+  attCheckinHasSig = false;
+  attCheckoutHasSig = false;
+}
+
+function resetAttendance() {
+  attResetAll();
+}
+
+
+// ── Attendance Query Page ──
+const ATT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+let aqAllRecords = [];
+let aqFiltered = [];
+
+function initAttQuery() {
+  const sel = document.getElementById('aqMember');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 全部成員 —</option>';
+  members.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name; opt.textContent = m.name;
+    if (m.name === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // populate edit modal time selects
+  ['aqEditCheckin','aqEditCheckout'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    for (let h = 0; h < 24; h++) {
+      for (let m of [0,15,30,45]) {
+        const val = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        sel.innerHTML += `<option value="${val}">${val}</option>`;
+      }
+    }
+  });
+}
+
+async function doAttQuery() {
+  const btn = document.querySelector('#attQueryPage .btn-search');
+  btn.textContent = '查詢中...'; btn.disabled = true;
+  document.getElementById('aqInitMsg').style.display = 'none';
+  document.getElementById('aqResultCard').style.display = 'none';
+  try {
+    const res = await fetch(ATT_SHEET_URL + '?action=getAttendance');
+    aqAllRecords = await res.json();
+  } catch(e) {
+    alert('無法取得資料：' + e.message);
+    btn.textContent = '查　詢'; btn.disabled = false;
+    return;
+  }
+  const dateFrom = document.getElementById('aqDateFrom').value;
+  const dateTo   = document.getElementById('aqDateTo').value;
+  const member   = document.getElementById('aqMember').value;
+  aqFiltered = aqAllRecords.filter((r,i) => {
+    r._row = i;
+    const d = r['日期'] || '';
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
+    if (member   && r['姓名'] !== member) return false;
+    return true;
+  });
+  renderAttQueryResults();
+  btn.textContent = '查　詢'; btn.disabled = false;
+}
+
+// 格式化日期/時間（處理 ISO 字串）
+function fmtAqDate(v) {
+  if (!v) return '';
+  const s = String(v);
+  // ISO 日期：取 T 前面的 yyyy-MM-dd
+  const dm = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (dm) return dm[1];
+  return s;
+}
+function fmtAqTime(v) {
+  if (!v) return '';
+  const s = String(v);
+  // ISO 時間：取 T 後面的 HH:MM
+  const tm = s.match(/T(\d{2}:\d{2})/);
+  if (tm) return tm[1];
+  // 已經是 HH:MM
+  const hm = s.match(/(\d{1,2}:\d{2})/);
+  if (hm) return hm[1];
+  return s;
+}
+
+function renderAttQueryResults() {
+  const tbody = document.getElementById('aqResultBody');
+  if (aqFiltered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:30px;">查無紀錄</td></tr>';
+  } else {
+    tbody.innerHTML = aqFiltered.map((r, i) => `
+      <tr>
+        <td style="white-space:nowrap;">${fmtAqDate(r['日期'])}</td>
+        <td style="white-space:nowrap;">${r['姓名']||''}</td>
+        <td style="white-space:nowrap;">${r['職稱']||''}</td>
+        <td style="white-space:nowrap;">${fmtAqTime(r['簽到時間'])}</td>
+        <td style="white-space:nowrap;">${fmtAqTime(r['簽退時間'])}</td>
+        <td style="text-align:center;">${r['協勤時數']||''}</td>
+        <td style="text-align:center;">${r['出勤次數']||''}</td>
+        <td style="text-align:center;">${r['服務人次']||''}</td>
+        <td><button class="att-member-btn" onclick="openAttEdit(${i})">編輯</button></td>
+      </tr>`).join('');
+  }
+  document.getElementById('aqResultCard').style.display = 'block';
+}
+
+function openAttEdit(idx) {
+  const r = aqFiltered[idx];
+  document.getElementById('aqEditRow').value = idx;
+  document.getElementById('aqEditDate').value = fmtAqDate(r['日期']);
+  document.getElementById('aqEditName').value = r['姓名'] || '';
+  document.getElementById('aqEditCheckin').value = fmtAqTime(r['簽到時間']);
+  document.getElementById('aqEditCheckout').value = fmtAqTime(r['簽退時間']);
+  document.getElementById('aqEditHours').value = r['協勤時數'] || '';
+  document.getElementById('aqEditCount').value = r['出勤次數'] || '';
+  document.getElementById('aqEditService').value = r['服務人次'] || '';
+  document.getElementById('aqEditModal').style.display = 'flex';
+}
+
+function closeAttEdit() {
+  document.getElementById('aqEditModal').style.display = 'none';
+}
+
+async function saveAttEdit() {
+  const idx = parseInt(document.getElementById('aqEditRow').value);
+  const r = aqFiltered[idx];
+  const updated = {
+    action: 'updateAttendance',
+    rowIndex: r._row,
+    date:     document.getElementById('aqEditDate').value,
+    memberName: r['姓名'],
+    checkinTime:  document.getElementById('aqEditCheckin').value,
+    checkoutTime: document.getElementById('aqEditCheckout').value,
+    hours:   document.getElementById('aqEditHours').value,
+    count:   document.getElementById('aqEditCount').value,
+    service: document.getElementById('aqEditService').value,
+  };
+  const btn = document.querySelector('#aqEditModal .btn-search');
+  btn.textContent = '儲存中...'; btn.disabled = true;
+  try {
+    await fetch(ATT_SHEET_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    });
+    closeAttEdit();
+    doAttQuery();
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  } finally {
+    btn.textContent = '儲存'; btn.disabled = false;
+  }
+}
+
+function resetAttQuery() {
+  document.getElementById('aqDateFrom').value = '';
+  document.getElementById('aqDateTo').value = '';
+  document.getElementById('aqMember').value = '';
+  document.getElementById('aqResultCard').style.display = 'none';
+  document.getElementById('aqInitMsg').style.display = 'block';
+}
+
+// ── 匯出 Word 報表（已移至報表頁）──
+function showExportWordModal() { /* 已停用 */ }
+function _unused_showExportWordModal_orig() {
+  const today = new Date();
+  document.getElementById('exportYear').value = today.getFullYear() - 1911;
+  document.getElementById('exportMonth').value = today.getMonth() + 1;
+  document.getElementById('exportWordStatus').textContent = '';
+  document.getElementById('exportWordModal').style.display = 'flex';
+}
+function closeExportWordModal() {
+  document.getElementById('exportWordModal').style.display = 'none';
+}
+async function doExportWord() {
+  const year = document.getElementById('exportYear').value;
+  const month = document.getElementById('exportMonth').value;
+  const unit = document.getElementById('exportUnit').value;
+  const statusEl = document.getElementById('exportWordStatus');
+  const btn = document.getElementById('exportWordBtn');
+  if (!year || !month) { statusEl.textContent = '請填入年份和月份'; return; }
+  btn.disabled = true;
+  statusEl.textContent = '正在從 Google Sheets 取得資料...';
+  try {
+    const res = await fetch(GET_URL + '?action=getAttendance');
+    const all = await res.json();
+    const westernYear = parseInt(year) + 1911;
+    const monthStr = String(westernYear) + '-' + String(month).padStart(2, '0');
+    const filtered = all.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0, 7) : '';
+      return d === monthStr;
+    }).map(r => ({
+      date: fmtAqDate(r['日期']),
+      title: r['職稱'] || '',
+      name: r['姓名'] || '',
+      checkinTime: fmtAqTime(r['簽到時間']),
+      checkoutTime: fmtAqTime(r['簽退時間']),
+      checkinSig: r['簽到簽名'] || '',
+      checkoutSig: r['簽退簽名'] || '',
+      hours: r['協勤時數'] || 0,
+      count: r['出勤次數'] || 0,
+      service: r['服務人次'] || 0,
+    }));
+    if (filtered.length === 0) {
+      statusEl.textContent = year + '年' + month + '月查無資料';
+      btn.disabled = false;
+      return;
+    }
+    statusEl.textContent = '找到 ' + filtered.length + ' 筆，正在產生 Word 文件...';
+    const result = await generateWordReport({ year, month, unit });
+    const byteChars = atob(result.pages[0]);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([byteArr], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '簽到簽退紀錄表_' + year + '年' + month + '月.docx';
+    a.click();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = '✅ 下載成功！共 ' + result.totalPages + ' 頁';
+    btn.disabled = false;
+  } catch(e) {
+    console.error(e);
+    statusEl.textContent = '❌ 錯誤：' + e.message;
+    btn.disabled = false;
+  }
+}
+async function generateWordReport({ year, month, unit }) {
+  // 用 JSONP 讓 Apps Script 直接從 Sheets 取資料（含簽名圖片）產生 Word
+  return new Promise((resolve, reject) => {
+    const cbName = 'wordCb_' + Date.now();
+    window[cbName] = function(json) {
+      delete window[cbName];
+      document.getElementById('jsonpWordScript')?.remove();
+      if (!json.success) reject(new Error(json.error || '後端產生失敗'));
+      else resolve(json.docx);
+    };
+    const url = ATT_URL
+      + '?action=generateWordFromSheet'
+      + '&year=' + encodeURIComponent(year)
+      + '&month=' + encodeURIComponent(month)
+      + '&unit=' + encodeURIComponent(unit)
+      + '&callback=' + cbName;
+    const script = document.createElement('script');
+    script.id = 'jsonpWordScript';
+    script.src = url;
+    script.onerror = () => reject(new Error('JSONP 載入失敗'));
+    document.head.appendChild(script);
+    setTimeout(() => reject(new Error('請求逾時（60秒），請重試')), 60000);
+  });
+}
+
+// ── 報表1：協勤紀錄表 ──
+async function generateRpt1() {
+  const year   = document.getElementById('rpt1Year').value;
+  const month  = document.getElementById('rpt1Month').value;
+  const unit   = document.getElementById('rpt1Unit').value;
+  const status = document.getElementById('rpt1Status');
+  const btn    = document.getElementById('rpt1Btn');
+  if (!year || !month) { status.style.color='var(--red)'; status.textContent = '請選擇年份和月份'; return; }
+  btn.disabled = true;
+  status.style.color = 'var(--text-light)';
+  status.textContent = '⏳ 正在產生，請稍候（約 15~30 秒）...';
+  try {
+    const json = await new Promise((resolve, reject) => {
+      const cbName = 'rpt1Cb_' + Date.now();
+      let done = false;
+      window[cbName] = function(j) {
+        done = true;
+        delete window[cbName];
+        document.getElementById('jsonpRpt1Script')?.remove();
+        if (!j.success) reject(new Error(j.error || '後端產生失敗'));
+        else resolve(j);
+      };
+      const url = ATT_URL
+        + '?action=generateAttendanceReport'
+        + '&year='  + encodeURIComponent(year)
+        + '&month=' + encodeURIComponent(month)
+        + '&unit='  + encodeURIComponent(unit)
+        + '&callback=' + cbName;
+      const script = document.createElement('script');
+      script.id = 'jsonpRpt1Script';
+      script.src = url;
+      document.head.appendChild(script);
+      setTimeout(() => {
+        if (!done) {
+          delete window[cbName];
+          document.getElementById('jsonpRpt1Script')?.remove();
+          reject(new Error('請求逾時（120秒），請重試'));
+        }
+      }, 120000);
+    });
+
+    // base64 → Blob → 直接下載到本機
+    const binary = atob(json.docxBase64);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = json.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+
+    status.style.color = '#1a6b35';
+    status.textContent = '✅ 下載成功！共 ' + json.count + ' 筆';
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── 報表2：救護義消服勤表 ──
+async function generateRpt2() {
+  const year   = document.getElementById('rpt2Year').value;
+  const month  = document.getElementById('rpt2Month').value;
+  const status = document.getElementById('rpt2Status');
+  const btn    = document.getElementById('rpt2Btn');
+  if (!year || !month) { status.style.color='var(--red)'; status.textContent = '請選擇年份和月份'; return; }
+  btn.disabled = true;
+  status.style.color = 'var(--text-light)';
+  status.textContent = '⏳ 正在產生，請稍候...';
+  try {
+    const json = await new Promise((resolve, reject) => {
+      const cbName = 'rpt2Cb_' + Date.now();
+      let done = false;
+      window[cbName] = function(j) {
+        done = true;
+        delete window[cbName];
+        document.getElementById('jsonpRpt2Script')?.remove();
+        if (!j.success) reject(new Error(j.error || '後端產生失敗'));
+        else resolve(j);
+      };
+      const url = ATT_URL
+        + '?action=generateServiceReport'
+        + '&year='  + encodeURIComponent(year)
+        + '&month=' + encodeURIComponent(month)
+        + '&callback=' + cbName;
+      const script = document.createElement('script');
+      script.id = 'jsonpRpt2Script';
+      script.src = url;
+      document.head.appendChild(script);
+      setTimeout(() => {
+        if (!done) {
+          delete window[cbName];
+          document.getElementById('jsonpRpt2Script')?.remove();
+          reject(new Error('請求逾時（120秒），請重試'));
+        }
+      }, 120000);
+    });
+    const binary = atob(json.docxBase64);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = json.fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    status.style.color = '#1a6b35';
+    status.textContent = '✅ 下載成功！共 ' + json.count + ' 筆';
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function exportAttCSV() {
+  if (!aqFiltered.length) return;
+  const headers = ['日期','姓名','職稱','簽到時間','簽退時間','協勤時數','出勤次數','服務人次'];
+  const rows = aqFiltered.map(r => headers.map(h => `"${String(r[h]||'').replace(/"/g,'""')}"`));
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `簽到紀錄_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+function exportCSV() {
+  if (!filteredRecords.length) return;
+  const headers = ['日期','出勤類別','出勤時間','返勤時間','行政區','地址','服務項目','義消姓名','備註'];
+  const rows = filteredRecords.map(r => [
+    r.date, r.dutyType, r.timeOut, r.timeBack, r.district, r.address, r.services, r.memberName, r.note
+  ].map(v => `"${(String(v || '')).replace(/"/g, '""')}"`));
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `出勤紀錄_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+</script>
+
+
+<!-- ══════ PAGE：報表 ══════ -->
+<div class="page" id="reportPage">
+  <div class="query-wrap">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📑</div>
+        <div class="section-title">選擇報表</div>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="filter-card">
+
+        <!-- 報表1 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">1</span>
+            簽到簽退紀錄表
+          </div>
+
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <div style="position:relative;">
+                <select id="rpt1Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>民國年份</label>
+              <div style="position:relative;">
+                <select id="rpt1Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <div style="position:relative;">
+                <select id="rpt1Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="rpt1Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+
+          <div class="filter-actions">
+            <button class="btn-search" onclick="generateRpt1()" id="rpt1Btn">⬇ 產生並下載</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
+
+        <!-- 報表2 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">2</span>
+            救護義消服勤表
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <div style="position:relative;">
+                <select id="rpt2Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field">
+              <label>民國年份</label>
+              <div style="position:relative;">
+                <select id="rpt2Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <div style="position:relative;">
+                <select id="rpt2Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div id="rpt2Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions">
+            <button class="btn-search" onclick="generateRpt2()" id="rpt2Btn">⬇ 產生並下載</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
+
+        <!-- 報表3 -->
+        <div style="opacity:0.4;pointer-events:none;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--border);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
+            報表三（即將推出）
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="form-footer" style="margin-top:20px;">臺中市政府消防局救護義消參與緊急救護出勤紀錄系統</div>
+  </div>
+</div>
+<!-- Signature Modal -->
+<div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
+  <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <img id="sigModalImg" style="max-width:80vw;max-height:80vh;display:block;">
+    <p style="text-align:center;margin-top:10px;font-size:0.75rem;color:#9c8c80;font-family:'Noto Sans TC',sans-serif;">點擊任意處關閉</p>
+  </div>
+</div>
+</body>
+</html>
