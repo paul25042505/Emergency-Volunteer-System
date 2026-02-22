@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>救護義消出勤紀錄表</title>
+<title>救護義消系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -125,7 +125,7 @@ body {
 label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.05em; }
 label .req { color: var(--red); margin-left: 2px; }
 
-input[type="text"], input[type="date"], input[type="time"], select, textarea {
+input[type="text"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
   width: 100%; border: 1px solid var(--border); border-radius: 4px;
   padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
   color: var(--text); background: #fafaf8;
@@ -394,7 +394,7 @@ tr:hover td { background: #fdfcfb; }
       <span></span><span></span><span></span>
     </button>
     <div class="header-text">
-      <h1 id="pageTitle">救護義消出勤紀錄表</h1>
+      <h1 id="pageTitle">救護義消系統</h1>
       <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
     </div>
   </div>
@@ -984,7 +984,7 @@ tr:hover td { background: #fdfcfb; }
           </div>
           <div class="field">
             <label>簽退時間 <span class="req">*</span></label>
-            <select id="attCheckoutTime" style="width:100%;">
+            <select id="attCheckoutTime" style="width:100%;" onchange="autoCalcHours()">
 <option value="00:00">00:00</option>
 <option value="00:15">00:15</option>
 <option value="00:30">00:30</option>
@@ -1095,21 +1095,16 @@ tr:hover td { background: #fdfcfb; }
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label>協勤時數 / 出勤次數 / 服務人次</label>
-            <div class="num-row">
-              <div>
-                <label style="font-size:0.72rem;margin-bottom:4px;">協勤時數</label>
-                <input type="number" id="attHours" min="0" step="0.5" placeholder="自動">
-              </div>
-              <div>
-                <label style="font-size:0.72rem;margin-bottom:4px;">出勤次數</label>
-                <input type="number" id="attCount" min="0" step="1" placeholder="自動">
-              </div>
-              <div>
-                <label style="font-size:0.72rem;margin-bottom:4px;">服務人次</label>
-                <input type="number" id="attService" min="0" step="1" placeholder="0">
-              </div>
-            </div>
+            <label>協勤時數</label>
+            <input type="number" id="attHours" min="0" step="0.5" placeholder="自動" style="width:100%;color:var(--text-light);" readonly>
+          </div>
+          <div class="field">
+            <label>出勤次數</label>
+            <input type="number" id="attCount" min="0" step="1" style="width:100%;color:var(--text-light);" readonly>
+          </div>
+          <div class="field">
+            <label>服務人次</label>
+            <input type="number" id="attService" min="0" step="1" placeholder="0" style="width:100%;background:white;">
           </div>
           <div class="submit-section" style="margin-top:16px;">
             <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
@@ -1207,33 +1202,33 @@ tr:hover td { background: #fdfcfb; }
     <input type="hidden" id="aqEditRow">
     <div class="field">
       <label>日期</label>
-      <input type="date" id="aqEditDate">
+      <input type="date" id="aqEditDate" style="width:100%;">
     </div>
     <div class="field">
       <label>姓名</label>
-      <input type="text" id="aqEditName" readonly style="background:#f5f5f5;">
+      <input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;">
     </div>
     <div class="row-2">
       <div class="field">
         <label>簽到時間</label>
-        <select id="aqEditCheckin" style="width:100%;"></select>
+        <select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select>
       </div>
       <div class="field">
         <label>簽退時間</label>
-        <select id="aqEditCheckout" style="width:100%;"></select>
+        <select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select>
       </div>
     </div>
     <div class="field">
       <label>協勤時數</label>
-      <input type="number" id="aqEditHours" min="0" step="0.5" style="width:100%;">
+      <input type="number" id="aqEditHours" style="width:100%;color:var(--text-light);" min="0" step="0.5" readonly>
     </div>
     <div class="field">
       <label>出勤次數</label>
-      <input type="number" id="aqEditCount" min="0" step="1" style="width:100%;">
+      <input type="number" id="aqEditCount" style="width:100%;background:white;" min="0" step="1">
     </div>
     <div class="field">
       <label>服務人次</label>
-      <input type="number" id="aqEditService" min="0" step="1" style="width:100%;">
+      <input type="number" id="aqEditService" style="width:100%;background:white;" min="0" step="1">
     </div>
     <div style="display:flex;gap:10px;margin-top:8px;">
       <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
@@ -1255,9 +1250,10 @@ function navTo(pageId) {
     document.getElementById('nav-dashboard').classList.add('active-nav');
     loadDashboard();
   } else if (pageId === 'formPage') {
-    document.getElementById('pageTitle').textContent = '救護義消出勤紀錄表';
+    document.getElementById('pageTitle').textContent = '救護義消系統';
     document.getElementById('pageSubEn').textContent = 'Emergency Volunteer Attendance Record';
     document.getElementById('nav-form').classList.add('active-nav');
+    setTimeout(() => resizeCanvas(), 50);
   } else if (pageId === 'membersPage') {
     document.getElementById('pageTitle').textContent = '成員管理';
     document.getElementById('pageSubEn').textContent = 'Member Management';
@@ -1327,7 +1323,7 @@ function closeDrawer() {
 // ── Dashboard ──
 async function loadDashboard() {
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = today.toLocaleDateString('sv');
   const monthStr = todayStr.substring(0, 7); // yyyy-MM
 
   document.getElementById('dashDate').textContent =
@@ -1549,7 +1545,7 @@ document.getElementById('newMemberName').addEventListener('keydown', e => {
 loadMembers();
 
 // ── Default date ──
-document.getElementById('date').value = new Date().toISOString().split('T')[0];
+document.getElementById('date').value = new Date().toLocaleDateString('sv');
     setDuty('協勤');
 
 // ── Checkbox style ──
@@ -1575,7 +1571,7 @@ function resizeCanvas() {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 }
-resizeCanvas();
+// 初始呼叫移到 navTo formPage，避免隱藏狀態取不到寬度
 window.addEventListener('resize', () => { clearSig(); resizeCanvas(); });
 
 function getPos(e) {
@@ -1640,7 +1636,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     document.getElementById('recordForm').reset();
     clearSig();
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = new Date().toLocaleDateString('sv');
     document.querySelectorAll('.cb-item').forEach(el => el.classList.remove('checked'));
     updateMemberSelect();
   })
@@ -1695,11 +1691,11 @@ async function doQuery() {
     if (dateVal && dateVal.toString().includes('Date')) {
       // Apps Script 有時會回傳 Date(timestamp) 格式
       const ts = parseInt(dateVal.replace(/[^0-9]/g,''));
-      if (ts) dateVal = new Date(ts).toISOString().split('T')[0];
+      if (ts) dateVal = new Date(ts).toLocaleDateString('sv');
     } else if (dateVal) {
       // 嘗試標準化日期字串
       const d = new Date(dateVal);
-      if (!isNaN(d)) dateVal = d.toISOString().split('T')[0];
+      if (!isNaN(d)) dateVal = d.toLocaleDateString('sv');
     }
     // 時間格式處理：Sheets 回傳 1899-12-30THH:MM:SS.000Z 格式
     const fmtTime = v => {
@@ -1857,7 +1853,7 @@ function roundTo15(date) {
 }
 async function initAttendancePage() {
   const now = new Date();
-  document.getElementById('attDate').value = now.toISOString().split('T')[0];
+  document.getElementById('attDate').value = now.toLocaleDateString('sv');
   document.getElementById('attCheckinTime').value = roundTo15(now);
 
   await loadMembers();
@@ -1931,16 +1927,16 @@ function openCheckout(memberName) {
 
   // 自動查詢出勤次數
   const date = document.getElementById('attDate').value;
-  fetch(ATT_URL + '?action=getMembers')  // reuse same url, just need any fetch to not block
-  fetch(ATT_URL).then(r => r.json()).then(raw => {
-    const count = raw.filter(r => {
-      const d = r['日期'] ? new Date(r['日期']).toISOString().split('T')[0] : '';
+  fetch(ATT_URL + '?action=getAttendance').then(r => r.json()).then(records => {
+    const count = records.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0,10) : '';
       return d === date && r['姓名'] === memberName;
     }).length;
     document.getElementById('attCount').value = count;
   }).catch(() => {});
 
-  setTimeout(() => initAttCanvas('checkout'), 100);
+  // 等畫面渲染完再初始化 canvas
+  requestAnimationFrame(() => requestAnimationFrame(() => initAttCanvas('checkout')));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1965,15 +1961,16 @@ function initAttCanvas(type) {
   if (type === 'checkin') attCheckinCtx = ctx;
   else attCheckoutCtx = ctx;
 
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     const ratio = window.devicePixelRatio || 1;
-    const w = newCanvas.offsetWidth || newCanvas.parentElement.offsetWidth || 300;
+    const rect = newCanvas.getBoundingClientRect();
+    const w = rect.width || newCanvas.parentElement.getBoundingClientRect().width || 300;
     newCanvas.width = w * ratio;
     newCanvas.height = 160 * ratio;
     ctx.scale(ratio, ratio);
     ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  });
+  }, 50);
 
   function getPos(e) {
     const r = newCanvas.getBoundingClientRect();
@@ -2035,8 +2032,25 @@ function calcHours(inTime, outTime) {
   const [inH, inM] = inTime.split(':').map(Number);
   const [outH, outM] = outTime.split(':').map(Number);
   let mins = (outH * 60 + outM) - (inH * 60 + inM);
-  if (mins <= 0) return 0;
-  return Math.ceil(mins / 30) * 0.5;
+  if (mins < 30) return 0;
+  return Math.floor(mins / 30) * 0.5;
+}
+function autoCalcEditHours() {
+  const inTime  = document.getElementById('aqEditCheckin').value;
+  const outTime = document.getElementById('aqEditCheckout').value;
+  if (!inTime || !outTime) return;
+  const h = calcHours(inTime, outTime);
+  const el = document.getElementById('aqEditHours');
+  el.value = h > 0 ? h : '';
+}
+function autoCalcHours() {
+  const inTime  = document.getElementById('attCheckinTimeRef').textContent.trim();
+  const outTime = document.getElementById('attCheckoutTime').value;
+  if (!inTime || !outTime) return;
+  const h = calcHours(inTime, outTime);
+  const el = document.getElementById('attHours');
+  el.value = h > 0 ? h : '';
+  el.placeholder = h > 0 ? h : '自動';
 }
 
 async function doCheckout() {
@@ -2048,10 +2062,24 @@ async function doCheckout() {
   const hours = calcHours(session.checkinTime, checkoutTime);
   document.getElementById('attHours').value = hours;
 
+  // 查今日該成員已出勤次數（+1 含本次）
+  const todayStr = document.getElementById('attDate').value;
+  let todayCount = 1;
+  try {
+    const res = await fetch(ATT_URL + '?action=getAttendance');
+    const records = await res.json();
+    const todayRecs = records.filter(r => {
+      const d = r['日期'] ? String(r['日期']).substring(0,10) : '';
+      return d === todayStr && r['姓名'] === attCheckoutTarget;
+    });
+    todayCount = todayRecs.length + 1;
+  } catch(e) { todayCount = 1; }
+  document.getElementById('attCount').value = todayCount;
+
   const memberObj = members.find(m => m.name === attCheckoutTarget);
   const data = {
     action: 'attendance',
-    date:         document.getElementById('attDate').value,
+    date:         todayStr,
     title:        memberObj ? (memberObj.title || '') : '',
     memberName:   attCheckoutTarget,
     checkinSig:   session.checkinSig,
@@ -2059,7 +2087,7 @@ async function doCheckout() {
     checkoutSig:  attCheckoutCtx.canvas.toDataURL('image/png'),
     checkoutTime: checkoutTime,
     hours:        String(hours),
-    count:        document.getElementById('attCount').value || '0',
+    count:        String(todayCount),
     service:      document.getElementById('attService').value || '0',
   };
 
@@ -2472,7 +2500,7 @@ function exportAttCSV() {
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `簽到紀錄_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `簽到紀錄_${new Date().toLocaleDateString('sv')}.csv`;
   a.click();
 }
 
@@ -2486,7 +2514,7 @@ function exportCSV() {
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `出勤紀錄_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `出勤紀錄_${new Date().toLocaleDateString('sv')}.csv`;
   a.click();
 }
 
