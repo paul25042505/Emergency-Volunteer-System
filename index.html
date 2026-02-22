@@ -1812,6 +1812,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sigModal').addEventListener('click', () => {
     document.getElementById('sigModal').style.display = 'none';
   });
+
+  // 初始載入首頁
+  document.getElementById('nav-dashboard').classList.add('active-nav');
+  document.getElementById('pageTitle').textContent = '救護義消系統';
+  document.getElementById('pageSubEn').textContent = 'Emergency Volunteer System';
+  loadDashboard();
 });
 
 async function debugData() {
