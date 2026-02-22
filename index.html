@@ -1224,7 +1224,7 @@ tr:hover td { background: #fdfcfb; }
     </div>
     <div class="field">
       <label>出勤次數</label>
-      <input type="number" id="aqEditCount" style="width:100%;background:white;" min="0" step="1">
+      <input type="number" id="aqEditCount" style="width:100%;color:var(--text-light);" min="0" step="1" readonly>
     </div>
     <div class="field">
       <label>服務人次</label>
@@ -1369,7 +1369,7 @@ async function loadDashboard() {
 }
 
 // ── Members (Google Sheets) ──
-const MEMBERS_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+const MEMBERS_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
 let members = [];
 
 async function loadMembers() {
@@ -1621,7 +1621,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
     signature: canvas.toDataURL('image/png')
   };
 
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
   const btn = document.querySelector('.btn-submit');
   btn.textContent = '送出中，請稍候...';
   btn.disabled = true;
@@ -1645,7 +1645,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
 });
 
 // ── Query Page ──
-const GET_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+const GET_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
 let allRecords = [];
 let filteredRecords = [];
 
@@ -1841,7 +1841,7 @@ async function debugData() {
 
 
 // ── Attendance Page ──
-const ATT_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+const ATT_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
 
 // attSessions: { memberName: { checkinTime, checkinSig } }
 let attSessions = {};
@@ -2133,7 +2133,7 @@ function resetAttendance() {
 
 
 // ── Attendance Query Page ──
-const ATT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwUFb4hqToGc1adjc9g1pml3Una2Taf64ch-4_T2HxEIkCjoeK--B6eoglJF0qmoyc_8Q/exec';
+const ATT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
 let aqAllRecords = [];
 let aqFiltered = [];
 
