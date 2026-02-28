@@ -1298,6 +1298,17 @@ function navTo(pageId) {
       }
       sel2.value = curY;
       document.getElementById('rpt2Month').value = curM;
+      // rpt3 年份
+      const sel3 = document.getElementById('rpt3Year');
+      if (!sel3.options.length) {
+        for (let y3 = curY + 1; y3 >= 100; y3--) {
+          const opt = document.createElement('option');
+          opt.value = y3; opt.textContent = y3 + ' 年';
+          sel3.appendChild(opt);
+        }
+      }
+      sel3.value = curY;
+      document.getElementById('rpt3Month').value = curM;
     })();
   } else if (pageId === 'attQueryPage') {
     document.getElementById('pageTitle').textContent = '簽到/退記錄查詢';
@@ -1369,7 +1380,7 @@ async function loadDashboard() {
 }
 
 // ── Members (Google Sheets) ──
-const MEMBERS_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
+const MEMBERS_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
 let members = [];
 
 async function loadMembers() {
@@ -1621,7 +1632,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
     signature: canvas.toDataURL('image/png')
   };
 
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
   const btn = document.querySelector('.btn-submit');
   btn.textContent = '送出中，請稍候...';
   btn.disabled = true;
@@ -1645,7 +1656,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
 });
 
 // ── Query Page ──
-const GET_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
+const GET_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
 let allRecords = [];
 let filteredRecords = [];
 
@@ -1841,7 +1852,8 @@ async function debugData() {
 
 
 // ── Attendance Page ──
-const ATT_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
+const ATT_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // attSessions: { memberName: { checkinTime, checkinSig } }
 let attSessions = {};
@@ -2132,8 +2144,66 @@ function resetAttendance() {
 }
 
 
+// ── 報表3：救護出勤紀錄表 ──
+async function generateRpt3() {
+  const year   = document.getElementById('rpt3Year').value;
+  const month  = document.getElementById('rpt3Month').value;
+  const status = document.getElementById('rpt3Status');
+  const btn    = document.getElementById('rpt3Btn');
+  if (!year || !month) { status.style.color='var(--red)'; status.textContent = '請選擇年份和月份'; return; }
+  btn.disabled = true;
+  status.style.color = 'var(--text-light)';
+  status.textContent = '⏳ 正在產生，請稍候...';
+  try {
+    const json = await new Promise((resolve, reject) => {
+      const cbName = 'rpt3Cb_' + Date.now();
+      let done = false;
+      window[cbName] = function(j) {
+        done = true;
+        delete window[cbName];
+        document.getElementById('jsonpRpt3Script')?.remove();
+        if (!j.success) reject(new Error(j.error || '後端產生失敗'));
+        else resolve(j);
+      };
+      const url = RPT3_URL
+        + '?action=generateOutingReport'
+        + '&year='  + encodeURIComponent(year)
+        + '&month=' + encodeURIComponent(month)
+        + '&unit='  + encodeURIComponent(document.getElementById('rpt3Unit').value)
+        + '&callback=' + cbName;
+      const script = document.createElement('script');
+      script.id = 'jsonpRpt3Script';
+      script.src = url;
+      document.head.appendChild(script);
+      setTimeout(() => {
+        if (!done) {
+          delete window[cbName];
+          document.getElementById('jsonpRpt3Script')?.remove();
+          reject(new Error('請求逾時（120秒），請重試'));
+        }
+      }, 120000);
+    });
+    const binary = atob(json.docxBase64);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = json.fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    status.style.color = '#1a6b35';
+    status.textContent = '✅ 下載成功！共 ' + json.count + ' 筆';
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── Attendance Query Page ──
-const ATT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbx99fzXWyZVXS7gz_Nr6C-TfRBlIeGw5XpFFAyTP-LY2ywjMH_y1fJ6GAxVtMFG0V8B/exec';
+const ATT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
 let aqAllRecords = [];
 let aqFiltered = [];
 
@@ -2635,10 +2705,46 @@ function exportCSV() {
         <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
 
         <!-- 報表3 -->
-        <div style="opacity:0.4;pointer-events:none;">
-          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;">
-            <span style="display:inline-block;width:20px;height:20px;background:var(--border);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
-            報表三（即將推出）
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
+            救護出勤紀錄表
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <div style="position:relative;">
+                <select id="rpt3Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field">
+              <label>民國年份</label>
+              <div style="position:relative;">
+                <select id="rpt3Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <div style="position:relative;">
+                <select id="rpt3Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div id="rpt3Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions">
+            <button class="btn-search" onclick="generateRpt3()" id="rpt3Btn">⬇ 產生並下載</button>
           </div>
         </div>
 
