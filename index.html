@@ -360,7 +360,48 @@ tr:hover td { background: #fdfcfb; }
 .duty-btn:first-child { border-right: 1px solid var(--border); }
 .duty-btn.active { background: var(--red); color: white; }
 .duty-btn:not(.active):hover { background: var(--red-faint); color: var(--red); }
+
+/* ── Stats Table ── */
+.stats-table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+.stats-table th { background:var(--warm); padding:10px 12px; text-align:left; font-weight:600; color:var(--text-mid); border-bottom:1px solid var(--border); white-space:nowrap; }
+.stats-table td { padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
+.stats-table tr:last-child td { border-bottom:none; }
+.stats-table tr:hover td { background:#fdfcfb; }
+.rank-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:0.72rem; font-weight:700; }
+.rank-1 { background:#f1c40f; color:#7d6608; }
+.rank-2 { background:#bdc3c7; color:#555; }
+.rank-3 { background:#cd7f32; color:#fff; }
+.rank-other { background:var(--warm); color:var(--text-light); }
+.bar-wrap { display:flex; align-items:center; gap:8px; }
+.bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; min-width:40px; }
+.bar-fill { height:100%; background:var(--red); border-radius:3px; transition:width 0.4s ease; }
+
+/* ── Map ── */
+#districtMap { height:280px; border-radius:6px; border:1px solid var(--border); overflow:hidden; }
+.map-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; font-size:0.75rem; color:var(--text-mid); }
+.map-legend-item { display:flex; align-items:center; gap:5px; }
+.map-legend-dot { width:10px; height:10px; border-radius:50%; background:var(--red); opacity:0.7; }
+
+/* ── Profile Page ── */
+.profile-select-card { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); margin-bottom:20px; }
+.profile-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.profile-stat { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:16px; text-align:center; }
+.profile-stat .num { font-family:'Noto Serif TC',serif; font-size:1.6rem; font-weight:700; color:var(--red); line-height:1; }
+.profile-stat .lbl { font-size:0.7rem; color:var(--text-light); margin-top:6px; letter-spacing:0.05em; }
+.timeline { position:relative; padding-left:20px; }
+.timeline::before { content:''; position:absolute; left:6px; top:0; bottom:0; width:2px; background:var(--border); }
+.tl-item { position:relative; margin-bottom:16px; }
+.tl-dot { position:absolute; left:-17px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--red); border:2px solid white; box-shadow:0 0 0 2px var(--border); }
+.tl-date { font-size:0.72rem; color:var(--text-light); margin-bottom:3px; }
+.tl-card { background:var(--white); border:1px solid var(--border); border-radius:5px; padding:10px 14px; font-size:0.83rem; }
+.tl-card .tl-type { font-size:0.7rem; }
+.month-tab-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.month-tab { padding:5px 14px; border:1px solid var(--border); border-radius:20px; font-size:0.8rem; cursor:pointer; background:var(--white); color:var(--text-mid); transition:all 0.15s; font-family:'Noto Sans TC',sans-serif; }
+.month-tab.active { background:var(--red); color:white; border-color:var(--red); }
+
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 
@@ -376,11 +417,13 @@ tr:hover td { background: #fdfcfb; }
   <nav>
     <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
     <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
-    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>出勤紀錄表</button>
-    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>出勤記錄查詢</button>
-    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍️</span>簽到簽退表</button>
-    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到/退記錄查詢</button>
-    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表</button>
+    <button id="nav-profile" onclick="navTo('profilePage')"><span class="icon">👤</span>個人頁面</button>
+    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>出勤案件登錄</button>
+    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>出勤紀錄查詢</button>
+    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍️</span>簽到簽退登錄</button>
+    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
+    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
+    <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>出勤統計</button>
   </nav>
 </div>
 
@@ -455,37 +498,50 @@ tr:hover td { background: #fdfcfb; }
         <div class="section-line"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <button onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.8rem;margin-bottom:8px;">✍️</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">簽到簽退</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">現場簽到使用</div>
+        <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">新增／刪除成員</div>
         </button>
-        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.8rem;margin-bottom:8px;">📊</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">簽到/退查詢</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">查詢簽到紀錄</div>
+        <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人頁面</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">個人出勤紀錄</div>
         </button>
         <button onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.8rem;margin-bottom:8px;">📋</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">出勤紀錄表</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">填寫出勤資料</div>
+          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤案件登錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">填寫出勤資料</div>
         </button>
         <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.8rem;margin-bottom:8px;">🔍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:600;color:var(--text);letter-spacing:0.06em;">出勤記錄查詢</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:4px;">查詢歷史出勤</div>
+          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤紀錄查詢</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢歷史出勤</div>
+        </button>
+        <button onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">✍️</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">現場簽到使用</div>
+        </button>
+        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📊</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退記錄查詢</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢簽到紀錄</div>
         </button>
         <button onclick="navTo('reportPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.5rem;margin-bottom:6px;">📑</div>
-          <div style="font-size:0.82rem;font-weight:600;color:var(--text);">報表</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">產生 Word 報表</div>
+          <div style="font-size:1.6rem;margin-bottom:8px;">📑</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">報表匯出</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">產生 Word 報表</div>
+        </button>
+        <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤統計</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">出勤排行榜</div>
         </button>
       </div>
     </div>
 
-    <div class="form-footer" style="margin-top:28px;">
-      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-    </div>
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
@@ -622,9 +678,7 @@ tr:hover td { background: #fdfcfb; }
         <p>感謝您的服務，出勤資料已記錄完成。</p>
       </div>
 
-      <div class="form-footer">
-        臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-      </div>
+      <div class="site-footer-placeholder"></div>
     </form>
   </div>
 </div>
@@ -668,9 +722,7 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <div class="form-footer">
-      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-    </div>
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
@@ -785,14 +837,24 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
+    <!-- 地圖 -->
+    <div id="queryMapDiv" style="display:none;">
+      <div class="section" style="margin-top:20px;">
+        <div class="section-head">
+          <div class="section-num">🗺</div>
+          <div class="section-title">出勤地點分佈</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="result-card"><div style="padding:16px;"><div id="queryMapInner" style="height:240px;border-radius:4px;"></div></div></div>
+      </div>
+    </div>
+
     <div id="queryInitMsg" class="query-empty">
       <span class="empty-icon">🔍</span>
       請設定篩選條件後按「查詢」
     </div>
 
-    <div class="form-footer" style="margin-top:28px;">
-      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-    </div>
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
@@ -955,9 +1017,7 @@ tr:hover td { background: #fdfcfb; }
         </div>
       </div>
 
-      <div class="form-footer" style="margin-top:28px;">
-        臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-      </div>
+      <div class="site-footer-placeholder"></div>
     </div>
 
     <!-- ── 簽退畫面（點選名單後進入）── -->
@@ -1119,9 +1179,7 @@ tr:hover td { background: #fdfcfb; }
         <button type="button" onclick="attBackToMain()" style="margin-top:12px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">返回名單</button>
       </div>
 
-      <div class="form-footer" style="margin-top:28px;">
-        臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-      </div>
+      <div class="site-footer-placeholder"></div>
     </div>
 
   </div>
@@ -1186,9 +1244,7 @@ tr:hover td { background: #fdfcfb; }
       <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
     </div>
 
-    <div class="form-footer" style="margin-top:28px;">
-      臺中市政府消防局救護義消參與緊急救護出勤紀錄系統
-    </div>
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
@@ -1238,6 +1294,25 @@ tr:hover td { background: #fdfcfb; }
 </div>
 
 <script>
+// ── URL 常數（必須在最頂部）──
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
+
+// ── Site Footer ──
+function initFooters() {
+  const lines = [
+    '© 2026 臺中市政府消防局潭子分隊　版權所有，轉載必究',
+    '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
+    '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
+    '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
+  ].join('　');
+  document.querySelectorAll('.site-footer-placeholder').forEach(el => {
+    el.className = 'form-footer';
+    el.style.marginTop = '28px';
+    el.textContent = lines;
+  });
+}
+
 // ── Navigation ──
 function navTo(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1250,8 +1325,8 @@ function navTo(pageId) {
     document.getElementById('nav-dashboard').classList.add('active-nav');
     loadDashboard();
   } else if (pageId === 'formPage') {
-    document.getElementById('pageTitle').textContent = '救護義消系統';
-    document.getElementById('pageSubEn').textContent = 'Emergency Volunteer Attendance Record';
+    document.getElementById('pageTitle').textContent = '出勤案件登錄';
+    document.getElementById('pageSubEn').textContent = 'Outing Record';
     document.getElementById('nav-form').classList.add('active-nav');
     setTimeout(() => resizeCanvas(), 50);
   } else if (pageId === 'membersPage') {
@@ -1260,17 +1335,27 @@ function navTo(pageId) {
     document.getElementById('nav-members').classList.add('active-nav');
     loadMembers();
   } else if (pageId === 'queryPage') {
-    document.getElementById('pageTitle').textContent = '出勤查詢';
+    document.getElementById('pageTitle').textContent = '出勤紀錄查詢';
     document.getElementById('pageSubEn').textContent = 'Attendance Query';
     document.getElementById('nav-query').classList.add('active-nav');
     updateQueryMemberSelect();
   } else if (pageId === 'attendancePage') {
-    document.getElementById('pageTitle').textContent = '簽到簽退';
+    document.getElementById('pageTitle').textContent = '簽到簽退登錄';
     document.getElementById('pageSubEn').textContent = 'Sign In / Sign Out';
     document.getElementById('nav-attendance').classList.add('active-nav');
     initAttendancePage();
+  } else if (pageId === 'statsPage') {
+    document.getElementById('pageTitle').textContent = '出勤統計';
+    document.getElementById('pageSubEn').textContent = 'Attendance Statistics';
+    document.getElementById('nav-stats').classList.add('active-nav');
+    initStatsPage();
+  } else if (pageId === 'profilePage') {
+    document.getElementById('pageTitle').textContent = '個人頁面';
+    document.getElementById('pageSubEn').textContent = 'Member Profile';
+    document.getElementById('nav-profile').classList.add('active-nav');
+    initProfilePage();
   } else if (pageId === 'reportPage') {
-    document.getElementById('pageTitle').textContent = '報表';
+    document.getElementById('pageTitle').textContent = '報表匯出';
     document.getElementById('pageSubEn').textContent = 'Reports';
     (function(){
       const t = new Date();
@@ -1380,7 +1465,7 @@ async function loadDashboard() {
 }
 
 // ── Members (Google Sheets) ──
-const MEMBERS_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+const MEMBERS_URL = BASE_URL;
 let members = [];
 
 async function loadMembers() {
@@ -1632,7 +1717,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
     signature: canvas.toDataURL('image/png')
   };
 
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+  const SCRIPT_URL = BASE_URL;
   const btn = document.querySelector('.btn-submit');
   btn.textContent = '送出中，請稍候...';
   btn.disabled = true;
@@ -1656,7 +1741,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
 });
 
 // ── Query Page ──
-const GET_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+const GET_URL = BASE_URL;
 let allRecords = [];
 let filteredRecords = [];
 
@@ -1797,6 +1882,7 @@ function renderQueryResults(records) {
     });
   }
   document.getElementById('resultCard').style.display = 'block';
+  renderQueryMap(records);
 }
 
 function resetQuery() {
@@ -1809,17 +1895,13 @@ function resetQuery() {
   document.getElementById('statsRow').style.display  = 'none';
   document.getElementById('resultCard').style.display = 'none';
   document.getElementById('queryInitMsg').style.display = 'block';
+  document.getElementById('queryMapDiv').style.display = 'none';
+  if (window._queryMap) { window._queryMap.remove(); window._queryMap = null; }
   filteredRecords = [];
 }
 
-// ── Signature modal ──
-function showSig(_, imgEl) {
-  const src = imgEl.src;
-  const modal = document.getElementById('sigModal');
-  document.getElementById('sigModalImg').src = src;
-  modal.style.display = 'flex';
-}
 document.addEventListener('DOMContentLoaded', () => {
+  initFooters();
   document.getElementById('sigModal').addEventListener('click', () => {
     document.getElementById('sigModal').style.display = 'none';
   });
@@ -1852,8 +1934,6 @@ async function debugData() {
 
 
 // ── Attendance Page ──
-const ATT_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
-const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // attSessions: { memberName: { checkinTime, checkinSig } }
 let attSessions = {};
@@ -1945,7 +2025,7 @@ function openCheckout(memberName) {
 
   // 自動查詢出勤次數
   const date = document.getElementById('attDate').value;
-  fetch(ATT_URL + '?action=getAttendance').then(r => r.json()).then(records => {
+  fetch(BASE_URL + '?action=getAttendance').then(r => r.json()).then(records => {
     const count = records.filter(r => {
       const d = r['日期'] ? String(r['日期']).substring(0,10) : '';
       return d === date && r['姓名'] === memberName;
@@ -2084,7 +2164,7 @@ async function doCheckout() {
   const todayStr = document.getElementById('attDate').value;
   let todayCount = 1;
   try {
-    const res = await fetch(ATT_URL + '?action=getAttendance');
+    const res = await fetch(BASE_URL + '?action=getAttendance');
     const records = await res.json();
     const todayRecs = records.filter(r => {
       const d = r['日期'] ? String(r['日期']).substring(0,10) : '';
@@ -2113,7 +2193,7 @@ async function doCheckout() {
   btn.textContent = '送出中...'; btn.disabled = true;
 
   try {
-    await fetch(ATT_URL, {
+    await fetch(BASE_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -2137,10 +2217,6 @@ function attResetAll() {
   attCheckoutTarget = null;
   attCheckinHasSig = false;
   attCheckoutHasSig = false;
-}
-
-function resetAttendance() {
-  attResetAll();
 }
 
 
@@ -2203,7 +2279,7 @@ async function generateRpt3() {
 }
 
 // ── Attendance Query Page ──
-const ATT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+const ATT_SHEET_URL = BASE_URL;
 let aqAllRecords = [];
 let aqFiltered = [];
 
@@ -2356,97 +2432,6 @@ function resetAttQuery() {
   document.getElementById('aqInitMsg').style.display = 'block';
 }
 
-// ── 匯出 Word 報表（已移至報表頁）──
-function showExportWordModal() { /* 已停用 */ }
-function _unused_showExportWordModal_orig() {
-  const today = new Date();
-  document.getElementById('exportYear').value = today.getFullYear() - 1911;
-  document.getElementById('exportMonth').value = today.getMonth() + 1;
-  document.getElementById('exportWordStatus').textContent = '';
-  document.getElementById('exportWordModal').style.display = 'flex';
-}
-function closeExportWordModal() {
-  document.getElementById('exportWordModal').style.display = 'none';
-}
-async function doExportWord() {
-  const year = document.getElementById('exportYear').value;
-  const month = document.getElementById('exportMonth').value;
-  const unit = document.getElementById('exportUnit').value;
-  const statusEl = document.getElementById('exportWordStatus');
-  const btn = document.getElementById('exportWordBtn');
-  if (!year || !month) { statusEl.textContent = '請填入年份和月份'; return; }
-  btn.disabled = true;
-  statusEl.textContent = '正在從 Google Sheets 取得資料...';
-  try {
-    const res = await fetch(GET_URL + '?action=getAttendance');
-    const all = await res.json();
-    const westernYear = parseInt(year) + 1911;
-    const monthStr = String(westernYear) + '-' + String(month).padStart(2, '0');
-    const filtered = all.filter(r => {
-      const d = r['日期'] ? String(r['日期']).substring(0, 7) : '';
-      return d === monthStr;
-    }).map(r => ({
-      date: fmtAqDate(r['日期']),
-      title: r['職稱'] || '',
-      name: r['姓名'] || '',
-      checkinTime: fmtAqTime(r['簽到時間']),
-      checkoutTime: fmtAqTime(r['簽退時間']),
-      checkinSig: r['簽到簽名'] || '',
-      checkoutSig: r['簽退簽名'] || '',
-      hours: r['協勤時數'] || 0,
-      count: r['出勤次數'] || 0,
-      service: r['服務人次'] || 0,
-    }));
-    if (filtered.length === 0) {
-      statusEl.textContent = year + '年' + month + '月查無資料';
-      btn.disabled = false;
-      return;
-    }
-    statusEl.textContent = '找到 ' + filtered.length + ' 筆，正在產生 Word 文件...';
-    const result = await generateWordReport({ year, month, unit });
-    const byteChars = atob(result.pages[0]);
-    const byteArr = new Uint8Array(byteChars.length);
-    for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
-    const blob = new Blob([byteArr], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '簽到簽退紀錄表_' + year + '年' + month + '月.docx';
-    a.click();
-    URL.revokeObjectURL(url);
-    statusEl.textContent = '✅ 下載成功！共 ' + result.totalPages + ' 頁';
-    btn.disabled = false;
-  } catch(e) {
-    console.error(e);
-    statusEl.textContent = '❌ 錯誤：' + e.message;
-    btn.disabled = false;
-  }
-}
-async function generateWordReport({ year, month, unit }) {
-  // 用 JSONP 讓 Apps Script 直接從 Sheets 取資料（含簽名圖片）產生 Word
-  return new Promise((resolve, reject) => {
-    const cbName = 'wordCb_' + Date.now();
-    window[cbName] = function(json) {
-      delete window[cbName];
-      document.getElementById('jsonpWordScript')?.remove();
-      if (!json.success) reject(new Error(json.error || '後端產生失敗'));
-      else resolve(json.docx);
-    };
-    const url = ATT_URL
-      + '?action=generateWordFromSheet'
-      + '&year=' + encodeURIComponent(year)
-      + '&month=' + encodeURIComponent(month)
-      + '&unit=' + encodeURIComponent(unit)
-      + '&callback=' + cbName;
-    const script = document.createElement('script');
-    script.id = 'jsonpWordScript';
-    script.src = url;
-    script.onerror = () => reject(new Error('JSONP 載入失敗'));
-    document.head.appendChild(script);
-    setTimeout(() => reject(new Error('請求逾時（60秒），請重試')), 60000);
-  });
-}
-
 // ── 報表1：協勤紀錄表 ──
 async function generateRpt1() {
   const year   = document.getElementById('rpt1Year').value;
@@ -2457,7 +2442,7 @@ async function generateRpt1() {
   if (!year || !month) { status.style.color='var(--red)'; status.textContent = '請選擇年份和月份'; return; }
   btn.disabled = true;
   status.style.color = 'var(--text-light)';
-  status.textContent = '⏳ 正在產生，請稍候（約 15~30 秒）...';
+  status.textContent = '⏳ 正在產生，請稍候...';
   try {
     const json = await new Promise((resolve, reject) => {
       const cbName = 'rpt1Cb_' + Date.now();
@@ -2469,7 +2454,7 @@ async function generateRpt1() {
         if (!j.success) reject(new Error(j.error || '後端產生失敗'));
         else resolve(j);
       };
-      const url = ATT_URL
+      const url = BASE_URL
         + '?action=generateAttendanceReport'
         + '&year='  + encodeURIComponent(year)
         + '&month=' + encodeURIComponent(month)
@@ -2532,7 +2517,7 @@ async function generateRpt2() {
         if (!j.success) reject(new Error(j.error || '後端產生失敗'));
         else resolve(j);
       };
-      const url = ATT_URL
+      const url = BASE_URL
         + '?action=generateServiceReport'
         + '&year='  + encodeURIComponent(year)
         + '&month=' + encodeURIComponent(month)
@@ -2579,6 +2564,406 @@ function exportAttCSV() {
   a.download = `簽到紀錄_${new Date().toLocaleDateString('sv')}.csv`;
   a.click();
 }
+
+
+// ══════════════════════════════════════
+// ── 月統計頁 ──
+// ══════════════════════════════════════
+let statsMap = null;
+
+function initStatsPage() {
+  const sel = document.getElementById('statsYear');
+  if (!sel.options.length) {
+    const curY = new Date().getFullYear() - 1911;
+    for (let y = curY + 1; y >= 100; y--) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y + ' 年';
+      sel.appendChild(opt);
+    }
+    sel.value = curY;
+    document.getElementById('statsMonth').value = new Date().getMonth() + 1;
+  }
+  loadStats();
+}
+
+async function loadStats() {
+  const year = document.getElementById('statsYear').value;
+  const month = document.getElementById('statsMonth').value;
+  if (!year || !month) return;
+
+  document.getElementById('statsEmptyMsg').textContent = '⏳ 載入中...';
+  document.getElementById('statsEmptyMsg').style.display = 'block';
+  document.getElementById('statsTableCard').style.display = 'none';
+  document.getElementById('statsOverview').style.display = 'none';
+  document.getElementById('statsMapSection').style.display = 'none';
+
+  const westernYear = parseInt(year) + 1911;
+  const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
+
+  try {
+    // 取簽到簽退資料（協勤時數、服務人次）
+    const [attRes, outRes] = await Promise.all([
+      fetch(BASE_URL + '?action=getAttendance'),
+      fetch(BASE_URL)
+    ]);
+    const attData = await attRes.json();
+    const outData = await outRes.json();
+
+    // 篩選當月
+    const monthAtt = attData.filter(r => {
+      const d = String(r['日期'] || '').substring(0, 7);
+      return d === monthStr;
+    });
+    const monthOut = outData.filter(r => {
+      let d = String(r['日期'] || '');
+      if (d.includes('T')) d = d.substring(0,10);
+      else { try { d = new Date(d).toLocaleDateString('sv'); } catch(e) {} }
+      return d.substring(0,7) === monthStr;
+    });
+
+    // 彙整每人資料
+    const memberMap = {};
+    monthAtt.forEach(r => {
+      const name = r['姓名'] || '';
+      if (!name) return;
+      if (!memberMap[name]) memberMap[name] = { name, hours: 0, service: 0, count: 0 };
+      memberMap[name].hours += parseFloat(r['協勤時數']) || 0;
+      memberMap[name].service += parseInt(r['服務人次']) || 0;
+      memberMap[name].count += 1;
+    });
+
+    // 出勤次數（來自出勤紀錄表）
+    const countMap = {};
+    monthOut.forEach(r => {
+      const name = r['姓名'] || '';
+      if (!name) return;
+      countMap[name] = (countMap[name] || 0) + 1;
+    });
+    // 合併 count
+    Object.keys(countMap).forEach(name => {
+      if (!memberMap[name]) memberMap[name] = { name, hours: 0, service: 0, count: 0 };
+      memberMap[name].outCount = countMap[name];
+    });
+
+    const rows = Object.values(memberMap).sort((a, b) => (b.hours || 0) - (a.hours || 0));
+
+    if (rows.length === 0) {
+      document.getElementById('statsEmptyMsg').textContent = `${year} 年 ${month} 月查無資料`;
+      return;
+    }
+
+    // 總覽
+    const totalHours = rows.reduce((s, r) => s + (r.hours || 0), 0);
+    document.getElementById('statsTotal').textContent = monthAtt.length;
+    document.getElementById('statsMemCount').textContent = rows.length;
+    document.getElementById('statsTotalHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    document.getElementById('statsOverview').style.display = 'grid';
+
+    // 排行榜
+    const maxHours = rows[0].hours || 1;
+    document.getElementById('statsTableTitle').textContent = `${year} 年 ${month} 月出勤排行榜`;
+    document.getElementById('statsTableBody').innerHTML = rows.map((r, i) => {
+      const rank = i + 1;
+      const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
+      const pct = Math.round(((r.hours || 0) / maxHours) * 100);
+      const hrs = (r.hours || 0) % 1 === 0 ? (r.hours || 0) : (r.hours || 0).toFixed(1);
+      return `<tr>
+        <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+        <td style="font-weight:600;">${r.name}</td>
+        <td style="text-align:center;">${r.outCount || r.count || 0}</td>
+        <td style="text-align:center;">${hrs}</td>
+        <td style="text-align:center;">${r.service || 0}</td>
+        <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">${hrs}h</span></div></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('statsTableCard').style.display = 'block';
+    document.getElementById('statsEmptyMsg').style.display = 'none';
+
+    // 地圖
+    renderDistrictMap(monthOut);
+    document.getElementById('statsMapSection').style.display = 'block';
+
+  } catch(e) {
+    document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
+  }
+}
+
+// ── 地理編碼快取（localStorage）──
+const GEO_CACHE_KEY = 'geocache_v1';
+
+function geoLoadCache() {
+  try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function geoSaveCache(cache) {
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache)); } catch(e) {}
+}
+
+async function geocodeAddress(address, cache) {
+  const key = address.trim();
+  if (cache[key]) return cache[key];
+  if (!key) return null;
+  try {
+    await new Promise(r => setTimeout(r, 1100)); // Nominatim 1秒限速
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(key + ' 台灣')}&format=json&limit=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'zh-TW' } });
+    const data = await res.json();
+    if (data.length > 0) {
+      const coord = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+      cache[key] = coord;
+      geoSaveCache(cache);
+      return coord;
+    }
+  } catch(e) {}
+  cache[key] = null; // 查不到也快取避免重查
+  geoSaveCache(cache);
+  return null;
+}
+
+async function renderDistrictMap(records) {
+  if (statsMap) { statsMap.remove(); statsMap = null; }
+  statsMap = L.map('districtMap').setView([24.2, 120.68], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(statsMap);
+
+  const legend = document.getElementById('mapLegend');
+  legend.innerHTML = '<span style="color:var(--text-light);">⏳ 解析地址中...</span>';
+
+  const cache = geoLoadCache();
+  // 收集所有唯一地址
+  const addrMap = {}; // address → [records]
+  records.forEach(r => {
+    const district = String(r['行政區'] || '').replace(/^台中/, '臺中');
+    const addr = String(r['詳細地址'] || r['address'] || '').trim();
+    const full = addr ? `${district}${addr}` : district;
+    if (!full) return;
+    if (!addrMap[full]) addrMap[full] = 0;
+    addrMap[full]++;
+  });
+
+  const entries = Object.entries(addrMap);
+  const maxCount = Math.max(...Object.values(addrMap), 1);
+  const markers = [];
+  let resolved = 0;
+
+  for (const [addr, count] of entries) {
+    legend.innerHTML = `<span style="color:var(--text-light);">⏳ 解析地址 ${++resolved}/${entries.length}...</span>`;
+    const coord = await geocodeAddress(addr, cache);
+    if (!coord) continue;
+    const opacity = 0.35 + (count / maxCount) * 0.55;
+    const radius = (12 + (count / maxCount) * 28) * 60;
+    const marker = L.circle(coord, {
+      radius,
+      color: '#c0392b', fillColor: '#e74c3c',
+      fillOpacity: opacity, weight: 2
+    }).addTo(statsMap).bindPopup(`<b>${addr}</b><br>出勤 ${count} 次`);
+    markers.push({ addr, count, coord });
+  }
+
+  // 圖例
+  if (markers.length > 0) {
+    legend.innerHTML = markers
+      .sort((a,b) => b.count - a.count)
+      .slice(0, 8)
+      .map(m => `<div class="map-legend-item"><div class="map-legend-dot" style="opacity:${0.35+(m.count/maxCount)*0.55};"></div>${m.addr.replace('臺中市','').replace('台中市','')} ${m.count}次</div>`)
+      .join('');
+  } else {
+    legend.innerHTML = '<span style="color:var(--text-light);">查無可解析的地址</span>';
+  }
+  setTimeout(() => statsMap.invalidateSize(), 100);
+}
+
+// ══════════════════════════════════════
+// ── 個人頁面 ──
+// ══════════════════════════════════════
+let profileAllData = [];
+let profileSelectedMonth = '';
+
+async function initProfilePage() {
+  // 每次進頁面都重新從試算表抓最新成員清單
+  await loadMembers();
+  const sel = document.getElementById('profileMember');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 請選擇 —</option>';
+  members.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name;
+    opt.textContent = m.title ? `${m.name}（${m.title}）` : m.name;
+    if (m.name === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (cur) loadProfile();
+}
+
+async function loadProfile() {
+  const name = document.getElementById('profileMember').value;
+  if (!name) {
+    document.getElementById('profileContent').style.display = 'none';
+    document.getElementById('profileEmptyMsg').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('profileEmptyMsg').textContent = '⏳ 載入中...';
+  document.getElementById('profileEmptyMsg').style.display = 'block';
+  document.getElementById('profileContent').style.display = 'none';
+
+  try {
+    const [attRes, outRes] = await Promise.all([
+      fetch(BASE_URL + '?action=getAttendance'),
+      fetch(BASE_URL)
+    ]);
+    const attData = await attRes.json();
+    const outData = await outRes.json();
+
+    // 篩選此人
+    const myAtt = attData.filter(r => r['姓名'] === name);
+    const myOut = outData.filter(r => (r['姓名'] || '') === name);
+
+    // 合併資料，以日期為 key
+    const byDate = {};
+    myAtt.forEach(r => {
+      const d = String(r['日期'] || '').substring(0,10);
+      if (!d) return;
+      if (!byDate[d]) byDate[d] = { date: d, hours: 0, service: 0, records: [] };
+      byDate[d].hours += parseFloat(r['協勤時數']) || 0;
+      byDate[d].service += parseInt(r['服務人次']) || 0;
+    });
+    myOut.forEach(r => {
+      let d = String(r['日期'] || '');
+      try { d = new Date(d).toLocaleDateString('sv'); } catch(e) {}
+      d = d.substring(0,10);
+      if (!d || d === 'Invalid Date') return;
+      if (!byDate[d]) byDate[d] = { date: d, hours: 0, service: 0, records: [] };
+      byDate[d].records.push({
+        type: r['出勤類別'] || '協勤',
+        timeOut: r['出勤時間'] || '',
+        timeBack: r['返勤時間'] || '',
+        district: String(r['行政區'] || '').replace(/^台中/,'臺中'),
+        services: r['服務內容'] || '',
+      });
+    });
+
+    profileAllData = Object.values(byDate).sort((a,b) => b.date.localeCompare(a.date));
+
+    // 取得有紀錄的月份
+    const months = [...new Set(profileAllData.map(r => r.date.substring(0,7)))].sort().reverse();
+
+    // 月份 tabs
+    const tabRow = document.getElementById('profileMonthTabs');
+    tabRow.innerHTML = months.map((m, i) => {
+      const [y, mo] = m.split('-');
+      const roc = parseInt(y) - 1911;
+      return `<button class="month-tab ${i===0?'active':''}" onclick="profileSelectMonth('${m}', this)">${roc}年${parseInt(mo)}月</button>`;
+    }).join('');
+
+    profileSelectedMonth = months[0] || '';
+
+    // 個人資訊
+    const memberObj = members.find(x => x.name === name) || {};
+    document.getElementById('profileAvatar').textContent = name.charAt(0);
+    document.getElementById('profileName').textContent = name;
+    document.getElementById('profileTitle').textContent = memberObj.title || '';
+
+    document.getElementById('profileContent').style.display = 'block';
+    document.getElementById('profileEmptyMsg').style.display = 'none';
+
+    renderProfileMonth(profileSelectedMonth);
+
+  } catch(e) {
+    document.getElementById('profileEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
+  }
+}
+
+function profileSelectMonth(month, btn) {
+  profileSelectedMonth = month;
+  document.querySelectorAll('.month-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProfileMonth(month);
+}
+
+function renderProfileMonth(month) {
+  const rows = profileAllData.filter(r => r.date.startsWith(month));
+  const totalHours = rows.reduce((s,r) => s + (r.hours||0), 0);
+  const totalService = rows.reduce((s,r) => s + (r.service||0), 0);
+  const totalCount = rows.reduce((s,r) => s + (r.records.length || (r.hours>0?1:0)), 0);
+
+  document.getElementById('profileCount').textContent = rows.length;
+  document.getElementById('profileHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+  document.getElementById('profileService').textContent = totalService;
+
+  // 時間軸
+  const tl = document.getElementById('profileTimeline');
+  if (rows.length === 0) {
+    tl.innerHTML = '<div style="color:var(--text-light);font-size:0.83rem;padding:8px 0;">本月無出勤紀錄</div>';
+    return;
+  }
+  tl.innerHTML = rows.map(r => {
+    const dateObj = new Date(r.date);
+    const weekdays = ['日','一','二','三','四','五','六'];
+    const dateStr = `${parseInt(r.date.substring(5,7))}/${parseInt(r.date.substring(8,10))}（${weekdays[dateObj.getDay()]}）`;
+    const hrs = (r.hours||0) % 1 === 0 ? (r.hours||0) : (r.hours||0).toFixed(1);
+    const recsHtml = r.records.map(rec => {
+      const fmtT = v => {
+        if (!v) return '';
+        const m = String(v).match(/T(\d{2}:\d{2})/);
+        if (m) return m[1];
+        const h = String(v).match(/(\d{1,2}:\d{2})/);
+        return h ? h[1] : '';
+      };
+      const timeStr = rec.timeOut ? `${fmtT(rec.timeOut)}–${fmtT(rec.timeBack)}` : '';
+      return `<div style="margin-top:4px;font-size:0.78rem;color:var(--text-mid);">
+        ${rec.district ? `📍 ${rec.district}` : ''}
+        ${timeStr ? `　⏱ ${timeStr}` : ''}
+        ${rec.services ? `<br>　${rec.services}` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-date">${dateStr}</div>
+      <div class="tl-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;font-size:0.85rem;">協勤 ${hrs} 小時</span>
+          ${r.service ? `<span class="tag">服務 ${r.service} 人</span>` : ''}
+        </div>
+        ${recsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 查詢頁地圖（整合進出勤查詢）
+async function renderQueryMap(records) {
+  const mapDiv = document.getElementById('queryMapDiv');
+  if (!mapDiv || records.length === 0) { if(mapDiv) mapDiv.style.display='none'; return; }
+  mapDiv.style.display = 'block';
+
+  if (window._queryMap) { window._queryMap.remove(); window._queryMap = null; }
+  window._queryMap = L.map('queryMapInner').setView([24.2, 120.68], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(window._queryMap);
+
+  const cache = geoLoadCache();
+  const addrMap = {};
+  records.forEach(r => {
+    const full = `${r.district || ''}${r.address || ''}`.trim();
+    if (full) addrMap[full] = (addrMap[full] || 0) + 1;
+  });
+
+  const maxC = Math.max(...Object.values(addrMap), 1);
+  for (const [addr, count] of Object.entries(addrMap)) {
+    const coord = await geocodeAddress(addr, cache);
+    if (!coord) continue;
+    const opacity = 0.35 + (count/maxC)*0.55;
+    L.circle(coord, {
+      radius: (12 + (count/maxC)*28) * 60,
+      color: '#c0392b', fillColor: '#e74c3c',
+      fillOpacity: opacity, weight: 2
+    }).addTo(window._queryMap).bindPopup(`<b>${addr}</b><br>出勤 ${count} 次`);
+  }
+  setTimeout(() => window._queryMap.invalidateSize(), 100);
+}
+
 
 function exportCSV() {
   if (!filteredRecords.length) return;
@@ -2704,7 +3089,7 @@ function exportCSV() {
 
         <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
 
-        <!-- 報表3 -->
+        <!-- 報表3：救護出勤紀錄表 -->
         <div style="margin-bottom:20px;">
           <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
             <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
@@ -2751,9 +3136,151 @@ function exportCSV() {
       </div>
     </div>
 
-    <div class="form-footer" style="margin-top:20px;">臺中市政府消防局救護義消參與緊急救護出勤紀錄系統</div>
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
+
+<!-- ══════ PAGE：月統計 ══════ -->
+<div class="page" id="statsPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📈</div>
+        <div class="section-title">月出勤統計</div>
+        <div class="section-line"></div>
+      </div>
+
+      <!-- 月份選擇 -->
+      <div class="filter-card" style="margin-bottom:16px;">
+        <div class="filter-grid">
+          <div class="field">
+            <label>年份</label>
+            <select id="statsYear" style="width:100%;" onchange="loadStats()"></select>
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <select id="statsMonth" style="width:100%;" onchange="loadStats()">
+              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 總覽數字 -->
+      <div class="stats-row" id="statsOverview" style="display:none;margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num" id="statsTotal">0</div><div class="stat-label">出勤總筆數</div></div>
+        <div class="stat-card"><div class="stat-num" id="statsMemCount">0</div><div class="stat-label">出勤人數</div></div>
+        <div class="stat-card"><div class="stat-num" id="statsTotalHours">0</div><div class="stat-label">協勤總時數</div></div>
+      </div>
+
+      <!-- 排行榜 -->
+      <div class="result-card" id="statsTableCard" style="display:none;">
+        <div class="result-head">
+          <h3 id="statsTableTitle">出勤排行榜</h3>
+        </div>
+        <div class="result-table-wrap">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>姓名</th>
+                <th>出勤次數</th>
+                <th>協勤時數</th>
+                <th>服務人次</th>
+                <th>出勤佔比</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="statsEmptyMsg" class="query-empty">
+        <span class="empty-icon">📈</span>載入中...
+      </div>
+    </div>
+
+    <!-- 地圖區塊 -->
+    <div class="section" id="statsMapSection" style="display:none;">
+      <div class="section-head">
+        <div class="section-num">🗺</div>
+        <div class="section-title">出勤地點熱度</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="result-card">
+        <div style="padding:16px;">
+          <div id="districtMap"></div>
+          <div class="map-legend" id="mapLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：個人頁面 ══════ -->
+<div class="page" id="profilePage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">👤</div>
+        <div class="section-title">選擇成員</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="profile-select-card">
+        <div class="field" style="margin-bottom:0;">
+          <label>義消姓名</label>
+          <select id="profileMember" style="width:100%;" onchange="loadProfile()">
+            <option value="">— 請選擇 —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="profileContent" style="display:none;">
+      <!-- 個人資訊 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" id="profileAvatar" style="font-size:0.9rem;background:var(--red);">？</div>
+          <div class="section-title" id="profileName">—</div>
+          <div class="section-line"></div>
+          <span id="profileTitle" style="font-size:0.75rem;color:var(--text-light);"></span>
+        </div>
+      </div>
+
+      <!-- 月份切換 -->
+      <div class="month-tab-row" id="profileMonthTabs"></div>
+
+      <!-- 統計數字 -->
+      <div class="profile-stats-grid">
+        <div class="profile-stat"><div class="num" id="profileCount">0</div><div class="lbl">出勤次數</div></div>
+        <div class="profile-stat"><div class="num" id="profileHours">0</div><div class="lbl">協勤時數</div></div>
+        <div class="profile-stat"><div class="num" id="profileService">0</div><div class="lbl">服務人次</div></div>
+      </div>
+
+      <!-- 出勤時間軸 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.75rem;">紀錄</div>
+          <div class="section-title">出勤紀錄</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="timeline" id="profileTimeline"></div>
+      </div>
+    </div>
+
+    <div id="profileEmptyMsg" class="query-empty">
+      <span class="empty-icon">👤</span>請選擇義消成員
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
 <!-- Signature Modal -->
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
