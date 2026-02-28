@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>救護義消系統</title>
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8IS0tIOWck+W9ouiDjOaZryAtLT4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iI2MwMzkyYiIvPgogIDwhLS0g55m96Imy5YWJ5pqIIC0tPgogIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMjMwIiBmaWxsPSIjYzAzOTJiIi8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjE1KSIgc3Ryb2tlLXdpZHRoPSI4Ii8+CiAgPCEtLSDnmb3oibLljYHlrZcgLS0+CiAgPHJlY3QgeD0iMTA4IiB5PSIyMDYiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTAwIiByeD0iMTgiIGZpbGw9IndoaXRlIi8+CiAgPHJlY3QgeD0iMjA2IiB5PSIxMDgiIHdpZHRoPSIxMDAiIGhlaWdodD0iMjk2IiByeD0iMTgiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8IS0tIOWck+W9ouiDjOaZryAtLT4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iI2MwMzkyYiIvPgogIDwhLS0g55m96Imy5YWJ5pqIIC0tPgogIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMjMwIiBmaWxsPSIjYzAzOTJiIi8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIyMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjE1KSIgc3Ryb2tlLXdpZHRoPSI4Ii8+CiAgPCEtLSDnmb3oibLljYHlrZcgLS0+CiAgPHJlY3QgeD0iMTA4IiB5PSIyMDYiIHdpZHRoPSIyOTYiIGhlaWdodD0iMTAwIiByeD0iMTgiIGZpbGw9IndoaXRlIi8+CiAgPHJlY3QgeD0iMjA2IiB5PSIxMDgiIHdpZHRoPSIxMDAiIGhlaWdodD0iMjk2IiByeD0iMTgiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=">
+<!-- PWA Manifest -->
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIuaVkeitt+e+qea2iOWHuuWLpOe0gOmMhOezu+e1sSIsICJzaG9ydF9uYW1lIjogIue+qea2iOezu+e1sSIsICJkZXNjcmlwdGlvbiI6ICLoh7rkuK3luILmlL/lupzmtojpmLLlsYDmlZHorbfnvqnmtojlj4PoiIfnt4rmgKXmlZHorbflh7rli6TntIDpjITns7vntbEiLCAic3RhcnRfdXJsIjogIi4iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiI2ZhZjdmMiIsICJ0aGVtZV9jb2xvciI6ICIjYzAzOTJiIiwgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwgImljb25zIjogW3sic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGRDYjNnOUlqQWdNQ0ExTVRJZ05URXlJajRLSUNBOElTMHRJT1djaytXOW91aURqT2FacnlBdExUNEtJQ0E4WTJseVkyeGxJR040UFNJeU5UWWlJR041UFNJeU5UWWlJSEk5SWpJMU5pSWdabWxzYkQwaUkyTXdNemt5WWlJdlBnb2dJRHdoTFMwZzU1bTk2SW15NVlXSjVwcUlJQzB0UGdvZ0lEeGphWEpqYkdVZ1kzZzlJakkxTmlJZ1kzazlJakkxTmlJZ2NqMGlNak13SWlCbWFXeHNQU0lqWXpBek9USmlJaTgrQ2lBZ1BHTnBjbU5zWlNCamVEMGlNalUySWlCamVUMGlNalUySWlCeVBTSXlNakFpSUdacGJHdzlJbTV2Ym1VaUlITjBjbTlyWlQwaWNtZGlZU2d5TlRVc01qVTFMREkxTlN3d0xqRTFLU0lnYzNSeWIydGxMWGRwWkhSb1BTSTRJaTgrQ2lBZ1BDRXRMU0RubWIzb2liTGxqWUhsclpjZ0xTMCtDaUFnUEhKbFkzUWdlRDBpTVRBNElpQjVQU0l5TURZaUlIZHBaSFJvUFNJeU9UWWlJR2hsYVdkb2REMGlNVEF3SWlCeWVEMGlNVGdpSUdacGJHdzlJbmRvYVhSbElpOCtDaUFnUEhKbFkzUWdlRDBpTWpBMklpQjVQU0l4TURnaUlIZHBaSFJvUFNJeE1EQWlJR2hsYVdkb2REMGlNamsySWlCeWVEMGlNVGdpSUdacGJHdzlJbmRvYVhSbElpOCtDand2YzNablBnbz0iLCAic2l6ZXMiOiAiYW55IiwgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=">
+<meta name="theme-color" content="#c0392b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="義消系統">
+
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1301,7 +1311,7 @@ const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZI
 // ── Site Footer ──
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.5　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -3288,5 +3298,18 @@ function exportCSV() {
     <p style="text-align:center;margin-top:10px;font-size:0.75rem;color:#9c8c80;font-family:'Noto Sans TC',sans-serif;">點擊任意處關閉</p>
   </div>
 </div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => new Response(''))));
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
 </body>
 </html>
