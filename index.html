@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -46,147 +45,147 @@ body {
 
 /* ── Overlay ── */
 .overlay {
-display: none; position: fixed; inset: 0;
-background: rgba(0,0,0,0.4); z-index: 90;
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 90;
 }
 .overlay.open { display: block; }
 
 /* ── Drawer ── */
 .drawer {
-position: fixed; top: 0; left: 0; height: 100%; width: 260px;
-background: var(–text); z-index: 100;
-transform: translateX(-100%);
-transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; height: 100%; width: 260px;
+  background: var(--text); z-index: 100;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display: flex; flex-direction: column;
 }
 .drawer.open { transform: translateX(0); }
 .drawer-header {
-background: var(–red-dark); padding: 32px 24px 24px; position: relative;
+  background: var(--red-dark); padding: 32px 24px 24px; position: relative;
 }
 .drawer-header .cross { font-size: 2rem; color: rgba(255,255,255,0.3); display: block; margin-bottom: 10px; }
 .drawer-header h2 {
-font-family: ‘Noto Serif TC’, serif; font-size: 1rem;
-color: white; font-weight: 600; letter-spacing: 0.12em;
+  font-family: 'Noto Serif TC', serif; font-size: 1rem;
+  color: white; font-weight: 600; letter-spacing: 0.12em;
 }
 .drawer-close {
-position: absolute; top: 16px; right: 16px;
-background: none; border: none; color: rgba(255,255,255,0.7);
-font-size: 1.4rem; cursor: pointer; padding: 4px 8px; border-radius: 3px; transition: color 0.15s;
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px; border-radius: 3px; transition: color 0.15s;
 }
 .drawer-close:hover { color: white; }
 .drawer nav { padding: 16px 0; }
 .drawer nav button {
-display: flex; align-items: center; gap: 12px; padding: 14px 24px;
-text-decoration: none; color: rgba(255,255,255,0.75); font-size: 0.9rem;
-letter-spacing: 0.05em; border-left: 3px solid transparent;
-transition: all 0.15s; cursor: pointer; background: none; width: 100%;
-font-family: ‘Noto Sans TC’, sans-serif;
-border-top: none; border-right: none; border-bottom: none;
+  display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+  text-decoration: none; color: rgba(255,255,255,0.75); font-size: 0.9rem;
+  letter-spacing: 0.05em; border-left: 3px solid transparent;
+  transition: all 0.15s; cursor: pointer; background: none; width: 100%;
+  font-family: 'Noto Sans TC', sans-serif;
+  border-top: none; border-right: none; border-bottom: none;
 }
 .drawer nav button:hover, .drawer nav button.active-nav {
-color: white; background: rgba(255,255,255,0.07); border-left-color: var(–red-mid);
+  color: white; background: rgba(255,255,255,0.07); border-left-color: var(--red-mid);
 }
 .drawer nav button .icon { font-size: 1rem; width: 20px; text-align: center; }
 
 /* ── Header ── */
 .header {
-background: var(–red); color: white; padding: 0; position: relative; overflow: hidden;
+  background: var(--red); color: white; padding: 0; position: relative; overflow: hidden;
 }
 .header-inner {
-position: relative; z-index: 2; display: flex; align-items: center;
-padding: 28px 24px 24px 70px;
+  position: relative; z-index: 2; display: flex; align-items: center;
+  padding: 28px 24px 24px 70px;
 }
 .header-deco { position: absolute; right: -20px; top: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.05); border-radius: 50%; z-index: 1; }
 .header-deco2 { position: absolute; right: 60px; bottom: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.04); border-radius: 50%; z-index: 1; }
 .header-cross { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 160px; opacity: 0.05; z-index: 1; pointer-events: none; line-height: 1; }
 .menu-btn {
-position: absolute; top: 50%; left: 18px; transform: translateY(-50%);
-background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-border-radius: 4px; color: white; width: 38px; height: 38px;
-display: flex; flex-direction: column; align-items: center; justify-content: center;
-gap: 4px; cursor: pointer; z-index: 5; transition: background 0.15s;
+  position: absolute; top: 50%; left: 18px; transform: translateY(-50%);
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 4px; color: white; width: 38px; height: 38px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; z-index: 5; transition: background 0.15s;
 }
 .menu-btn:hover { background: rgba(255,255,255,0.25); }
 .menu-btn span { display: block; width: 18px; height: 2px; background: white; border-radius: 2px; }
-.header-text h1 { font-family: ‘Noto Serif TC’, serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1.2; }
+.header-text h1 { font-family: 'Noto Serif TC', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.1em; line-height: 1.2; }
 .header-text p { margin-top: 4px; font-size: 0.78rem; opacity: 0.75; letter-spacing: 0.12em; font-weight: 300; }
 
 /* ── Form / Members wrap ── */
 .form-wrap, .members-wrap {
-max-width: 700px; margin: 0 auto; padding: 28px 16px 64px;
+  max-width: 700px; margin: 0 auto; padding: 28px 16px 64px;
 }
 
 /* ── Section ── */
-.section { margin-bottom: var(–section-gap); }
+.section { margin-bottom: var(--section-gap); }
 .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .section-num {
-width: 26px; height: 26px; background: var(–red); color: white; border-radius: 50%;
-font-size: 0.72rem; font-weight: 700; display: flex; align-items: center;
-justify-content: center; flex-shrink: 0;
+  width: 26px; height: 26px; background: var(--red); color: white; border-radius: 50%;
+  font-size: 0.72rem; font-weight: 700; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
 }
-.section-title { font-family: ‘Noto Serif TC’, serif; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.14em; color: var(–text); }
-.section-line { flex: 1; height: 1px; background: var(–border); }
+.section-title { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.14em; color: var(--text); }
+.section-line { flex: 1; height: 1px; background: var(--border); }
 
-.card { background: var(–white); border: 1px solid var(–border); border-radius: 6px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.card-divider { height: 1px; background: var(–border); margin: 18px 0; }
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.card-divider { height: 1px; background: var(--border); margin: 18px 0; }
 
 /* ── Fields ── */
 .field { margin-bottom: 18px; }
 .field:last-child { margin-bottom: 0; }
-label { display: block; font-size: 0.78rem; font-weight: 500; color: var(–text-mid); margin-bottom: 6px; letter-spacing: 0.05em; }
-label .req { color: var(–red); margin-left: 2px; }
+label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.05em; }
+label .req { color: var(--red); margin-left: 2px; }
 
-input[type=“text”], input[type=“date”], input[type=“time”], input[type=“number”], select, textarea {
-width: 100%; border: 1px solid var(–border); border-radius: 4px;
-padding: 10px 13px; font-size: 0.92rem; font-family: ‘Noto Sans TC’, sans-serif;
-color: var(–text); background: #fafaf8;
-transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-appearance: none; -webkit-appearance: none;
+input[type="text"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text); background: #fafaf8;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  appearance: none; -webkit-appearance: none;
 }
 select {
-background-image: url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘12’ height=‘8’ viewBox=‘0 0 12 8’%3E%3Cpath d=‘M1 1l5 5 5-5’ stroke=’%239c8c80’ stroke-width=‘1.5’ fill=‘none’ stroke-linecap=‘round’/%3E%3C/svg%3E”);
-background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239c8c80' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
 }
 input:focus, select:focus, textarea:focus {
-outline: none; border-color: var(–red);
-box-shadow: 0 0 0 3px rgba(192,57,43,0.1); background: white;
+  outline: none; border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.1); background: white;
 }
 textarea { resize: vertical; min-height: 82px; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .time-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: end; }
-.time-dash { text-align: center; padding: 0 8px 10px; color: var(–text-light); font-size: 1.1rem; }
+.time-dash { text-align: center; padding: 0 8px 10px; color: var(--text-light); font-size: 1.1rem; }
 
 /* ── Checkboxes ── */
 .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
 .cb-item {
-display: flex; align-items: center; gap: 9px; padding: 10px 12px;
-border: 1.5px solid var(–border); border-radius: 5px; cursor: pointer;
-transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-font-size: 0.88rem; color: var(–text-mid); user-select: none; background: #fafaf8;
+  display: flex; align-items: center; gap: 9px; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 5px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  font-size: 0.88rem; color: var(--text-mid); user-select: none; background: #fafaf8;
 }
-.cb-item:hover { border-color: var(–red); background: var(–red-faint); color: var(–text); }
-.cb-item input[type=“checkbox”] { accent-color: var(–red); flex-shrink: 0; width: auto; border: none; padding: 0; background: none; box-shadow: none; }
-.cb-item.checked { border-color: var(–red); background: var(–red-faint); color: var(–text); box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+.cb-item:hover { border-color: var(--red); background: var(--red-faint); color: var(--text); }
+.cb-item input[type="checkbox"] { accent-color: var(--red); flex-shrink: 0; width: auto; border: none; padding: 0; background: none; box-shadow: none; }
+.cb-item.checked { border-color: var(--red); background: var(--red-faint); color: var(--text); box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
 
 /* ── Signature ── */
-.sig-wrap { border: 1.5px solid var(–border); border-radius: 5px; overflow: hidden; background: #fafaf8; }
+.sig-wrap { border: 1.5px solid var(--border); border-radius: 5px; overflow: hidden; background: #fafaf8; }
 .sig-wrap canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
-.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(–warm); border-top: 1px solid var(–border); }
-.sig-footer span { font-size: 0.73rem; color: var(–text-light); letter-spacing: 0.04em; }
-.btn-clear { background: none; border: 1px solid var(–border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(–text-mid); font-family: ‘Noto Sans TC’, sans-serif; transition: all 0.15s; }
-.btn-clear:hover { border-color: var(–red); color: var(–red); background: var(–red-faint); }
+.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(--warm); border-top: 1px solid var(--border); }
+.sig-footer span { font-size: 0.73rem; color: var(--text-light); letter-spacing: 0.04em; }
+.btn-clear { background: none; border: 1px solid var(--border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(--text-mid); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; }
+.btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
 
 /* ── Submit ── */
 .submit-section { margin-top: 8px; }
 .btn-submit {
-width: 100%; background: var(–red); color: white; border: none; padding: 16px;
-font-size: 1rem; font-family: ‘Noto Sans TC’, sans-serif; font-weight: 700;
-letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
-transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-box-shadow: 0 4px 16px rgba(192,57,43,0.25); position: relative; overflow: hidden;
+  width: 100%; background: var(--red); color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(192,57,43,0.25); position: relative; overflow: hidden;
 }
-.btn-submit::before { content: ‘’; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
-.btn-submit:hover { background: var(–red-dark); box-shadow: 0 6px 20px rgba(192,57,43,0.35); }
+.btn-submit::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
+.btn-submit:hover { background: var(--red-dark); box-shadow: 0 6px 20px rgba(192,57,43,0.35); }
 .btn-submit:active { transform: scale(0.99); }
 .btn-submit:disabled { background: #bba09a; box-shadow: none; cursor: not-allowed; }
 
@@ -194,219 +193,221 @@ box-shadow: 0 4px 16px rgba(192,57,43,0.25); position: relative; overflow: hidde
 .success-msg { display: none; text-align: center; padding: 24px; background: #eafaf1; border: 1px solid #a9dfbf; border-radius: 6px; margin-top: 16px; }
 .success-msg.show { display: block; }
 .success-icon { width: 48px; height: 48px; background: #27ae60; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 1.4rem; color: white; }
-.success-msg h3 { font-family: ‘Noto Serif TC’, serif; color: #1a6b35; font-size: 1rem; letter-spacing: 0.08em; margin-bottom: 4px; }
+.success-msg h3 { font-family: 'Noto Serif TC', serif; color: #1a6b35; font-size: 1rem; letter-spacing: 0.08em; margin-bottom: 4px; }
 .success-msg p { font-size: 0.83rem; color: #2d8a4a; }
 
 /* ── Footer ── */
-.form-footer { text-align: center; margin-top: 28px; font-size: 0.72rem; color: var(–text-light); letter-spacing: 0.04em; line-height: 1.8; }
+.form-footer { text-align: center; margin-top: 28px; font-size: 0.72rem; color: var(--text-light); letter-spacing: 0.04em; line-height: 1.8; }
 
 /* ── Member shortcut link ── */
 .member-shortcut {
-margin-top: 8px; background: none; border: none; font-size: 0.76rem;
-color: var(–text-light); cursor: pointer; padding: 0; letter-spacing: 0.04em;
-font-family: ‘Noto Sans TC’, sans-serif; transition: color 0.15s; display: inline-block;
+  margin-top: 8px; background: none; border: none; font-size: 0.76rem;
+  color: var(--text-light); cursor: pointer; padding: 0; letter-spacing: 0.04em;
+  font-family: 'Noto Sans TC', sans-serif; transition: color 0.15s; display: inline-block;
 }
-.member-shortcut:hover { color: var(–red); }
+.member-shortcut:hover { color: var(--red); }
 
 /* ── Members Page ── */
-.member-add-card { background: var(–white); border: 1px solid var(–border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.member-add-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
 .add-row { display: flex; gap: 10px; }
 .add-row input { flex: 1; }
 .btn-add {
-background: var(–red); color: white; border: none; border-radius: 4px;
-padding: 10px 20px; font-size: 0.88rem; font-family: ‘Noto Sans TC’, sans-serif;
-font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
+  background: var(--red); color: white; border: none; border-radius: 4px;
+  padding: 10px 20px; font-size: 0.88rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
 }
-.btn-add:hover { background: var(–red-dark); }
+.btn-add:hover { background: var(--red-dark); }
 
-.member-list-card { background: var(–white); border: 1px solid var(–border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.member-list-head { background: var(–warm); border-bottom: 1px solid var(–border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
-.member-list-head h3 { font-family: ‘Noto Serif TC’, serif; font-size: 0.88rem; font-weight: 600; color: var(–text); letter-spacing: 0.1em; }
-.member-count { background: var(–red-faint); color: var(–red-dark); border: 1px solid #f0bab4; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; }
-.member-empty { text-align: center; padding: 40px 20px; color: var(–text-light); font-size: 0.85rem; letter-spacing: 0.05em; }
+.member-list-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.member-list-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.member-list-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
+.member-count { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; }
+.member-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.85rem; letter-spacing: 0.05em; }
 .member-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
-.member-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(–border); transition: background 0.1s; }
+.member-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
 .member-item:last-child { border-bottom: none; }
 .member-item:hover { background: #fdfcfb; }
-.member-avatar { width: 36px; height: 36px; background: var(–red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 700; flex-shrink: 0; margin-right: 14px; font-family: ‘Noto Serif TC’, serif; }
-.member-name { flex: 1; font-size: 0.95rem; color: var(–text); letter-spacing: 0.03em; }
+.member-avatar { width: 36px; height: 36px; background: var(--red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 700; flex-shrink: 0; margin-right: 14px; font-family: 'Noto Serif TC', serif; }
+.member-name { flex: 1; font-size: 0.95rem; color: var(--text); letter-spacing: 0.03em; }
 .member-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .member-info .member-name { flex: unset; }
-.member-title { font-size: 0.75rem; color: var(–text-light); letter-spacing: 0.04em; }
-.btn-delete { background: none; border: 1px solid var(–border); border-radius: 4px; padding: 5px 12px; font-size: 0.75rem; color: var(–text-light); cursor: pointer; font-family: ‘Noto Sans TC’, sans-serif; transition: all 0.15s; }
-.btn-delete:hover { border-color: var(–red); color: var(–red); background: var(–red-faint); }
+.member-title { font-size: 0.75rem; color: var(--text-light); letter-spacing: 0.04em; }
+.btn-delete { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 5px 12px; font-size: 0.75rem; color: var(--text-light); cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; }
+.btn-delete:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
 
 .drag-handle {
-display: flex; flex-direction: column; gap: 3px;
-padding: 8px 10px 8px 0; cursor: grab; flex-shrink: 0; opacity: 0.35;
-transition: opacity 0.15s;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 10px 8px 0; cursor: grab; flex-shrink: 0; opacity: 0.35;
+  transition: opacity 0.15s;
 }
 .drag-handle:active { cursor: grabbing; }
-.drag-handle span { display: block; width: 16px; height: 2px; background: var(–text-mid); border-radius: 2px; }
+.drag-handle span { display: block; width: 16px; height: 2px; background: var(--text-mid); border-radius: 2px; }
 .member-item:hover .drag-handle { opacity: 0.7; }
-.member-item.dragging { opacity: 0.4; background: var(–warm); }
-.member-item.drag-over { border-top: 2px solid var(–red); background: var(–red-faint); }
+.member-item.dragging { opacity: 0.4; background: var(--warm); }
+.member-item.drag-over { border-top: 2px solid var(--red); background: var(--red-faint); }
+
 
 /* ── Query Page ── */
 .query-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
 
-.filter-card { background: var(–white); border: 1px solid var(–border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
+.filter-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
 .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .filter-actions { display: flex; gap: 10px; margin-top: 16px; }
 .btn-search {
-flex: 1; background: var(–red); color: white; border: none; border-radius: 4px;
-padding: 11px; font-size: 0.9rem; font-family: ‘Noto Sans TC’, sans-serif;
-font-weight: 600; cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s;
+  flex: 1; background: var(--red); color: white; border: none; border-radius: 4px;
+  padding: 11px; font-size: 0.9rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s;
 }
-.btn-search:hover { background: var(–red-dark); }
+.btn-search:hover { background: var(--red-dark); }
 .btn-reset {
-background: none; border: 1px solid var(–border-dark); border-radius: 4px;
-padding: 11px 18px; font-size: 0.88rem; font-family: ‘Noto Sans TC’, sans-serif;
-color: var(–text-mid); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  background: none; border: 1px solid var(--border-dark); border-radius: 4px;
+  padding: 11px 18px; font-size: 0.88rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text-mid); cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.btn-reset:hover { border-color: var(–red); color: var(–red); }
+.btn-reset:hover { border-color: var(--red); color: var(--red); }
 
 /* Stats row */
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-.stat-card { background: var(–white); border: 1px solid var(–border); border-radius: 6px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.stat-num { font-family: ‘Noto Serif TC’, serif; font-size: 1.8rem; font-weight: 700; color: var(–red); line-height: 1; }
-.stat-label { font-size: 0.72rem; color: var(–text-light); margin-top: 6px; letter-spacing: 0.06em; }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-num { font-family: 'Noto Serif TC', serif; font-size: 1.8rem; font-weight: 700; color: var(--red); line-height: 1; }
+.stat-label { font-size: 0.72rem; color: var(--text-light); margin-top: 6px; letter-spacing: 0.06em; }
 
 /* Result table */
-.result-card { background: var(–white); border: 1px solid var(–border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.result-head { background: var(–warm); border-bottom: 1px solid var(–border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
-.result-head h3 { font-family: ‘Noto Serif TC’, serif; font-size: 0.88rem; font-weight: 600; color: var(–text); letter-spacing: 0.1em; }
+.result-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.result-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.result-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
 .btn-csv {
-background: none; border: 1px solid var(–border-dark); border-radius: 4px;
-padding: 5px 14px; font-size: 0.75rem; cursor: pointer; color: var(–text-mid);
-font-family: ‘Noto Sans TC’, sans-serif; transition: all 0.15s;
+  background: none; border: 1px solid var(--border-dark); border-radius: 4px;
+  padding: 5px 14px; font-size: 0.75rem; cursor: pointer; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
 }
 .btn-csv:hover { border-color: #27ae60; color: #27ae60; background: #eafaf1; }
 
 .result-table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
-th { background: var(–warm); padding: 10px 14px; text-align: left; font-weight: 600; color: var(–text-mid); border-bottom: 1px solid var(–border); white-space: nowrap; letter-spacing: 0.04em; }
-td { padding: 11px 14px; border-bottom: 1px solid var(–border); color: var(–text); vertical-align: top; }
+th { background: var(--warm); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text-mid); border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.04em; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fdfcfb; }
-.tag { display: inline-block; background: var(–red-faint); color: var(–red-dark); border: 1px solid #f0bab4; border-radius: 3px; padding: 1px 6px; font-size: 0.72rem; margin: 1px; white-space: nowrap; }
+.tag { display: inline-block; background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 3px; padding: 1px 6px; font-size: 0.72rem; margin: 1px; white-space: nowrap; }
 
-.query-empty { text-align: center; padding: 40px 20px; color: var(–text-light); font-size: 0.85rem; }
+.query-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.85rem; }
 .query-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
-.loading-msg { text-align: center; padding: 30px; color: var(–text-light); font-size: 0.85rem; }
+.loading-msg { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85rem; }
+
 
 /* ── Attendance Page ── */
 .attendance-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
 .status-banner {
-border-radius: 6px; padding: 14px 20px; margin-bottom: 20px;
-display: flex; align-items: center; gap: 12px; font-size: 0.88rem; font-weight: 500;
+  border-radius: 6px; padding: 14px 20px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px; font-size: 0.88rem; font-weight: 500;
 }
-.status-banner.idle { background: var(–warm); border: 1px solid var(–border); color: var(–text-mid); }
+.status-banner.idle { background: var(--warm); border: 1px solid var(--border); color: var(--text-mid); }
 .status-banner.checked-in { background: #eafaf1; border: 1px solid #a9dfbf; color: #1a6b35; }
 .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.status-banner.idle .status-dot { background: var(–text-light); }
+.status-banner.idle .status-dot { background: var(--text-light); }
 .status-banner.checked-in .status-dot { background: #27ae60; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .att-extra-fields { display: none; }
 .att-extra-fields.show { display: block; }
 .btn-checkin {
-width: 100%; background: #27ae60; color: white; border: none; padding: 16px;
-font-size: 1rem; font-family: ‘Noto Sans TC’, sans-serif; font-weight: 700;
-letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
-transition: background 0.2s, box-shadow 0.2s;
-box-shadow: 0 4px 16px rgba(39,174,96,0.3);
+  width: 100%; background: #27ae60; color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(39,174,96,0.3);
 }
 .btn-checkin:hover { background: #219a52; }
 .btn-checkout {
-width: 100%; background: var(–red); color: white; border: none; padding: 16px;
-font-size: 1rem; font-family: ‘Noto Sans TC’, sans-serif; font-weight: 700;
-letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
-transition: background 0.2s, box-shadow 0.2s;
-box-shadow: 0 4px 16px rgba(192,57,43,0.25);
+  width: 100%; background: var(--red); color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(192,57,43,0.25);
 }
-.btn-checkout:hover { background: var(–red-dark); }
+.btn-checkout:hover { background: var(--red-dark); }
 .time-badge {
-display: inline-block; background: var(–red-faint); color: var(–red-dark);
-border: 1px solid #f0bab4; border-radius: 4px; padding: 3px 10px;
-font-size: 0.82rem; font-weight: 600; font-family: ‘Noto Serif TC’, serif;
-letter-spacing: 0.06em;
+  display: inline-block; background: var(--red-faint); color: var(--red-dark);
+  border: 1px solid #f0bab4; border-radius: 4px; padding: 3px 10px;
+  font-size: 0.82rem; font-weight: 600; font-family: 'Noto Serif TC', serif;
+  letter-spacing: 0.06em;
 }
 .num-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .att-status-badge {
-font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
-white-space: nowrap; flex-shrink: 0;
+  font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap; flex-shrink: 0;
 }
-.att-status-badge.idle { background: var(–warm); color: var(–text-light); border: 1px solid var(–border); }
+.att-status-badge.idle { background: var(--warm); color: var(--text-light); border: 1px solid var(--border); }
 .att-status-badge.in { background: #eafaf1; color: #1a6b35; border: 1px solid #a9dfbf; }
-.att-status-badge.done { background: var(–red-faint); color: var(–red-dark); border: 1px solid #f0bab4; }
+.att-status-badge.done { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; }
 .att-member-btn {
-background: none; border: 1px solid var(–border); border-radius: 4px;
-padding: 5px 14px; font-size: 0.78rem; cursor: pointer; color: var(–text-mid);
-font-family: ‘Noto Sans TC’, sans-serif; transition: all 0.15s; white-space: nowrap;
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 14px; font-size: 0.78rem; cursor: pointer; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; white-space: nowrap;
 }
-.att-member-btn:hover { border-color: var(–red); color: var(–red); background: var(–red-faint); }
+.att-member-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
 .att-member-btn.checkin-btn { border-color: #27ae60; color: #27ae60; }
 .att-member-btn.checkin-btn:hover { background: #eafaf1; }
 @media (max-width: 520px) {
-.row-2 { grid-template-columns: 1fr; }
-.header-text h1 { font-size: 1.2rem; }
-.checkbox-grid { grid-template-columns: 1fr 1fr; }
-.form-wrap, .members-wrap { padding: 20px 12px 48px; }
-.card { padding: 16px; }
-.add-row { flex-direction: column; }
-.filter-grid { grid-template-columns: 1fr; }
-.stats-row { grid-template-columns: repeat(3, 1fr); }
-.stat-num { font-size: 1.4rem; }
+  .row-2 { grid-template-columns: 1fr; }
+  .header-text h1 { font-size: 1.2rem; }
+  .checkbox-grid { grid-template-columns: 1fr 1fr; }
+  .form-wrap, .members-wrap { padding: 20px 12px 48px; }
+  .card { padding: 16px; }
+  .add-row { flex-direction: column; }
+  .filter-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .stat-num { font-size: 1.4rem; }
 }
 
 /* ── Duty Toggle ── */
-.duty-toggle { display: flex; gap: 0; border: 1.5px solid var(–border); border-radius: 6px; overflow: hidden; }
+.duty-toggle { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; }
 .duty-btn {
-flex: 1; padding: 10px 0; font-size: 0.95rem; font-family: ‘Noto Sans TC’, sans-serif;
-font-weight: 600; letter-spacing: 0.12em; border: none; background: #fafaf8;
-color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.15s;
+  flex: 1; padding: 10px 0; font-size: 0.95rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; letter-spacing: 0.12em; border: none; background: #fafaf8;
+  color: var(--text-mid); cursor: pointer; transition: background 0.15s, color 0.15s;
 }
-.duty-btn:first-child { border-right: 1px solid var(–border); }
-.duty-btn.active { background: var(–red); color: white; }
-.duty-btn:not(.active):hover { background: var(–red-faint); color: var(–red); }
+.duty-btn:first-child { border-right: 1px solid var(--border); }
+.duty-btn.active { background: var(--red); color: white; }
+.duty-btn:not(.active):hover { background: var(--red-faint); color: var(--red); }
 
 /* ── Stats Table ── */
 .stats-table { width:100%; border-collapse:collapse; font-size:0.83rem; }
-.stats-table th { background:var(–warm); padding:10px 12px; text-align:left; font-weight:600; color:var(–text-mid); border-bottom:1px solid var(–border); white-space:nowrap; }
-.stats-table td { padding:10px 12px; border-bottom:1px solid var(–border); color:var(–text); vertical-align:middle; }
+.stats-table th { background:var(--warm); padding:10px 12px; text-align:left; font-weight:600; color:var(--text-mid); border-bottom:1px solid var(--border); white-space:nowrap; }
+.stats-table td { padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
 .stats-table tr:last-child td { border-bottom:none; }
 .stats-table tr:hover td { background:#fdfcfb; }
 .rank-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:0.72rem; font-weight:700; }
 .rank-1 { background:#f1c40f; color:#7d6608; }
 .rank-2 { background:#bdc3c7; color:#555; }
 .rank-3 { background:#cd7f32; color:#fff; }
-.rank-other { background:var(–warm); color:var(–text-light); }
+.rank-other { background:var(--warm); color:var(--text-light); }
 .bar-wrap { display:flex; align-items:center; gap:8px; }
-.bar-bg { flex:1; height:6px; background:var(–border); border-radius:3px; overflow:hidden; min-width:40px; }
-.bar-fill { height:100%; background:var(–red); border-radius:3px; transition:width 0.4s ease; }
+.bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; min-width:40px; }
+.bar-fill { height:100%; background:var(--red); border-radius:3px; transition:width 0.4s ease; }
 
 /* ── Map ── */
-#districtMap { height:280px; border-radius:6px; border:1px solid var(–border); overflow:hidden; }
-.map-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; font-size:0.75rem; color:var(–text-mid); }
+#districtMap { height:280px; border-radius:6px; border:1px solid var(--border); overflow:hidden; }
+.map-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; font-size:0.75rem; color:var(--text-mid); }
 .map-legend-item { display:flex; align-items:center; gap:5px; }
-.map-legend-dot { width:10px; height:10px; border-radius:50%; background:var(–red); opacity:0.7; }
+.map-legend-dot { width:10px; height:10px; border-radius:50%; background:var(--red); opacity:0.7; }
 
 /* ── Profile Page ── */
-.profile-select-card { background:var(–white); border:1px solid var(–border); border-radius:6px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); margin-bottom:20px; }
+.profile-select-card { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); margin-bottom:20px; }
 .profile-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
-.profile-stat { background:var(–white); border:1px solid var(–border); border-radius:6px; padding:16px; text-align:center; }
-.profile-stat .num { font-family:‘Noto Serif TC’,serif; font-size:1.6rem; font-weight:700; color:var(–red); line-height:1; }
-.profile-stat .lbl { font-size:0.7rem; color:var(–text-light); margin-top:6px; letter-spacing:0.05em; }
+.profile-stat { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:16px; text-align:center; }
+.profile-stat .num { font-family:'Noto Serif TC',serif; font-size:1.6rem; font-weight:700; color:var(--red); line-height:1; }
+.profile-stat .lbl { font-size:0.7rem; color:var(--text-light); margin-top:6px; letter-spacing:0.05em; }
 .timeline { position:relative; padding-left:20px; }
-.timeline::before { content:’’; position:absolute; left:6px; top:0; bottom:0; width:2px; background:var(–border); }
+.timeline::before { content:''; position:absolute; left:6px; top:0; bottom:0; width:2px; background:var(--border); }
 .tl-item { position:relative; margin-bottom:16px; }
-.tl-dot { position:absolute; left:-17px; top:4px; width:10px; height:10px; border-radius:50%; background:var(–red); border:2px solid white; box-shadow:0 0 0 2px var(–border); }
-.tl-date { font-size:0.72rem; color:var(–text-light); margin-bottom:3px; }
-.tl-card { background:var(–white); border:1px solid var(–border); border-radius:5px; padding:10px 14px; font-size:0.83rem; }
+.tl-dot { position:absolute; left:-17px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--red); border:2px solid white; box-shadow:0 0 0 2px var(--border); }
+.tl-date { font-size:0.72rem; color:var(--text-light); margin-bottom:3px; }
+.tl-card { background:var(--white); border:1px solid var(--border); border-radius:5px; padding:10px 14px; font-size:0.83rem; }
 .tl-card .tl-type { font-size:0.7rem; }
 .month-tab-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-.month-tab { padding:5px 14px; border:1px solid var(–border); border-radius:20px; font-size:0.8rem; cursor:pointer; background:var(–white); color:var(–text-mid); transition:all 0.15s; font-family:‘Noto Sans TC’,sans-serif; }
-.month-tab.active { background:var(–red); color:white; border-color:var(–red); }
+.month-tab { padding:5px 14px; border:1px solid var(--border); border-radius:20px; font-size:0.8rem; cursor:pointer; background:var(--white); color:var(--text-mid); transition:all 0.15s; font-family:'Noto Sans TC',sans-serif; }
+.month-tab.active { background:var(--red); color:white; border-color:var(--red); }
 
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -417,7 +418,6 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
 <!-- Drawer -->
-
 <div class="drawer" id="drawer">
   <div class="drawer-header">
     <span class="cross">✚</span>
@@ -438,7 +438,6 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 </div>
 
 <!-- ══════ SHARED HEADER ══════ -->
-
 <div class="header">
   <div class="header-deco"></div>
   <div class="header-deco2"></div>
@@ -455,461 +454,443 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 </div>
 
 <!-- ══════ PAGE 0：儀表板 ══════ -->
-
 <div class="page active" id="dashboardPage">
   <div class="form-wrap">
 
-```
-<!-- 今日統計 -->
-<div class="section">
-  <div class="section-head">
-    <div class="section-num" style="font-size:0.75rem;">今</div>
-    <div class="section-title">今日概況</div>
-    <div class="section-line"></div>
-    <span id="dashDate" style="font-size:0.75rem;color:var(--text-light);white-space:nowrap;"></span>
-  </div>
-  <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
-    <div class="stat-card">
-      <div class="stat-num" id="dashTodayAtt">—</div>
-      <div class="stat-label">今日出勤筆數</div>
+    <!-- 今日統計 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">今</div>
+        <div class="section-title">今日概況</div>
+        <div class="section-line"></div>
+        <span id="dashDate" style="font-size:0.75rem;color:var(--text-light);white-space:nowrap;"></span>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodayAtt">—</div>
+          <div class="stat-label">今日出勤筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodayMembers">—</div>
+          <div class="stat-label">今日出勤人數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodaySignin">—</div>
+          <div class="stat-label">今日簽到人數</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-num" id="dashTodayMembers">—</div>
-      <div class="stat-label">今日出勤人數</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="dashTodaySignin">—</div>
-      <div class="stat-label">今日簽到人數</div>
-    </div>
-  </div>
-</div>
 
-<!-- 本月統計 -->
-<div class="section">
-  <div class="section-head">
-    <div class="section-num" style="font-size:0.75rem;">月</div>
-    <div class="section-title">本月累計</div>
-    <div class="section-line"></div>
-  </div>
-  <div class="stats-row" style="grid-template-columns:repeat(2,1fr);">
-    <div class="stat-card">
-      <div class="stat-num" id="dashMonthAtt">—</div>
-      <div class="stat-label">出勤總筆數</div>
+    <!-- 本月統計 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">月</div>
+        <div class="section-title">本月累計</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(2,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthAtt">—</div>
+          <div class="stat-label">出勤總筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthHours">—</div>
+          <div class="stat-label">協勤總時數</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-num" id="dashMonthHours">—</div>
-      <div class="stat-label">協勤總時數</div>
+
+    <!-- 快速入口 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">⚡</div>
+        <div class="section-title">快速入口</div>
+        <div class="section-line"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">新增／刪除成員</div>
+        </button>
+        <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人頁面</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">個人出勤紀錄</div>
+        </button>
+        <button onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤案件登錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">填寫出勤資料</div>
+        </button>
+        <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤紀錄查詢</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢歷史出勤</div>
+        </button>
+        <button onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">✍️</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">現場簽到使用</div>
+        </button>
+        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📊</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退記錄查詢</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢簽到紀錄</div>
+        </button>
+        <button onclick="navTo('reportPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📑</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">報表匯出</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">產生 Word 報表</div>
+        </button>
+        <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤統計</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">出勤排行榜</div>
+        </button>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- 快速入口 -->
-<div class="section">
-  <div class="section-head">
-    <div class="section-num" style="font-size:0.75rem;">⚡</div>
-    <div class="section-title">快速入口</div>
-    <div class="section-line"></div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-    <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">新增／刪除成員</div>
-    </button>
-    <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人頁面</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">個人出勤紀錄</div>
-    </button>
-    <button onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤案件登錄</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">填寫出勤資料</div>
-    </button>
-    <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤紀錄查詢</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢歷史出勤</div>
-    </button>
-    <button onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">✍️</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">現場簽到使用</div>
-    </button>
-    <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📊</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退記錄查詢</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢簽到紀錄</div>
-    </button>
-    <button onclick="navTo('reportPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📑</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">報表匯出</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">產生 Word 報表</div>
-    </button>
-    <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤統計</div>
-      <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">出勤排行榜</div>
-    </button>
-  </div>
-</div>
-
-<div class="site-footer-placeholder"></div>
-```
-
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
 <!-- ══════ PAGE 1：出勤紀錄 ══════ -->
-
 <div class="page" id="formPage">
   <div class="form-wrap">
     <form id="recordForm" novalidate>
 
-```
-  <!-- § 1 基本資訊 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num">1</div>
-      <div class="section-title">基本資訊</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="card">
-      <div class="field">
-        <label for="date">出勤日期 <span class="req">*</span></label>
-        <input type="date" id="date" required>
-      </div>
-      <div class="card-divider"></div>
-      <div class="field">
-        <label>出勤類別 <span class="req">*</span></label>
-        <div class="duty-toggle">
-          <button type="button" class="duty-btn active" id="dutyAssist" onclick="setDuty('協勤')">協勤</button>
-          <button type="button" class="duty-btn" id="dutyPublic" onclick="setDuty('公差')">公差</button>
+      <!-- § 1 基本資訊 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">1</div>
+          <div class="section-title">基本資訊</div>
+          <div class="section-line"></div>
         </div>
-        <input type="hidden" id="dutyType" value="協勤">
-      </div>
-      <div class="card-divider"></div>
-      <div class="field">
-        <label>出勤時間 <span class="req">*</span></label>
-        <div class="time-row">
-          <input type="time" id="timeOut" required>
-          <div class="time-dash">—</div>
-          <input type="time" id="timeBack" required>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- § 2 出勤地點 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num">2</div>
-      <div class="section-title">出勤地點</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="card">
-      <div class="field">
-        <label for="district">行政區 <span class="req">*</span></label>
-        <select id="district" required>
-          <option value="">— 請選擇區域 —</option>
-          <option value="臺中市潭子區">臺中市潭子區</option>
-          <option value="臺中市豐原區">臺中市豐原區</option>
-          <option value="臺中市神岡區">臺中市神岡區</option>
-          <option value="臺中市大雅區">臺中市大雅區</option>
-          <option value="臺中市北屯區">臺中市北屯區</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="address">詳細地址 <span class="req">*</span></label>
-        <input type="text" id="address" placeholder="路名、號碼或地標" required>
-      </div>
-    </div>
-  </div>
-
-  <!-- § 3 服務內容 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num">3</div>
-      <div class="section-title">服務內容</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="card">
-      <div class="field">
-        <label>服務項目 <span class="req">*</span>（可複選）</label>
-        <div class="checkbox-grid" id="serviceGrid">
-          <label class="cb-item"><input type="checkbox" value="保暖"> 保暖</label>
-          <label class="cb-item"><input type="checkbox" value="心理支持"> 心理支持</label>
-          <label class="cb-item"><input type="checkbox" value="量測生命徵象"> 量測生命徵象</label>
-          <label class="cb-item"><input type="checkbox" value="CPR"> CPR</label>
-          <label class="cb-item"><input type="checkbox" value="AED"> AED</label>
-          <label class="cb-item"><input type="checkbox" value="給氧"> 給氧</label>
-          <label class="cb-item"><input type="checkbox" value="OneTouch血糖"> OneTouch 血糖</label>
-        </div>
-      </div>
-      <div class="card-divider"></div>
-      <div class="field">
-        <label for="note">備註說明</label>
-        <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
-      </div>
-    </div>
-  </div>
-
-  <!-- § 4 出勤義消簽名 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num">4</div>
-      <div class="section-title">出勤義消簽名</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="card">
-      <div class="field">
-        <label for="memberSelect">出勤義消姓名 <span class="req">*</span></label>
-        <select id="memberSelect" required>
-          <option value="">— 請選擇義消成員 —</option>
-        </select>
-        <button type="button" class="member-shortcut" onclick="navTo('membersPage')">
-          ＋ 找不到姓名？前往成員管理新增
-        </button>
-      </div>
-      <div class="card-divider"></div>
-      <div class="field">
-        <label>義消簽名 <span class="req">*</span></label>
-        <div class="sig-wrap">
-          <canvas id="sigCanvas"></canvas>
-          <div class="sig-footer">
-            <span>請用滑鼠或手指於上方簽名</span>
-            <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+        <div class="card">
+          <div class="field">
+            <label for="date">出勤日期 <span class="req">*</span></label>
+            <input type="date" id="date" required>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>出勤類別 <span class="req">*</span></label>
+            <div class="duty-toggle">
+              <button type="button" class="duty-btn active" id="dutyAssist" onclick="setDuty('協勤')">協勤</button>
+              <button type="button" class="duty-btn" id="dutyPublic" onclick="setDuty('公差')">公差</button>
+            </div>
+            <input type="hidden" id="dutyType" value="協勤">
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>出勤時間 <span class="req">*</span></label>
+            <div class="time-row">
+              <input type="time" id="timeOut" required>
+              <div class="time-dash">—</div>
+              <input type="time" id="timeBack" required>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="submit-section">
-    <button type="submit" class="btn-submit">送　出　紀　錄</button>
-  </div>
+      <!-- § 2 出勤地點 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">2</div>
+          <div class="section-title">出勤地點</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="district">行政區 <span class="req">*</span></label>
+            <select id="district" required>
+              <option value="">— 請選擇區域 —</option>
+              <option value="臺中市潭子區">臺中市潭子區</option>
+              <option value="臺中市豐原區">臺中市豐原區</option>
+              <option value="臺中市神岡區">臺中市神岡區</option>
+              <option value="臺中市大雅區">臺中市大雅區</option>
+              <option value="臺中市北屯區">臺中市北屯區</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="address">詳細地址 <span class="req">*</span></label>
+            <input type="text" id="address" placeholder="路名、號碼或地標" required>
+          </div>
+        </div>
+      </div>
 
-  <div class="success-msg" id="successMsg">
-    <div class="success-icon">✓</div>
-    <h3>紀錄已成功送出</h3>
-    <p>感謝您的服務，出勤資料已記錄完成。</p>
-  </div>
+      <!-- § 3 服務內容 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">3</div>
+          <div class="section-title">服務內容</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label>服務項目 <span class="req">*</span>（可複選）</label>
+            <div class="checkbox-grid" id="serviceGrid">
+              <label class="cb-item"><input type="checkbox" value="保暖"> 保暖</label>
+              <label class="cb-item"><input type="checkbox" value="心理支持"> 心理支持</label>
+              <label class="cb-item"><input type="checkbox" value="量測生命徵象"> 量測生命徵象</label>
+              <label class="cb-item"><input type="checkbox" value="CPR"> CPR</label>
+              <label class="cb-item"><input type="checkbox" value="AED"> AED</label>
+              <label class="cb-item"><input type="checkbox" value="給氧"> 給氧</label>
+              <label class="cb-item"><input type="checkbox" value="OneTouch血糖"> OneTouch 血糖</label>
+            </div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label for="note">備註說明</label>
+            <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
+          </div>
+        </div>
+      </div>
 
-  <div class="site-footer-placeholder"></div>
-</form>
-```
+      <!-- § 4 出勤義消簽名 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">4</div>
+          <div class="section-title">出勤義消簽名</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="memberSelect">出勤義消姓名 <span class="req">*</span></label>
+            <select id="memberSelect" required>
+              <option value="">— 請選擇義消成員 —</option>
+            </select>
+            <button type="button" class="member-shortcut" onclick="navTo('membersPage')">
+              ＋ 找不到姓名？前往成員管理新增
+            </button>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>義消簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="sigCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div class="submit-section">
+        <button type="submit" class="btn-submit">送　出　紀　錄</button>
+      </div>
+
+      <div class="success-msg" id="successMsg">
+        <div class="success-icon">✓</div>
+        <h3>紀錄已成功送出</h3>
+        <p>感謝您的服務，出勤資料已記錄完成。</p>
+      </div>
+
+      <div class="site-footer-placeholder"></div>
+    </form>
   </div>
 </div>
 
 <!-- ══════ PAGE 2：成員管理 ══════ -->
-
 <div class="page" id="membersPage">
   <div class="members-wrap">
 
-```
-<div class="section">
-  <div class="section-head">
-    <div class="section-num" style="font-size:1rem;">＋</div>
-    <div class="section-title">新增成員</div>
-    <div class="section-line"></div>
-  </div>
-  <div class="member-add-card">
-    <div class="add-row">
-      <input type="text" id="newMemberName" placeholder="義消姓名" maxlength="20">
-      <input type="text" id="newMemberTitle" placeholder="職稱（如：隊長）" maxlength="20" style="flex:1;">
-      <button type="button" class="btn-add" onclick="addMember()">新　增</button>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-head">
-    <div class="section-num" style="font-size:0.85rem;">名</div>
-    <div class="section-title">成員名單</div>
-    <div class="section-line"></div>
-  </div>
-  <div class="member-list-card">
-    <div class="member-list-head">
-      <h3>目前成員</h3>
-      <span class="member-count" id="memberCount">0 人</span>
-    </div>
-    <div id="memberList">
-      <div class="member-empty">
-        <span class="empty-icon">👥</span>
-        尚未新增任何成員
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:1rem;">＋</div>
+        <div class="section-title">新增成員</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="member-add-card">
+        <div class="add-row">
+          <input type="text" id="newMemberName" placeholder="義消姓名" maxlength="20">
+          <input type="text" id="newMemberTitle" placeholder="職稱（如：隊長）" maxlength="20" style="flex:1;">
+          <button type="button" class="btn-add" onclick="addMember()">新　增</button>
+        </div>
       </div>
     </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.85rem;">名</div>
+        <div class="section-title">成員名單</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="member-list-card">
+        <div class="member-list-head">
+          <h3>目前成員</h3>
+          <span class="member-count" id="memberCount">0 人</span>
+        </div>
+        <div id="memberList">
+          <div class="member-empty">
+            <span class="empty-icon">👥</span>
+            尚未新增任何成員
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
-<div class="site-footer-placeholder"></div>
-```
-
-  </div>
-</div>
 
 <!-- ══════ PAGE 3：出勤查詢 ══════ -->
-
 <div class="page" id="queryPage">
   <div class="query-wrap">
 
-```
-<!-- 篩選條件 -->
-<div class="section">
-  <div class="section-head">
-    <div class="section-num">🔍</div>
-    <div class="section-title">篩選條件</div>
-    <div class="section-line"></div>
-  </div>
-  <div class="filter-card">
-    <div class="filter-grid">
-      <div class="field">
-        <label for="qDateFrom">日期（起）</label>
-        <input type="date" id="qDateFrom">
+    <!-- 篩選條件 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">篩選條件</div>
+        <div class="section-line"></div>
       </div>
-      <div class="field">
-        <label for="qDateTo">日期（迄）</label>
-        <input type="date" id="qDateTo">
-      </div>
-      <div class="field">
-        <label for="qMember">義消姓名</label>
-        <select id="qMember">
-          <option value="">— 全部成員 —</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="qDistrict">行政區</label>
-        <select id="qDistrict">
-          <option value="">— 全部區域 —</option>
-          <option value="臺中市潭子區">臺中市潭子區</option>
-          <option value="臺中市豐原區">臺中市豐原區</option>
-          <option value="臺中市神岡區">臺中市神岡區</option>
-          <option value="臺中市大雅區">臺中市大雅區</option>
-          <option value="臺中市北屯區">臺中市北屯區</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="qDuty">出勤類別</label>
-        <select id="qDuty">
-          <option value="">— 全部類別 —</option>
-          <option value="協勤">協勤</option>
-          <option value="公差">公差</option>
-        </select>
-      </div>
-      <div class="field" style="grid-column: 1 / -1;">
-        <label for="qService">服務項目</label>
-        <select id="qService">
-          <option value="">— 全部項目 —</option>
-          <option value="保暖">保暖</option>
-          <option value="心理支持">心理支持</option>
-          <option value="量測生命徵象">量測生命徵象</option>
-          <option value="CPR">CPR</option>
-          <option value="AED">AED</option>
-          <option value="給氧">給氧</option>
-          <option value="OneTouch血糖">OneTouch 血糖</option>
-        </select>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="qDateFrom">日期（起）</label>
+            <input type="date" id="qDateFrom">
+          </div>
+          <div class="field">
+            <label for="qDateTo">日期（迄）</label>
+            <input type="date" id="qDateTo">
+          </div>
+          <div class="field">
+            <label for="qMember">義消姓名</label>
+            <select id="qMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qDistrict">行政區</label>
+            <select id="qDistrict">
+              <option value="">— 全部區域 —</option>
+              <option value="臺中市潭子區">臺中市潭子區</option>
+              <option value="臺中市豐原區">臺中市豐原區</option>
+              <option value="臺中市神岡區">臺中市神岡區</option>
+              <option value="臺中市大雅區">臺中市大雅區</option>
+              <option value="臺中市北屯區">臺中市北屯區</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qDuty">出勤類別</label>
+            <select id="qDuty">
+              <option value="">— 全部類別 —</option>
+              <option value="協勤">協勤</option>
+              <option value="公差">公差</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="qService">服務項目</label>
+            <select id="qService">
+              <option value="">— 全部項目 —</option>
+              <option value="保暖">保暖</option>
+              <option value="心理支持">心理支持</option>
+              <option value="量測生命徵象">量測生命徵象</option>
+              <option value="CPR">CPR</option>
+              <option value="AED">AED</option>
+              <option value="給氧">給氧</option>
+              <option value="OneTouch血糖">OneTouch 血糖</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-search" onclick="doQuery()">查　詢</button>
+          <button class="btn-reset" onclick="resetQuery()">清除條件</button>
+          <button class="btn-reset" onclick="debugData()" title="顯示原始資料供除錯">🔧</button>
+        </div>
       </div>
     </div>
-    <div class="filter-actions">
-      <button class="btn-search" onclick="doQuery()">查　詢</button>
-      <button class="btn-reset" onclick="resetQuery()">清除條件</button>
-      <button class="btn-reset" onclick="debugData()" title="顯示原始資料供除錯">🔧</button>
+
+    <!-- 統計數字 -->
+    <div class="stats-row" id="statsRow" style="display:none;">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">出勤總筆數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statMembers">0</div>
+        <div class="stat-label">出勤人數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statDays">0</div>
+        <div class="stat-label">出勤天數</div>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- 統計數字 -->
-<div class="stats-row" id="statsRow" style="display:none;">
-  <div class="stat-card">
-    <div class="stat-num" id="statTotal">0</div>
-    <div class="stat-label">出勤總筆數</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-num" id="statMembers">0</div>
-    <div class="stat-label">出勤人數</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-num" id="statDays">0</div>
-    <div class="stat-label">出勤天數</div>
-  </div>
-</div>
-
-<!-- 結果列表 -->
-<div class="result-card" id="resultCard" style="display:none;">
-  <div class="result-head">
-    <h3>查詢結果</h3>
-    <button class="btn-csv" onclick="exportCSV()">匯出 CSV</button>
-  </div>
-  <div class="result-table-wrap">
-    <table id="resultTable">
-      <thead>
-        <tr>
-          <th>日期</th>
-          <th>類別</th>
-          <th>出勤時間</th>
-          <th>行政區</th>
-          <th>地址</th>
-          <th>服務項目</th>
-          <th>義消姓名</th>
-          <th>備註</th>
-          <th>簽名</th>
-        </tr>
-      </thead>
-      <tbody id="resultBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- 地圖 -->
-<div id="queryMapDiv" style="display:none;">
-  <div class="section" style="margin-top:20px;">
-    <div class="section-head">
-      <div class="section-num">🗺</div>
-      <div class="section-title">出勤地點分佈</div>
-      <div class="section-line"></div>
+    <!-- 結果列表 -->
+    <div class="result-card" id="resultCard" style="display:none;">
+      <div class="result-head">
+        <h3>查詢結果</h3>
+        <button class="btn-csv" onclick="exportCSV()">匯出 CSV</button>
+      </div>
+      <div class="result-table-wrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>類別</th>
+              <th>出勤時間</th>
+              <th>行政區</th>
+              <th>地址</th>
+              <th>服務項目</th>
+              <th>義消姓名</th>
+              <th>備註</th>
+              <th>簽名</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="result-card"><div style="padding:16px;"><div id="queryMapInner" style="height:240px;border-radius:4px;"></div></div></div>
+
+    <!-- 地圖 -->
+    <div id="queryMapDiv" style="display:none;">
+      <div class="section" style="margin-top:20px;">
+        <div class="section-head">
+          <div class="section-num">🗺</div>
+          <div class="section-title">出勤地點分佈</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="result-card"><div style="padding:16px;"><div id="queryMapInner" style="height:240px;border-radius:4px;"></div></div></div>
+      </div>
+    </div>
+
+    <div id="queryInitMsg" class="query-empty">
+      <span class="empty-icon">🔍</span>
+      請設定篩選條件後按「查詢」
+    </div>
+
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
-<div id="queryInitMsg" class="query-empty">
-  <span class="empty-icon">🔍</span>
-  請設定篩選條件後按「查詢」
-</div>
-
-<div class="site-footer-placeholder"></div>
-```
-
-  </div>
-</div>
 
 <!-- ══════ PAGE 4：簽到簽退 ══════ -->
-
 <div class="page" id="attendancePage">
   <div class="attendance-wrap">
 
-```
-<!-- ── 主畫面 ── -->
-<div id="attMain">
-  <!-- 日期 + 簽到表單 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num">✍</div>
-      <div class="section-title">簽到</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="card">
-      <div class="row-2">
-        <div class="field">
-          <label for="attDate">日期</label>
-          <input type="date" id="attDate">
+    <!-- ── 主畫面 ── -->
+    <div id="attMain">
+      <!-- 日期 + 簽到表單 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">✍</div>
+          <div class="section-title">簽到</div>
+          <div class="section-line"></div>
         </div>
-        <div class="field">
-          <label for="attCheckinTime">簽到時間 <span class="req">*</span></label>
-          <select id="attCheckinTime" style="width:100%;">
-```
-
+        <div class="card">
+          <div class="row-2">
+            <div class="field">
+              <label for="attDate">日期</label>
+              <input type="date" id="attDate">
+            </div>
+            <div class="field">
+              <label for="attCheckinTime">簽到時間 <span class="req">*</span></label>
+              <select id="attCheckinTime" style="width:100%;">
 <option value="00:00">00:00</option>
 <option value="00:15">00:15</option>
 <option value="00:30">00:30</option>
@@ -1031,52 +1012,49 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
         </div>
       </div>
 
-```
-  <!-- 已簽到名單 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num" style="font-size:0.8rem;">名</div>
-      <div class="section-title">已簽到名單</div>
-      <div class="section-line"></div>
-      <span style="font-size:0.75rem;color:var(--text-light);">點擊成員進行簽退</span>
-    </div>
-    <div class="member-list-card">
-      <div id="attCheckinList">
-        <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
+      <!-- 已簽到名單 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.8rem;">名</div>
+          <div class="section-title">已簽到名單</div>
+          <div class="section-line"></div>
+          <span style="font-size:0.75rem;color:var(--text-light);">點擊成員進行簽退</span>
+        </div>
+        <div class="member-list-card">
+          <div id="attCheckinList">
+            <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="site-footer-placeholder"></div>
-</div>
-
-<!-- ── 簽退畫面（點選名單後進入）── -->
-<div id="attCheckoutView" style="display:none;">
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num" style="font-size:0.9rem;">←</div>
-      <div class="section-title" id="attCheckoutName">成員姓名</div>
-      <div class="section-line"></div>
-      <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">← 返回</button>
+      <div class="site-footer-placeholder"></div>
     </div>
-  </div>
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num">✓</div>
-      <div class="section-title">簽退</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="card">
-      <div class="field" style="background:var(--warm);border-radius:4px;padding:10px 14px;margin-bottom:16px;">
-        <span style="font-size:0.78rem;color:var(--text-mid);">簽到時間：</span>
-        <span class="time-badge" id="attCheckinTimeRef"></span>
+    <!-- ── 簽退畫面（點選名單後進入）── -->
+    <div id="attCheckoutView" style="display:none;">
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.9rem;">←</div>
+          <div class="section-title" id="attCheckoutName">成員姓名</div>
+          <div class="section-line"></div>
+          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">← 返回</button>
+        </div>
       </div>
-      <div class="field">
-        <label>簽退時間 <span class="req">*</span></label>
-        <select id="attCheckoutTime" style="width:100%;" onchange="autoCalcHours()">
-```
 
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">✓</div>
+          <div class="section-title">簽退</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field" style="background:var(--warm);border-radius:4px;padding:10px 14px;margin-bottom:16px;">
+            <span style="font-size:0.78rem;color:var(--text-mid);">簽到時間：</span>
+            <span class="time-badge" id="attCheckinTimeRef"></span>
+          </div>
+          <div class="field">
+            <label>簽退時間 <span class="req">*</span></label>
+            <select id="attCheckoutTime" style="width:100%;" onchange="autoCalcHours()">
 <option value="00:00">00:00</option>
 <option value="00:15">00:15</option>
 <option value="00:30">00:30</option>
@@ -1204,88 +1182,85 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
         </div>
       </div>
 
-```
-  <div class="success-msg" id="attSuccessMsg">
-    <div class="success-icon">✓</div>
-    <h3>簽退完成</h3>
-    <p id="attSuccessDetail">紀錄已成功儲存。</p>
-    <button type="button" onclick="attBackToMain()" style="margin-top:12px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">返回名單</button>
-  </div>
+      <div class="success-msg" id="attSuccessMsg">
+        <div class="success-icon">✓</div>
+        <h3>簽退完成</h3>
+        <p id="attSuccessDetail">紀錄已成功儲存。</p>
+        <button type="button" onclick="attBackToMain()" style="margin-top:12px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">返回名單</button>
+      </div>
 
-  <div class="site-footer-placeholder"></div>
-</div>
-```
+      <div class="site-footer-placeholder"></div>
+    </div>
 
   </div>
 </div>
+
 
 <!-- ══════ PAGE 5：簽到簽退查詢 ══════ -->
-
 <div class="page" id="attQueryPage">
   <div class="query-wrap">
 
-```
-<div class="section">
-  <div class="section-head">
-    <div class="section-num">🔍</div>
-    <div class="section-title">篩選條件</div>
-    <div class="section-line"></div>
-  </div>
-  <div class="filter-card">
-    <div class="filter-grid">
-      <div class="field">
-        <label for="aqDateFrom">日期（起）</label>
-        <input type="date" id="aqDateFrom">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">篩選條件</div>
+        <div class="section-line"></div>
       </div>
-      <div class="field">
-        <label for="aqDateTo">日期（迄）</label>
-        <input type="date" id="aqDateTo">
-      </div>
-      <div class="field" style="grid-column:1/-1;">
-        <label for="aqMember">義消姓名</label>
-        <select id="aqMember">
-          <option value="">— 全部成員 —</option>
-        </select>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="aqDateFrom">日期（起）</label>
+            <input type="date" id="aqDateFrom">
+          </div>
+          <div class="field">
+            <label for="aqDateTo">日期（迄）</label>
+            <input type="date" id="aqDateTo">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label for="aqMember">義消姓名</label>
+            <select id="aqMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-search" onclick="doAttQuery()">查　詢</button>
+          <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
+        </div>
       </div>
     </div>
-    <div class="filter-actions">
-      <button class="btn-search" onclick="doAttQuery()">查　詢</button>
-      <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
+
+    <div class="result-card" id="aqResultCard" style="display:none;">
+      <div class="result-head">
+        <h3>查詢結果</h3>
+        <button class="btn-csv" onclick="exportAttCSV()">匯出 CSV</button>
+
+      </div>
+      <div class="result-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th><th>姓名</th><th>職稱</th>
+              <th>簽到</th><th>簽退</th><th>協勤時數</th>
+              <th>出勤次數</th><th>服務人次</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="aqResultBody"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
-</div>
 
-<div class="result-card" id="aqResultCard" style="display:none;">
-  <div class="result-head">
-    <h3>查詢結果</h3>
-    <button class="btn-csv" onclick="exportAttCSV()">匯出 CSV</button>
+    <div id="aqInitMsg" class="query-empty">
+      <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
+    </div>
 
-  </div>
-  <div class="result-table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>日期</th><th>姓名</th><th>職稱</th>
-          <th>簽到</th><th>簽退</th><th>協勤時數</th>
-          <th>出勤次數</th><th>服務人次</th><th>操作</th>
-        </tr>
-      </thead>
-      <tbody id="aqResultBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<div id="aqInitMsg" class="query-empty">
-  <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
-</div>
-
-<div class="site-footer-placeholder"></div>
-```
-
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
 <!-- 編輯 Modal -->
+
+
 
 <div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
   <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
@@ -1832,15 +1807,10 @@ async function doQuery() {
     const fmtTime = v => {
       if (!v) return '';
       v = String(v);
-      // ISO 格式：Sheets 回傳 UTC，需加 8 小時轉台灣時間
-      const isoMatch = v.match(/T(\d{2}):(\d{2})/);
-      if (isoMatch) {
-        let h = parseInt(isoMatch[1]) + 8;
-        const m = isoMatch[2];
-        if (h >= 24) h -= 24;
-        return `${String(h).padStart(2,'0')}:${m}`;
-      }
-      // 一般 HH:MM 格式（已是本地時間，不需轉換）
+      // ISO 格式：取 T 後面的 HH:MM
+      const isoMatch = v.match(/T(\d{2}:\d{2})/);
+      if (isoMatch) return isoMatch[1];
+      // 一般 HH:MM 格式
       const hmMatch = v.match(/(\d{1,2}:\d{2})/);
       if (hmMatch) return hmMatch[1];
       return v;
@@ -2945,17 +2915,10 @@ function renderProfileMonth(month) {
     const recsHtml = r.records.map(rec => {
       const fmtT = v => {
         if (!v) return '';
-        v = String(v);
-        // ISO 格式：Sheets 回傳 UTC，加 8 小時轉台灣時間
-        const isoMatch = v.match(/T(\d{2}):(\d{2})/);
-        if (isoMatch) {
-          let h = parseInt(isoMatch[1]) + 8;
-          if (h >= 24) h -= 24;
-          return `${String(h).padStart(2,'0')}:${isoMatch[2]}`;
-        }
-        // 一般 HH:MM
-        const hmMatch = v.match(/(\d{1,2}:\d{2})/);
-        return hmMatch ? hmMatch[1] : '';
+        const m = String(v).match(/T(\d{2}:\d{2})/);
+        if (m) return m[1];
+        const h = String(v).match(/(\d{1,2}:\d{2})/);
+        return h ? h[1] : '';
       };
       const timeStr = rec.timeOut ? `${fmtT(rec.timeOut)}–${fmtT(rec.timeBack)}` : '';
       return `<div style="margin-top:4px;font-size:0.78rem;color:var(--text-mid);">
@@ -3028,170 +2991,166 @@ function exportCSV() {
 
 </script>
 
-<!-- ══════ PAGE：報表 ══════ -->
 
+<!-- ══════ PAGE：報表 ══════ -->
 <div class="page" id="reportPage">
   <div class="query-wrap">
 
-```
-<div class="section">
-  <div class="section-head">
-    <div class="section-num">📑</div>
-    <div class="section-title">選擇報表</div>
-    <div class="section-line"></div>
-  </div>
-
-  <div class="filter-card">
-
-    <!-- 報表1 -->
-    <div style="margin-bottom:20px;">
-      <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-        <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">1</span>
-        簽到簽退紀錄表
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📑</div>
+        <div class="section-title">選擇報表</div>
+        <div class="section-line"></div>
       </div>
 
-      <div class="filter-grid" style="padding-left:0;">
-        <div class="field" style="grid-column:1/-1;">
-          <label>分隊別</label>
-          <div style="position:relative;">
-            <select id="rpt1Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-              <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>民國年份</label>
-          <div style="position:relative;">
-            <select id="rpt1Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>月份</label>
-          <div style="position:relative;">
-            <select id="rpt1Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-      </div>
+      <div class="filter-card">
 
-      <div id="rpt1Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+        <!-- 報表1 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">1</span>
+            簽到簽退紀錄表
+          </div>
 
-      <div class="filter-actions">
-        <button class="btn-search" onclick="generateRpt1()" id="rpt1Btn">⬇ 產生並下載</button>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <div style="position:relative;">
+                <select id="rpt1Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>民國年份</label>
+              <div style="position:relative;">
+                <select id="rpt1Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <div style="position:relative;">
+                <select id="rpt1Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="rpt1Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+
+          <div class="filter-actions">
+            <button class="btn-search" onclick="generateRpt1()" id="rpt1Btn">⬇ 產生並下載</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
+
+        <!-- 報表2 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">2</span>
+            救護義消服勤表
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <div style="position:relative;">
+                <select id="rpt2Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field">
+              <label>民國年份</label>
+              <div style="position:relative;">
+                <select id="rpt2Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <div style="position:relative;">
+                <select id="rpt2Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div id="rpt2Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions">
+            <button class="btn-search" onclick="generateRpt2()" id="rpt2Btn">⬇ 產生並下載</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
+
+        <!-- 報表3：救護出勤紀錄表 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
+            救護出勤紀錄表
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <div style="position:relative;">
+                <select id="rpt3Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div class="filter-grid" style="padding-left:0;">
+            <div class="field">
+              <label>民國年份</label>
+              <div style="position:relative;">
+                <select id="rpt3Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <div style="position:relative;">
+                <select id="rpt3Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
+              </div>
+            </div>
+          </div>
+          <div id="rpt3Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions">
+            <button class="btn-search" onclick="generateRpt3()" id="rpt3Btn">⬇ 產生並下載</button>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
-
-    <!-- 報表2 -->
-    <div style="margin-bottom:20px;">
-      <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-        <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">2</span>
-        救護義消服勤表
-      </div>
-      <div class="filter-grid" style="padding-left:0;">
-        <div class="field" style="grid-column:1/-1;">
-          <label>分隊別</label>
-          <div style="position:relative;">
-            <select id="rpt2Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-              <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-      </div>
-      <div class="filter-grid" style="padding-left:0;">
-        <div class="field">
-          <label>民國年份</label>
-          <div style="position:relative;">
-            <select id="rpt2Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>月份</label>
-          <div style="position:relative;">
-            <select id="rpt2Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-      </div>
-      <div id="rpt2Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
-      <div class="filter-actions">
-        <button class="btn-search" onclick="generateRpt2()" id="rpt2Btn">⬇ 產生並下載</button>
-      </div>
-    </div>
-
-    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
-
-    <!-- 報表3：救護出勤紀錄表 -->
-    <div style="margin-bottom:20px;">
-      <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-        <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
-        救護出勤紀錄表
-      </div>
-      <div class="filter-grid" style="padding-left:0;">
-        <div class="field" style="grid-column:1/-1;">
-          <label>分隊別</label>
-          <div style="position:relative;">
-            <select id="rpt3Unit" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-              <option value="鳳凰救護大隊潭子分隊">鳳凰救護大隊潭子分隊</option>
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-      </div>
-      <div class="filter-grid" style="padding-left:0;">
-        <div class="field">
-          <label>民國年份</label>
-          <div style="position:relative;">
-            <select id="rpt3Year" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;"></select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>月份</label>
-          <div style="position:relative;">
-            <select id="rpt3Month" style="width:100%;padding:9px 32px 9px 12px;border:1px solid var(--border);border-radius:5px;font-size:0.88rem;font-family:inherit;color:var(--text);background:white;appearance:none;-webkit-appearance:none;cursor:pointer;">
-              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-            </select>
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-light);font-size:0.65rem;">▼</span>
-          </div>
-        </div>
-      </div>
-      <div id="rpt3Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
-      <div class="filter-actions">
-        <button class="btn-search" onclick="generateRpt3()" id="rpt3Btn">⬇ 產生並下載</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<div class="site-footer-placeholder"></div>
-```
-
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
 <!-- ══════ PAGE：月統計 ══════ -->
-
 <div class="page" id="statsPage">
   <div class="query-wrap">
     <div class="section">
@@ -3201,83 +3160,79 @@ function exportCSV() {
         <div class="section-line"></div>
       </div>
 
-```
-  <!-- 月份選擇 -->
-  <div class="filter-card" style="margin-bottom:16px;">
-    <div class="filter-grid">
-      <div class="field">
-        <label>年份</label>
-        <select id="statsYear" style="width:100%;" onchange="loadStats()"></select>
+      <!-- 月份選擇 -->
+      <div class="filter-card" style="margin-bottom:16px;">
+        <div class="filter-grid">
+          <div class="field">
+            <label>年份</label>
+            <select id="statsYear" style="width:100%;" onchange="loadStats()"></select>
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <select id="statsMonth" style="width:100%;" onchange="loadStats()">
+              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <div class="field">
-        <label>月份</label>
-        <select id="statsMonth" style="width:100%;" onchange="loadStats()">
-          <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-          <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-          <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-          <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-        </select>
+
+      <!-- 總覽數字 -->
+      <div class="stats-row" id="statsOverview" style="display:none;margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num" id="statsTotal">0</div><div class="stat-label">出勤總筆數</div></div>
+        <div class="stat-card"><div class="stat-num" id="statsMemCount">0</div><div class="stat-label">出勤人數</div></div>
+        <div class="stat-card"><div class="stat-num" id="statsTotalHours">0</div><div class="stat-label">協勤總時數</div></div>
+      </div>
+
+      <!-- 排行榜 -->
+      <div class="result-card" id="statsTableCard" style="display:none;">
+        <div class="result-head">
+          <h3 id="statsTableTitle">出勤排行榜</h3>
+        </div>
+        <div class="result-table-wrap">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>姓名</th>
+                <th>出勤次數</th>
+                <th>協勤時數</th>
+                <th>服務人次</th>
+                <th>出勤佔比</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="statsEmptyMsg" class="query-empty">
+        <span class="empty-icon">📈</span>載入中...
       </div>
     </div>
-  </div>
 
-  <!-- 總覽數字 -->
-  <div class="stats-row" id="statsOverview" style="display:none;margin-bottom:16px;">
-    <div class="stat-card"><div class="stat-num" id="statsTotal">0</div><div class="stat-label">出勤總筆數</div></div>
-    <div class="stat-card"><div class="stat-num" id="statsMemCount">0</div><div class="stat-label">出勤人數</div></div>
-    <div class="stat-card"><div class="stat-num" id="statsTotalHours">0</div><div class="stat-label">協勤總時數</div></div>
-  </div>
-
-  <!-- 排行榜 -->
-  <div class="result-card" id="statsTableCard" style="display:none;">
-    <div class="result-head">
-      <h3 id="statsTableTitle">出勤排行榜</h3>
+    <!-- 地圖區塊 -->
+    <div class="section" id="statsMapSection" style="display:none;">
+      <div class="section-head">
+        <div class="section-num">🗺</div>
+        <div class="section-title">出勤地點熱度</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="result-card">
+        <div style="padding:16px;">
+          <div id="districtMap"></div>
+          <div class="map-legend" id="mapLegend"></div>
+        </div>
+      </div>
     </div>
-    <div class="result-table-wrap">
-      <table class="stats-table">
-        <thead>
-          <tr>
-            <th>排名</th>
-            <th>姓名</th>
-            <th>出勤次數</th>
-            <th>協勤時數</th>
-            <th>服務人次</th>
-            <th>出勤佔比</th>
-          </tr>
-        </thead>
-        <tbody id="statsTableBody"></tbody>
-      </table>
-    </div>
-  </div>
 
-  <div id="statsEmptyMsg" class="query-empty">
-    <span class="empty-icon">📈</span>載入中...
-  </div>
-</div>
-
-<!-- 地圖區塊 -->
-<div class="section" id="statsMapSection" style="display:none;">
-  <div class="section-head">
-    <div class="section-num">🗺</div>
-    <div class="section-title">出勤地點熱度</div>
-    <div class="section-line"></div>
-  </div>
-  <div class="result-card">
-    <div style="padding:16px;">
-      <div id="districtMap"></div>
-      <div class="map-legend" id="mapLegend"></div>
-    </div>
-  </div>
-</div>
-
-<div class="site-footer-placeholder"></div>
-```
-
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
 <!-- ══════ PAGE：個人頁面 ══════ -->
-
 <div class="page" id="profilePage">
   <div class="query-wrap">
     <div class="section">
@@ -3296,51 +3251,47 @@ function exportCSV() {
       </div>
     </div>
 
-```
-<div id="profileContent" style="display:none;">
-  <!-- 個人資訊 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num" id="profileAvatar" style="font-size:0.9rem;background:var(--red);">？</div>
-      <div class="section-title" id="profileName">—</div>
-      <div class="section-line"></div>
-      <span id="profileTitle" style="font-size:0.75rem;color:var(--text-light);"></span>
+    <div id="profileContent" style="display:none;">
+      <!-- 個人資訊 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" id="profileAvatar" style="font-size:0.9rem;background:var(--red);">？</div>
+          <div class="section-title" id="profileName">—</div>
+          <div class="section-line"></div>
+          <span id="profileTitle" style="font-size:0.75rem;color:var(--text-light);"></span>
+        </div>
+      </div>
+
+      <!-- 月份切換 -->
+      <div class="month-tab-row" id="profileMonthTabs"></div>
+
+      <!-- 統計數字 -->
+      <div class="profile-stats-grid">
+        <div class="profile-stat"><div class="num" id="profileCount">0</div><div class="lbl">出勤次數</div></div>
+        <div class="profile-stat"><div class="num" id="profileHours">0</div><div class="lbl">協勤時數</div></div>
+        <div class="profile-stat"><div class="num" id="profileService">0</div><div class="lbl">服務人次</div></div>
+      </div>
+
+      <!-- 出勤時間軸 -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.75rem;">紀錄</div>
+          <div class="section-title">出勤紀錄</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="timeline" id="profileTimeline"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- 月份切換 -->
-  <div class="month-tab-row" id="profileMonthTabs"></div>
-
-  <!-- 統計數字 -->
-  <div class="profile-stats-grid">
-    <div class="profile-stat"><div class="num" id="profileCount">0</div><div class="lbl">出勤次數</div></div>
-    <div class="profile-stat"><div class="num" id="profileHours">0</div><div class="lbl">協勤時數</div></div>
-    <div class="profile-stat"><div class="num" id="profileService">0</div><div class="lbl">服務人次</div></div>
-  </div>
-
-  <!-- 出勤時間軸 -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-num" style="font-size:0.75rem;">紀錄</div>
-      <div class="section-title">出勤紀錄</div>
-      <div class="section-line"></div>
+    <div id="profileEmptyMsg" class="query-empty">
+      <span class="empty-icon">👤</span>請選擇義消成員
     </div>
-    <div class="timeline" id="profileTimeline"></div>
-  </div>
-</div>
 
-<div id="profileEmptyMsg" class="query-empty">
-  <span class="empty-icon">👤</span>請選擇義消成員
-</div>
-
-<div class="site-footer-placeholder"></div>
-```
-
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
 <!-- Signature Modal -->
-
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
     <img id="sigModalImg" style="max-width:80vw;max-height:80vh;display:block;">
@@ -3360,6 +3311,5 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register(swUrl).catch(() => {});
 }
 </script>
-
 </body>
 </html>
