@@ -1806,11 +1806,15 @@ async function doQuery() {
     // 時間格式處理：Sheets 回傳 1899-12-30THH:MM:SS.000Z 格式
     const fmtTime = v => {
       if (!v) return '';
-      v = String(v);
-      // ISO 格式：取 T 後面的 HH:MM
-      const isoMatch = v.match(/T(\d{2}:\d{2})/);
-      if (isoMatch) return isoMatch[1];
-      // 一般 HH:MM 格式
+            // ISO 格式：Sheets 回傳 UTC，需加 8 小時轉台灣時間
+      const isoMatch = v.match(/T(\d{2}):(\d{2})/);
+      if (isoMatch) {
+        let h = parseInt(isoMatch[1]) + 8;
+        const m = isoMatch[2];
+        if (h >= 24) h -= 24;
+        return `${String(h).padStart(2,'0')}:${m}`;
+      }
+      // 一般 HH:MM 格式（已是本地時間，不需轉換）
       const hmMatch = v.match(/(\d{1,2}:\d{2})/);
       if (hmMatch) return hmMatch[1];
       return v;
@@ -2915,10 +2919,17 @@ function renderProfileMonth(month) {
     const recsHtml = r.records.map(rec => {
       const fmtT = v => {
         if (!v) return '';
-        const m = String(v).match(/T(\d{2}:\d{2})/);
-        if (m) return m[1];
-        const h = String(v).match(/(\d{1,2}:\d{2})/);
-        return h ? h[1] : '';
+        v = String(v);
+        // ISO 格式：Sheets 回傳 UTC，加 8 小時轉台灣時間
+        const isoMatch = v.match(/T(\d{2}):(\d{2})/);
+        if (isoMatch) {
+          let h = parseInt(isoMatch[1]) + 8;
+          if (h >= 24) h -= 24;
+          return `${String(h).padStart(2,'0')}:${isoMatch[2]}`;
+        }
+        // 一般 HH:MM
+        const hmMatch = v.match(/(\d{1,2}:\d{2})/);
+        return hmMatch ? hmMatch[1] : '';
       };
       const timeStr = rec.timeOut ? `${fmtT(rec.timeOut)}–${fmtT(rec.timeBack)}` : '';
       return `<div style="margin-top:4px;font-size:0.78rem;color:var(--text-mid);">
