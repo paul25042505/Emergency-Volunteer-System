@@ -1370,11 +1370,11 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
     <!-- ────────────────────────────── -->
-    <!-- v1.3.03 -->
+    <!-- v1.3.04 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.3.03
+        <h3 style="color:var(--red-dark);">v1.3.04
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
@@ -1393,6 +1393,27 @@ tr:hover td { background: #fdfcfb; }
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>系統部署至 GitHub Pages，提供固定網址存取</li>
           <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.3.03 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.3.03
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　登入功能修復</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>修正 JWT URL-safe base64 解析錯誤導致無法登入</li>
+          <li>修正中文名字顯示亂碼，改用 decodeURIComponent 處理 UTF-8</li>
+          <li>修正登入紀錄時間錯誤（+16小時）</li>
+          <li>Header 登入者名字顯示寬度從 80px 擴大至 140px</li>
         </ul>
       </div>
     </div>
@@ -1873,7 +1894,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.3.03　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.3.04　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -3009,57 +3030,158 @@ const GEO_CACHE_KEY = 'geocache_v1';
 function geoLoadCache() { try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || '{}'); } catch(e) { return {}; } }
 function geoSaveCache(cache) { try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache)); } catch(e) {} }
 
+// ── 地理編碼：優先 TGOS（台灣內政部），備援 Nominatim ──
 async function geocodeAddress(address, cache) {
   const key = address.trim();
   if (cache[key] !== undefined) return cache[key];
   if (!key) return null;
+
+  // 先嘗試 TGOS
+  const coord = await geocodeTGOS(key) || await geocodeNominatim(key);
+  cache[key] = coord;
+  geoSaveCache(cache);
+  return coord;
+}
+
+// TGOS 內政部地址解析（台灣地址最準確）
+async function geocodeTGOS(address) {
   try {
-    await new Promise(r => setTimeout(r, 1100));
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(key + ' 台灣')}&format=json&limit=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'zh-TW' } });
+    // TGOS 地址定位服務
+    const url = 'https://api.nlsc.gov.tw/other/TownVillagePointQuery/'
+      + encodeURIComponent(address);
+    // 改用全文地址查詢 API
+    const url2 = `https://geocode.nlsc.gov.tw/api/address?address=${encodeURIComponent(address)}&format=json`;
+    const res = await fetch(url2, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('TGOS HTTP ' + res.status);
     const data = await res.json();
-    if (data.length > 0) {
-      const coord = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-      cache[key] = coord; geoSaveCache(cache); return coord;
+    // TGOS 回傳格式：{ x: 經度, y: 緯度 } 或 results 陣列
+    if (data && data.results && data.results.length > 0) {
+      const r = data.results[0];
+      const lat = parseFloat(r.y || r.lat);
+      const lng = parseFloat(r.x || r.lng);
+      if (!isNaN(lat) && !isNaN(lng) && lat > 20 && lat < 26) {
+        return [lat, lng];
+      }
+    }
+    if (data && data.y && data.x) {
+      const lat = parseFloat(data.y);
+      const lng = parseFloat(data.x);
+      if (!isNaN(lat) && !isNaN(lng) && lat > 20 && lat < 26) {
+        return [lat, lng];
+      }
     }
   } catch(e) {}
-  cache[key] = null; geoSaveCache(cache); return null;
+  return null;
+}
+
+// Nominatim 備援（TGOS 失敗時使用）
+async function geocodeNominatim(address) {
+  try {
+    await new Promise(r => setTimeout(r, 300));
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=tw`;
+    const res = await fetch(url, {
+      headers: { 'Accept-Language': 'zh-TW' },
+      signal: AbortSignal.timeout(8000)
+    });
+    const data = await res.json();
+    if (data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+    }
+  } catch(e) {}
+  return null;
 }
 
 async function renderDistrictMap(records) {
   if (statsMap) { statsMap.remove(); statsMap = null; }
-  statsMap = L.map('districtMap').setView([24.2, 120.68], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(statsMap);
+  statsMap = L.map('districtMap').setView([24.21, 120.70], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(statsMap);
+
   const legend = document.getElementById('mapLegend');
   legend.innerHTML = '<span style="color:var(--text-light);">⏳ 解析地址中...</span>';
+
   const cache = geoLoadCache();
   const addrMap = {};
   records.forEach(r => {
     const district = String(r['行政區'] || '').replace(/^台中/,'臺中');
-    const addr = String(r['詳細地址'] || r['address'] || '').trim();
-    const full = addr ? `${district}${addr}` : district;
+    const addr     = String(r['詳細地址'] || r['address'] || '').trim();
+    const full     = addr ? `${district}${addr}` : district;
     if (full) addrMap[full] = (addrMap[full] || 0) + 1;
   });
-  const entries = Object.entries(addrMap);
-  const maxCount = Math.max(...Object.values(addrMap), 1);
-  const markers = [];
-  let resolved = 0;
+
+  const entries   = Object.entries(addrMap);
+  const maxCount  = Math.max(...Object.values(addrMap), 1);
+  const markers   = [];
+  let resolved    = 0;
+  let failCount   = 0;
+
   for (const [addr, count] of entries) {
-    legend.innerHTML = `<span style="color:var(--text-light);">⏳ 解析地址 ${++resolved}/${entries.length}...</span>`;
+    legend.innerHTML = `<span style="color:var(--text-light);">⏳ 解析地址 ${++resolved}/${entries.length}（失敗 ${failCount} 筆）</span>`;
     const coord = await geocodeAddress(addr, cache);
-    if (!coord) continue;
-    const opacity = 0.35 + (count / maxCount) * 0.55;
-    L.circle(coord, { radius: (12 + (count / maxCount) * 28) * 60, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: opacity, weight: 2 })
-      .addTo(statsMap).bindPopup(`<b>${addr}</b><br>出勤 ${count} 次`);
-    markers.push({ addr, count, coord });
+    if (!coord) { failCount++; continue; }
+
+    // 依出勤次數決定圓圈大小（精確小圓，半徑 30~80 公尺）
+    const radius  = 30 + (count / maxCount) * 50;
+    const opacity = 0.5 + (count / maxCount) * 0.4;
+    const color   = count >= 3 ? '#922b21' : '#c0392b';
+
+    // 精確圓圈標記
+    const circle = L.circle(coord, {
+      radius,
+      color,
+      fillColor: '#e74c3c',
+      fillOpacity: opacity,
+      weight: count >= 3 ? 3 : 1.5,
+    }).addTo(statsMap);
+
+    // popup 顯示完整地址與次數
+    const shortAddr = addr.replace('臺中市','').replace('台中市','');
+    circle.bindPopup(
+      `<div style="font-family:'Noto Sans TC',sans-serif;font-size:0.85rem;">
+        <b style="color:#c0392b;">${shortAddr}</b><br>
+        出勤 <b>${count}</b> 次
+      </div>`,
+      { maxWidth: 200 }
+    );
+
+    // 次數 ≥ 2 加上數字標籤
+    if (count >= 2) {
+      L.marker(coord, {
+        icon: L.divIcon({
+          html: `<div style="background:#c0392b;color:white;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:0.7rem;font-weight:700;font-family:sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.3);">${count}</div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+          className: ''
+        })
+      }).addTo(statsMap);
+    }
+
+    markers.push({ addr: shortAddr, count, coord });
   }
+
+  // 自動縮放到所有標記的範圍
   if (markers.length > 0) {
-    legend.innerHTML = markers.sort((a,b) => b.count - a.count).slice(0, 8)
-      .map(m => `<div class="map-legend-item"><div class="map-legend-dot" style="opacity:${0.35+(m.count/maxCount)*0.55};"></div>${m.addr.replace('臺中市','').replace('台中市','')} ${m.count}次</div>`)
+    const bounds = markers.map(m => m.coord);
+    statsMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+
+    legend.innerHTML = markers
+      .sort((a,b) => b.count - a.count)
+      .slice(0, 8)
+      .map(m => `
+        <div class="map-legend-item">
+          <div class="map-legend-dot" style="opacity:${0.5+(m.count/maxCount)*0.4};width:${8+(m.count/maxCount)*6}px;height:${8+(m.count/maxCount)*6}px;"></div>
+          ${m.addr} <span style="font-weight:700;color:var(--red);">${m.count}</span> 次
+        </div>`)
       .join('');
+
+    if (failCount > 0) {
+      legend.innerHTML += `<div style="color:var(--text-light);font-size:0.72rem;margin-top:6px;">※ ${failCount} 筆地址無法解析</div>`;
+    }
   } else {
-    legend.innerHTML = '<span style="color:var(--text-light);">查無可解析的地址</span>';
+    legend.innerHTML = `<span style="color:var(--text-light);">查無可解析的地址${failCount > 0 ? `（${failCount} 筆解析失敗）` : ''}</span>`;
   }
+
   setTimeout(() => statsMap.invalidateSize(), 100);
 }
 
@@ -3068,20 +3190,54 @@ async function renderQueryMap(records) {
   if (!mapDiv || records.length === 0) { if(mapDiv) mapDiv.style.display='none'; return; }
   mapDiv.style.display = 'block';
   if (window._queryMap) { window._queryMap.remove(); window._queryMap = null; }
-  window._queryMap = L.map('queryMapInner').setView([24.2, 120.68], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(window._queryMap);
-  const cache = geoLoadCache();
+  window._queryMap = L.map('queryMapInner').setView([24.21, 120.70], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(window._queryMap);
+
+  const cache   = geoLoadCache();
   const addrMap = {};
   records.forEach(r => {
     const full = `${r.district || ''}${r.address || ''}`.trim();
     if (full) addrMap[full] = (addrMap[full] || 0) + 1;
   });
-  const maxC = Math.max(...Object.values(addrMap), 1);
+
+  const maxC    = Math.max(...Object.values(addrMap), 1);
+  const markers = [];
+
   for (const [addr, count] of Object.entries(addrMap)) {
     const coord = await geocodeAddress(addr, cache);
     if (!coord) continue;
-    L.circle(coord, { radius: (12 + (count/maxC)*28) * 60, color: '#c0392b', fillColor: '#e74c3c', fillOpacity: 0.35 + (count/maxC)*0.55, weight: 2 })
-      .addTo(window._queryMap).bindPopup(`<b>${addr}</b><br>出勤 ${count} 次`);
+
+    const radius  = 30 + (count / maxC) * 50;
+    const opacity = 0.5 + (count / maxC) * 0.4;
+    const shortAddr = addr.replace('臺中市','').replace('台中市','');
+
+    L.circle(coord, {
+      radius,
+      color: count >= 3 ? '#922b21' : '#c0392b',
+      fillColor: '#e74c3c',
+      fillOpacity: opacity,
+      weight: count >= 3 ? 3 : 1.5,
+    }).addTo(window._queryMap).bindPopup(
+      `<div style="font-family:'Noto Sans TC',sans-serif;font-size:0.85rem;">
+        <b style="color:#c0392b;">${shortAddr}</b><br>出勤 <b>${count}</b> 次
+      </div>`,
+      { maxWidth: 200 }
+    );
+
+    if (count >= 2) {
+      L.marker(coord, {
+        icon: L.divIcon({
+          html: `<div style="background:#c0392b;color:white;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:0.7rem;font-weight:700;font-family:sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.3);">${count}</div>`,
+          iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+        })
+      }).addTo(window._queryMap);
+    }
+
+    markers.push(coord);
+  }
+
+  if (markers.length > 0) {
+    window._queryMap.fitBounds(markers, { padding: [30, 30], maxZoom: 16 });
   }
   setTimeout(() => window._queryMap.invalidateSize(), 100);
 }
