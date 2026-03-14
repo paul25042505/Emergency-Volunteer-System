@@ -477,6 +477,9 @@ tr:hover td { background: #fdfcfb; }
           <div class="stat-label">今日簽到人數</div>
         </div>
       </div>
+      <div style="margin-top:8px;text-align:right;">
+        <button onclick="debugDashDate()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">🔧 日期格式診斷</button>
+      </div>
     </div>
 
     <div class="section">
@@ -1297,17 +1300,60 @@ const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZI
 // ════════════════════════════════════════
 function normDate(v) {
   if (!v) return '';
-  const s = String(v);
-  // 已是 yyyy-MM-dd
-  if (s.match(/^\d{4}-\d{2}-\d{2}/)) return s.substring(0, 10);
-  // ISO 帶 T
-  if (s.includes('T')) return s.substring(0, 10);
-  // 其他嘗試 parse
+  const s = String(v).trim();
+
+  // 1. 已是 yyyy-MM-dd（最常見）
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  // 2. ISO 帶 T（含時間，取日期部分即可，不需要時區轉換）
+  if (s.includes('T')) {
+    const dt = s.substring(0, 10);
+    if (dt.match(/^\d{4}-\d{2}-\d{2}$/)) return dt;
+  }
+
+  // 3. Google Sheets 序列化格式：Date(timestamp) 或 new Date(timestamp)
+  const tsMatch = s.match(/Date\((\d+)\)/);
+  if (tsMatch) {
+    const d = new Date(parseInt(tsMatch[1]));
+    // 轉為台灣時間（UTC+8）
+    const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+    return tw.toISOString().substring(0, 10);
+  }
+
+  // 4. 斜線格式：yyyy/M/d 或 yyyy/MM/dd
+  const slashMatch = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if (slashMatch) {
+    return `${slashMatch[1]}-${String(slashMatch[2]).padStart(2,'0')}-${String(slashMatch[3]).padStart(2,'0')}`;
+  }
+
+  // 5. 中文格式：yyyy年M月d日
+  const cnMatch = s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (cnMatch) {
+    return `${cnMatch[1]}-${String(cnMatch[2]).padStart(2,'0')}-${String(cnMatch[3]).padStart(2,'0')}`;
+  }
+
+  // 6. 純數字（Excel 序列日期，1900-01-00 起算）
+  if (/^\d+$/.test(s)) {
+    const serial = parseInt(s);
+    if (serial > 40000 && serial < 60000) { // 合理範圍 ~2009~2064
+      const d = new Date((serial - 25569) * 86400 * 1000);
+      const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+      return tw.toISOString().substring(0, 10);
+    }
+  }
+
+  // 7. 其他嘗試 parse（最後手段）
   try {
     const d = new Date(s);
-    if (!isNaN(d)) return d.toLocaleDateString('sv').substring(0, 10);
+    if (!isNaN(d)) {
+      // 強制以台灣時區解讀，避免時差造成偏一天
+      const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+      return tw.toISOString().substring(0, 10);
+    }
   } catch(e) {}
-  return s.substring(0, 10);
+
+  return '';
 }
 
 // 共用：時間格式化（ISO → HH:MM，含+8h修正）
@@ -1829,6 +1875,40 @@ async function debugData() {
     });
     alert(msg);
   } catch(e) { alert('錯誤：' + e.message); }
+}
+
+// 首頁日期格式診斷（幫助確認 Sheets 回傳的日期欄位原始值）
+async function debugDashDate() {
+  const today = new Date().toLocaleDateString('sv');
+  try {
+    const res = await fetch(BASE_URL);
+    const raw = await res.json();
+    if (!raw.length) { alert('出勤紀錄表沒有資料'); return; }
+    
+    // 顯示前3筆的日期欄位原始值
+    let msg = `今天日期：${today}\n\n【出勤紀錄表前3筆的日期原始值】\n`;
+    raw.slice(0, 3).forEach((r, i) => {
+      const rawVal = r['日期'] || r['date'] || '（找不到日期欄位）';
+      const parsed = normDate(rawVal);
+      const match = parsed === today ? '✅ 符合今天' : `❌ 解析後=${parsed}`;
+      msg += `第${i+1}筆：原始="${rawVal}" → ${match}\n`;
+    });
+    
+    // 統計今日符合筆數
+    const todayCount = raw.filter(r => normDate(r['日期']) === today).length;
+    msg += `\n今日符合筆數：${todayCount} 筆`;
+    
+    // 若全部都不符合，顯示所有欄位名稱
+    if (todayCount === 0) {
+      msg += `\n\n【第1筆所有欄位名稱，請確認是否有「日期」欄】\n`;
+      Object.keys(raw[0]).forEach((k, i) => {
+        if (!String(raw[0][k] || '').startsWith('data:image')) {
+          msg += `  "${k}" = ${String(raw[0][k] || '').substring(0,30)}\n`;
+        }
+      });
+    }
+    alert(msg);
+  } catch(e) { alert('診斷失敗：' + e.message); }
 }
 
 function exportCSV() {
