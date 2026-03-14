@@ -1581,7 +1581,9 @@ function verifyWithBackend(idToken) {
     // idToken 太長無法放 URL，改傳 email（從前端解析）
     // Apps Script 端用 email 直接查白名單
     try {
-      const payload = JSON.parse(atob(idToken.split('.')[1]));
+      const raw2 = idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const b64_2 = raw2.padEnd(Math.ceil(raw2.length / 4) * 4, '=');
+      const payload = JSON.parse(atob(b64_2));
       const email   = (payload.email || '').trim();
       const name    = payload.name   || '';
 
@@ -1640,7 +1642,12 @@ async function handleGoogleLogin(response) {
 
   try {
     // 解析 JWT payload（取 email、name）
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    // JWT 的 base64 是 URL-safe 格式，需先轉為標準 base64 才能用 atob()
+    const b64 = response.credential.split('.')[1]
+      .replace(/-/g, '+')   // URL-safe '-' → 標準 '+'
+      .replace(/_/g, '/')   // URL-safe '_' → 標準 '/'
+      .padEnd(Math.ceil(response.credential.split('.')[1].length / 4) * 4, '='); // 補齊 padding
+    const payload = JSON.parse(atob(b64));
     const email   = (payload.email || '').trim();
     const name    = payload.name   || '';
 
