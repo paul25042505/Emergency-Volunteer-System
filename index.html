@@ -961,7 +961,9 @@ tr:hover td { background: #fdfcfb; }
             <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;color:var(--text);" readonly>
           </div>
           <div class="field">
-            <label>出勤次數</label>
+            <label>出勤次數
+              <button type="button" onclick="diagTodayCount()" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:3px;padding:1px 8px;font-size:0.68rem;color:var(--text-light);cursor:pointer;min-height:unset;font-family:'Noto Sans TC',sans-serif;">🔧 診斷</button>
+            </label>
             <input type="number" id="attCount" min="0" step="1" style="width:100%;color:var(--text-light);" readonly>
           </div>
           <div class="field">
@@ -1302,15 +1304,20 @@ function normDate(v) {
   if (!v) return '';
   const s = String(v).trim();
 
-  // 1. 已是 yyyy-MM-dd（最常見）
-  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-
-  // 2. ISO 帶 T（含時間，取日期部分即可，不需要時區轉換）
+  // 1. ISO 帶 T（Sheets 存 UTC，需加 8 小時轉台灣時間再取日期）
+  //    例：2026-03-14T16:00:00.000Z → UTC+8 → 2026-03-15 00:00 → "2026-03-15"
+  //    例：2026-03-14T00:00:00.000Z → UTC+8 → 2026-03-14 08:00 → "2026-03-14"
   if (s.includes('T')) {
-    const dt = s.substring(0, 10);
-    if (dt.match(/^\d{4}-\d{2}-\d{2}$/)) return dt;
+    const d = new Date(s);
+    if (!isNaN(d)) {
+      const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+      return tw.toISOString().substring(0, 10);
+    }
   }
+
+  // 2. 已是 yyyy-MM-dd（純日期字串，無時區問題，直接取）
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
 
   // 3. Google Sheets 序列化格式：Date(timestamp) 或 new Date(timestamp)
   const tsMatch = s.match(/Date\((\d+)\)/);
@@ -2025,21 +2032,72 @@ function openCheckout(memberName) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 修復5：獨立函式查今日出勤次數
+// 查今日出勤次數（含診斷 log）
 async function loadTodayCount(memberName) {
   const date = document.getElementById('attDate').value;
+  document.getElementById('attCount').value = '查詢中...';
   try {
     const res = await fetch(BASE_URL);
     const records = await res.json();
+
+    // 診斷：印出前3筆日期原始值與解析結果
+    console.log('[loadTodayCount] 查詢日期:', date, '，姓名:', memberName);
+    records.slice(0, 5).forEach((r, i) => {
+      const rawDate = r['日期'] || '';
+      const parsed  = normDate(rawDate);
+      const name    = r['姓名'] || r['memberName'] || '';
+      console.log(`  [${i}] 日期原始="${rawDate}" → 解析="${parsed}" 姓名="${name}"`);
+    });
+
     const count = records.filter(r => {
-      // 修復5：同時檢查中英文欄位名稱
+      const name = r['姓名'] || r['memberName'] || '';
+      const d    = normDate(r['日期']);
+      return d === date && name === memberName;
+    }).length;
+
+    console.log('[loadTodayCount] 符合筆數:', count);
+    document.getElementById('attCount').value = count;
+  } catch(e) {
+    console.error('[loadTodayCount] 錯誤:', e);
+    document.getElementById('attCount').value = 0;
+  }
+}
+
+// 出勤次數診斷（點「🔧 診斷」按鈕觸發）
+async function diagTodayCount() {
+  const date = document.getElementById('attDate').value;
+  const memberName = attCheckoutTarget || '（未選擇）';
+  let msg = `查詢日期：${date}
+姓名：${memberName}
+
+`;
+  try {
+    const res = await fetch(BASE_URL);
+    const records = await res.json();
+    msg += `Sheets 共 ${records.length} 筆資料
+
+`;
+    msg += `【前5筆日期原始值 → 解析後】
+`;
+    records.slice(0, 5).forEach((r, i) => {
+      const raw    = String(r['日期'] || '');
+      const parsed = normDate(raw);
+      const name   = r['姓名'] || r['memberName'] || '';
+      const hit    = parsed === date && name === memberName ? ' ✅' : '';
+      msg += `${i+1}. "${raw}" → ${parsed}　姓名:"${name}"${hit}
+`;
+    });
+
+    const count = records.filter(r => {
       const name = r['姓名'] || r['memberName'] || '';
       return normDate(r['日期']) === date && name === memberName;
     }).length;
-    document.getElementById('attCount').value = count > 0 ? count : 0;
+    msg += `
+符合今天 + 此姓名：${count} 筆`;
   } catch(e) {
-    document.getElementById('attCount').value = 0;
+    msg += '錯誤：' + e.message;
   }
+  alert(msg);
 }
 
 function attBackToMain() {
