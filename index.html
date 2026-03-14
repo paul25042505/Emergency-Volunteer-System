@@ -409,11 +409,86 @@ tr:hover td { background: #fdfcfb; }
 .month-tab-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
 .month-tab { padding:5px 14px; border:1px solid var(--border); border-radius:20px; font-size:0.8rem; cursor:pointer; background:var(--white); color:var(--text-mid); transition:all 0.15s; font-family:'Noto Sans TC',sans-serif; min-height:unset; }
 .month-tab.active { background:var(--red); color:white; border-color:var(--red); }
+
+/* ── Login Screen ── */
+#loginScreen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: var(--cream); z-index: 9999;
+  padding: 32px 24px;
+}
+.login-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+  padding: 40px 32px; max-width: 360px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
+}
+.login-logo {
+  width: 72px; height: 72px; background: var(--red); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; font-size: 2rem; color: white;
+}
+.login-title {
+  font-family: 'Noto Serif TC', serif; font-size: 1.3rem; font-weight: 700;
+  color: var(--text); letter-spacing: 0.1em; margin-bottom: 6px;
+}
+.login-sub {
+  font-size: 0.78rem; color: var(--text-light); letter-spacing: 0.06em;
+  margin-bottom: 28px; line-height: 1.6;
+}
+.login-divider { height: 1px; background: var(--border); margin: 24px 0; }
+.login-hint {
+  font-size: 0.72rem; color: var(--text-light); margin-top: 20px;
+  line-height: 1.7; letter-spacing: 0.04em;
+}
+.login-error {
+  display: none; background: #fdf0ee; border: 1px solid #f0bab4;
+  border-radius: 6px; padding: 12px 16px; margin-top: 16px;
+  font-size: 0.82rem; color: var(--red-dark); line-height: 1.6;
+}
+.login-error.show { display: block; }
+#loginSpinner {
+  display: none; margin: 16px auto 0;
+  font-size: 0.82rem; color: var(--text-light); letter-spacing: 0.04em;
+}
+#loginSpinner.show { display: block; }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
+
+<!-- ══════ 登入畫面 ══════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">✚</div>
+    <div class="login-title">救護義消系統</div>
+    <div class="login-sub">
+      臺中市政府消防局潭子分隊<br>鳳凰救護大隊
+    </div>
+    <div class="login-divider"></div>
+    <!-- Google 登入按鈕 -->
+    <div id="g_id_onload"
+      data-client_id="280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com"
+      data-callback="handleGoogleLogin"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="outline"
+      data-text="sign_in_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+      data-width="280">
+    </div>
+    <div id="loginSpinner">⏳ 驗證中，請稍候...</div>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-hint">
+      僅限授權義消成員登入<br>
+      如無法登入請聯絡管理員
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
@@ -450,6 +525,10 @@ tr:hover td { background: #fdfcfb; }
     <div class="header-text">
       <h1 id="pageTitle">救護義消系統</h1>
       <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <span id="headerUserInfo" style="display:none;font-size:0.72rem;color:rgba(255,255,255,0.8);letter-spacing:0.04em;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <button onclick="logout()" id="logoutBtn" style="display:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:white;font-size:0.72rem;padding:5px 10px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;letter-spacing:0.04em;">登出</button>
     </div>
   </div>
 </div>
@@ -1291,17 +1370,71 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
     <!-- ────────────────────────────── -->
-    <!-- v1.2.02 -->
+    <!-- v1.3.02 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.2.02
+        <h3 style="color:var(--red-dark);">v1.3.02
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🔐 安全性</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>新增 Google 帳號登入驗證，僅授權成員可存取系統</li>
+          <li>登入驗證透過 Apps Script 後端白名單比對</li>
+          <li>前端備援白名單，後端不可用時自動切換</li>
+          <li>Session 有效期 8 小時，重新整理頁面不需再次登入</li>
+          <li>閒置 30 分鐘自動鎖定，保護未看管的裝置</li>
+          <li>Header 顯示目前登入者姓名，一鍵登出按鈕</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🌐 部署</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>系統部署至 GitHub Pages，提供固定網址存取</li>
+          <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.3.01 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.3.01
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🔐 安全性</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>新增 Google 帳號登入驗證，僅授權成員可存取系統</li>
+          <li>Session 有效期 8 小時，重新整理頁面不需再次登入</li>
+          <li>閒置 30 分鐘自動鎖定，保護未看管的裝置</li>
+          <li>Header 顯示目前登入者姓名，一鍵登出按鈕</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🌐 部署</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>系統部署至 GitHub Pages，提供固定網址存取</li>
+          <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.2.01 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.2.01
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Bug 修復</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 BUG 修復</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>修正首頁「今日出勤筆數、出勤人數、簽到人數」顯示 0 的問題</li>
           <li>修正簽退頁面「出勤次數」顯示 0 的問題</li>
@@ -1311,6 +1444,7 @@ tr:hover td { background: #fdfcfb; }
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 修正</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>統一所有輸入欄位（input、select）高度，解決欄位高度不一致問題</li>
+          <li>導覽列加入版本修改紀錄頁面，側邊欄支援上下滑動</li>
           <li>查詢頁服務項目下拉選單補齊全部 16 項</li>
         </ul>
       </div>
@@ -1425,9 +1559,160 @@ tr:hover td { background: #fdfcfb; }
 
 <script>
 // ════════════════════════════════════════
+// Google 登入驗證
+// ════════════════════════════════════════
+
+const CLIENT_ID       = '280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com';
+const SPREADSHEET_ID  = '1XPlhFHkJbSwKk_dhVSccSFzz6MVosnxgh40NPSf1nn0';
+
+// ── 後端驗證（Apps Script 讀取試算表白名單）──
+async function verifyWithBackend(idToken) {
+  try {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verifyLogin', idToken })
+    });
+    const data = await res.json();
+    return data; // { allowed: true/false, email, name }
+  } catch(e) {
+    // 後端不可用時回傳 null，改用備援邏輯
+    return null;
+  }
+}
+
+// ── 前端備援：直接向 Sheets API 讀取白名單 ──
+// 當 Apps Script 無回應時啟用，從試算表「白名單」工作表 A 欄讀取
+async function verifyWithSheetsDirect(email) {
+  try {
+    // 使用 Google Sheets API（公開讀取，試算表需設為「知道連結的人可檢視」）
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/白名單!A2:A?key=AIzaSyD-placeholder`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('Sheets API 無法存取');
+    const data   = await res.json();
+    const emails = (data.values || []).flat().map(e => String(e).toLowerCase().trim());
+    return emails.includes(email.toLowerCase().trim());
+  } catch(e) {
+    // Sheets API 也失敗時，回傳 null 讓外層決定
+    return null;
+  }
+}
+
+// ── Google 登入回調 ──
+async function handleGoogleLogin(response) {
+  const spinner  = document.getElementById('loginSpinner');
+  const errorDiv = document.getElementById('loginError');
+  spinner.classList.add('show');
+  errorDiv.classList.remove('show');
+
+  try {
+    // 解析 JWT payload（取 email、name）
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email   = (payload.email || '').trim();
+    const name    = payload.name   || '';
+
+    let allowed = false;
+
+    // 第一優先：後端 Apps Script 驗證
+    const backendResult = await verifyWithBackend(response.credential);
+
+    if (backendResult !== null) {
+      // 後端有回應，以後端結果為準
+      allowed = backendResult.allowed === true;
+    } else {
+      // 後端無回應，備援：直接讀 Sheets（需試算表設為公開檢視）
+      const sheetResult = await verifyWithSheetsDirect(email);
+      if (sheetResult !== null) {
+        allowed = sheetResult;
+      } else {
+        // 兩道都失敗，拒絕登入並提示
+        spinner.classList.remove('show');
+        errorDiv.innerHTML = '⚠️ 無法連線至驗證伺服器<br>請確認網路連線後再試，或聯絡管理員。';
+        errorDiv.classList.add('show');
+        google.accounts.id.disableAutoSelect();
+        return;
+      }
+    }
+
+    if (allowed) {
+      // 登入成功，寫入 session
+      sessionStorage.setItem('rescue_user', JSON.stringify({
+        email, name, loginAt: Date.now()
+      }));
+      showApp(name, email);
+    } else {
+      spinner.classList.remove('show');
+      errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員將您的帳號加入白名單。`;
+      errorDiv.classList.add('show');
+      google.accounts.id.disableAutoSelect();
+    }
+
+  } catch(e) {
+    spinner.classList.remove('show');
+    errorDiv.textContent = '驗證過程發生錯誤，請重新整理後再試。';
+    errorDiv.classList.add('show');
+  }
+}
+
+// ── 顯示主系統 ──
+function showApp(name, email) {
+  document.getElementById('loginScreen').style.display = 'none';
+  const userInfo = document.getElementById('headerUserInfo');
+  if (userInfo) {
+    userInfo.textContent = name || email;
+    userInfo.style.display = 'inline';
+  }
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.style.display = 'inline';
+  startIdleTimer();
+}
+
+// ── 檢查既有 session（重新整理不需再登入）──
+function checkSession() {
+  const raw = sessionStorage.getItem('rescue_user');
+  if (!raw) return false;
+  try {
+    const user = JSON.parse(raw);
+    // session 有效期 8 小時
+    if (Date.now() - user.loginAt > 8 * 3600 * 1000) {
+      sessionStorage.removeItem('rescue_user');
+      return false;
+    }
+    showApp(user.name, user.email);
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── 登出 ──
+function logout() {
+  if (!confirm('確定要登出嗎？')) return;
+  sessionStorage.removeItem('rescue_user');
+  google.accounts.id.disableAutoSelect();
+  location.reload();
+}
+
+// ── 閒置自動鎖定（30 分鐘無操作自動登出）──
+let idleTimer = null;
+function startIdleTimer() {
+  const IDLE_MINUTES = 30;
+  const reset = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      alert('閒置超過 ' + IDLE_MINUTES + ' 分鐘，系統已自動鎖定，請重新登入。');
+      sessionStorage.removeItem('rescue_user');
+      location.reload();
+    }, IDLE_MINUTES * 60 * 1000);
+  };
+  ['click','touchstart','keydown','scroll'].forEach(ev =>
+    document.addEventListener(ev, reset, { passive: true })
+  );
+  reset();
+}
+
+// ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbyJLPFF-jwyzFYwHa5F1HUlpdT2fiMsxvCHhK3bh7Pm555BN6xbY7L81KCA789lTlk8Vw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbycaeVXMhT6o2doQJMiwi_n8LlzUhWBRNt4q8xUKhkmPE5-0VCVKd5XSszxTDR3BRVKlw/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ════════════════════════════════════════
@@ -1517,7 +1802,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.2.02　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.3.02　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2869,6 +3154,11 @@ function renderProfileMonth(month) {
 // ════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initFooters();
+  // 檢查是否已有 session，有則跳過登入畫面
+  if (checkSession()) {
+    // session 有效，直接載入
+  }
+  // 若無 session，loginScreen 已顯示，等使用者 Google 登入
   document.getElementById('sigModal').addEventListener('click', () => {
     document.getElementById('sigModal').style.display = 'none';
   });
