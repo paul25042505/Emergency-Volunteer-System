@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="義消系統">
+<meta name="color-scheme" content="light">
 
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -38,6 +39,7 @@ body {
   font-family: 'Noto Sans TC', sans-serif;
   color: var(--text);
   min-height: 100vh;
+  color-scheme: light;
 }
 
 /* ── Pages ── */
@@ -90,7 +92,7 @@ color: white; background: rgba(255,255,255,0.07); border-left-color: var(–red-
 
 /* ── Header ── */
 .header {
-background: var(–red); color: white; padding: 0; position: relative; overflow: hidden;
+background: var(–red) !important; -webkit-background-color: var(–red); color: white !important; padding: 0; position: relative; overflow: hidden;
 }
 .header-inner {
 position: relative; z-index: 2; display: flex; align-items: center;
@@ -425,15 +427,15 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <nav>
-    <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
-    <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
-    <button id="nav-profile" onclick="navTo('profilePage')"><span class="icon">👤</span>個人頁面</button>
-    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>出勤案件登錄</button>
-    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>出勤紀錄查詢</button>
-    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍️</span>簽到簽退登錄</button>
-    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
-    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
-    <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>出勤統計</button>
+    <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠︎</span>首頁</button>
+    <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥︎</span>成員管理</button>
+    <button id="nav-profile" onclick="navTo('profilePage')"><span class="icon">👤︎</span>個人頁面</button>
+    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋︎</span>出勤案件登錄</button>
+    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍︎</span>出勤紀錄查詢</button>
+    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍︎</span>簽到簽退登錄</button>
+    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊︎</span>簽到簽退記錄查詢</button>
+    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑︎</span>報表匯出</button>
+    <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈︎</span>出勤統計</button>
   </nav>
 </div>
 
@@ -512,42 +514,42 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
     <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">👥︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">新增／刪除成員</div>
     </button>
     <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">👤︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人頁面</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">個人出勤紀錄</div>
     </button>
     <button onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">📋︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤案件登錄</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">填寫出勤資料</div>
     </button>
     <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">🔍︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤紀錄查詢</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢歷史出勤</div>
     </button>
     <button onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">✍️</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">✍︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">現場簽到使用</div>
     </button>
     <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📊</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">📊︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退記錄查詢</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">查詢簽到紀錄</div>
     </button>
     <button onclick="navTo('reportPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📑</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">📑︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">報表匯出</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">產生 Word 報表</div>
     </button>
     <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-      <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
+      <div style="font-size:1.6rem;margin-bottom:8px;">📈︎</div>
       <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤統計</div>
       <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">出勤排行榜</div>
     </button>
@@ -745,7 +747,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
     </div>
     <div id="memberList">
       <div class="member-empty">
-        <span class="empty-icon">👥</span>
+        <span class="empty-icon">👥︎</span>
         尚未新增任何成員
       </div>
     </div>
@@ -767,7 +769,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 <!-- 篩選條件 -->
 <div class="section">
   <div class="section-head">
-    <div class="section-num">🔍</div>
+    <div class="section-num">🔍︎</div>
     <div class="section-title">篩選條件</div>
     <div class="section-line"></div>
   </div>
@@ -884,7 +886,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 </div>
 
 <div id="queryInitMsg" class="query-empty">
-  <span class="empty-icon">🔍</span>
+  <span class="empty-icon">🔍︎</span>
   請設定篩選條件後按「查詢」
 </div>
 
@@ -905,7 +907,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
   <!-- 日期 + 簽到表單 -->
   <div class="section">
     <div class="section-head">
-      <div class="section-num">✍</div>
+      <div class="section-num">✍︎</div>
       <div class="section-title">簽到</div>
       <div class="section-line"></div>
     </div>
@@ -1052,7 +1054,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
     </div>
     <div class="member-list-card">
       <div id="attCheckinList">
-        <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
+        <div class="member-empty"><span class="empty-icon">📋︎</span>尚無人簽到</div>
       </div>
     </div>
   </div>
@@ -1237,7 +1239,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 ```
 <div class="section">
   <div class="section-head">
-    <div class="section-num">🔍</div>
+    <div class="section-num">🔍︎</div>
     <div class="section-title">篩選條件</div>
     <div class="section-line"></div>
   </div>
@@ -1287,7 +1289,7 @@ color: var(–text-mid); cursor: pointer; transition: background 0.15s, color 0.
 </div>
 
 <div id="aqInitMsg" class="query-empty">
-  <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
+  <span class="empty-icon">📊︎</span>請設定篩選條件後按「查詢」
 </div>
 
 <div class="site-footer-placeholder"></div>
@@ -1540,7 +1542,7 @@ function renderMemberList() {
   const list = document.getElementById('memberList');
   document.getElementById('memberCount').textContent = members.length + ' 人';
   if (members.length === 0) {
-    list.innerHTML = '<div class="member-empty"><span class="empty-icon">👥</span>尚未新增任何成員</div>';
+    list.innerHTML = '<div class="member-empty"><span class="empty-icon">👥︎</span>尚未新增任何成員</div>';
     return;
   }
   list.innerHTML = members.map((m, i) => `
@@ -2040,7 +2042,7 @@ function renderCheckinList() {
   const list = document.getElementById('attCheckinList');
   const sessions = Object.entries(attSessions);
   if (sessions.length === 0) {
-    list.innerHTML = '<div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>';
+    list.innerHTML = '<div class="member-empty"><span class="empty-icon">📋︎</span>尚無人簽到</div>';
     return;
   }
   // 未簽退在前，已完成在後
@@ -3065,7 +3067,7 @@ function exportCSV() {
 ```
 <div class="section">
   <div class="section-head">
-    <div class="section-num">📑</div>
+    <div class="section-num">📑︎</div>
     <div class="section-title">選擇報表</div>
     <div class="section-line"></div>
   </div>
@@ -3225,7 +3227,7 @@ function exportCSV() {
   <div class="query-wrap">
     <div class="section">
       <div class="section-head">
-        <div class="section-num">📈</div>
+        <div class="section-num">📈︎</div>
         <div class="section-title">月出勤統計</div>
         <div class="section-line"></div>
       </div>
@@ -3280,7 +3282,7 @@ function exportCSV() {
   </div>
 
   <div id="statsEmptyMsg" class="query-empty">
-    <span class="empty-icon">📈</span>載入中...
+    <span class="empty-icon">📈︎</span>載入中...
   </div>
 </div>
 
@@ -3311,7 +3313,7 @@ function exportCSV() {
   <div class="query-wrap">
     <div class="section">
       <div class="section-head">
-        <div class="section-num">👤</div>
+        <div class="section-num">👤︎</div>
         <div class="section-title">選擇成員</div>
         <div class="section-line"></div>
       </div>
@@ -3359,7 +3361,7 @@ function exportCSV() {
 </div>
 
 <div id="profileEmptyMsg" class="query-empty">
-  <span class="empty-icon">👤</span>請選擇義消成員
+  <span class="empty-icon">👤︎</span>請選擇義消成員
 </div>
 
 <div class="site-footer-placeholder"></div>
