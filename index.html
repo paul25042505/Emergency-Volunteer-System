@@ -1581,9 +1581,7 @@ function verifyWithBackend(idToken) {
     // idToken 太長無法放 URL，改傳 email（從前端解析）
     // Apps Script 端用 email 直接查白名單
     try {
-      const raw2 = idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const b64_2 = raw2.padEnd(Math.ceil(raw2.length / 4) * 4, '=');
-      const payload = JSON.parse(atob(b64_2));
+      const payload = parseJWT(idToken);
       const email   = (payload.email || '').trim();
       const name    = payload.name   || '';
 
@@ -1633,6 +1631,21 @@ async function verifyWithSheetsDirect(email) {
   }
 }
 
+// ── JWT 解析（支援 UTF-8 中文）──
+function parseJWT(token) {
+  const part = token.split('.')[1]
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const b64 = part.padEnd(Math.ceil(part.length / 4) * 4, '=');
+  // decodeURIComponent + escape 處理 UTF-8 多位元組字元
+  const json = decodeURIComponent(
+    atob(b64).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join('')
+  );
+  return JSON.parse(json);
+}
+
 // ── Google 登入回調 ──
 async function handleGoogleLogin(response) {
   const spinner  = document.getElementById('loginSpinner');
@@ -1642,12 +1655,8 @@ async function handleGoogleLogin(response) {
 
   try {
     // 解析 JWT payload（取 email、name）
-    // JWT 的 base64 是 URL-safe 格式，需先轉為標準 base64 才能用 atob()
-    const b64 = response.credential.split('.')[1]
-      .replace(/-/g, '+')   // URL-safe '-' → 標準 '+'
-      .replace(/_/g, '/')   // URL-safe '_' → 標準 '/'
-      .padEnd(Math.ceil(response.credential.split('.')[1].length / 4) * 4, '='); // 補齊 padding
-    const payload = JSON.parse(atob(b64));
+    // JWT 解析（URL-safe base64 → UTF-8 處理中文）
+    const payload = parseJWT(response.credential);
     const email   = (payload.email || '').trim();
     const name    = payload.name   || '';
 
