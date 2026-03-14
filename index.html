@@ -388,11 +388,7 @@ tr:hover td { background: #fdfcfb; }
 .bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; min-width:40px; }
 .bar-fill { height:100%; background:var(--red); border-radius:3px; transition:width 0.4s ease; }
 
-/* ── Map ── */
-#districtMap { height:280px; border-radius:6px; border:1px solid var(--border); overflow:hidden; }
-.map-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; font-size:0.75rem; color:var(--text-mid); }
-.map-legend-item { display:flex; align-items:center; gap:5px; }
-.map-legend-dot { width:10px; height:10px; border-radius:50%; background:var(--red); opacity:0.7; }
+
 
 /* ── Profile Page ── */
 .profile-select-card { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); margin-bottom:20px; }
@@ -1288,19 +1284,7 @@ tr:hover td { background: #fdfcfb; }
       </div>
       <div id="statsEmptyMsg" class="query-empty"><span class="empty-icon">📈</span>載入中...</div>
     </div>
-    <div class="section" id="statsMapSection" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">🗺</div>
-        <div class="section-title">出勤地點熱度</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="result-card">
-        <div style="padding:16px;">
-          <div id="districtMap"></div>
-          <div class="map-legend" id="mapLegend"></div>
-        </div>
-      </div>
-    </div>
+
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -1370,11 +1354,11 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
     <!-- ────────────────────────────── -->
-    <!-- v1.3.04 -->
+    <!-- v1.3.05 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.3.04
+        <h3 style="color:var(--red-dark);">v1.3.05
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
@@ -1393,6 +1377,27 @@ tr:hover td { background: #fdfcfb; }
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>系統部署至 GitHub Pages，提供固定網址存取</li>
           <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.3.04 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.3.04
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　地圖精確化</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🗺 地圖改進</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>圓圈半徑從 720～2400 公尺縮小至 30～80 公尺</li>
+          <li>出勤 2 次以上地點自動加上數字標籤</li>
+          <li>地圖自動縮放至所有標記的範圍</li>
+          <li>顯示解析失敗筆數</li>
         </ul>
       </div>
     </div>
@@ -1894,7 +1899,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.3.04　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.3.05　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2923,7 +2928,6 @@ function downloadDocx(json) {
 // ════════════════════════════════════════
 // 月統計
 // ════════════════════════════════════════
-let statsMap = null;
 
 function initStatsPage() {
   const sel = document.getElementById('statsYear');
@@ -2949,7 +2953,6 @@ async function loadStats() {
   document.getElementById('statsEmptyMsg').style.display = 'block';
   document.getElementById('statsTableCard').style.display = 'none';
   document.getElementById('statsOverview').style.display = 'none';
-  document.getElementById('statsMapSection').style.display = 'none';
 
   const westernYear = parseInt(year) + 1911;
   const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
@@ -3016,8 +3019,7 @@ async function loadStats() {
     document.getElementById('statsTableCard').style.display = 'block';
     document.getElementById('statsEmptyMsg').style.display = 'none';
 
-    renderDistrictMap(monthOut);
-    document.getElementById('statsMapSection').style.display = 'block';
+
   } catch(e) {
     document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
   }
@@ -3091,98 +3093,6 @@ async function geocodeNominatim(address) {
     }
   } catch(e) {}
   return null;
-}
-
-async function renderDistrictMap(records) {
-  if (statsMap) { statsMap.remove(); statsMap = null; }
-  statsMap = L.map('districtMap').setView([24.21, 120.70], 14);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(statsMap);
-
-  const legend = document.getElementById('mapLegend');
-  legend.innerHTML = '<span style="color:var(--text-light);">⏳ 解析地址中...</span>';
-
-  const cache = geoLoadCache();
-  const addrMap = {};
-  records.forEach(r => {
-    const district = String(r['行政區'] || '').replace(/^台中/,'臺中');
-    const addr     = String(r['詳細地址'] || r['address'] || '').trim();
-    const full     = addr ? `${district}${addr}` : district;
-    if (full) addrMap[full] = (addrMap[full] || 0) + 1;
-  });
-
-  const entries   = Object.entries(addrMap);
-  const maxCount  = Math.max(...Object.values(addrMap), 1);
-  const markers   = [];
-  let resolved    = 0;
-  let failCount   = 0;
-
-  for (const [addr, count] of entries) {
-    legend.innerHTML = `<span style="color:var(--text-light);">⏳ 解析地址 ${++resolved}/${entries.length}（失敗 ${failCount} 筆）</span>`;
-    const coord = await geocodeAddress(addr, cache);
-    if (!coord) { failCount++; continue; }
-
-    // 依出勤次數決定圓圈大小（精確小圓，半徑 30~80 公尺）
-    const radius  = 30 + (count / maxCount) * 50;
-    const opacity = 0.5 + (count / maxCount) * 0.4;
-    const color   = count >= 3 ? '#922b21' : '#c0392b';
-
-    // 精確圓圈標記
-    const circle = L.circle(coord, {
-      radius,
-      color,
-      fillColor: '#e74c3c',
-      fillOpacity: opacity,
-      weight: count >= 3 ? 3 : 1.5,
-    }).addTo(statsMap);
-
-    // popup 顯示完整地址與次數
-    const shortAddr = addr.replace('臺中市','').replace('台中市','');
-    circle.bindPopup(
-      `<div style="font-family:'Noto Sans TC',sans-serif;font-size:0.85rem;">
-        <b style="color:#c0392b;">${shortAddr}</b><br>
-        出勤 <b>${count}</b> 次
-      </div>`,
-      { maxWidth: 200 }
-    );
-
-    // 次數 ≥ 2 加上數字標籤
-    if (count >= 2) {
-      L.marker(coord, {
-        icon: L.divIcon({
-          html: `<div style="background:#c0392b;color:white;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:0.7rem;font-weight:700;font-family:sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.3);">${count}</div>`,
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-          className: ''
-        })
-      }).addTo(statsMap);
-    }
-
-    markers.push({ addr: shortAddr, count, coord });
-  }
-
-  // 自動縮放到所有標記的範圍
-  if (markers.length > 0) {
-    const bounds = markers.map(m => m.coord);
-    statsMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
-
-    legend.innerHTML = markers
-      .sort((a,b) => b.count - a.count)
-      .slice(0, 8)
-      .map(m => `
-        <div class="map-legend-item">
-          <div class="map-legend-dot" style="opacity:${0.5+(m.count/maxCount)*0.4};width:${8+(m.count/maxCount)*6}px;height:${8+(m.count/maxCount)*6}px;"></div>
-          ${m.addr} <span style="font-weight:700;color:var(--red);">${m.count}</span> 次
-        </div>`)
-      .join('');
-
-    if (failCount > 0) {
-      legend.innerHTML += `<div style="color:var(--text-light);font-size:0.72rem;margin-top:6px;">※ ${failCount} 筆地址無法解析</div>`;
-    }
-  } else {
-    legend.innerHTML = `<span style="color:var(--text-light);">查無可解析的地址${failCount > 0 ? `（${failCount} 筆解析失敗）` : ''}</span>`;
-  }
-
-  setTimeout(() => statsMap.invalidateSize(), 100);
 }
 
 async function renderQueryMap(records) {
