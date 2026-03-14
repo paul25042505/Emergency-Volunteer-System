@@ -71,7 +71,7 @@ body {
   font-size: 1.4rem; cursor: pointer; padding: 4px 8px; border-radius: 3px; transition: color 0.15s;
 }
 .drawer-close:hover { color: white; }
-.drawer nav { padding: 16px 0; }
+.drawer nav { padding: 16px 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
 .drawer nav button {
   display: flex; align-items: center; gap: 12px; padding: 14px 24px;
   text-decoration: none; color: rgba(255,255,255,0.75); font-size: 0.9rem;
@@ -434,6 +434,7 @@ tr:hover td { background: #fdfcfb; }
     <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
     <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
     <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>出勤統計</button>
+    <button id="nav-changelog" onclick="navTo('changelogPage')"><span class="icon">📝</span>版本修改紀錄</button>
   </nav>
 </div>
 
@@ -476,9 +477,6 @@ tr:hover td { background: #fdfcfb; }
           <div class="stat-num" id="dashTodaySignin">—</div>
           <div class="stat-label">今日簽到人數</div>
         </div>
-      </div>
-      <div style="margin-top:8px;text-align:right;">
-        <button onclick="debugDashDate()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">🔧 日期格式診斷</button>
       </div>
     </div>
 
@@ -803,7 +801,6 @@ tr:hover td { background: #fdfcfb; }
         <div class="filter-actions">
           <button class="btn-search" onclick="doQuery()">查　詢</button>
           <button class="btn-reset" onclick="resetQuery()">清除條件</button>
-          <button class="btn-reset" onclick="debugData()" title="顯示原始資料供除錯">🔧</button>
         </div>
       </div>
     </div>
@@ -961,9 +958,7 @@ tr:hover td { background: #fdfcfb; }
             <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;color:var(--text);" readonly>
           </div>
           <div class="field">
-            <label>出勤次數
-              <button type="button" onclick="diagTodayCount()" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:3px;padding:1px 8px;font-size:0.68rem;color:var(--text-light);cursor:pointer;min-height:unset;font-family:'Noto Sans TC',sans-serif;">🔧 診斷</button>
-            </label>
+            <label>出勤次數</label>
             <input type="number" id="attCount" min="0" step="1" style="width:100%;color:var(--text-light);" readonly>
           </div>
           <div class="field">
@@ -1282,6 +1277,144 @@ tr:hover td { background: #fdfcfb; }
   </div>
 </div>
 
+
+<!-- ══════ PAGE：版本修改紀錄 ══════ -->
+<div class="page" id="changelogPage">
+  <div class="query-wrap">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📝</div>
+        <div class="section-title">版本修改紀錄</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.2.02 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head" style="background:var(--red-faint);">
+        <h3 style="color:var(--red-dark);">v1.2.02
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Bug 修復</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 BUG 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>修正首頁「今日出勤筆數、出勤人數、簽到人數」顯示 0 的問題</li>
+          <li>修正簽退頁面「出勤次數」顯示 0 的問題</li>
+          <li>根本原因：Google Sheets 日期以 UTC 儲存（如 <code style="background:var(--warm);padding:1px 5px;border-radius:3px;font-size:0.78rem;">2026-03-13T16:00:00.000Z</code>），需加 +8 小時轉換為台灣時間才能正確比對當日日期</li>
+          <li>統一所有日期解析邏輯為 <code style="background:var(--warm);padding:1px 5px;border-radius:3px;font-size:0.78rem;">normDate()</code>，支援 ISO+T、斜線格式、中文格式、Date(timestamp) 等多種格式</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 修正</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>統一所有輸入欄位（input、select）高度，解決欄位高度不一致問題</li>
+          <li>查詢頁服務項目下拉選單補齊全部 16 項</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.2 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.2
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">報表匯出</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>新增「報表匯出」頁面</li>
+          <li>報表 1：簽到簽退紀錄表（含簽名圖片嵌入）</li>
+          <li>報表 2：救護義消服勤表</li>
+          <li>報表 3：救護出勤紀錄表</li>
+          <li>所有報表使用 Google Docs 範本產生 .docx 檔案並直接下載</li>
+          <li>簽名圖片超過 200KB 自動略過，保護報表產生不中斷</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.1 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.1
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">簽到簽退</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>新增「簽到簽退登錄」頁面，支援現場多人同時簽到</li>
+          <li>簽到簽名畫布（支援滑鼠與觸控）</li>
+          <li>已簽到名單即時顯示，點擊成員進入簽退流程</li>
+          <li>簽退時自動計算協勤時數（以 30 分鐘為最小單位）</li>
+          <li>新增「簽到簽退記錄查詢」頁面（支援日期、成員篩選）</li>
+          <li>簽到簽退記錄支援線上編輯</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.0 系列 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.0 系列
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">v1.0 → v1.3 → v1.4 → v1.5　基礎建設</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">主版本建立</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.5　統計、地圖、個人頁面</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>新增「出勤統計」頁面：月份排行榜、金銀銅牌、時數進度條</li>
+          <li>新增「個人頁面」：個人出勤時間軸、月份切換、累計統計</li>
+          <li>出勤紀錄查詢、出勤統計加入地圖視覺化</li>
+          <li>地圖使用 Leaflet.js + OpenStreetMap，地址地理編碼使用 Nominatim 並快取</li>
+          <li>PWA 支援（可加到手機桌面）、Favicon（紅底白十字）</li>
+          <li>個人頁面時間格式修正（ISO UTC 轉台灣時間）</li>
+        </ul>
+
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.4　名稱調整與細節修正</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>頁面名稱統一更新（出勤案件登錄、簽到簽退登錄、報表匯出、出勤統計）</li>
+          <li>導覽列順序調整（首頁→成員管理→個人頁面→出勤登錄→查詢→簽到退→記錄查詢→報表→統計）</li>
+          <li>緊急聯絡電話更正為 04-25327425</li>
+          <li>著作權頁腳加入版本號、移除首頁快速入口多餘按鈕</li>
+        </ul>
+
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3　首頁儀表板與程式碼整理</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>新增首頁儀表板（今日出勤、出勤人數、簽到人數、本月出勤、協勤總時數）</li>
+          <li>快速入口按鈕區塊</li>
+          <li>統一所有 API URL 為 BASE_URL 常數</li>
+          <li>移除廢棄函式、著作權頁腳統一管理（initFooters）</li>
+        </ul>
+
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.0　初始版本</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>出勤案件登錄（日期、類別、時間、地點、服務內容、義消簽名）</li>
+          <li>成員管理（新增、刪除、拖曳排序）</li>
+          <li>出勤紀錄查詢（多條件篩選、匯出 CSV）</li>
+          <li>資料儲存至 Google Sheets（透過 Apps Script）</li>
+        </ul>
+
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
 <!-- Signature Modal -->
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -1384,7 +1517,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.6　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.2.02　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -1433,6 +1566,7 @@ function navTo(pageId) {
     profilePage:    ['個人頁面', 'Member Profile', 'nav-profile'],
     reportPage:     ['報表匯出', 'Reports', 'nav-report'],
     attQueryPage:   ['簽到/退記錄查詢', 'Attendance Log', 'nav-attquery'],
+    changelogPage:  ['版本修改紀錄', 'Version History', 'nav-changelog'],
   };
   const t = titles[pageId];
   if (t) {
@@ -1868,55 +2002,7 @@ function resetQuery() {
   filteredRecords = [];
 }
 
-async function debugData() {
-  try {
-    const res = await fetch(BASE_URL);
-    const raw = await res.json();
-    if (!raw.length) { alert('沒有資料'); return; }
-    const r = raw[0];
-    let msg = '【欄位名稱】\n';
-    Object.keys(r).forEach((k, i) => {
-      const v = String(r[k] || '');
-      const preview = v.startsWith('data:image') ? '[base64圖片]' : v.substring(0, 30);
-      msg += `${i+1}. "${k}" = ${preview}\n`;
-    });
-    alert(msg);
-  } catch(e) { alert('錯誤：' + e.message); }
-}
 
-// 首頁日期格式診斷（幫助確認 Sheets 回傳的日期欄位原始值）
-async function debugDashDate() {
-  const today = new Date().toLocaleDateString('sv');
-  try {
-    const res = await fetch(BASE_URL);
-    const raw = await res.json();
-    if (!raw.length) { alert('出勤紀錄表沒有資料'); return; }
-    
-    // 顯示前3筆的日期欄位原始值
-    let msg = `今天日期：${today}\n\n【出勤紀錄表前3筆的日期原始值】\n`;
-    raw.slice(0, 3).forEach((r, i) => {
-      const rawVal = r['日期'] || r['date'] || '（找不到日期欄位）';
-      const parsed = normDate(rawVal);
-      const match = parsed === today ? '✅ 符合今天' : `❌ 解析後=${parsed}`;
-      msg += `第${i+1}筆：原始="${rawVal}" → ${match}\n`;
-    });
-    
-    // 統計今日符合筆數
-    const todayCount = raw.filter(r => normDate(r['日期']) === today).length;
-    msg += `\n今日符合筆數：${todayCount} 筆`;
-    
-    // 若全部都不符合，顯示所有欄位名稱
-    if (todayCount === 0) {
-      msg += `\n\n【第1筆所有欄位名稱，請確認是否有「日期」欄】\n`;
-      Object.keys(raw[0]).forEach((k, i) => {
-        if (!String(raw[0][k] || '').startsWith('data:image')) {
-          msg += `  "${k}" = ${String(raw[0][k] || '').substring(0,30)}\n`;
-        }
-      });
-    }
-    alert(msg);
-  } catch(e) { alert('診斷失敗：' + e.message); }
-}
 
 function exportCSV() {
   if (!filteredRecords.length) return;
@@ -2032,22 +2118,12 @@ function openCheckout(memberName) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 查今日出勤次數（含診斷 log）
+// 查今日出勤次數
 async function loadTodayCount(memberName) {
   const date = document.getElementById('attDate').value;
-  document.getElementById('attCount').value = '查詢中...';
   try {
     const res = await fetch(BASE_URL);
     const records = await res.json();
-
-    // 診斷：印出前3筆日期原始值與解析結果
-    console.log('[loadTodayCount] 查詢日期:', date, '，姓名:', memberName);
-    records.slice(0, 5).forEach((r, i) => {
-      const rawDate = r['日期'] || '';
-      const parsed  = normDate(rawDate);
-      const name    = r['姓名'] || r['memberName'] || '';
-      console.log(`  [${i}] 日期原始="${rawDate}" → 解析="${parsed}" 姓名="${name}"`);
-    });
 
     const count = records.filter(r => {
       const name = r['姓名'] || r['memberName'] || '';
@@ -2055,7 +2131,6 @@ async function loadTodayCount(memberName) {
       return d === date && name === memberName;
     }).length;
 
-    console.log('[loadTodayCount] 符合筆數:', count);
     document.getElementById('attCount').value = count;
   } catch(e) {
     console.error('[loadTodayCount] 錯誤:', e);
@@ -2063,42 +2138,6 @@ async function loadTodayCount(memberName) {
   }
 }
 
-// 出勤次數診斷（點「🔧 診斷」按鈕觸發）
-async function diagTodayCount() {
-  const date = document.getElementById('attDate').value;
-  const memberName = attCheckoutTarget || '（未選擇）';
-  let msg = `查詢日期：${date}
-姓名：${memberName}
-
-`;
-  try {
-    const res = await fetch(BASE_URL);
-    const records = await res.json();
-    msg += `Sheets 共 ${records.length} 筆資料
-
-`;
-    msg += `【前5筆日期原始值 → 解析後】
-`;
-    records.slice(0, 5).forEach((r, i) => {
-      const raw    = String(r['日期'] || '');
-      const parsed = normDate(raw);
-      const name   = r['姓名'] || r['memberName'] || '';
-      const hit    = parsed === date && name === memberName ? ' ✅' : '';
-      msg += `${i+1}. "${raw}" → ${parsed}　姓名:"${name}"${hit}
-`;
-    });
-
-    const count = records.filter(r => {
-      const name = r['姓名'] || r['memberName'] || '';
-      return normDate(r['日期']) === date && name === memberName;
-    }).length;
-    msg += `
-符合今天 + 此姓名：${count} 筆`;
-  } catch(e) {
-    msg += '錯誤：' + e.message;
-  }
-  alert(msg);
-}
 
 function attBackToMain() {
   attCheckoutTarget = null;
