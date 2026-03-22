@@ -1287,6 +1287,79 @@ tr:hover td { background: #fdfcfb; }
   </div>
 </div>
 
+<!-- ══════ PAGE：物品領用 ══════ -->
+<div class="page" id="itemsPage">
+  <div class="query-wrap">
+
+    <!-- 新增物品 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">＋</div>
+        <div class="section-title">新增物品</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label for="itemName">物品名稱 <span class="req">*</span></label>
+          <input type="text" id="itemName" placeholder="例：聘書、協勤慰問品">
+        </div>
+        <div class="field">
+          <label for="itemNote">備註說明</label>
+          <input type="text" id="itemNote" placeholder="例：114年春節、共3份">
+        </div>
+        <div class="field">
+          <label>領取人 <span class="req">*</span>（可複選）</label>
+          <div id="itemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <button onclick="addItem()" class="btn-submit" style="letter-spacing:0.1em;">新增物品</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待領清單 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📦</div>
+        <div class="section-title">待領清單</div>
+        <div class="section-line"></div>
+        <button onclick="loadItems()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div id="itemsList">
+        <div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- 領取簽名 Modal -->
+<div id="claimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;" id="claimModalTitle">領取物品</div>
+    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:20px;" id="claimModalSub"></div>
+    <div style="background:var(--warm);border-radius:5px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--text-mid);">
+      領取人：<b id="claimModalName"></b>
+    </div>
+    <div class="field">
+      <label>領取簽名 <span class="req">*</span></label>
+      <div class="sig-wrap">
+        <canvas id="claimSigCanvas"></canvas>
+        <div class="sig-footer">
+          <span>請用滑鼠或手指於上方簽名</span>
+          <button type="button" class="btn-clear" onclick="clearClaimSig()">清除重簽</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="submitClaim()" class="btn-search" style="flex:1;letter-spacing:0.1em;">確認領取</button>
+      <button onclick="closeClaimModal()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- ══════ PAGE：版本修改紀錄 ══════ -->
 <div class="page" id="changelogPage">
   <div class="query-wrap">
