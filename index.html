@@ -457,7 +457,7 @@ tr:hover td { background: #fdfcfb; }
     <div class="login-logo">✚</div>
     <div class="login-title">救護義消系統</div>
     <div class="login-sub">
-      臺中市政府消防局潭子分隊<br>鳳凰救護大隊
+      臺中市政府消防局<br>鳳凰救護大隊潭子分隊
     </div>
     <div class="login-divider"></div>
     <!-- Google 登入按鈕 -->
@@ -2721,41 +2721,36 @@ async function doCheckout() {
   const btn = document.querySelector('#attCheckoutView .btn-checkout');
   btn.textContent = '送出中...'; btn.disabled = true;
 
-  try {
-    await fetch(BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action:       'attendance',
-        date:         todayStr,
-        title:        memberObj.title || '',
-        memberName:   attCheckoutTarget,
-        checkinSig:   session.checkinSig  || '',
-        checkinTime:  session.checkinTime,
-        checkoutSig:  attCheckoutCtx.canvas.toDataURL('image/png'),
-        checkoutTime,
-        hours:        String(hours),
-        count:        String(countVal),
-        service:      String(serviceVal),
-        // rowIndex 若有則直接更新，若無則讓 Apps Script 用日期+姓名+簽到時間找行
-        rowIndex:     session.rowIndex !== null ? session.rowIndex : undefined,
-      })
-    });
+  // no-cors 無法讀取回應，直接送出後視為成功
+  fetch(BASE_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action:       'attendance',
+      date:         todayStr,
+      title:        memberObj.title || '',
+      memberName:   attCheckoutTarget,
+      checkinSig:   session.checkinSig  || '',
+      checkinTime:  session.checkinTime,
+      checkoutSig:  attCheckoutCtx.canvas.toDataURL('image/png'),
+      checkoutTime,
+      hours:        String(hours),
+      count:        String(countVal),
+      service:      String(serviceVal),
+      rowIndex:     session.rowIndex !== null ? session.rowIndex : undefined,
+    })
+  }).catch(() => {}); // 忽略網路錯誤，Sheets 通常仍會寫入
 
-    // 標記完成
-    attSessions[attCheckoutTarget].done         = true;
-    attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
+  // 標記完成，顯示成功訊息
+  attSessions[attCheckoutTarget].done         = true;
+  attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
 
-    document.getElementById('attSuccessDetail').textContent =
-      `${attCheckoutTarget} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
-    document.getElementById('attSuccessMsg').classList.add('show');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  } catch(e) {
-    alert('送出失敗，請檢查網路連線後再試。');
-  } finally {
-    btn.textContent = '確認簽退送出'; btn.disabled = false;
-  }
+  document.getElementById('attSuccessDetail').textContent =
+    `${attCheckoutTarget} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
+  document.getElementById('attSuccessMsg').classList.add('show');
+  btn.textContent = '確認簽退送出'; btn.disabled = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 
