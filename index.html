@@ -1299,7 +1299,7 @@ tr:hover td { background: #fdfcfb; }
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
         <h3 style="color:var(--red-dark);">v1.3.09
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　簽到寫入後台</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
       </div>
@@ -1346,7 +1346,7 @@ tr:hover td { background: #fdfcfb; }
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head">
         <h3>v1.3.07
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　功能調整</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　功能調整</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
       </div>
@@ -1366,7 +1366,7 @@ tr:hover td { background: #fdfcfb; }
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head">
         <h3>v1.3.06
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　移除地圖功能</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　移除地圖功能</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
       </div>
@@ -1825,7 +1825,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbys8UqGklSoALeUoMi_vNkqU1KXOcbq6ioseR8wx7_XIuNM1EDjLRmX0y53mOcPoVvUhA/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbzcti-CqORFVOW9zQwQRE_u3Z1czU67Qaq72-vm4Myy5yxdsMe1K8EpIMmS8i2wUxXevA/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ════════════════════════════════════════
@@ -2606,9 +2606,10 @@ async function doCheckin() {
   btn.textContent = '簽到中...'; btn.disabled = true;
 
   try {
-    // POST 到 Sheets，取得 rowIndex
-    const res = await fetch(BASE_URL, {
+    // 用 no-cors 寫入 Sheets（無法讀回應，但寫入會成功）
+    fetch(BASE_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action:      'checkin',
@@ -2619,13 +2620,12 @@ async function doCheckin() {
         checkinTime: timeVal,
       })
     });
-    const result = await res.json();
-
-    // 存入本地 session（含 rowIndex）
+    // no-cors 不等回應，直接存入本地 session
+    // rowIndex 留空，簽退時 Apps Script 用 日期+姓名+簽到時間 找對應行
     attSessions[memberName] = {
       checkinTime: timeVal,
       checkinSig,
-      rowIndex:    result.rowIndex,
+      rowIndex:    null,
       done:        false,
     };
 
@@ -2737,7 +2737,8 @@ async function doCheckout() {
         hours:        String(hours),
         count:        String(countVal),
         service:      String(serviceVal),
-        rowIndex:     session.rowIndex,   // 告訴 Sheets 要更新哪一行
+        // rowIndex 若有則直接更新，若無則讓 Apps Script 用日期+姓名+簽到時間找行
+        rowIndex:     session.rowIndex !== null ? session.rowIndex : undefined,
       })
     });
 
