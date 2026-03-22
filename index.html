@@ -496,16 +496,6 @@ tr:hover td { background: #fdfcfb; }
   <nav>
     <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
     <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
-        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
-        </button>
-        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
-        </button>
     <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>出勤案件登錄</button>
     <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>出勤紀錄查詢</button>
     <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍</span>簽到簽退登錄</button>
@@ -1309,335 +1299,146 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <!-- ────────────────────────────── -->
     <!-- v1.4.01 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
         <h3 style="color:var(--red-dark);">v1.4.01
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　簽到寫入後台</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🔐 安全性</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>新增 Google 帳號登入驗證，僅授權成員可存取系統</li>
-          <li>登入驗證透過 Apps Script 後端白名單比對</li>
-          <li>前端備援白名單，後端不可用時自動切換</li>
-          <li>Session 有效期 8 小時，重新整理頁面不需再次登入</li>
-          <li>閒置 30 分鐘自動鎖定，保護未看管的裝置</li>
-          <li>Header 顯示目前登入者姓名，一鍵登出按鈕</li>
-        </ul>
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🌐 部署</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>系統部署至 GitHub Pages，提供固定網址存取</li>
-          <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.09 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.09
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　簽到寫入後台</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　物品領用</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>簽到時立即寫入 Google Sheets，所有裝置都能看到同步的在線名單</li>
-          <li>簽退時更新對應的簽到紀錄，跨裝置準確</li>
-          <li>首頁「目前在線人數」改從 Sheets 即時計算</li>
+          <li>新增「待領物品」頁面：建立物品、選擇領取人、追蹤領取狀態</li>
+          <li>義消可點選自己名字，簽名確認領取，自動記錄領取時間</li>
+          <li>進度條顯示已領取／總人數，全數領取後自動移至下方</li>
+          <li>資料同步儲存至 Google Sheets「物品領用」工作表</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 調整</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>待領物品移至首頁快速入口第二格</li>
+          <li>建立日期改為西元年月日格式顯示</li>
         </ul>
       </div>
     </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.08 -->
+    <!-- v1.3 系列 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head">
-        <h3>v1.3.08
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-21　簽退出勤次數修正</span>
+        <h3>v1.3 系列
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14 ～ 2026-03-22　安全性、功能修正</span>
         </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+        <span style="font-size:0.72rem;color:var(--text-light);">多次小修</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>簽退頁面「出勤次數」改為依簽到～簽退時段內計算，不再統計整天</li>
+
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.09　簽到寫入後台</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>簽到時立即寫入 Google Sheets，所有裝置共用同一份在線名單</li>
+          <li>簽退時更新對應的簽到紀錄（不再新增額外一筆）</li>
+          <li>首頁「目前在線人數」從 Sheets 即時計算，跨裝置準確</li>
+        </ul>
+
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.08　簽退出勤次數修正</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>出勤次數改為依簽到～簽退時段計算，不再統計整天</li>
           <li>選完簽退時間後自動重新計算出勤次數</li>
         </ul>
-      </div>
-    </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.07 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.07
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　功能調整</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>首頁「今日簽到人數」改為「目前在線人數」，依簽到未簽退判斷</li>
-          <li>服務項目新增：協助使用心電圖、協助使用支氣管擴張劑、協助使用NTG、測量血糖</li>
-          <li>移除「個人頁面」，與出勤紀錄查詢功能重複</li>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.07　功能調整</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>首頁新增「目前在線人數」（已簽到未簽退）與「今日簽到人數」</li>
+          <li>服務項目新增：協助使用心電圖、支氣管擴張劑、NTG、測量血糖</li>
+          <li>移除「個人頁面」（與出勤紀錄查詢功能重複）</li>
         </ul>
-      </div>
-    </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.06 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.06
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　移除地圖功能</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🎨 UI 調整</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>移除出勤紀錄查詢頁面的地圖分佈功能（Nominatim 對台灣巷弄地址支援不足）</li>
-          <li>移除 Leaflet.js 地圖函式庫，減少頁面載入資源</li>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.05 ～ v1.3.06　移除地圖功能</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>移除出勤統計地圖熱度、出勤查詢地圖分佈（Nominatim 對台灣地址支援不足）</li>
+          <li>移除 Leaflet.js，減少頁面載入資源</li>
         </ul>
-      </div>
-    </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.05 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.05
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　UI 調整</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🎨 UI 調整</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>移除「出勤統計」頁面的地圖熱度區塊，簡化頁面</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.04 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.04
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　地圖精確化</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🗺 地圖改進</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>圓圈半徑從 720～2400 公尺縮小至 30～80 公尺</li>
-          <li>出勤 2 次以上地點自動加上數字標籤</li>
-          <li>地圖自動縮放至所有標記的範圍</li>
-          <li>顯示解析失敗筆數</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.03 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.03
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　登入功能修復</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.03 ～ v1.3.04　登入功能修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
           <li>修正 JWT URL-safe base64 解析錯誤導致無法登入</li>
-          <li>修正中文名字顯示亂碼，改用 decodeURIComponent 處理 UTF-8</li>
+          <li>修正中文名字顯示亂碼（UTF-8 編碼處理）</li>
           <li>修正登入紀錄時間錯誤（+16小時）</li>
-          <li>Header 登入者名字顯示寬度從 80px 擴大至 140px</li>
         </ul>
-      </div>
-    </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.02 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.3.02
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　白名單改為試算表管理</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🔐 安全性</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.01 ～ v1.3.02　Google 帳號登入 & 白名單</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>白名單改由 Google Sheets「白名單」工作表管理，新增／移除成員只需編輯試算表，無需重新部署</li>
-          <li>Apps Script 自動建立「登入紀錄」工作表，記錄每次登入時間、帳號、姓名、結果</li>
-          <li>驗證流程改為三層備援：① Apps Script 後端 → ② Sheets API 直讀 → ③ 無法連線時拒絕並提示</li>
-          <li>登入失敗訊息優化，明確顯示被拒絕的帳號與操作說明</li>
+          <li>新增 Google 帳號登入，僅白名單成員可存取系統</li>
+          <li>白名單改由 Google Sheets「白名單」工作表管理，新增／移除成員無需重新部署</li>
+          <li>自動建立「登入紀錄」工作表，記錄每次登入時間與結果</li>
+          <li>Session 有效期 8 小時，閒置 30 分鐘自動鎖定</li>
+          <li>系統部署至 GitHub Pages：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
         </ul>
+
       </div>
     </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.3.01 -->
+    <!-- v1.2 系列 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head">
-        <h3>v1.3.01
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
+        <h3>v1.2 系列
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">報表匯出、Bug 修復</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🔐 安全性</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>新增 Google 帳號登入驗證，僅授權成員可存取系統</li>
-          <li>Session 有效期 8 小時，重新整理頁面不需再次登入</li>
-          <li>閒置 30 分鐘自動鎖定，保護未看管的裝置</li>
-          <li>Header 顯示目前登入者姓名，一鍵登出按鈕</li>
-        </ul>
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🌐 部署</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>系統部署至 GitHub Pages，提供固定網址存取</li>
-          <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
-        </ul>
-      </div>
-    </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.2.01 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.2.01
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Bug 修復</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>修正首頁「今日出勤筆數、出勤人數、簽到人數」顯示 0 的問題</li>
-          <li>修正簽退頁面「出勤次數」顯示 0 的問題</li>
-          <li>根本原因：Google Sheets 日期以 UTC 儲存（如 <code style="background:var(--warm);padding:1px 5px;border-radius:3px;font-size:0.78rem;">2026-03-13T16:00:00.000Z</code>），需加 +8 小時轉換為台灣時間才能正確比對當日日期</li>
-          <li>統一所有日期解析邏輯為 <code style="background:var(--warm);padding:1px 5px;border-radius:3px;font-size:0.78rem;">normDate()</code>，支援 ISO+T、斜線格式、中文格式、Date(timestamp) 等多種格式</li>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.2.01　Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
+          <li>修正首頁出勤筆數、出勤人數顯示 0 的問題</li>
+          <li>根本原因：Google Sheets 日期以 UTC 儲存，需加 +8 小時轉換為台灣時間</li>
+          <li>統一所有日期解析為 normDate()，支援多種格式</li>
+          <li>統一輸入欄位高度、導覽列支援上下滑動、版本修改紀錄頁面</li>
         </ul>
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 修正</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>統一所有輸入欄位（input、select）高度，解決欄位高度不一致問題</li>
-          <li>導覽列加入版本修改紀錄頁面，側邊欄支援上下滑動</li>
-          <li>查詢頁服務項目下拉選單補齊全部 16 項</li>
-        </ul>
-      </div>
-    </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.2 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.2
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">報表匯出</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.2　報表匯出</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>新增「報表匯出」頁面</li>
-          <li>報表 1：簽到簽退紀錄表（含簽名圖片嵌入）</li>
+          <li>報表 1：簽到簽退紀錄表（含簽名圖片）</li>
           <li>報表 2：救護義消服勤表</li>
           <li>報表 3：救護出勤紀錄表</li>
-          <li>所有報表使用 Google Docs 範本產生 .docx 檔案並直接下載</li>
-          <li>簽名圖片超過 200KB 自動略過，保護報表產生不中斷</li>
+          <li>所有報表使用 Google Docs 範本產生 .docx 並直接下載</li>
         </ul>
+
       </div>
     </div>
 
-    <!-- ────────────────────────────── -->
-    <!-- v1.1 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.1
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">簽到簽退</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>新增「簽到簽退登錄」頁面，支援現場多人同時簽到</li>
-          <li>簽到簽名畫布（支援滑鼠與觸控）</li>
-          <li>已簽到名單即時顯示，點擊成員進入簽退流程</li>
-          <li>簽退時自動計算協勤時數（以 30 分鐘為最小單位）</li>
-          <li>新增「簽到簽退記錄查詢」頁面（支援日期、成員篩選）</li>
-          <li>簽到簽退記錄支援線上編輯</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────── -->
     <!-- v1.0 系列 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head">
         <h3>v1.0 系列
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">v1.0 → v1.3 → v1.4 → v1.5　基礎建設</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">基礎建設</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">主版本建立</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
 
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.5　統計、地圖、個人頁面</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.1　簽到簽退</div>
         <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>新增「出勤統計」頁面：月份排行榜、金銀銅牌、時數進度條</li>
-          <li>新增「個人頁面」：個人出勤時間軸、月份切換、累計統計</li>
-          <li>出勤紀錄查詢、出勤統計加入地圖視覺化</li>
-          <li>地圖使用 Leaflet.js + OpenStreetMap，地址地理編碼使用 Nominatim 並快取</li>
-          <li>PWA 支援（可加到手機桌面）、Favicon（紅底白十字）</li>
-          <li>個人頁面時間格式修正（ISO UTC 轉台灣時間）</li>
+          <li>新增「簽到簽退登錄」頁面，支援現場多人同時簽到</li>
+          <li>簽到簽名畫布（支援滑鼠與觸控）</li>
+          <li>已簽到名單即時顯示，點擊進入簽退流程</li>
+          <li>自動計算協勤時數（以 30 分鐘為最小單位）</li>
+          <li>新增「簽到簽退記錄查詢」，支援日期、成員篩選與線上編輯</li>
         </ul>
 
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.4　名稱調整與細節修正</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>頁面名稱統一更新（出勤案件登錄、簽到簽退登錄、報表匯出、出勤統計）</li>
-          <li>導覽列順序調整（首頁→成員管理→個人頁面→出勤登錄→查詢→簽到退→記錄查詢→報表→統計）</li>
-          <li>緊急聯絡電話更正為 04-25327425</li>
-          <li>著作權頁腳加入版本號、移除首頁快速入口多餘按鈕</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3　首頁儀表板與程式碼整理</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>新增首頁儀表板（今日出勤、出勤人數、簽到人數、本月出勤、協勤總時數）</li>
-          <li>快速入口按鈕區塊</li>
-          <li>統一所有 API URL 為 BASE_URL 常數</li>
-          <li>移除廢棄函式、著作權頁腳統一管理（initFooters）</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.0　初始版本</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.0 ～ v1.0.5　基礎建設</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>出勤案件登錄（日期、類別、時間、地點、服務內容、義消簽名）</li>
           <li>成員管理（新增、刪除、拖曳排序）</li>
           <li>出勤紀錄查詢（多條件篩選、匯出 CSV）</li>
+          <li>首頁儀表板（今日出勤、在線人數、本月統計、快速入口）</li>
+          <li>出勤統計月排行榜（金銀銅牌、時數進度條）</li>
+          <li>PWA 支援（可加到手機桌面）、Favicon（紅底白十字）</li>
           <li>資料儲存至 Google Sheets（透過 Apps Script）</li>
         </ul>
 
@@ -1648,78 +1449,6 @@ tr:hover td { background: #fdfcfb; }
   </div>
 </div>
 
-
-<!-- ══════ PAGE：物品領用 ══════ -->
-<div class="page" id="itemsPage">
-  <div class="query-wrap">
-
-    <!-- 新增物品 -->
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">＋</div>
-        <div class="section-title">新增物品</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="card">
-        <div class="field">
-          <label for="itemName">物品名稱 <span class="req">*</span></label>
-          <input type="text" id="itemName" placeholder="例：聘書、協勤慰問品">
-        </div>
-        <div class="field">
-          <label for="itemNote">備註說明</label>
-          <input type="text" id="itemNote" placeholder="例：114年春節、共3份">
-        </div>
-        <div class="field">
-          <label>領取人 <span class="req">*</span>（可複選）</label>
-          <div id="itemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;"></div>
-        </div>
-        <div style="margin-top:16px;">
-          <button onclick="addItem()" class="btn-submit" style="letter-spacing:0.1em;">新增物品</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 物品清單 -->
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">📦</div>
-        <div class="section-title">待領清單</div>
-        <div class="section-line"></div>
-        <button onclick="loadItems()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
-      </div>
-      <div id="itemsList">
-        <div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>
-      </div>
-    </div>
-
-    <div class="site-footer-placeholder"></div>
-  </div>
-</div>
-
-<!-- 領取簽名 Modal -->
-<div id="claimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
-  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
-    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;" id="claimModalTitle">領取物品</div>
-    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:20px;" id="claimModalSub"></div>
-    <div style="background:var(--warm);border-radius:5px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--text-mid);">
-      領取人：<b id="claimModalName"></b>
-    </div>
-    <div class="field">
-      <label>領取簽名 <span class="req">*</span></label>
-      <div class="sig-wrap">
-        <canvas id="claimSigCanvas"></canvas>
-        <div class="sig-footer">
-          <span>請用滑鼠或手指於上方簽名</span>
-          <button type="button" class="btn-clear" onclick="clearClaimSig()">清除重簽</button>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:16px;">
-      <button onclick="submitClaim()" class="btn-search" style="flex:1;letter-spacing:0.1em;">確認領取</button>
-      <button onclick="closeClaimModal()" class="btn-reset">取消</button>
-    </div>
-  </div>
-</div>
 
 <!-- Signature Modal -->
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
@@ -3331,9 +3060,13 @@ function renderItemCard(item, allDone) {
         </h3>
         <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">
           建立：${item.createTime ? (function(t){
-            var d=t.substring(0,10).split('-');
-            var time=t.substring(11,16);
-            return parseInt(d[0])+'年'+parseInt(d[1])+'月'+parseInt(d[2])+'日 '+time;
+            // t 格式可能是 "2026-03-22 22:51:00" 或 "2026-03-22T22:51:00"
+            var s = String(t).replace('T',' ');
+            var datePart = s.substring(0,10);
+            var timePart = s.length >= 16 ? s.substring(11,16) : '';
+            var d = datePart.split('-');
+            if (d.length < 3) return t;
+            return parseInt(d[0])+'年'+parseInt(d[1])+'月'+parseInt(d[2])+'日'+(timePart?' '+timePart:'');
           })(item.createTime) : ''}
         </div>
       </div>
