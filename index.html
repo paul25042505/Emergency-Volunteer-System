@@ -543,7 +543,7 @@ tr:hover td { background: #fdfcfb; }
         </div>
         <div class="stat-card">
           <div class="stat-num" id="dashTodayMembers">—</div>
-          <div class="stat-label">今日出勤人數</div>
+          <div class="stat-label">今日簽到人數</div>
         </div>
         <div class="stat-card">
           <div class="stat-num" id="dashTodaySignin">—</div>
@@ -2017,9 +2017,8 @@ async function loadDashboard() {
     const monthAtt = att.filter(r => normDate(r['日期']).substring(0, 7) === monthStr);
 
     document.getElementById('dashTodayAtt').textContent = todayAtt.length;
-    document.getElementById('dashTodayMembers').textContent =
-      new Set(todayAtt.map(r => r['姓名'] || r['memberName'] || '')).size;
     document.getElementById('dashMonthAtt').textContent = monthAtt.length;
+    // 今日出勤人數暫存，等簽到資料載入後一起更新
   } catch(e) {
     ['dashTodayAtt','dashTodayMembers','dashMonthAtt'].forEach(id =>
       document.getElementById(id).textContent = '—');
@@ -2033,7 +2032,11 @@ async function loadDashboard() {
     const todaySignin = signin.filter(r => normDate(r['日期']) === todayStr);
     const monthSignin = signin.filter(r => normDate(r['日期']).substring(0, 7) === monthStr);
 
-    // 目前在線：今日有簽到但簽退時間為空的人
+    // 今日簽到人數：今日有簽到紀錄的不重複人數（不論是否簽退、是否有出勤案件）
+    const todaySigninSet = new Set(todaySignin.map(r => r['姓名'] || '').filter(Boolean));
+    document.getElementById('dashTodayMembers').textContent = todaySigninSet.size;
+
+    // 目前在線：今日有簽到但尚未簽退的人
     const onlineSet = new Set(
       todaySignin
         .filter(r => (r['姓名'] || '') && !(r['簽退時間'] || '').toString().trim())
