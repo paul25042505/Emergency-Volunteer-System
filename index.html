@@ -496,14 +496,23 @@ tr:hover td { background: #fdfcfb; }
   <nav>
     <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
     <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
+        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
+        </button>
+        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
+        </button>
     <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>出勤案件登錄</button>
     <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>出勤紀錄查詢</button>
     <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍</span>簽到簽退登錄</button>
     <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
     <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
     <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>出勤統計</button>
-    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>物品領用</button>
-    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>物品領用</button>
+    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>待領物品</button>
     <button id="nav-changelog" onclick="navTo('changelogPage')"><span class="icon">📝</span>版本修改紀錄</button>
   </nav>
 </div>
@@ -584,6 +593,11 @@ tr:hover td { background: #fdfcfb; }
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">新增／刪除成員</div>
         </button>
+        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
+        </button>
         
         <button onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
           <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
@@ -614,11 +628,6 @@ tr:hover td { background: #fdfcfb; }
           <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤統計</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">出勤排行榜</div>
-        </button>
-        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">物品領用</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
         </button>
       </div>
     </div>
@@ -3321,7 +3330,11 @@ function renderItemCard(item, allDone) {
           ${item.note ? `<span style="font-size:0.72rem;font-weight:400;color:var(--text-light);margin-left:6px;">${item.note}</span>` : ''}
         </h3>
         <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">
-          建立：${item.createTime ? item.createTime.substring(0,16) : ''}
+          建立：${item.createTime ? (function(t){
+            var d=t.substring(0,10).split('-');
+            var time=t.substring(11,16);
+            return parseInt(d[0])+'年'+parseInt(d[1])+'月'+parseInt(d[2])+'日 '+time;
+          })(item.createTime) : ''}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
