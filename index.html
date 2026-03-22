@@ -1294,11 +1294,11 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
     <!-- ────────────────────────────── -->
-    <!-- v1.3.08 -->
+    <!-- v1.3.09 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.3.08
+        <h3 style="color:var(--red-dark);">v1.3.09
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-14　Google 帳號登入</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
@@ -1317,6 +1317,25 @@ tr:hover td { background: #fdfcfb; }
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>系統部署至 GitHub Pages，提供固定網址存取</li>
           <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.3.08 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.3.08
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-21　簽退出勤次數修正</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>簽退頁面「出勤次數」改為依簽到～簽退時段內計算，不再統計整天</li>
+          <li>選完簽退時間後自動重新計算出勤次數</li>
         </ul>
       </div>
     </div>
@@ -1806,7 +1825,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbyjlrKCL-Owqo3g1NG5p71DGTfquqDiN2lJIbtdtUXFOKJyubgy3UBwA4k9CTHF3pz3cA/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbys8UqGklSoALeUoMi_vNkqU1KXOcbq6ioseR8wx7_XIuNM1EDjLRmX0y53mOcPoVvUhA/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ════════════════════════════════════════
@@ -1896,7 +1915,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.3.08　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.3.09　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2014,13 +2033,12 @@ async function loadDashboard() {
     const todaySignin = signin.filter(r => normDate(r['日期']) === todayStr);
     const monthSignin = signin.filter(r => normDate(r['日期']).substring(0, 7) === monthStr);
 
-    // 目前在線：今日有簽到但「簽退時間」為空的人
-    const onlineSet = new Set();
-    todaySignin.forEach(r => {
-      const name       = r['姓名'] || '';
-      const checkoutT  = r['簽退時間'] || '';
-      if (name && !checkoutT) onlineSet.add(name);
-    });
+    // 目前在線：今日有簽到但簽退時間為空的人
+    const onlineSet = new Set(
+      todaySignin
+        .filter(r => (r['姓名'] || '') && !(r['簽退時間'] || '').toString().trim())
+        .map(r => r['姓名'])
+    );
     document.getElementById('dashTodaySignin').textContent = onlineSet.size;
 
     const totalHours = monthSignin.reduce((sum, r) => sum + (parseFloat(r['協勤時數']) || 0), 0);
@@ -2402,15 +2420,17 @@ function exportCSV() {
 // ════════════════════════════════════════
 // 簽到簽退
 // ════════════════════════════════════════
-let attSessions = {};
+// attSessions：暫存簽到資料（rowIndex 由 Sheets 回傳）
+// 格式：{ memberName: { checkinTime, checkinSig, rowIndex, done, checkoutTime } }
+let attSessions      = {};
 let attCheckoutTarget = null;
-let attCheckinHasSig = false;
+let attCheckinHasSig  = false;
 let attCheckoutHasSig = false;
 let attCheckinCtx, attCheckoutCtx;
 
 function roundTo15(date) {
-  const h = date.getHours();
-  const m = Math.round(date.getMinutes() / 15) * 15;
+  const h   = date.getHours();
+  const m   = Math.round(date.getMinutes() / 15) * 15;
   const adjM = m === 60 ? 0 : m;
   const adjH = m === 60 ? (h + 1) % 24 : h;
   return `${String(adjH).padStart(2,'0')}:${String(adjM).padStart(2,'0')}`;
@@ -2419,8 +2439,6 @@ function roundTo15(date) {
 async function initAttendancePage() {
   const now = new Date();
   document.getElementById('attDate').value = now.toLocaleDateString('sv');
-
-  // 建立時間選項
   buildTimeOptions('attCheckinTime', roundTo15(now));
   buildTimeOptions('attCheckoutTime', roundTo15(now));
 
@@ -2437,11 +2455,33 @@ async function initAttendancePage() {
   attCheckinHasSig = false;
   document.getElementById('attSuccessMsg').classList.remove('show');
   setTimeout(() => initAttCanvas('checkin'), 100);
+
+  // 從 Sheets 讀取今日在線名單，還原 attSessions
+  await loadTodayCheckins();
+}
+
+// ── 從 Sheets 讀取今日已簽到未簽退名單 ──
+async function loadTodayCheckins() {
+  try {
+    const res     = await fetch(BASE_URL + '?action=getTodayCheckins');
+    const records = await res.json();
+    // 把從 Sheets 讀到的資料寫入 attSessions（不覆蓋已有的本地資料）
+    records.forEach(r => {
+      if (!attSessions[r.memberName]) {
+        attSessions[r.memberName] = {
+          checkinTime: r.checkinTime,
+          checkinSig:  '',          // 已存在 Sheets，不需要再傳
+          rowIndex:    r.rowIndex,  // Sheets 行號，簽退時更新用
+          done:        false,
+        };
+      }
+    });
+  } catch(e) {}
   renderCheckinList();
 }
 
 function renderCheckinList() {
-  const list = document.getElementById('attCheckinList');
+  const list     = document.getElementById('attCheckinList');
   const sessions = Object.entries(attSessions);
   if (sessions.length === 0) {
     list.innerHTML = '<div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>';
@@ -2476,53 +2516,25 @@ function renderCheckinList() {
 function openCheckout(memberName) {
   attCheckoutTarget = memberName;
   const session = attSessions[memberName];
-  document.getElementById('attCheckoutName').textContent = memberName;
-  document.getElementById('attCheckinTimeRef').textContent = session.checkinTime;
-
-  // 修復4：建立時間選項，預設當前時間，並立即計算時數
+  document.getElementById('attCheckoutName').textContent    = memberName;
+  document.getElementById('attCheckinTimeRef').textContent  = session.checkinTime;
   buildTimeOptions('attCheckoutTime', roundTo15(new Date()));
-  document.getElementById('attHours').value = '';
-  document.getElementById('attCount').value = '';
+  document.getElementById('attHours').value   = '';
+  document.getElementById('attCount').value   = '';
   document.getElementById('attService').value = '';
   document.getElementById('attSuccessMsg').classList.remove('show');
-  document.getElementById('attMain').style.display = 'none';
+  document.getElementById('attMain').style.display         = 'none';
   document.getElementById('attCheckoutView').style.display = 'block';
   attCheckoutHasSig = false;
-
-  // 立即計算時數（修復4）
   autoCalcHours();
-
-  // 查今日出勤次數（修復5）
   loadTodayCount(memberName);
-
   requestAnimationFrame(() => requestAnimationFrame(() => initAttCanvas('checkout')));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 查今日出勤次數
-async function loadTodayCount(memberName) {
-  const date = document.getElementById('attDate').value;
-  try {
-    const res = await fetch(BASE_URL);
-    const records = await res.json();
-
-    const count = records.filter(r => {
-      const name = r['姓名'] || r['memberName'] || '';
-      const d    = normDate(r['日期']);
-      return d === date && name === memberName;
-    }).length;
-
-    document.getElementById('attCount').value = count;
-  } catch(e) {
-    console.error('[loadTodayCount] 錯誤:', e);
-    document.getElementById('attCount').value = 0;
-  }
-}
-
-
 function attBackToMain() {
   attCheckoutTarget = null;
-  document.getElementById('attMain').style.display = 'block';
+  document.getElementById('attMain').style.display         = 'block';
   document.getElementById('attCheckoutView').style.display = 'none';
   document.getElementById('attSuccessMsg').classList.remove('show');
   renderCheckinList();
@@ -2533,24 +2545,21 @@ function initAttCanvas(type) {
   const id = type === 'checkin' ? 'attCheckinCanvas' : 'attCheckoutCanvas';
   const canvas = document.getElementById(id);
   if (!canvas) return;
-
   const newCanvas = canvas.cloneNode(true);
   canvas.parentNode.replaceChild(newCanvas, canvas);
-
   const ctx = newCanvas.getContext('2d');
   if (type === 'checkin') attCheckinCtx = ctx;
   else attCheckoutCtx = ctx;
-
   setTimeout(() => {
     const ratio = window.devicePixelRatio || 1;
-    const rect = newCanvas.getBoundingClientRect();
-    const w = rect.width || newCanvas.parentElement.getBoundingClientRect().width || 300;
-    newCanvas.width = w * ratio;
+    const rect  = newCanvas.getBoundingClientRect();
+    const w     = rect.width || newCanvas.parentElement.getBoundingClientRect().width || 300;
+    newCanvas.width  = w * ratio;
     newCanvas.height = 160 * ratio;
     ctx.scale(ratio, ratio);
-    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   }, 50);
-
   function getPos(e) {
     const r = newCanvas.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
@@ -2559,19 +2568,15 @@ function initAttCanvas(type) {
   let drawing = false;
   newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
   newCanvas.addEventListener('mousemove', e => {
-    if (!drawing) return;
-    const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
-    if (type === 'checkin') attCheckinHasSig = true;
-    else attCheckoutHasSig = true;
+    if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') attCheckinHasSig = true; else attCheckoutHasSig = true;
   });
-  newCanvas.addEventListener('mouseup', () => drawing = false);
+  newCanvas.addEventListener('mouseup',    () => drawing = false);
   newCanvas.addEventListener('mouseleave', () => drawing = false);
   newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
-  newCanvas.addEventListener('touchmove', e => {
-    e.preventDefault(); if (!drawing) return;
-    const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
-    if (type === 'checkin') attCheckinHasSig = true;
-    else attCheckoutHasSig = true;
+  newCanvas.addEventListener('touchmove',  e => {
+    e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') attCheckinHasSig = true; else attCheckoutHasSig = true;
   }, { passive: false });
   newCanvas.addEventListener('touchend', () => drawing = false);
 }
@@ -2579,35 +2584,69 @@ function initAttCanvas(type) {
 function clearAttCanvas(type) {
   const ctx = type === 'checkin' ? attCheckinCtx : attCheckoutCtx;
   if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  if (type === 'checkin') attCheckinHasSig = false;
-  else attCheckoutHasSig = false;
+  if (type === 'checkin') attCheckinHasSig = false; else attCheckoutHasSig = false;
 }
 
-function doCheckin() {
+// ── 簽到：立即寫入 Sheets ──
+async function doCheckin() {
   const memberName = document.getElementById('attMemberSel').value;
-  const timeVal = document.getElementById('attCheckinTime').value;
+  const timeVal    = document.getElementById('attCheckinTime').value;
   if (!memberName) { alert('請選擇義消成員'); return; }
-  if (!timeVal) { alert('請填入簽到時間'); return; }
+  if (!timeVal)    { alert('請填入簽到時間'); return; }
   if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
-  if (attSessions[memberName]) {
+  if (attSessions[memberName] && !attSessions[memberName].done) {
     if (!confirm(`${memberName} 已有簽到紀錄（${attSessions[memberName].checkinTime}），要重新簽到嗎？`)) return;
   }
-  attSessions[memberName] = {
-    checkinTime: timeVal,
-    checkinSig: attCheckinCtx.canvas.toDataURL('image/png')
-  };
-  document.getElementById('attMemberSel').value = '';
-  attCheckinHasSig = false;
-  clearAttCanvas('checkin');
-  buildTimeOptions('attCheckinTime', roundTo15(new Date()));
-  renderCheckinList();
-  window.scrollTo({ top: document.getElementById('attCheckinList').offsetTop - 80, behavior: 'smooth' });
+
+  const memberObj  = members.find(m => m.name === memberName) || {};
+  const checkinSig = attCheckinCtx.canvas.toDataURL('image/png');
+  const date       = document.getElementById('attDate').value;
+
+  const btn = document.querySelector('.btn-checkin');
+  btn.textContent = '簽到中...'; btn.disabled = true;
+
+  try {
+    // POST 到 Sheets，取得 rowIndex
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:      'checkin',
+        date,
+        title:       memberObj.title || '',
+        memberName,
+        checkinSig,
+        checkinTime: timeVal,
+      })
+    });
+    const result = await res.json();
+
+    // 存入本地 session（含 rowIndex）
+    attSessions[memberName] = {
+      checkinTime: timeVal,
+      checkinSig,
+      rowIndex:    result.rowIndex,
+      done:        false,
+    };
+
+    // 重置簽到表單
+    document.getElementById('attMemberSel').value = '';
+    attCheckinHasSig = false;
+    clearAttCanvas('checkin');
+    buildTimeOptions('attCheckinTime', roundTo15(new Date()));
+    renderCheckinList();
+    window.scrollTo({ top: document.getElementById('attCheckinList').offsetTop - 80, behavior: 'smooth' });
+
+  } catch(e) {
+    alert('簽到失敗，請確認網路連線後再試。');
+  } finally {
+    btn.textContent = '確認簽到'; btn.disabled = false;
+  }
 }
 
-// 修復4：autoCalcHours 從 span 取文字，去除空白後計算
 function calcHours(inTime, outTime) {
   if (!inTime || !outTime) return 0;
-  const [inH, inM] = inTime.split(':').map(Number);
+  const [inH, inM]   = inTime.split(':').map(Number);
   const [outH, outM] = outTime.split(':').map(Number);
   let mins = (outH * 60 + outM) - (inH * 60 + inM);
   if (mins < 30) return 0;
@@ -2618,9 +2657,7 @@ function autoCalcHours() {
   const inTime  = (document.getElementById('attCheckinTimeRef').textContent || '').replace(/\s+/g, '').trim();
   const outTime = document.getElementById('attCheckoutTime').value;
   if (!inTime || !outTime) return;
-  const h = calcHours(inTime, outTime);
-  document.getElementById('attHours').value = h;
-  // 簽退時間改變時同步重新計算出勤次數
+  document.getElementById('attHours').value = calcHours(inTime, outTime);
   if (attCheckoutTarget) loadTodayCount(attCheckoutTarget);
 }
 
@@ -2631,54 +2668,95 @@ function autoCalcEditHours() {
   document.getElementById('aqEditHours').value = calcHours(inTime, outTime);
 }
 
+// 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
+async function loadTodayCount(memberName) {
+  const date      = document.getElementById('attDate').value;
+  const checkinT  = (attSessions[memberName] || {}).checkinTime || '';
+  const checkoutT = document.getElementById('attCheckoutTime').value || '';
+  document.getElementById('attCount').value = 0;
+  if (!checkinT || !checkoutT) return;
+
+  function toMins(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+  const inMins  = toMins(checkinT);
+  const outMins = toMins(checkoutT);
+
+  try {
+    const res     = await fetch(BASE_URL);
+    const records = await res.json();
+    const count   = records.filter(r => {
+      const name = r['姓名'] || r['memberName'] || '';
+      if (name !== memberName) return false;
+      if (normDate(r['日期']) !== date) return false;
+      const recOut  = fmtTime(r['出勤時間'] || '');
+      const recBack = fmtTime(r['返勤時間'] || '');
+      if (!recOut) return false;
+      const recOutMins  = toMins(recOut);
+      const recBackMins = recBack ? toMins(recBack) : recOutMins;
+      return recOutMins >= inMins && recBackMins <= outMins;
+    }).length;
+    document.getElementById('attCount').value = count;
+  } catch(e) {
+    document.getElementById('attCount').value = 0;
+  }
+}
+
+// ── 簽退：更新 Sheets 對應行 ──
 async function doCheckout() {
   const checkoutTime = document.getElementById('attCheckoutTime').value;
-  if (!checkoutTime) { alert('請填入簽退時間'); return; }
+  if (!checkoutTime)      { alert('請填入簽退時間'); return; }
   if (!attCheckoutHasSig) { alert('請完成簽退簽名'); return; }
 
-  const session = attSessions[attCheckoutTarget];
-  const hours = calcHours(session.checkinTime, checkoutTime);
+  const session    = attSessions[attCheckoutTarget];
+  const hours      = calcHours(session.checkinTime, checkoutTime);
+  const countVal   = parseInt(document.getElementById('attCount').value)   || 0;
+  const serviceVal = parseInt(document.getElementById('attService').value)  || 0;
+  const todayStr   = document.getElementById('attDate').value;
+  const memberObj  = members.find(m => m.name === attCheckoutTarget) || {};
+
   document.getElementById('attHours').value = hours;
-
-  const todayStr = document.getElementById('attDate').value;
-  const countVal = parseInt(document.getElementById('attCount').value) || 0;
-
-  const memberObj = members.find(m => m.name === attCheckoutTarget);
-  const data = {
-    action: 'attendance',
-    date:         todayStr,
-    title:        memberObj ? (memberObj.title || '') : '',
-    memberName:   attCheckoutTarget,
-    checkinSig:   session.checkinSig,
-    checkinTime:  session.checkinTime,
-    checkoutSig:  attCheckoutCtx.canvas.toDataURL('image/png'),
-    checkoutTime: checkoutTime,
-    hours:        String(hours),
-    count:        String(countVal),
-    service:      document.getElementById('attService').value || '0',
-  };
 
   const btn = document.querySelector('#attCheckoutView .btn-checkout');
   btn.textContent = '送出中...'; btn.disabled = true;
 
   try {
     await fetch(BASE_URL, {
-      method: 'POST', mode: 'no-cors',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        action:       'attendance',
+        date:         todayStr,
+        title:        memberObj.title || '',
+        memberName:   attCheckoutTarget,
+        checkinSig:   session.checkinSig  || '',
+        checkinTime:  session.checkinTime,
+        checkoutSig:  attCheckoutCtx.canvas.toDataURL('image/png'),
+        checkoutTime,
+        hours:        String(hours),
+        count:        String(countVal),
+        service:      String(serviceVal),
+        rowIndex:     session.rowIndex,   // 告訴 Sheets 要更新哪一行
+      })
     });
-    attSessions[attCheckoutTarget].done = true;
+
+    // 標記完成
+    attSessions[attCheckoutTarget].done         = true;
     attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
+
     document.getElementById('attSuccessDetail').textContent =
       `${attCheckoutTarget} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
     document.getElementById('attSuccessMsg').classList.add('show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
   } catch(e) {
     alert('送出失敗，請檢查網路連線後再試。');
   } finally {
     btn.textContent = '確認簽退送出'; btn.disabled = false;
   }
 }
+
 
 // ════════════════════════════════════════
 // 簽到簽退查詢
