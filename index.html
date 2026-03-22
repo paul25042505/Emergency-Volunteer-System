@@ -2988,10 +2988,20 @@ async function loadItems() {
   const container = document.getElementById('itemsList');
   container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>';
   try {
-    const res = await fetch(BASE_URL + '?action=getItems');
-    allItems  = await res.json();
+    const res  = await fetch(BASE_URL + '?action=getItems');
+    const text = await res.text();
+    try {
+      allItems = JSON.parse(text);
+    } catch(parseErr) {
+      container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>資料格式錯誤：${text.substring(0,100)}</div>`;
+      return;
+    }
   } catch(e) {
-    container.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗，請重新整理</div>';
+    container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：${e.message}</div>`;
+    return;
+  }
+  if (!Array.isArray(allItems)) {
+    container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>回傳格式非陣列：${JSON.stringify(allItems).substring(0,100)}</div>`;
     return;
   }
   renderItemsList();
