@@ -502,6 +502,8 @@ tr:hover td { background: #fdfcfb; }
     <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
     <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
     <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>出勤統計</button>
+    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>物品領用</button>
+    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>物品領用</button>
     <button id="nav-changelog" onclick="navTo('changelogPage')"><span class="icon">📝</span>版本修改紀錄</button>
   </nav>
 </div>
@@ -612,6 +614,11 @@ tr:hover td { background: #fdfcfb; }
           <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">出勤統計</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">出勤排行榜</div>
+        </button>
+        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">物品領用</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
         </button>
       </div>
     </div>
@@ -1294,11 +1301,11 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
     <!-- ────────────────────────────── -->
-    <!-- v1.3.09 -->
+    <!-- v1.4.01 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.3.09
+        <h3 style="color:var(--red-dark);">v1.4.01
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　簽到寫入後台</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
@@ -1317,6 +1324,26 @@ tr:hover td { background: #fdfcfb; }
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>系統部署至 GitHub Pages，提供固定網址存取</li>
           <li>網址：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.3.09 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.3.09
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　簽到寫入後台</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>簽到時立即寫入 Google Sheets，所有裝置都能看到同步的在線名單</li>
+          <li>簽退時更新對應的簽到紀錄，跨裝置準確</li>
+          <li>首頁「目前在線人數」改從 Sheets 即時計算</li>
         </ul>
       </div>
     </div>
@@ -1612,6 +1639,79 @@ tr:hover td { background: #fdfcfb; }
   </div>
 </div>
 
+
+<!-- ══════ PAGE：物品領用 ══════ -->
+<div class="page" id="itemsPage">
+  <div class="query-wrap">
+
+    <!-- 新增物品 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">＋</div>
+        <div class="section-title">新增物品</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label for="itemName">物品名稱 <span class="req">*</span></label>
+          <input type="text" id="itemName" placeholder="例：聘書、協勤慰問品">
+        </div>
+        <div class="field">
+          <label for="itemNote">備註說明</label>
+          <input type="text" id="itemNote" placeholder="例：114年春節、共3份">
+        </div>
+        <div class="field">
+          <label>領取人 <span class="req">*</span>（可複選）</label>
+          <div id="itemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <button onclick="addItem()" class="btn-submit" style="letter-spacing:0.1em;">新增物品</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 物品清單 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📦</div>
+        <div class="section-title">待領清單</div>
+        <div class="section-line"></div>
+        <button onclick="loadItems()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div id="itemsList">
+        <div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- 領取簽名 Modal -->
+<div id="claimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;" id="claimModalTitle">領取物品</div>
+    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:20px;" id="claimModalSub"></div>
+    <div style="background:var(--warm);border-radius:5px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--text-mid);">
+      領取人：<b id="claimModalName"></b>
+    </div>
+    <div class="field">
+      <label>領取簽名 <span class="req">*</span></label>
+      <div class="sig-wrap">
+        <canvas id="claimSigCanvas"></canvas>
+        <div class="sig-footer">
+          <span>請用滑鼠或手指於上方簽名</span>
+          <button type="button" class="btn-clear" onclick="clearClaimSig()">清除重簽</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="submitClaim()" class="btn-search" style="flex:1;letter-spacing:0.1em;">確認領取</button>
+      <button onclick="closeClaimModal()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- Signature Modal -->
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -1825,7 +1925,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbzcti-CqORFVOW9zQwQRE_u3Z1czU67Qaq72-vm4Myy5yxdsMe1K8EpIMmS8i2wUxXevA/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbwWM26zM9wsDa_FnxH3ndaZr5rphI3x84_0Ypl2an0koegvxpRSGdktvfKxdUCbeJ-Udg/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ════════════════════════════════════════
@@ -1915,7 +2015,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.3.09　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.4.01　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -1963,6 +2063,7 @@ function navTo(pageId) {
     statsPage:      ['出勤統計', 'Attendance Statistics', 'nav-stats'],
     reportPage:     ['報表匯出', 'Reports', 'nav-report'],
     attQueryPage:   ['簽到/退記錄查詢', 'Attendance Log', 'nav-attquery'],
+    itemsPage:      ['物品領用', 'Item Pickup', 'nav-items'],
     changelogPage:  ['版本修改紀錄', 'Version History', 'nav-changelog'],
   };
   const t = titles[pageId];
@@ -1979,6 +2080,7 @@ function navTo(pageId) {
   else if (pageId === 'attendancePage') initAttendancePage();
   else if (pageId === 'statsPage') initStatsPage();
   else if (pageId === 'reportPage') initReportPage();
+  else if (pageId === 'itemsPage')  initItemsPage();
   else if (pageId === 'attQueryPage') initAttQuery();
 
   closeDrawer();
@@ -3106,6 +3208,285 @@ async function loadStats() {
 // ════════════════════════════════════════
 // 地圖
 // ════════════════════════════════════════ 
+
+
+// ════════════════════════════════════════
+// 物品領用
+// ════════════════════════════════════════
+let allItems        = [];
+let claimTargetItem = null;
+let claimTargetName = '';
+let claimSigCtx     = null;
+let claimHasSig     = false;
+
+async function initItemsPage() {
+  // 渲染領取人選單（從成員名單）
+  await loadMembers();
+  renderItemRecipients();
+  await loadItems();
+}
+
+function renderItemRecipients() {
+  const grid = document.getElementById('itemRecipients');
+  if (!grid) return;
+  if (members.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text-light);font-size:0.82rem;">尚無成員，請先到「成員管理」新增</div>';
+    return;
+  }
+  grid.innerHTML = members.map(m => `
+    <label class="cb-item" style="font-size:0.82rem;">
+      <input type="checkbox" value="${m.name}" style="accent-color:var(--red);min-height:unset;">
+      ${m.name}
+    </label>
+  `).join('');
+  grid.querySelectorAll('.cb-item').forEach(el => {
+    el.querySelector('input').addEventListener('change', function() {
+      el.classList.toggle('checked', this.checked);
+    });
+  });
+}
+
+async function loadItems() {
+  const container = document.getElementById('itemsList');
+  container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>';
+  try {
+    const res = await fetch(BASE_URL + '?action=getItems');
+    allItems  = await res.json();
+  } catch(e) {
+    container.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗，請重新整理</div>';
+    return;
+  }
+  renderItemsList();
+}
+
+function renderItemsList() {
+  const container = document.getElementById('itemsList');
+  if (allItems.length === 0) {
+    container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>目前沒有待領物品</div>';
+    return;
+  }
+
+  // 分成「有人未領」和「全部已領」兩組
+  const pending  = allItems.filter(item => item.recipients.some(r => !r.claimed));
+  const done     = allItems.filter(item => item.recipients.every(r => r.claimed));
+
+  let html = '';
+
+  if (pending.length > 0) {
+    html += pending.map(item => renderItemCard(item, false)).join('');
+  }
+
+  if (done.length > 0) {
+    html += `<div style="font-size:0.78rem;color:var(--text-light);letter-spacing:0.06em;margin:20px 0 8px;font-family:'Noto Serif TC',serif;">── 已全數領取 ──</div>`;
+    html += done.map(item => renderItemCard(item, true)).join('');
+  }
+
+  container.innerHTML = html;
+}
+
+function renderItemCard(item, allDone) {
+  const total    = item.recipients.length;
+  const claimed  = item.recipients.filter(r => r.claimed).length;
+  const pct      = total > 0 ? Math.round(claimed / total * 100) : 0;
+
+  const recipientsHtml = item.recipients.map(r => {
+    if (r.claimed) {
+      return `<div class="member-item" style="padding:10px 16px;">
+        <div class="member-avatar" style="background:#27ae60;width:32px;height:32px;font-size:0.85rem;">${r.name.charAt(0)}</div>
+        <div class="member-info">
+          <div class="member-name" style="font-size:0.88rem;">${r.name}</div>
+          <div class="member-title">已領取　${r.claimTime ? r.claimTime.substring(0,16) : ''}</div>
+        </div>
+        ${r.sig ? `<img src="${r.sig}" style="height:32px;border:1px solid var(--border);border-radius:3px;" title="領取簽名">` : '<span class="att-status-badge done">已領取</span>'}
+      </div>`;
+    }
+    return `<div class="member-item" style="padding:10px 16px;">
+      <div class="member-avatar" style="background:#e0d5c8;color:var(--text-mid);width:32px;height:32px;font-size:0.85rem;">${r.name.charAt(0)}</div>
+      <div class="member-info">
+        <div class="member-name" style="font-size:0.88rem;">${r.name}</div>
+        <div class="member-title">尚未領取</div>
+      </div>
+      <button class="att-member-btn" style="border-color:#27ae60;color:#27ae60;"
+        onclick="openClaimModal('${item.itemId}','${r.name}','${item.itemName}','${item.note || ''}')">
+        領取
+      </button>
+    </div>`;
+  }).join('');
+
+  return `<div class="result-card" style="margin-bottom:14px;">
+    <div class="result-head" style="${allDone ? '' : 'background:var(--warm);'}">
+      <div>
+        <h3 style="font-family:'Noto Serif TC',serif;font-size:0.92rem;font-weight:700;color:var(--text);">
+          ${item.itemName}
+          ${item.note ? `<span style="font-size:0.72rem;font-weight:400;color:var(--text-light);margin-left:6px;">${item.note}</span>` : ''}
+        </h3>
+        <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">
+          建立：${item.createTime ? item.createTime.substring(0,16) : ''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <div style="text-align:right;">
+          <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:${allDone ? '#27ae60' : 'var(--red)'};">${claimed}/${total}</div>
+          <div style="font-size:0.68rem;color:var(--text-light);">已領取</div>
+        </div>
+        <button onclick="deleteItem('${item.itemId}','${item.itemName}')"
+          style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
+          刪除
+        </button>
+      </div>
+    </div>
+    <!-- 進度條 -->
+    <div style="padding:0 16px 0;background:var(--warm);">
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${allDone ? '#27ae60' : 'var(--red)'};border-radius:2px;transition:width 0.4s;"></div>
+      </div>
+    </div>
+    <!-- 領取人清單 -->
+    <div style="border-top:1px solid var(--border);">
+      ${recipientsHtml}
+    </div>
+  </div>`;
+}
+
+async function addItem() {
+  const name  = document.getElementById('itemName').value.trim();
+  const note  = document.getElementById('itemNote').value.trim();
+  const checked = [...document.querySelectorAll('#itemRecipients input:checked')];
+
+  if (!name)           { alert('請填入物品名稱'); return; }
+  if (!checked.length) { alert('請選擇至少一位領取人'); return; }
+
+  const recipients = checked.map(cb => cb.value);
+  const btn = document.querySelector('#itemsPage .btn-submit');
+  btn.textContent = '新增中...'; btn.disabled = true;
+
+  try {
+    fetch(BASE_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addItem', itemName: name, note, recipients })
+    });
+    // 清空表單
+    document.getElementById('itemName').value = '';
+    document.getElementById('itemNote').value = '';
+    document.querySelectorAll('#itemRecipients input').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.cb-item').classList.remove('checked');
+    });
+    // 等一下再重新載入（no-cors 無回應，稍等讓 Sheets 寫入）
+    setTimeout(() => { loadItems(); }, 1500);
+  } catch(e) {
+    alert('新增失敗，請重試。');
+  } finally {
+    btn.textContent = '新增物品'; btn.disabled = false;
+  }
+}
+
+async function deleteItem(itemId, itemName) {
+  if (!confirm(`確定要刪除「${itemName}」嗎？`)) return;
+  fetch(BASE_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'deleteItem', itemId })
+  });
+  setTimeout(() => loadItems(), 1500);
+}
+
+// ── 領取 Modal ──
+function openClaimModal(itemId, memberName, itemName, note) {
+  claimTargetItem = itemId;
+  claimTargetName = memberName;
+  document.getElementById('claimModalTitle').textContent = itemName;
+  document.getElementById('claimModalSub').textContent   = note || '';
+  document.getElementById('claimModalName').textContent  = memberName;
+  claimHasSig = false;
+  document.getElementById('claimModal').style.display = 'flex';
+  // 初始化簽名畫布
+  setTimeout(() => initClaimCanvas(), 100);
+}
+
+function closeClaimModal() {
+  document.getElementById('claimModal').style.display = 'none';
+  claimTargetItem = null;
+  claimTargetName = '';
+}
+
+function initClaimCanvas() {
+  const canvas = document.getElementById('claimSigCanvas');
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+  claimSigCtx  = newCanvas.getContext('2d');
+  claimHasSig  = false;
+  const ratio  = window.devicePixelRatio || 1;
+  const rect   = newCanvas.getBoundingClientRect();
+  const w      = rect.width || 300;
+  newCanvas.width  = w * ratio;
+  newCanvas.height = 160 * ratio;
+  claimSigCtx.scale(ratio, ratio);
+  claimSigCtx.strokeStyle = '#1a1a1a';
+  claimSigCtx.lineWidth   = 2;
+  claimSigCtx.lineCap     = 'round';
+  claimSigCtx.lineJoin    = 'round';
+
+  function getPos(e) {
+    const r = newCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  let drawing = false;
+  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); });
+  newCanvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; });
+  newCanvas.addEventListener('mouseup',    () => drawing = false);
+  newCanvas.addEventListener('mouseleave', () => drawing = false);
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; }, { passive: false });
+  newCanvas.addEventListener('touchend',   () => drawing = false);
+}
+
+function clearClaimSig() {
+  if (claimSigCtx) claimSigCtx.clearRect(0, 0, claimSigCtx.canvas.width, claimSigCtx.canvas.height);
+  claimHasSig = false;
+}
+
+async function submitClaim() {
+  if (!claimHasSig) { alert('請先完成簽名'); return; }
+  const sig = document.getElementById('claimSigCanvas').toDataURL('image/png');
+  const btn = document.querySelector('#claimModal .btn-search');
+  btn.textContent = '送出中...'; btn.disabled = true;
+
+  fetch(BASE_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action:     'claimItem',
+      itemId:     claimTargetItem,
+      memberName: claimTargetName,
+      sig,
+    })
+  }).catch(() => {});
+
+  // 樂觀更新：立即在本地標記為已領取
+  allItems = allItems.map(item => {
+    if (item.itemId !== claimTargetItem) return item;
+    return {
+      ...item,
+      recipients: item.recipients.map(r => {
+        if (r.name !== claimTargetName || r.claimed) return r;
+        return { ...r, claimed: true, claimTime: new Date().toLocaleString('zh-TW'), sig };
+      })
+    };
+  });
+
+  closeClaimModal();
+  renderItemsList();
+  btn.textContent = '確認領取'; btn.disabled = false;
+
+  // 稍後從 Sheets 重新同步
+  setTimeout(() => loadItems(), 2000);
+}
 
 // ════════════════════════════════════════
 // DOMContentLoaded
