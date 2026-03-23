@@ -1769,7 +1769,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbzLHOKqFDQtC-E6pMee-YmlrOir9NJRl95DJ-e1YN1Y5M7pUC1OyPFdOXq7jds-SBbMhQ/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbwoxjLDIWneZcqDBQGr2hVaZ_5Hh1mW_RHA6Hogk5oTAAobLwHYXEZeZ5H-t1LZVAj1Zw/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ════════════════════════════════════════
@@ -3482,7 +3482,6 @@ async function submitClaim() {
         + '?action=claimItemGet'
         + '&itemId='     + encodeURIComponent(claimTargetItem)
         + '&memberName=' + encodeURIComponent(claimTargetName)
-        + '&sig='        + encodeURIComponent(sig.substring(0, 500)) // 部分簽名用於辨識
         + '&callback='   + cbName;
       const script = document.createElement('script');
       script.id  = 'claimJsonpScript';
@@ -3492,11 +3491,16 @@ async function submitClaim() {
       setTimeout(() => { if (!done) { done = true; delete window[cbName]; document.getElementById('claimJsonpScript')?.remove(); reject(new Error('逾時')); } }, 15000);
     });
 
-    // 同時用 no-cors 寫入完整簽名圖
+    // 再用 no-cors POST 寫入完整簽名圖（JSONP URL 長度有限，簽名另外送）
     fetch(BASE_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'claimItem', itemId: claimTargetItem, memberName: claimTargetName, sig })
+      body: JSON.stringify({
+        action:     'updateClaimSig',
+        itemId:     claimTargetItem,
+        memberName: claimTargetName,
+        sig,
+      })
     }).catch(() => {});
 
     // 更新本地資料
