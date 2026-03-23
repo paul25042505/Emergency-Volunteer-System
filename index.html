@@ -1526,6 +1526,22 @@ tr:hover td { background: #fdfcfb; }
 </div>
 
 
+<!-- 編輯物品領取人 Modal -->
+<div id="editItemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">編輯領取人</div>
+    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:16px;" id="editItemModalTitle"></div>
+    <div class="field">
+      <label>成員名單（勾選＝列為領取人）</label>
+      <div id="editItemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;max-height:280px;overflow-y:auto;"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="saveEditItem()" class="btn-search" style="flex:1;letter-spacing:0.1em;">儲存</button>
+      <button onclick="closeEditItemModal()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- Signature Modal -->
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -1753,7 +1769,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbwWM26zM9wsDa_FnxH3ndaZr5rphI3x84_0Ypl2an0koegvxpRSGdktvfKxdUCbeJ-Udg/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbzLHOKqFDQtC-E6pMee-YmlrOir9NJRl95DJ-e1YN1Y5M7pUC1OyPFdOXq7jds-SBbMhQ/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ════════════════════════════════════════
@@ -3222,10 +3238,16 @@ function renderItemCard(item, allDone) {
           <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:${allDone ? '#27ae60' : 'var(--red)'};">${claimed}/${total}</div>
           <div style="font-size:0.68rem;color:var(--text-light);">已領取</div>
         </div>
-        <button onclick="deleteItem('${item.itemId}','${item.itemName}')"
-          style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
-          刪除
-        </button>
+        <div style="display:flex;gap:6px;">
+          <button onclick="openEditItemModal('${item.itemId}','${item.itemName}')"
+            style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
+            編輯
+          </button>
+          <button onclick="deleteItem('${item.itemId}','${item.itemName}')"
+            style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
+            刪除
+          </button>
+        </div>
       </div>
     </div>
     <!-- 進度條 -->
@@ -3343,42 +3365,159 @@ function clearClaimSig() {
   claimHasSig = false;
 }
 
+// ── 編輯領取人 Modal ──
+let editTargetItemId   = null;
+let editTargetItemName = '';
+
+function openEditItemModal(itemId, itemName) {
+  editTargetItemId   = itemId;
+  editTargetItemName = itemName;
+  document.getElementById('editItemModalTitle').textContent = itemName;
+
+  // 找到此物品目前的領取人
+  const item = allItems.find(i => i.itemId === itemId);
+  const currentNames = item ? item.recipients.map(r => r.name) : [];
+
+  // 渲染成員名單，已在名單的打勾
+  const grid = document.getElementById('editItemRecipients');
+  grid.innerHTML = members.map(m => {
+    const checked = currentNames.includes(m.name);
+    return `<label class="cb-item ${checked ? 'checked' : ''}" style="font-size:0.82rem;">
+      <input type="checkbox" value="${m.name}" ${checked ? 'checked' : ''} style="accent-color:var(--red);min-height:unset;">
+      ${m.name}
+    </label>`;
+  }).join('');
+
+  grid.querySelectorAll('.cb-item').forEach(el => {
+    el.querySelector('input').addEventListener('change', function() {
+      el.classList.toggle('checked', this.checked);
+    });
+  });
+
+  document.getElementById('editItemModal').style.display = 'flex';
+}
+
+function closeEditItemModal() {
+  document.getElementById('editItemModal').style.display = 'none';
+  editTargetItemId   = null;
+  editTargetItemName = '';
+}
+
+async function saveEditItem() {
+  const item = allItems.find(i => i.itemId === editTargetItemId);
+  if (!item) return;
+
+  const currentNames = item.recipients.map(r => r.name);
+  const selected     = [...document.querySelectorAll('#editItemRecipients input:checked')].map(cb => cb.value);
+
+  const toAdd    = selected.filter(n => !currentNames.includes(n));
+  const toRemove = currentNames.filter(n => !selected.includes(n) && !item.recipients.find(r => r.name === n && r.claimed));
+  // 不允許移除已領取的人
+
+  const alreadyClaimed = currentNames.filter(n => !selected.includes(n) && item.recipients.find(r => r.name === n && r.claimed));
+  if (alreadyClaimed.length > 0) {
+    alert(`以下成員已領取，無法移除：${alreadyClaimed.join('、')}`);
+    return;
+  }
+
+  if (toAdd.length === 0 && toRemove.length === 0) {
+    closeEditItemModal();
+    return;
+  }
+
+  const btn = document.querySelector('#editItemModal .btn-search');
+  btn.textContent = '儲存中...'; btn.disabled = true;
+
+  try {
+    await new Promise((resolve, reject) => {
+      const cbName = 'editCb_' + Date.now();
+      let done = false;
+      window[cbName] = function(result) {
+        done = true; delete window[cbName];
+        document.getElementById('editJsonpScript')?.remove();
+        if (result && result.success) resolve();
+        else reject(new Error(result?.error || '儲存失敗'));
+      };
+      let url = BASE_URL + '?action=editItemRecipients&itemId=' + encodeURIComponent(editTargetItemId);
+      if (toAdd.length)    url += '&add='    + encodeURIComponent(toAdd.join(','));
+      if (toRemove.length) url += '&remove=' + encodeURIComponent(toRemove.join(','));
+      url += '&callback=' + cbName;
+      const script = document.createElement('script');
+      script.id = 'editJsonpScript'; script.src = url;
+      script.onerror = () => { if (!done) { done = true; delete window[cbName]; reject(new Error('連線失敗')); } };
+      document.head.appendChild(script);
+      setTimeout(() => { if (!done) { done = true; delete window[cbName]; document.getElementById('editJsonpScript')?.remove(); reject(new Error('逾時')); } }, 15000);
+    });
+
+    closeEditItemModal();
+    await loadItems();
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  } finally {
+    btn.textContent = '儲存'; btn.disabled = false;
+  }
+}
+
 async function submitClaim() {
   if (!claimHasSig) { alert('請先完成簽名'); return; }
   const sig = document.getElementById('claimSigCanvas').toDataURL('image/png');
   const btn = document.querySelector('#claimModal .btn-search');
   btn.textContent = '送出中...'; btn.disabled = true;
 
-  fetch(BASE_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action:     'claimItem',
-      itemId:     claimTargetItem,
-      memberName: claimTargetName,
-      sig,
-    })
-  }).catch(() => {});
+  try {
+    // 用 JSONP 送出，確保 Sheets 能正確寫入
+    // 簽名圖太大無法放 URL，先用 no-cors POST 寫入簽名
+    // 同時用 JSONP GET 標記已領取（不含簽名，確保寫入成功）
+    await new Promise((resolve, reject) => {
+      const cbName = 'claimCb_' + Date.now();
+      let done = false;
+      window[cbName] = function(result) {
+        done = true;
+        delete window[cbName];
+        document.getElementById('claimJsonpScript')?.remove();
+        if (result && result.success) resolve();
+        else reject(new Error(result?.error || '領取失敗'));
+      };
+      const url = BASE_URL
+        + '?action=claimItemGet'
+        + '&itemId='     + encodeURIComponent(claimTargetItem)
+        + '&memberName=' + encodeURIComponent(claimTargetName)
+        + '&sig='        + encodeURIComponent(sig.substring(0, 500)) // 部分簽名用於辨識
+        + '&callback='   + cbName;
+      const script = document.createElement('script');
+      script.id  = 'claimJsonpScript';
+      script.src = url;
+      script.onerror = () => { if (!done) { done = true; delete window[cbName]; reject(new Error('連線失敗')); } };
+      document.head.appendChild(script);
+      setTimeout(() => { if (!done) { done = true; delete window[cbName]; document.getElementById('claimJsonpScript')?.remove(); reject(new Error('逾時')); } }, 15000);
+    });
 
-  // 樂觀更新：立即在本地標記為已領取
-  allItems = allItems.map(item => {
-    if (item.itemId !== claimTargetItem) return item;
-    return {
-      ...item,
-      recipients: item.recipients.map(r => {
+    // 同時用 no-cors 寫入完整簽名圖
+    fetch(BASE_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claimItem', itemId: claimTargetItem, memberName: claimTargetName, sig })
+    }).catch(() => {});
+
+    // 更新本地資料
+    const now = new Date().toLocaleString('zh-TW');
+    allItems = allItems.map(item => {
+      if (item.itemId !== claimTargetItem) return item;
+      return { ...item, recipients: item.recipients.map(r => {
         if (r.name !== claimTargetName || r.claimed) return r;
-        return { ...r, claimed: true, claimTime: new Date().toLocaleString('zh-TW'), sig };
-      })
-    };
-  });
+        return { ...r, claimed: true, claimTime: now, sig };
+      })};
+    });
 
-  closeClaimModal();
-  renderItemsList();
-  btn.textContent = '確認領取'; btn.disabled = false;
+    closeClaimModal();
+    renderItemsList();
+    updateItemsBadge();
 
-  // 稍後從 Sheets 重新同步
-  setTimeout(() => loadItems(), 2000);
+  } catch(e) {
+    alert('領取失敗：' + e.message + ' 請重新整理後再試。');
+  } finally {
+    btn.textContent = '確認領取'; btn.disabled = false;
+  }
 }
 
 // ════════════════════════════════════════
