@@ -584,7 +584,10 @@ tr:hover td { background: #fdfcfb; }
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">新增／刪除成員</div>
         </button>
         <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
+          <div style="position:relative;display:inline-block;font-size:1.6rem;margin-bottom:8px;">
+            📦
+            <span id="itemsBadge" style="display:none;position:absolute;top:-6px;right:-10px;background:#e74c3c;color:white;border-radius:50%;min-width:18px;height:18px;font-size:0.65rem;font-weight:700;line-height:18px;text-align:center;padding:0 4px;font-family:sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></span>
+          </div>
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取物品、簽名確認</div>
         </button>
@@ -1964,6 +1967,32 @@ async function loadDashboard() {
     ['dashTodaySignin','dashMonthHours'].forEach(id =>
       document.getElementById(id).textContent = '—');
   }
+
+  // 更新待領物品角標
+  updateItemsBadge();
+}
+
+// 計算尚未全部領取的物品數，更新角標
+async function updateItemsBadge() {
+  const badge = document.getElementById('itemsBadge');
+  if (!badge) return;
+  try {
+    const res   = await fetch(BASE_URL + '?action=getItems');
+    const items = await res.json();
+    if (!Array.isArray(items)) return;
+    // 計算有人尚未領取的物品數
+    const pending = items.filter(item =>
+      Array.isArray(item.recipients) && item.recipients.some(r => !r.claimed)
+    ).length;
+    if (pending > 0) {
+      badge.textContent    = pending > 99 ? '99+' : pending;
+      badge.style.display  = 'inline-block';
+    } else {
+      badge.style.display  = 'none';
+    }
+  } catch(e) {
+    badge.style.display = 'none';
+  }
 }
 
 // ════════════════════════════════════════
@@ -3154,13 +3183,15 @@ function renderItemCard(item, allDone) {
         </h3>
         <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">
           建立：${item.createTime ? (function(t){
-            // t 格式可能是 "2026-03-22 22:51:00" 或 "2026-03-22T22:51:00"
-            var s = String(t).replace('T',' ');
-            var datePart = s.substring(0,10);
-            var timePart = s.length >= 16 ? s.substring(11,16) : '';
-            var d = datePart.split('-');
-            if (d.length < 3) return t;
-            return parseInt(d[0])+'年'+parseInt(d[1])+'月'+parseInt(d[2])+'日'+(timePart?' '+timePart:'');
+            // 用 Date 解析所有格式，再統一輸出 yyyy-MM-dd
+            try {
+              var d = new Date(t);
+              if (isNaN(d)) return String(t).substring(0,10);
+              var y  = d.getFullYear();
+              var mo = String(d.getMonth()+1).padStart(2,'0');
+              var dd = String(d.getDate()).padStart(2,'0');
+              return y+'-'+mo+'-'+dd;
+            } catch(e) { return String(t).substring(0,10); }
           })(item.createTime) : ''}
         </div>
       </div>
