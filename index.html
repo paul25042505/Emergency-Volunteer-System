@@ -1692,6 +1692,13 @@ function showApp(name, email) {
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.style.display = 'inline';
   startIdleTimer();
+
+  // 登入後根據 hash 決定顯示哪個頁面
+  const hashPage = location.hash.replace('#', '');
+  const targetPage = (hashPage && document.getElementById(hashPage))
+    ? hashPage : 'dashboardPage';
+  navTo(targetPage, true);
+  history.replaceState({ pageId: targetPage }, '', '#' + targetPage);
 }
 
 // ── 檢查既有 session（重新整理不需再登入）──
@@ -1863,10 +1870,18 @@ function buildTimeOptions(selId, selectedVal) {
 // ════════════════════════════════════════
 // Navigation
 // ════════════════════════════════════════
-function navTo(pageId) {
+function navTo(pageId, fromHistory) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
   document.querySelectorAll('.drawer nav button').forEach(btn => btn.classList.remove('active-nav'));
+
+  // 推入瀏覽器歷史（上一頁/下一頁用）
+  if (!fromHistory) {
+    const url = '#' + pageId;
+    if (location.hash !== url) {
+      history.pushState({ pageId }, '', url);
+    }
+  }
 
   const titles = {
     dashboardPage:  ['救護義消系統', 'Emergency Volunteer System', 'nav-dashboard'],
