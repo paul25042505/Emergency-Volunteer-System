@@ -1769,8 +1769,42 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbwoxjLDIWneZcqDBQGr2hVaZ_5Hh1mW_RHA6Hogk5oTAAobLwHYXEZeZ5H-t1LZVAj1Zw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyEOdpYnQB3hSfJL8yby5amo4HN2A1jS5XIKF5ImdWVeY3QvZ7wL5e7wKS_uYbco4Ye4g/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
+
+// ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
+function jsonpFetch(url, scriptId, timeout) {
+  timeout = timeout || 15000;
+  return new Promise(function(resolve, reject) {
+    var cbName = 'jsonpCb_' + scriptId + '_' + Date.now();
+    var done   = false;
+    window[cbName] = function(data) {
+      done = true;
+      delete window[cbName];
+      var el = document.getElementById(scriptId);
+      if (el) el.remove();
+      resolve(data);
+    };
+    var script  = document.createElement('script');
+    script.id   = scriptId;
+    var sep     = url.indexOf('?') >= 0 ? '&' : '?';
+    script.src  = url + sep + 'callback=' + cbName;
+    script.onerror = function() {
+      if (!done) { done = true; delete window[cbName]; reject(new Error('Load failed')); }
+    };
+    document.head.appendChild(script);
+    setTimeout(function() {
+      if (!done) {
+        done = true;
+        delete window[cbName];
+        var el = document.getElementById(scriptId);
+        if (el) el.remove();
+        reject(new Error('Timeout'));
+      }
+    }, timeout);
+  });
+}
+
 
 // ════════════════════════════════════════
 // 共用：日期正規化（修復2）
@@ -1963,8 +1997,7 @@ async function loadDashboard() {
     today.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
 
   try {
-    const res1 = await fetch(BASE_URL);
-    const att = await res1.json();
+    const att = await jsonpFetch(BASE_URL, 'dashAttCb');
 
     // 修復2：使用 normDate 正規化後比對
     const todayAtt = att.filter(r => normDate(r['日期']) === todayStr);
@@ -1979,7 +2012,7 @@ async function loadDashboard() {
   }
 
   try {
-    const res2 = await fetch(BASE_URL + '?action=getAttendance');
+    const res2 = await jsonpFetch(BASE_URL + '?action=getAttendance', 'getAttendanceCb');
     const signin = await res2.json();
 
     // 修復2：使用 normDate
@@ -2015,8 +2048,7 @@ async function updateItemsBadge() {
   const badge = document.getElementById('itemsBadge');
   if (!badge) return;
   try {
-    const res   = await fetch(BASE_URL + '?action=getItems');
-    const items = await res.json();
+    const items = await jsonpFetch(BASE_URL + '?action=getItems', 'badgeItemsCb');
     if (!Array.isArray(items)) return;
     // 計算有人尚未領取的物品數
     const pending = items.filter(item =>
@@ -2040,8 +2072,8 @@ let members = [];
 
 async function loadMembers() {
   try {
-    const res = await fetch(BASE_URL + '?action=getMembers');
-    members = await res.json();
+    members = await jsonpFetch(BASE_URL + '?action=getMembers', 'getMembersCb');
+    if (!Array.isArray(members)) members = [];
   } catch(e) { members = []; }
   updateMemberSelect();
   renderMemberList();
@@ -2279,8 +2311,7 @@ async function doQuery() {
   document.getElementById('resultCard').style.display = 'none';
 
   try {
-    const res = await fetch(BASE_URL);
-    allRecords = await res.json();
+    allRecords = await jsonpFetch(BASE_URL, 'queryRecordsCb');
   } catch(e) {
     alert('無法取得資料，請確認 Google Apps Script 已正確部署並允許任何人存取。');
     btn.textContent = '查　詢'; btn.disabled = false;
@@ -2446,7 +2477,7 @@ async function initAttendancePage() {
 // ── 從 Sheets 讀取今日已簽到未簽退名單 ──
 async function loadTodayCheckins() {
   try {
-    const res     = await fetch(BASE_URL + '?action=getTodayCheckins');
+    const res     = await jsonpFetch(BASE_URL + '?action=getTodayCheckins', 'getTodayCheckinsCb');
     const records = await res.json();
     // 把從 Sheets 讀到的資料寫入 attSessions（不覆蓋已有的本地資料）
     records.forEach(r => {
@@ -2667,8 +2698,7 @@ async function loadTodayCount(memberName) {
   const outMins = toMins(checkoutT);
 
   try {
-    const res     = await fetch(BASE_URL);
-    const records = await res.json();
+    const records = await jsonpFetch(BASE_URL, 'todayCountCb');
     const count   = records.filter(r => {
       const name = r['姓名'] || r['memberName'] || '';
       if (name !== memberName) return false;
@@ -2762,7 +2792,7 @@ async function doAttQuery() {
   document.getElementById('aqInitMsg').style.display = 'none';
   document.getElementById('aqResultCard').style.display = 'none';
   try {
-    const res = await fetch(BASE_URL + '?action=getAttendance');
+    const res = await jsonpFetch(BASE_URL + '?action=getAttendance', 'getAttendanceCb');
     aqAllRecords = await res.json();
   } catch(e) {
     alert('無法取得資料：' + e.message);
@@ -3136,17 +3166,8 @@ async function loadItems() {
   if (!container) return;
   container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>';
   try {
-    const url  = BASE_URL + '?action=getItems';
-    const res  = await fetch(url);
-    const text = await res.text();
-    // 顯示原始回應（前100字）供診斷
-    console.log('[getItems] 回應:', text.substring(0, 200));
-    try {
-      allItems = JSON.parse(text);
-    } catch(parseErr) {
-      container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>資料格式錯誤<br><small>${text.substring(0,150)}</small></div>`;
-      return;
-    }
+    allItems = await jsonpFetch(BASE_URL + '?action=getItems', 'getItemsCb');
+    if (!Array.isArray(allItems)) throw new Error('格式錯誤');
   } catch(e) {
     container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>連線失敗：${e.message}</div>`;
     return;
