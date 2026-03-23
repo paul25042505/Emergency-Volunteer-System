@@ -1694,11 +1694,18 @@ function showApp(name, email) {
   startIdleTimer();
 
   // 登入後根據 hash 決定顯示哪個頁面
-  const hashPage = location.hash.replace('#', '');
+  const hashPage   = location.hash.replace('#', '');
   const targetPage = (hashPage && document.getElementById(hashPage))
     ? hashPage : 'dashboardPage';
-  navTo(targetPage, true);
-  history.replaceState({ pageId: targetPage }, '', '#' + targetPage);
+
+  // 先把首頁推入歷史（作為基底），再切到目標頁
+  // 這樣按上一頁永遠有東西可以退
+  history.replaceState({ pageId: 'dashboardPage' }, '', '#dashboardPage');
+  if (targetPage !== 'dashboardPage') {
+    navTo(targetPage, false); // false = 會再 pushState
+  } else {
+    navTo('dashboardPage', true);
+  }
 }
 
 // ── 檢查既有 session（重新整理不需再登入）──
@@ -3379,9 +3386,31 @@ async function submitClaim() {
 // ════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initFooters();
+
+  // ── 上一頁／下一頁監聽 ──
+  window.addEventListener('popstate', (e) => {
+    const pageId = (e.state && e.state.pageId)
+      || location.hash.replace('#', '')
+      || 'dashboardPage';
+    const el = document.getElementById(pageId);
+    navTo(el ? pageId : 'dashboardPage', true);
+  });
+
+  // ── 初始頁面處理 ──
+  const initPage = location.hash.replace('#', '');
+  const initEl   = document.getElementById(initPage);
+
   if (checkSession()) {
-    // session 有效，直接載入
+    // session 有效：先把首頁設為基底，再切到目標頁
+    history.replaceState({ pageId: 'dashboardPage' }, '', '#dashboardPage');
+    if (initEl && initPage !== 'dashboardPage') {
+      navTo(initPage, false);
+    } else {
+      navTo('dashboardPage', true);
+    }
   }
+  // 若無 session，loginScreen 顯示，登入後 showApp 再處理
+
   document.getElementById('sigModal').addEventListener('click', () => {
     document.getElementById('sigModal').style.display = 'none';
   });
