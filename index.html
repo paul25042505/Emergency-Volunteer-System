@@ -3031,10 +3031,17 @@ let claimSigCtx     = null;
 let claimHasSig     = false;
 
 async function initItemsPage() {
-  // 渲染領取人選單（從成員名單）
-  await loadMembers();
-  renderItemRecipients();
-  await loadItems();
+  // 先確保容器顯示載入中
+  const container = document.getElementById('itemsList');
+  if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>';
+
+  try {
+    await loadMembers();
+    renderItemRecipients();
+    await loadItems();
+  } catch(e) {
+    if (container) container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>初始化失敗：${e.message}</div>`;
+  }
 }
 
 function renderItemRecipients() {
@@ -3059,22 +3066,26 @@ function renderItemRecipients() {
 
 async function loadItems() {
   const container = document.getElementById('itemsList');
+  if (!container) return;
   container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>';
   try {
-    const res  = await fetch(BASE_URL + '?action=getItems');
+    const url  = BASE_URL + '?action=getItems';
+    const res  = await fetch(url);
     const text = await res.text();
+    // 顯示原始回應（前100字）供診斷
+    console.log('[getItems] 回應:', text.substring(0, 200));
     try {
       allItems = JSON.parse(text);
     } catch(parseErr) {
-      container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>資料格式錯誤：${text.substring(0,100)}</div>`;
+      container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>資料格式錯誤<br><small>${text.substring(0,150)}</small></div>`;
       return;
     }
   } catch(e) {
-    container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：${e.message}</div>`;
+    container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>連線失敗：${e.message}</div>`;
     return;
   }
   if (!Array.isArray(allItems)) {
-    container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>回傳格式非陣列：${JSON.stringify(allItems).substring(0,100)}</div>`;
+    container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>格式錯誤（非陣列）<br><small>${JSON.stringify(allItems).substring(0,150)}</small></div>`;
     return;
   }
   renderItemsList();
