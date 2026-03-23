@@ -1776,32 +1776,40 @@ const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZI
 function jsonpFetch(url, scriptId, timeout) {
   timeout = timeout || 15000;
   return new Promise(function(resolve, reject) {
-    var cbName = 'jsonpCb_' + scriptId + '_' + Date.now();
+    var cbName = '_jsonp_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    var script = document.createElement('script');
     var done   = false;
-    window[cbName] = function(data) {
-      done = true;
+
+    function cleanup() {
       delete window[cbName];
-      var el = document.getElementById(scriptId);
-      if (el) el.remove();
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data) {
+      if (done) return;
+      done = true;
+      cleanup();
       resolve(data);
     };
-    var script  = document.createElement('script');
-    script.id   = scriptId;
-    var sep     = url.indexOf('?') >= 0 ? '&' : '?';
-    script.src  = url + sep + 'callback=' + cbName;
+
+    var sep    = url.indexOf('?') >= 0 ? '&' : '?';
+    script.src = url + sep + 'callback=' + cbName;
+
     script.onerror = function() {
-      if (!done) { done = true; delete window[cbName]; reject(new Error('Load failed')); }
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error('連線失敗'));
     };
-    document.head.appendChild(script);
+
     setTimeout(function() {
-      if (!done) {
-        done = true;
-        delete window[cbName];
-        var el = document.getElementById(scriptId);
-        if (el) el.remove();
-        reject(new Error('Timeout'));
-      }
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error('連線逾時'));
     }, timeout);
+
+    document.head.appendChild(script);
   });
 }
 
@@ -3046,12 +3054,10 @@ async function loadStats() {
   const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
 
   try {
-    const [attRes, outRes] = await Promise.all([
-      fetch(BASE_URL + '?action=getAttendance'),
-      fetch(BASE_URL)
+    const [attData, outData] = await Promise.all([
+      jsonpFetch(BASE_URL + '?action=getAttendance', 'statsAttCb'),
+      jsonpFetch(BASE_URL, 'statsOutCb')
     ]);
-    const attData = await attRes.json();
-    const outData = await outRes.json();
 
     const monthAtt = attData.filter(r => normDate(r['日期']).substring(0, 7) === monthStr);
     const monthOut = outData.filter(r => normDate(r['日期']).substring(0, 7) === monthStr);
