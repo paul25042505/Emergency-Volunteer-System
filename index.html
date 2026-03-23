@@ -709,10 +709,7 @@ tr:hover td { background: #fdfcfb; }
               <label class="cb-item"><input type="checkbox" value="協助給氧"> 協助給氧</label>
               <label class="cb-item"><input type="checkbox" value="協助抽吸"> 協助抽吸</label>
               <label class="cb-item"><input type="checkbox" value="協助使用LUCAS"> 協助使用LUCAS</label>
-              <label class="cb-item"><input type="checkbox" value="協助使用心電圖"> 協助使用心電圖</label>
-              <label class="cb-item"><input type="checkbox" value="協助使用支氣管擴張劑"> 協助使用支氣管擴張劑</label>
-              <label class="cb-item"><input type="checkbox" value="協助使用NTG"> 協助使用NTG</label>
-              <label class="cb-item"><input type="checkbox" value="測量血糖"> 測量血糖</label>
+              
               <label class="cb-item"><input type="checkbox" value="協助使用心電圖"> 協助使用心電圖</label>
               <label class="cb-item"><input type="checkbox" value="協助使用支氣管擴張劑"> 協助使用支氣管擴張劑</label>
               <label class="cb-item"><input type="checkbox" value="協助使用NTG"> 協助使用NTG</label>
@@ -949,7 +946,7 @@ tr:hover td { background: #fdfcfb; }
               <input type="date" id="attDate">
             </div>
             <div class="field">
-              <label for="attCheckinTime">簽到時間 <span class="req">*</span></label>
+              <label for="attCheckinTime">簽到時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
               <select id="attCheckinTime" style="width:100%;"></select>
             </div>
           </div>
@@ -1035,7 +1032,7 @@ tr:hover td { background: #fdfcfb; }
           </div>
           <div class="field">
             <label>出勤次數</label>
-            <input type="number" id="attCount" min="0" step="1" style="width:100%;color:var(--text-light);" readonly>
+            <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;color:var(--text-light);" readonly>
           </div>
           <div class="field">
             <label>服務人次</label>
@@ -1375,11 +1372,35 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <!-- v1.4.01 -->
+    <!-- v1.4.02 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.4.01
+        <h3 style="color:var(--red-dark);">v1.4.02
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-23　細節修正</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>簽到簽退紀錄查詢：協勤時數、出勤次數、服務人次為 0 時正確顯示「0」，不再空白</li>
+          <li>簽退頁面：出勤次數為 0 時顯示「0」，避免誤以為欄位未填寫</li>
+          <li>出勤案件登錄：移除重複的服務項目（協助使用心電圖等四項）</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 調整</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>出勤案件登錄、簽到簽退登錄的時間欄位加上「24小時制」提醒</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.4.01 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.4.01
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-22　物品領用</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
@@ -1388,18 +1409,15 @@ tr:hover td { background: #fdfcfb; }
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>新增「待領物品」頁面：建立物品、選擇領取人、追蹤領取狀態</li>
-          <li>義消可點選自己名字，簽名確認領取，自動記錄領取時間</li>
+          <li>義消可點選自己名字，簽名確認領取，自動記錄領取時間與簽名</li>
           <li>進度條顯示已領取／總人數，全數領取後自動移至下方</li>
+          <li>首頁待領物品角標顯示未領取項目數</li>
           <li>資料同步儲存至 Google Sheets「物品領用」工作表</li>
-        </ul>
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 調整</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>待領物品移至首頁快速入口第二格</li>
-          <li>建立日期改為西元年月日格式顯示</li>
         </ul>
       </div>
     </div>
 
+    <!-- ────────────────────────────── -->
     <!-- v1.3 系列 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
@@ -1410,52 +1428,28 @@ tr:hover td { background: #fdfcfb; }
         <span style="font-size:0.72rem;color:var(--text-light);">多次小修</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.09　簽到寫入後台</div>
         <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
           <li>簽到時立即寫入 Google Sheets，所有裝置共用同一份在線名單</li>
           <li>簽退時更新對應的簽到紀錄（不再新增額外一筆）</li>
           <li>首頁「目前在線人數」從 Sheets 即時計算，跨裝置準確</li>
         </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.08　簽退出勤次數修正</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.07～08　功能調整與修正</div>
         <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>出勤次數改為依簽到～簽退時段計算，不再統計整天</li>
-          <li>選完簽退時間後自動重新計算出勤次數</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.07　功能調整</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>首頁新增「目前在線人數」（已簽到未簽退）與「今日簽到人數」</li>
+          <li>首頁新增「目前在線人數」與「今日簽到人數」</li>
           <li>服務項目新增：協助使用心電圖、支氣管擴張劑、NTG、測量血糖</li>
-          <li>移除「個人頁面」（與出勤紀錄查詢功能重複）</li>
+          <li>出勤次數改為依簽到～簽退時段計算，不再統計整天</li>
         </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.05 ～ v1.3.06　移除地圖功能</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>移除出勤統計地圖熱度、出勤查詢地圖分佈（Nominatim 對台灣地址支援不足）</li>
-          <li>移除 Leaflet.js，減少頁面載入資源</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.03 ～ v1.3.04　登入功能修復</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>修正 JWT URL-safe base64 解析錯誤導致無法登入</li>
-          <li>修正中文名字顯示亂碼（UTF-8 編碼處理）</li>
-          <li>修正登入紀錄時間錯誤（+16小時）</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.01 ～ v1.3.02　Google 帳號登入 & 白名單</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.3.01～06　Google 登入 & 安全性</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>新增 Google 帳號登入，僅白名單成員可存取系統</li>
-          <li>白名單改由 Google Sheets「白名單」工作表管理，新增／移除成員無需重新部署</li>
-          <li>自動建立「登入紀錄」工作表，記錄每次登入時間與結果</li>
-          <li>Session 有效期 8 小時，閒置 30 分鐘自動鎖定</li>
-          <li>系統部署至 GitHub Pages：https://paul25042505.github.io/Emergency-Volunteer-System/</li>
+          <li>白名單由 Google Sheets 管理，Session 8 小時，閒置 30 分鐘自動鎖定</li>
+          <li>系統部署至 GitHub Pages</li>
         </ul>
-
       </div>
     </div>
 
+    <!-- ────────────────────────────── -->
     <!-- v1.2 系列 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
@@ -1466,27 +1460,15 @@ tr:hover td { background: #fdfcfb; }
         <span style="font-size:0.72rem;color:var(--text-light);">中版本更新</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.2.01　Bug 修復</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>修正首頁出勤筆數、出勤人數顯示 0 的問題</li>
-          <li>根本原因：Google Sheets 日期以 UTC 儲存，需加 +8 小時轉換為台灣時間</li>
-          <li>統一所有日期解析為 normDate()，支援多種格式</li>
-          <li>統一輸入欄位高度、導覽列支援上下滑動、版本修改紀錄頁面</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.2　報表匯出</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>新增「報表匯出」頁面</li>
-          <li>報表 1：簽到簽退紀錄表（含簽名圖片）</li>
-          <li>報表 2：救護義消服勤表</li>
-          <li>報表 3：救護出勤紀錄表</li>
-          <li>所有報表使用 Google Docs 範本產生 .docx 並直接下載</li>
+          <li>新增報表匯出：簽到簽退紀錄表、救護義消服勤表、救護出勤紀錄表</li>
+          <li>修正 Google Sheets 日期 UTC 時區問題（+8小時）</li>
+          <li>統一所有日期解析為 normDate()</li>
         </ul>
-
       </div>
     </div>
 
+    <!-- ────────────────────────────── -->
     <!-- v1.0 系列 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
@@ -1497,30 +1479,13 @@ tr:hover td { background: #fdfcfb; }
         <span style="font-size:0.72rem;color:var(--text-light);">主版本建立</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.1　簽到簽退</div>
-        <ul style="padding-left:1.2em;color:var(--text);margin-bottom:12px;">
-          <li>新增「簽到簽退登錄」頁面，支援現場多人同時簽到</li>
-          <li>簽到簽名畫布（支援滑鼠與觸控）</li>
-          <li>已簽到名單即時顯示，點擊進入簽退流程</li>
-          <li>自動計算協勤時數（以 30 分鐘為最小單位）</li>
-          <li>新增「簽到簽退記錄查詢」，支援日期、成員篩選與線上編輯</li>
-        </ul>
-
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">v1.0 ～ v1.0.5　基礎建設</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>出勤案件登錄（日期、類別、時間、地點、服務內容、義消簽名）</li>
-          <li>成員管理（新增、刪除、拖曳排序）</li>
-          <li>出勤紀錄查詢（多條件篩選、匯出 CSV）</li>
-          <li>首頁儀表板（今日出勤、在線人數、本月統計、快速入口）</li>
-          <li>出勤統計月排行榜（金銀銅牌、時數進度條）</li>
-          <li>PWA 支援（可加到手機桌面）、Favicon（紅底白十字）</li>
-          <li>資料儲存至 Google Sheets（透過 Apps Script）</li>
+          <li>出勤案件登錄、成員管理、出勤紀錄查詢、首頁儀表板</li>
+          <li>簽到簽退登錄（簽名畫布、自動計算時數）、簽到簽退記錄查詢</li>
+          <li>出勤統計月排行榜、PWA 支援、資料儲存至 Google Sheets</li>
         </ul>
-
       </div>
     </div>
-
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -1901,7 +1866,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.4.01　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.4.02　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2841,9 +2806,9 @@ function renderAttQueryResults() {
         <td style="white-space:nowrap;">${r['職稱']||''}</td>
         <td style="white-space:nowrap;">${fmtAqTime(r['簽到時間'])}</td>
         <td style="white-space:nowrap;">${fmtAqTime(r['簽退時間'])}</td>
-        <td style="text-align:center;">${r['協勤時數']||''}</td>
-        <td style="text-align:center;">${r['出勤次數']||''}</td>
-        <td style="text-align:center;">${r['服務人次']||''}</td>
+        <td style="text-align:center;">${r['協勤時數']!==undefined&&r['協勤時數']!==''?r['協勤時數']:0}</td>
+        <td style="text-align:center;">${r['出勤次數']!==undefined&&r['出勤次數']!==''?r['出勤次數']:0}</td>
+        <td style="text-align:center;">${r['服務人次']!==undefined&&r['服務人次']!==''?r['服務人次']:0}</td>
         <td><button class="att-member-btn" onclick="openAttEdit(${i})">編輯</button></td>
       </tr>`).join('');
   }
