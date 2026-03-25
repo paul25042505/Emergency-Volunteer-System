@@ -654,7 +654,7 @@ tr:hover td { background: #fdfcfb; }
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label>出勤時間 <span class="req">*</span></label>
+            <label>出勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
             <div class="time-row">
               <input type="time" id="timeOut" required>
               <div class="time-dash">—</div>
@@ -768,6 +768,7 @@ tr:hover td { background: #fdfcfb; }
         <div class="success-icon">✓</div>
         <h3>紀錄已成功送出</h3>
         <p>感謝您的服務，出勤資料已記錄完成。</p>
+        <button type="button" onclick="goToQuery()" style="margin-top:12px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">查看出勤紀錄 →</button>
       </div>
       <div class="site-footer-placeholder"></div>
     </form>
@@ -1372,11 +1373,11 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <!-- v1.4.02 -->
+    <!-- v1.4.03 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.4.02
+        <h3 style="color:var(--red-dark);">v1.4.03
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-23　細節修正</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
@@ -1391,6 +1392,27 @@ tr:hover td { background: #fdfcfb; }
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 調整</div>
         <ul style="padding-left:1.2em;color:var(--text);">
           <li>出勤案件登錄、簽到簽退登錄的時間欄位加上「24小時制」提醒</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.4.02 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.4.02
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-23　細節修正</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">🐛 Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>簽到簽退紀錄查詢：協勤時數、出勤次數、服務人次為 0 時正確顯示「0」</li>
+          <li>簽退頁面：出勤次數為 0 時顯示「0」，不再空白</li>
+          <li>出勤案件登錄：移除重複的服務項目</li>
+          <li>時間欄位加上「24小時制」提醒</li>
         </ul>
       </div>
     </div>
@@ -1734,7 +1756,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbyVUgyKjkEMxj1JyEyp6Fwhm_zh_PrjBN1oJoEBwquTP3shki1vJOlu6lhZdwWzaZtwJw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbxK4ngTt6xmvl__ww3bMnFTFIhF_SWyIIeZcg7M_iUiYTzVtxUiXaRQFfvxfrw3g3AXDQ/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -1866,7 +1888,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.4.02　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.4.03　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2257,6 +2279,20 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
   .finally(() => { btn.textContent = '送　出　紀　錄'; btn.disabled = false; });
 });
 
+// 從出勤登錄跳到查詢頁並帶入今日條件
+function goToQuery() {
+  const today = new Date().toLocaleDateString('sv');
+  navTo('queryPage');
+  // 設定查詢條件為今天
+  setTimeout(() => {
+    const fromEl = document.getElementById('qDateFrom');
+    const toEl   = document.getElementById('qDateTo');
+    if (fromEl) fromEl.value = today;
+    if (toEl)   toEl.value   = today;
+    doQuery();
+  }, 300);
+}
+
 // ════════════════════════════════════════
 // 出勤查詢
 // ════════════════════════════════════════
@@ -2455,8 +2491,9 @@ async function loadTodayCheckins() {
       if (!attSessions[r.memberName]) {
         attSessions[r.memberName] = {
           checkinTime: r.checkinTime,
-          checkinSig:  '',          // 已存在 Sheets，不需要再傳
-          rowIndex:    r.rowIndex,  // Sheets 行號，簽退時更新用
+          checkinSig:  '',
+          rowIndex:    r.rowIndex,
+          date:        r.date,       // 記錄日期，供補簽判斷
           done:        false,
         };
       }
@@ -2472,23 +2509,26 @@ function renderCheckinList() {
     list.innerHTML = '<div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>';
     return;
   }
-  const sorted = [...sessions].sort((a, b) => (a[1].done ? 1 : 0) - (b[1].done ? 1 : 0));
+  const todayStr = new Date().toLocaleDateString('sv');
+  const sorted   = [...sessions].sort((a, b) => (a[1].done ? 1 : 0) - (b[1].done ? 1 : 0));
   list.innerHTML = sorted.map(([name, s]) => {
-    const m = members.find(x => x.name === name) || { name, title: '' };
+    const m         = members.find(x => x.name === name) || { name, title: '' };
+    const isYesterday = s.date && s.date !== todayStr;
+    const dateLabel   = isYesterday ? `<span style="font-size:0.7rem;color:#e67e22;margin-left:4px;">（${s.date} 待補簽）</span>` : '';
     if (s.done) {
       return `<div class="member-item">
         <div class="member-avatar" style="background:#95a5a6;">${name.charAt(0)}</div>
         <div class="member-info">
-          <div class="member-name">${name}</div>
+          <div class="member-name">${name}${dateLabel}</div>
           <div class="member-title">${s.checkinTime} → ${s.checkoutTime}</div>
         </div>
         <span class="att-status-badge done">已完成</span>
       </div>`;
     }
     return `<div class="member-item">
-      <div class="member-avatar" style="background:#27ae60;">${name.charAt(0)}</div>
+      <div class="member-avatar" style="background:${isYesterday ? '#e67e22' : '#27ae60'};">${name.charAt(0)}</div>
       <div class="member-info">
-        <div class="member-name">${name}</div>
+        <div class="member-name">${name}${dateLabel}</div>
         ${m.title ? `<div class="member-title">${m.title}</div>` : ''}
       </div>
       <span class="att-status-badge in">簽到 ${s.checkinTime}</span>
@@ -2655,7 +2695,8 @@ function autoCalcEditHours() {
 
 // 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
 async function loadTodayCount(memberName) {
-  const date      = document.getElementById('attDate').value;
+  // 補簽退：用 session 裡記錄的日期
+  const date      = (attSessions[memberName] && attSessions[memberName].date) || document.getElementById('attDate').value;
   const checkinT  = (attSessions[memberName] || {}).checkinTime || '';
   const checkoutT = document.getElementById('attCheckoutTime').value || '';
   document.getElementById('attCount').value = 0;
@@ -2697,7 +2738,8 @@ async function doCheckout() {
   const hours      = calcHours(session.checkinTime, checkoutTime);
   const countVal   = parseInt(document.getElementById('attCount').value)   || 0;
   const serviceVal = parseInt(document.getElementById('attService').value)  || 0;
-  const todayStr   = document.getElementById('attDate').value;
+  // 補簽退：日期用 session 裡記錄的簽到日期，不一定是今天
+  const todayStr   = (attSessions[attCheckoutTarget] && attSessions[attCheckoutTarget].date) || document.getElementById('attDate').value;
   const memberObj  = members.find(m => m.name === attCheckoutTarget) || {};
 
   document.getElementById('attHours').value = hours;
