@@ -2320,8 +2320,14 @@ async function doQuery() {
 
   try {
     allRecords = await jsonpFetch(BASE_URL, 'queryRecordsCb');
+    if (!Array.isArray(allRecords)) {
+      alert('資料格式錯誤：' + JSON.stringify(allRecords).substring(0, 100));
+      btn.textContent = '查　詢'; btn.disabled = false;
+      return;
+    }
+    console.log('[doQuery] 共取得', allRecords.length, '筆，第1筆：', JSON.stringify(allRecords[0]));
   } catch(e) {
-    alert('無法取得資料，請確認 Google Apps Script 已正確部署並允許任何人存取。');
+    alert('無法取得資料：' + e.message);
     btn.textContent = '查　詢'; btn.disabled = false;
     return;
   }
