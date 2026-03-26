@@ -946,10 +946,10 @@ tr:hover td { background: #fdfcfb; }
           <div class="field">
             <label>類別 <span class="req">*</span></label>
             <div class="duty-toggle">
-              <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('出勤')">出勤</button>
+              <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('協勤')">協勤</button>
               <button type="button" class="duty-btn" id="attDutyPub" onclick="setAttDuty('公差')">公差</button>
             </div>
-            <input type="hidden" id="attDutyType" value="出勤">
+            <input type="hidden" id="attDutyType" value="協勤">
           </div>
           <div class="field">
             <label for="attMemberSel">義消成員 <span class="req">*</span></label>
@@ -1049,7 +1049,10 @@ tr:hover td { background: #fdfcfb; }
         <div class="success-icon">✓</div>
         <h3>簽退完成</h3>
         <p id="attSuccessDetail">紀錄已成功儲存。</p>
-        <button type="button" onclick="attBackToMain()" style="margin-top:12px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">返回名單</button>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">返回名單</button>
+          <button type="button" onclick="goToAttQuery()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:6px 20px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">查看紀錄 →</button>
+        </div>
       </div>
       <div class="site-footer-placeholder"></div>
     </div>
@@ -1783,7 +1786,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbz5KlIh9UtVN8258_OjCD9aQjImcIsBdJ2uiE5l0bAzIlnydZFXLEUmpANB1QG0vwg4mw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbxZS1lcM-sz59jw7t8Qr8ko8xrng0stq9vpG1nOYW5nUI7x1FX9dtaGQNbQA_7hFrwKTA/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbxzEn2QO4ok2ET1jlPxI0xLqsTsxwEEH1SlwjmGMulGy6XHu_wCOodLw4dUtokYd_G6/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -2265,7 +2268,7 @@ function setDuty(type) {
 }
 
 function setAttDuty(type) {
-  document.getElementById('attDutyOut').classList.toggle('active', type === '出勤');
+  document.getElementById('attDutyOut').classList.toggle('active', type === '協勤');
   document.getElementById('attDutyPub').classList.toggle('active', type === '公差');
   document.getElementById('attDutyType').value = type;
 }
@@ -2324,6 +2327,19 @@ function goToQuery() {
     if (fromEl) fromEl.value = today;
     if (toEl)   toEl.value   = today;
     doQuery();
+  }, 300);
+}
+
+// 簽退後跳到簽到簽退查詢頁
+function goToAttQuery() {
+  const today = new Date().toLocaleDateString('sv');
+  navTo('attQueryPage');
+  setTimeout(() => {
+    const fromEl = document.getElementById('aqDateFrom');
+    const toEl   = document.getElementById('aqDateTo');
+    if (fromEl) fromEl.value = today;
+    if (toEl)   toEl.value   = today;
+    doAttQuery();
   }, 300);
 }
 
@@ -2529,7 +2545,7 @@ async function loadTodayCheckins() {
           checkinSig:  '',
           rowIndex:    r.rowIndex,
           date:        r.date,
-          dutyType:    r.dutyType || '出勤',
+          dutyType:    r.dutyType || '協勤',
           done:        false,
         };
       }
@@ -2679,7 +2695,7 @@ async function doCheckin() {
         memberName,
         checkinSig,
         checkinTime: timeVal,
-        dutyType:    document.getElementById('attDutyType')?.value || '出勤',
+        dutyType:    document.getElementById('attDutyType')?.value || '協勤',
       })
     });
     // no-cors 不等回應，直接存入本地 session
@@ -2693,7 +2709,7 @@ async function doCheckin() {
 
     // 重置簽到表單
     document.getElementById('attMemberSel').value = '';
-    setAttDuty('出勤');
+    setAttDuty('協勤');
     attCheckinHasSig = false;
     clearAttCanvas('checkin');
     buildTimeOptions('attCheckinTime', roundTo15(new Date()));
@@ -2793,7 +2809,7 @@ async function doCheckout() {
     body: JSON.stringify({
       action:       'attendance',
       date:         todayStr,
-      dutyType:     session.dutyType || '出勤',
+      dutyType:     session.dutyType || '協勤',
       title:        memberObj.title || '',
       memberName:   attCheckoutTarget,
       checkinSig:   session.checkinSig  || '',
