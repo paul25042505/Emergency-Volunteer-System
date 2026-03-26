@@ -644,7 +644,6 @@ tr:hover td { background: #fdfcfb; }
             <input type="date" id="date" required>
           </div>
           <div class="card-divider"></div>
-                    <div class="card-divider"></div>
           <div class="field">
             <label>出勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
             <div class="time-row">
@@ -1050,8 +1049,7 @@ tr:hover td { background: #fdfcfb; }
         <h3>簽退完成</h3>
         <p id="attSuccessDetail">紀錄已成功儲存。</p>
         <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
-          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">返回名單</button>
-          <button type="button" onclick="goToAttQuery()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:6px 20px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">查看紀錄 →</button>
+          <button type="button" onclick="goToAttQuery()" style="background:#1a6b35;border:none;border-radius:4px;padding:8px 24px;font-size:0.85rem;color:white;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;font-weight:500;">查看簽到紀錄 →</button>
         </div>
       </div>
       <div class="site-footer-placeholder"></div>
@@ -1786,7 +1784,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbxZS1lcM-sz59jw7t8Qr8ko8xrng0stq9vpG1nOYW5nUI7x1FX9dtaGQNbQA_7hFrwKTA/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbzpCyN03wp_-x6QMDGVO0U_GPvbsHwIdFSgTcGPTxvA62QjDguK0yIyHj-_SR-cmZ2EuQ/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbxzEn2QO4ok2ET1jlPxI0xLqsTsxwEEH1SlwjmGMulGy6XHu_wCOodLw4dUtokYd_G6/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -2284,7 +2282,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
   const data = {
     action:     'outing',
     date:       document.getElementById('date').value,
-    dutyType:   '出勤',
+
     timeOut:    document.getElementById('timeOut').value,
     timeBack:   document.getElementById('timeBack').value,
     district:   document.getElementById('district').value,
