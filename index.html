@@ -1726,10 +1726,10 @@ async function handleGoogleLogin(response) {
       sessionStorage.setItem('rescue_user', JSON.stringify({
         email,
         name,
-        memberName: data.memberName || name,  // 白名單 B 欄的義消姓名
+        memberName: (backendResult && backendResult.memberName) || name,
         loginAt: Date.now()
       }));
-      showApp(data.memberName || name, email);
+      showApp((backendResult && backendResult.memberName) || name, email);
     } else {
       spinner.classList.remove('show');
       errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員將您的帳號加入白名單。`;
