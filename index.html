@@ -1403,11 +1403,11 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <!-- v1.4.04 -->
+    <!-- v1.4.05 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.4.04
+        <h3 style="color:var(--red-dark);">v1.4.05
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
@@ -1432,6 +1432,34 @@ tr:hover td { background: #fdfcfb; }
 
     <!-- ────────────────────────────── -->
         <!-- ────────────────────────────── -->
+    <!-- v1.4.04 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.4.04
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能 / 調整</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>簽到登錄新增「類別」選項（協勤／公差），於簽到時選擇，記錄至 Sheets B 欄</li>
+          <li>出勤案件登錄移除「出勤類別」選項</li>
+          <li>簽退查詢表格新增「類別」欄</li>
+          <li>出勤紀錄表改為自動分頁，每頁重複標題列</li>
+          <li>忘記簽退可無限期補簽，標示橘色「待補簽」</li>
+          <li>補簽退時日期使用簽到當天日期</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🐛 Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>修正出勤案件登錄後查詢不到資料（送出資料缺少 action 欄位）</li>
+          <li>確保「出勤紀錄」工作表有標題列，欄位不再錯位</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
     <!-- v1.4.03 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
@@ -1949,7 +1977,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.4.04　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.4.05　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
