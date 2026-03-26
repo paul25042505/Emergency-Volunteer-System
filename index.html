@@ -704,6 +704,7 @@ tr:hover td { background: #fdfcfb; }
               <label class="cb-item"><input type="checkbox" value="協助使用心電圖"> 協助使用心電圖</label>
               <label class="cb-item"><input type="checkbox" value="協助使用支氣管擴張劑"> 協助使用支氣管擴張劑</label>
               <label class="cb-item"><input type="checkbox" value="協助使用NTG"> 協助使用NTG</label>
+              <label class="cb-item"><input type="checkbox" value="靜脈注射（IV）"> 靜脈注射（IV）</label>
               <label class="cb-item"><input type="checkbox" value="測量血糖"> 測量血糖</label>
               <label class="cb-item"><input type="checkbox" value="協助止血"> 協助止血</label>
               <label class="cb-item"><input type="checkbox" value="包紮傷口"> 包紮傷口</label>
@@ -842,14 +843,7 @@ tr:hover td { background: #fdfcfb; }
               <option value="臺中市北屯區">臺中市北屯區</option>
             </select>
           </div>
-          <div class="field">
-            <label for="qDuty">出勤類別</label>
-            <select id="qDuty">
-              <option value="">— 全部類別 —</option>
-              <option value="協勤">協勤</option>
-              <option value="公差">公差</option>
-            </select>
-          </div>
+
           <div class="field" style="grid-column: 1 / -1;">
             <label for="qService">服務項目</label>
             <select id="qService">
@@ -941,7 +935,7 @@ tr:hover td { background: #fdfcfb; }
               <select id="attCheckinTime" style="width:100%;"></select>
             </div>
           </div>
-          <div class="field">
+          <div class="field" style="margin-top:0;">
             <label>類別 <span class="req">*</span></label>
             <div class="duty-toggle">
               <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('協勤')">協勤</button>
@@ -1361,6 +1355,42 @@ tr:hover td { background: #fdfcfb; }
 </div>
 
 
+<!-- 待領物品提示 Modal -->
+<div id="pendingItemsAlert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <span style="font-size:1.4rem;">📦</span>
+      <div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);">尚有物品待領取</div>
+        <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px;">請盡速完成領取，謝謝！</div>
+      </div>
+    </div>
+    <div id="pendingItemsList" style="font-size:0.85rem;color:var(--text);line-height:1.8;margin-bottom:20px;max-height:200px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="navTo('itemsPage');document.getElementById('pendingItemsAlert').style.display='none';" style="flex:1;background:var(--red);border:none;border-radius:6px;padding:10px;font-size:0.85rem;color:white;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:500;">前往領取</button>
+      <button onclick="document.getElementById('pendingItemsAlert').style.display='none';" style="background:none;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.85rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">稍後再說</button>
+    </div>
+  </div>
+</div>
+
+<!-- 待領物品提示 Modal -->
+<div id="pendingItemsAlert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <span style="font-size:1.4rem;">📦</span>
+      <div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:#8b3a3a;">尚有物品待領取</div>
+        <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px;">請盡速完成領取，謝謝！</div>
+      </div>
+    </div>
+    <div id="pendingItemsList" style="font-size:0.85rem;color:var(--text);line-height:2;margin-bottom:20px;max-height:200px;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="navTo('itemsPage');document.getElementById('pendingItemsAlert').style.display='none';" style="flex:1;background:#b94a3a;border:none;border-radius:6px;padding:10px;font-size:0.85rem;color:white;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:500;">前往領取</button>
+      <button onclick="document.getElementById('pendingItemsAlert').style.display='none';" style="background:none;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.85rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">稍後再說</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ PAGE：版本修改紀錄 ══════ -->
 <div class="page" id="changelogPage">
   <div class="query-wrap">
@@ -1373,11 +1403,11 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <!-- v1.4.04 -->
+    <!-- v1.4.05 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.4.04
+        <h3 style="color:var(--red-dark);">v1.4.05
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
@@ -1385,7 +1415,7 @@ tr:hover td { background: #fdfcfb; }
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 調整</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>出勤案件登錄移除「出勤類別」選項，固定為出勤</li>
+          <li>出勤案件登錄移除「出勤類別」選項</li>
           <li>簽到登錄新增「類別」選項（出勤／公差），於簽到時選擇</li>
           <li>出勤紀錄表改為自動分頁，不再固定 12 筆換頁，每頁重複標題列</li>
         </ul>
@@ -1396,6 +1426,34 @@ tr:hover td { background: #fdfcfb; }
           <li>忘記簽退不限隔天，任何時間都能補簽，標示橘色「待補簽」</li>
           <li>補簽退時日期使用簽到當天的日期</li>
           <li>送出登錄成功後顯示「查看出勤紀錄」按鈕</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────── -->
+    <!-- v1.4.04 -->
+    <!-- ────────────────────────────── -->
+    <div class="result-card" style="margin-bottom:16px;">
+      <div class="result-head">
+        <h3>v1.4.04
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
+        </h3>
+        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 調整</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>出勤案件登錄移除「出勤類別」選項</li>
+          <li>簽到登錄新增「類別」選項（協勤／公差），於簽到時選擇</li>
+          <li>Sheets 簽到簽退工作表新增「類別」欄（B欄）</li>
+          <li>出勤紀錄表改為自動分頁，每頁重複標題列</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🐛 Bug 修復</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>修正出勤案件登錄後查詢不到資料的問題</li>
+          <li>確保「出勤紀錄」工作表有標題列，欄位不再錯位</li>
+          <li>忘記簽退可無限期補簽，標示橘色「待補簽」</li>
+          <li>簽退完成後顯示「查看簽到紀錄」按鈕</li>
         </ul>
       </div>
     </div>
@@ -1915,7 +1973,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.4.04　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.4.05　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2340,6 +2398,28 @@ function goToAttQuery() {
   }, 300);
 }
 
+// ── 簽到後檢查待領物品並提示 ──
+function showPendingItemsAlert() {
+  if (!allItems || allItems.length === 0) return;
+  const myName = session.name || '';
+  const pending = allItems.filter(item => {
+    return item.recipients && item.recipients.some(r => r.name === myName && !r.claimed);
+  });
+  if (pending.length === 0) return;
+
+  const listEl = document.getElementById('pendingItemsList');
+  listEl.innerHTML = pending.map(item => {
+    const note = item.note ? `<span style="color:var(--text-light);font-size:0.78rem;">（${item.note}）</span>` : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+      <span style="color:#b94a3a;font-size:1rem;">•</span>
+      <span>${item.itemName}${note}</span>
+    </div>`;
+  }).join('');
+
+  const modal = document.getElementById('pendingItemsAlert');
+  modal.style.display = 'flex';
+}
+
 // ════════════════════════════════════════
 // 出勤查詢
 // ════════════════════════════════════════
@@ -2379,7 +2459,6 @@ async function doQuery() {
   const member   = document.getElementById('qMember').value;
   const district = document.getElementById('qDistrict').value;
   const service  = document.getElementById('qService').value;
-  const duty     = document.getElementById('qDuty').value;
 
   allRecords = allRecords.map(r => ({
     date:       normDate(r['日期'] || r.date || ''),
@@ -2699,6 +2778,9 @@ async function doCheckin() {
       rowIndex:    null,
       done:        false,
     };
+
+    // 簽到成功後：若有未領取物品，彈出提示
+    showPendingItemsAlert();
 
     // 重置簽到表單
     document.getElementById('attMemberSel').value = '';
