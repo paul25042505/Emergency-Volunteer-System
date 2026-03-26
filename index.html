@@ -644,15 +644,7 @@ tr:hover td { background: #fdfcfb; }
             <input type="date" id="date" required>
           </div>
           <div class="card-divider"></div>
-          <div class="field">
-            <label>出勤類別 <span class="req">*</span></label>
-            <div class="duty-toggle">
-              <button type="button" class="duty-btn active" id="dutyAssist" onclick="setDuty('協勤')">協勤</button>
-              <button type="button" class="duty-btn" id="dutyPublic" onclick="setDuty('公差')">公差</button>
-            </div>
-            <input type="hidden" id="dutyType" value="協勤">
-          </div>
-          <div class="card-divider"></div>
+                    <div class="card-divider"></div>
           <div class="field">
             <label>出勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
             <div class="time-row">
@@ -950,6 +942,14 @@ tr:hover td { background: #fdfcfb; }
               <label for="attCheckinTime">簽到時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
               <select id="attCheckinTime" style="width:100%;"></select>
             </div>
+          </div>
+          <div class="field">
+            <label>類別 <span class="req">*</span></label>
+            <div class="duty-toggle">
+              <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('出勤')">出勤</button>
+              <button type="button" class="duty-btn" id="attDutyPub" onclick="setAttDuty('公差')">公差</button>
+            </div>
+            <input type="hidden" id="attDutyType" value="出勤">
           </div>
           <div class="field">
             <label for="attMemberSel">義消成員 <span class="req">*</span></label>
@@ -1779,8 +1779,8 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbwG4hxfo_YbuuKIM9p5Otr8IV_Id-0jiw-lueTxTJtGbwknOW7TRoVBZMx6lCqErcRAWA/exec';
-const RPT3_URL = 'https://script.google.com/macros/s/AKfycbx91dJ5-61ubJ9G72f5rZIO40Nr39obC0ZR6wmpNS2TdiWzJ6p0mo5LHIAgF1Vf2iSs/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbwGxUNxe6FXwGG6RcQb2ypF5wxpqUIzw--3k-E44u3wZnyZE7Y7ejGPKB6FKgol3v19bA/exec';
+const RPT3_URL = 'https://script.google.com/macros/s/AKfycbwIs8jORVaHvWdHOC3b4_1L1nN5Q58bYNZ_r4AbtD_QvPXwZ2Gr4XB2r3dF6RZOWzv9/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
 function jsonpFetch(url, scriptId, timeout) {
@@ -2255,9 +2255,15 @@ canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) re
 canvas.addEventListener('touchend', () => drawing = false);
 
 function setDuty(type) {
-  document.getElementById('dutyType').value = type;
-  document.getElementById('dutyAssist').classList.toggle('active', type === '協勤');
-  document.getElementById('dutyPublic').classList.toggle('active', type === '公差');
+  // 出勤案件登錄已移除類別選項，此函式保留以防呼叫但不執行任何操作
+  var el = document.getElementById('dutyType');
+  if (el) el.value = type;
+}
+
+function setAttDuty(type) {
+  document.getElementById('attDutyOut').classList.toggle('active', type === '出勤');
+  document.getElementById('attDutyPub').classList.toggle('active', type === '公差');
+  document.getElementById('attDutyType').value = type;
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
 
@@ -2271,7 +2277,7 @@ document.getElementById('recordForm').addEventListener('submit', function(e) {
   const data = {
     action:     'outing',
     date:       document.getElementById('date').value,
-    dutyType:   document.getElementById('dutyType').value,
+    dutyType:   '出勤',
     timeOut:    document.getElementById('timeOut').value,
     timeBack:   document.getElementById('timeBack').value,
     district:   document.getElementById('district').value,
@@ -2668,6 +2674,7 @@ async function doCheckin() {
         memberName,
         checkinSig,
         checkinTime: timeVal,
+        dutyType:    document.getElementById('attDutyType')?.value || '出勤',
       })
     });
     // no-cors 不等回應，直接存入本地 session
@@ -2681,6 +2688,7 @@ async function doCheckin() {
 
     // 重置簽到表單
     document.getElementById('attMemberSel').value = '';
+    setAttDuty('出勤');
     attCheckinHasSig = false;
     clearAttCanvas('checkin');
     buildTimeOptions('attCheckinTime', roundTo15(new Date()));
