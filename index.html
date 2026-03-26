@@ -2433,13 +2433,9 @@ function renderQueryResults(records) {
       const sigCell = r.signature
         ? `<img data-sig="${i}" style="height:40px;cursor:pointer;border:1px solid var(--border);border-radius:3px;" title="點擊放大">`
         : '—';
-      const dutyTag = r.dutyType
-        ? `<span class="tag" style="${r.dutyType === '公差' ? 'background:#eaf4ff;color:#1a5fa8;border-color:#a8c9f0;' : ''}">${r.dutyType}</span>`
-        : '';
       return `<tr>
         <td style="text-align:center;color:var(--text-light);font-size:0.8rem;">${seqNum}</td>
         <td style="white-space:nowrap;">${r.date || ''}</td>
-        <td style="white-space:nowrap;">${dutyTag}</td>
         <td style="white-space:nowrap;">${timeStr}</td>
         <td style="white-space:nowrap;">${r.district || ''}</td>
         <td style="min-width:10em;">${r.address || ''}</td>
@@ -2917,10 +2913,12 @@ function openAttEdit(idx) {
   document.getElementById('aqEditName').value = r['姓名'] || '';
   document.getElementById('aqEditCheckin').value = fmtAqTime(r['簽到時間']);
   document.getElementById('aqEditCheckout').value = fmtAqTime(r['簽退時間']);
-  document.getElementById('aqEditHours').value = r['協勤時數'] || '';
-  document.getElementById('aqEditCount').value = r['出勤次數'] || '';
-  document.getElementById('aqEditService').value = r['服務人次'] || '';
+  document.getElementById('aqEditHours').value   = (r['協勤時數'] !== undefined && r['協勤時數'] !== '') ? r['協勤時數'] : 0;
+  document.getElementById('aqEditCount').value   = (r['出勤次數'] !== undefined && r['出勤次數'] !== '') ? r['出勤次數'] : 0;
+  document.getElementById('aqEditService').value = (r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0;
   document.getElementById('aqEditModal').style.display = 'flex';
+  // 若時數為空或 0，嘗試自動計算
+  autoCalcEditHours();
 }
 
 function closeAttEdit() {
