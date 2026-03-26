@@ -896,7 +896,6 @@ tr:hover td { background: #fdfcfb; }
             <tr>
               <th>#</th>
               <th>日期</th>
-              <th>類別</th>
               <th>出勤時間</th>
               <th>行政區</th>
               <th>地址</th>
@@ -2419,7 +2418,7 @@ function renderQueryResults(records) {
 
   const tbody = document.getElementById('resultBody');
   if (records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
   } else {
     // 修復3：每月序號重算
     const monthCounters = {};
