@@ -935,7 +935,7 @@ tr:hover td { background: #fdfcfb; }
               <select id="attCheckinTime" style="width:100%;"></select>
             </div>
           </div>
-          <div class="field" style="margin-top:0;">
+          <div class="field" style="margin-top:8px;">
             <label>類別 <span class="req">*</span></label>
             <div class="duty-toggle">
               <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('協勤')">協勤</button>
@@ -1403,11 +1403,11 @@ tr:hover td { background: #fdfcfb; }
       </div>
     </div>
 
-    <!-- v1.4.05 -->
+    <!-- v1.4.04 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
-        <h3 style="color:var(--red-dark);">v1.4.05
+        <h3 style="color:var(--red-dark);">v1.4.04
           <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
@@ -1431,34 +1431,7 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
     <!-- ────────────────────────────── -->
-    <!-- v1.4.04 -->
-    <!-- ────────────────────────────── -->
-    <div class="result-card" style="margin-bottom:16px;">
-      <div class="result-head">
-        <h3>v1.4.04
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
-        </h3>
-        <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
-      </div>
-      <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 調整</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>出勤案件登錄移除「出勤類別」選項</li>
-          <li>簽到登錄新增「類別」選項（協勤／公差），於簽到時選擇</li>
-          <li>Sheets 簽到簽退工作表新增「類別」欄（B欄）</li>
-          <li>出勤紀錄表改為自動分頁，每頁重複標題列</li>
-        </ul>
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🐛 Bug 修復</div>
-        <ul style="padding-left:1.2em;color:var(--text);">
-          <li>修正出勤案件登錄後查詢不到資料的問題</li>
-          <li>確保「出勤紀錄」工作表有標題列，欄位不再錯位</li>
-          <li>忘記簽退可無限期補簽，標示橘色「待補簽」</li>
-          <li>簽退完成後顯示「查看簽到紀錄」按鈕</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- ────────────────────────────── -->
+        <!-- ────────────────────────────── -->
     <!-- v1.4.03 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
@@ -1751,9 +1724,12 @@ async function handleGoogleLogin(response) {
     if (allowed) {
       // 登入成功，寫入 session
       sessionStorage.setItem('rescue_user', JSON.stringify({
-        email, name, loginAt: Date.now()
+        email,
+        name,
+        memberName: data.memberName || name,  // 白名單 B 欄的義消姓名
+        loginAt: Date.now()
       }));
-      showApp(name, email);
+      showApp(data.memberName || name, email);
     } else {
       spinner.classList.remove('show');
       errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員將您的帳號加入白名單。`;
@@ -1841,7 +1817,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbwZpa6WRdkhYouaXXo_Hjgd6zkFngHUIesQWhAh1lOJIJE91gOIiM7PuoqGAXvAB-6uYQ/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyo9g31dw2SxESxTHLC09vmcrQR00BIR1MIro19tG4AJl2QLMkJ7Q_R9Bwh3pDVg8yjFA/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbxzEn2QO4ok2ET1jlPxI0xLqsTsxwEEH1SlwjmGMulGy6XHu_wCOodLw4dUtokYd_G6/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -1973,7 +1949,7 @@ function fmtTime(v) {
 // ════════════════════════════════════════
 function initFooters() {
   const lines = [
-    '© 2026 臺中市政府消防局潭子分隊　v1.4.05　版權所有，轉載必究',
+    '© 2026 臺中市政府消防局潭子分隊　v1.4.04　版權所有，轉載必究',
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -2401,7 +2377,16 @@ function goToAttQuery() {
 // ── 簽到後檢查待領物品並提示 ──
 function showPendingItemsAlert() {
   if (!allItems || allItems.length === 0) return;
-  const myName = session.name || '';
+
+  // 直接用 sessionStorage 的義消姓名（白名單 B 欄）
+  let myName = '';
+  try {
+    const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    myName = u.memberName || u.name || '';
+  } catch(e) {}
+
+  if (!myName) return;
+
   const pending = allItems.filter(item => {
     return item.recipients && item.recipients.some(r => r.name === myName && !r.claimed);
   });
