@@ -925,17 +925,17 @@ tr:hover td { background: #fdfcfb; }
           <div class="section-line"></div>
         </div>
         <div class="card">
-          <div class="row-2">
-            <div class="field">
+          <div class="row-2" style="margin-bottom:18px;">
+            <div class="field" style="margin-bottom:0;">
               <label for="attDate">日期</label>
               <input type="date" id="attDate">
             </div>
-            <div class="field">
+            <div class="field" style="margin-bottom:0;">
               <label for="attCheckinTime">簽到時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
               <select id="attCheckinTime" style="width:100%;"></select>
             </div>
           </div>
-          <div class="field" style="margin-top:8px;">
+          <div class="field">
             <label>類別 <span class="req">*</span></label>
             <div class="duty-toggle">
               <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('協勤')">協勤</button>
@@ -2573,6 +2573,7 @@ async function initAttendancePage() {
   buildTimeOptions('attCheckoutTime', roundTo15(now));
 
   await loadMembers();
+  loadItems();  // 預載物品清單，供簽到後提示用
   const sel = document.getElementById('attMemberSel');
   sel.innerHTML = '<option value="">— 請選擇 —</option>';
   members.forEach(m => {
