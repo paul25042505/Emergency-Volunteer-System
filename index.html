@@ -1408,30 +1408,31 @@ tr:hover td { background: #fdfcfb; }
     <div class="result-card" style="margin-bottom:16px;">
       <div class="result-head" style="background:var(--red-faint);">
         <h3 style="color:var(--red-dark);">v1.4.05
-          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-25　類別邏輯調整</span>
+          <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);margin-left:8px;">2026-03-26　功能補強</span>
         </h3>
         <span style="font-size:0.72rem;color:var(--text-light);">小修</span>
       </div>
       <div style="padding:16px 20px;font-size:0.85rem;line-height:2;">
-        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 調整</div>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-bottom:6px;">✨ 新功能</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>出勤案件登錄移除「出勤類別」選項</li>
-          <li>簽到登錄新增「類別」選項（出勤／公差），於簽到時選擇</li>
-          <li>出勤紀錄表改為自動分頁，不再固定 12 筆換頁，每頁重複標題列</li>
+          <li>簽到完成後，若有待領物品尚未領取，自動彈出提示視窗顯示物品清單，可直接前往領取</li>
+          <li>待領物品提示依據白名單 B 欄義消姓名比對，每人只看到自己的待領物品</li>
+          <li>服務項目新增「靜脈注射（IV）」</li>
+        </ul>
+        <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🎨 UI 調整</div>
+        <ul style="padding-left:1.2em;color:var(--text);">
+          <li>簽退完成畫面改為「查看簽到紀錄」按鈕（綠色框線樣式）</li>
+          <li>簽到頁面類別選項與上下欄位間距統一</li>
         </ul>
         <div style="color:var(--text-mid);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;margin-top:12px;margin-bottom:6px;">🐛 Bug 修復</div>
         <ul style="padding-left:1.2em;color:var(--text);">
-          <li>修正出勤案件登錄後查詢不到資料的問題（送出資料缺少 action 欄位）</li>
-          <li>確保「出勤紀錄」工作表有標題列，欄位不再錯位</li>
-          <li>忘記簽退不限隔天，任何時間都能補簽，標示橘色「待補簽」</li>
-          <li>補簽退時日期使用簽到當天的日期</li>
-          <li>送出登錄成功後顯示「查看出勤紀錄」按鈕</li>
+          <li>出勤紀錄查詢移除「出勤類別」篩選欄位</li>
+          <li>修正登入驗證錯誤（data 變數未定義）</li>
         </ul>
       </div>
     </div>
 
     <!-- ────────────────────────────── -->
-        <!-- ────────────────────────────── -->
     <!-- v1.4.04 -->
     <!-- ────────────────────────────── -->
     <div class="result-card" style="margin-bottom:16px;">
