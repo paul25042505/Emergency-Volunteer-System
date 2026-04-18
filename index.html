@@ -101,15 +101,15 @@ body {
 
 /* ── Overlay ── */
 .overlay {
-  display: none; position: fixed; inset: 0;
+  display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.4); z-index: 190;
 }
 .overlay.open { display: block; }
 
 /* ── Drawer ── */
 .drawer {
-  position: fixed; top: 0; left: 0; height: 100%; width: 260px;
-  background: var(--text); z-index: 200;
+  position: fixed; top: 56px; left: 0; height: calc(100% - 56px); width: 260px;
+  background: var(--text); z-index: 199;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
   display: flex; flex-direction: column;
