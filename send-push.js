@@ -36,8 +36,8 @@ async function main() {
   console.log(`檢查明天（${tomorrow}）是否有定訓...`);
 
   // 查詢 trainDate === 明天 的定訓記錄
-  const meetingSnap = await db.collection('meetingRecords')
-    .where('trainDate', '==', tomorrow)
+  const meetingSnap = await db.collection('trainingSchedule')
+    '.where('date', '==', tomorrow)
     .get();
 
   if (meetingSnap.empty) {
