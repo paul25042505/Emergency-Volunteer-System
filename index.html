@@ -29,13 +29,25 @@
   --section-gap: 24px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
 body {
   background: var(--cream);
   font-family: 'Noto Sans TC', sans-serif;
   color: var(--text);
-  min-height: 100vh;
   color-scheme: light;
-  padding-top: 56px;
+  display: flex;
+  flex-direction: column;
+}
+/* 主捲動區 */
+#appScroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 
 /* ── Pages ── */
@@ -645,6 +657,7 @@ tr:hover td { background: #fdfcfb; }
   </div>
 </div>
 
+<div id="appScroll">
 
 <!-- ══════ 簡易模式切換按鈕（固定右下角）══════ -->
 <button id="easyModeToggle" onclick="toggleEasyMode()">👴 簡易模式</button>
@@ -5405,7 +5418,8 @@ function adminScrollTo(sectionId) {
   const headerH = header ? header.getBoundingClientRect().height : 56;
   const barH    = bar    ? bar.getBoundingClientRect().height    : 44;
   const top = el.getBoundingClientRect().top + window.scrollY - headerH - barH - 8;
-  window.scrollTo({ top, behavior: 'smooth' });
+  const scroller = document.getElementById('appScroll') || window;
+  scroller.scrollTo({ top, behavior: 'smooth' });
   // 高亮 tab
   const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-changelog'];
   const idx = secIds.indexOf(sectionId);
@@ -7745,5 +7759,6 @@ async function reloadMembersUnit() {
 }
 
 </script>
+</div><!-- /appScroll -->
 </body>
 </html>
