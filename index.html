@@ -1000,7 +1000,7 @@ tr:hover td { background: #fdfcfb; }
         </div>
         <div class="card">
           <div class="field">
-            <label>案件類型 <span class="req">*</span>（單選）</label>
+            <label>案件類型 <span class="req">*</span>（單選）<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依電腦輔助派遣系統案件類型填寫</span></label>
             <div class="checkbox-grid" id="caseTypeGrid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
               <!-- 由 JS 動態載入 -->
               <div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">載入中...</div>
@@ -7315,13 +7315,19 @@ async function meetingDelete(id, title) {
 const DEFAULT_CASE_TYPES = ['路倒','急病','外傷','心臟病','呼吸困難','意識不清','車禍','燙傷','其他'];
 let _caseTypesList = [];
 
+let _caseTypeDocs = []; // 儲存完整 doc 含 id
 async function loadCaseTypes() {
   try {
     const docs = await fbList(COL_CASETYPES);
-    _caseTypesList = docs.length
-      ? docs.sort((a,b)=>(a.order||0)-(b.order||0)).map(d=>d.name).filter(Boolean)
-      : [...DEFAULT_CASE_TYPES];
+    if (docs.length) {
+      _caseTypeDocs = docs.sort((a,b)=>(a.order||0)-(b.order||0));
+      _caseTypesList = _caseTypeDocs.map(d=>d.name).filter(Boolean);
+    } else {
+      _caseTypeDocs = [];
+      _caseTypesList = [...DEFAULT_CASE_TYPES];
+    }
   } catch(e) {
+    _caseTypeDocs = [];
     _caseTypesList = [...DEFAULT_CASE_TYPES];
   }
 }
@@ -7418,8 +7424,22 @@ async function addCaseType() {
 async function deleteCaseType(name) {
   if (!confirm('確定刪除「' + name + '」？')) return;
   try {
-    const docs = await fbList(COL_CASETYPES);
-    const doc = docs.find(d => d.name === name);
+    // 先找現有 doc
+    let doc = _caseTypeDocs.find(d => d.name === name);
+    if (!doc) {
+      // 預設值尚未存入 Firestore，先把所有預設值寫入，再刪除指定的
+      const all = await fbList(COL_CASETYPES);
+      if (all.length === 0) {
+        // 寫入全部預設值（排除要刪的那個）
+        const toAdd = DEFAULT_CASE_TYPES.filter(n => n !== name);
+        await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
+        await loadAdminCaseTypes();
+        return;
+      }
+      // 有 doc 但快取過期，重新載入
+      await loadCaseTypes();
+      doc = _caseTypeDocs.find(d => d.name === name);
+    }
     if (doc) await fbDelete(COL_CASETYPES, doc.id);
     await loadAdminCaseTypes();
   } catch(e) { alert('刪除失敗：' + e.message); }
