@@ -181,10 +181,10 @@ label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-
 label .req { color: var(--red); margin-left: 2px; }
 
 /* 修復6：統一所有輸入元件高度 */
-input[type="text"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
+input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
   width: 100%; border: 1px solid var(--border); border-radius: 4px;
   padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
-  color: var(--text); background: #fafaf8;
+  color: var(--text); background: white;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   appearance: none; -webkit-appearance: none;
   min-height: 42px; line-height: 1.4; vertical-align: middle;
@@ -198,6 +198,11 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(192,57,43,0.1); background: white;
 }
 textarea { resize: vertical; min-height: 82px; }
+input[readonly], input.input-readonly {
+  background: #fafaf8 !important;
+  color: var(--text-light) !important;
+  cursor: not-allowed;
+}
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .time-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: end; }
 .time-dash { text-align: center; padding: 0 8px 10px; color: var(--text-light); font-size: 1.1rem; }
@@ -1369,15 +1374,15 @@ tr:hover td { background: #fdfcfb; }
           <div class="card-divider"></div>
           <div class="field">
             <label>協勤時數</label>
-            <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;color:var(--text);" readonly>
+            <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;" readonly>
           </div>
           <div class="field">
             <label>協勤次數</label>
-            <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;color:var(--text-light);" readonly>
+            <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field">
-            <label>服務人次</label>
-            <input type="number" id="attService" min="0" step="1" placeholder="0" style="width:100%;background:white;">
+            <label>服務人次 <span class="req">*</span></label>
+            <input type="number" id="attService" min="0" step="1" placeholder="0" style="width:100%;">
           </div>
           <div class="submit-section" style="margin-top:16px;">
             <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
@@ -1490,9 +1495,9 @@ tr:hover td { background: #fdfcfb; }
       <div class="field"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
       <div class="field"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
     </div>
-    <div class="field"><label>協勤時數</label><input type="number" id="aqEditHours" style="width:100%;color:var(--text-light);" min="0" step="0.5" readonly></div>
-    <div class="field"><label>協勤次數</label><input type="number" id="aqEditCount" style="width:100%;color:var(--text-light);" min="0" step="1" readonly></div>
-    <div class="field"><label>服務人次</label><input type="number" id="aqEditService" style="width:100%;background:white;" min="0" step="1"></div>
+    <div class="field"><label>協勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
+    <div class="field"><label>協勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
+    <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
     <div style="display:flex;gap:10px;margin-top:8px;">
       <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
       <button onclick="closeAttEdit()" class="btn-reset">取消</button>
@@ -1938,25 +1943,54 @@ tr:hover td { background: #fdfcfb; }
 
     <div class="section" id="adminSec-wl">
       <div class="section-head"><div class="section-num">👤</div><div class="section-title">成員帳號管理</div><div class="section-line"></div>
-        <button onclick="loadAdminWhitelist()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+        <button onclick="loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
-      <div class="card">
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-          <input type="email" id="adminWlEmail" placeholder="Email" style="flex:2;min-width:150px;">
-          <input type="text"  id="adminWlName"  placeholder="義消姓名" style="flex:1;min-width:90px;">
-          <select id="adminWlUnit" style="flex:1;min-width:90px;"><option value="">選分隊</option></select>
-          <select id="adminWlRole" style="min-width:110px;">
-            <option value="member">一般成員</option>
-            <option value="officer">分隊承辦人</option>
-            <option value="admin">系統管理員</option>
-          </select>
-          <button onclick="adminAddWhitelist()" class="btn-search" style="min-height:unset;padding:6px 14px;">新增</button>
+      <!-- 新增帳號 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:12px;letter-spacing:0.05em;">＋ 新增帳號</div>
+        <div class="filter-grid" style="margin-bottom:12px;">
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">Email <span class="req">*</span></label>
+            <input type="email" id="adminWlEmail" placeholder="example@gmail.com" style="width:100%;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">義消姓名 <span class="req">*</span></label>
+            <input type="text" id="adminWlName" placeholder="姓名" style="width:100%;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
+            <select id="adminWlUnit" style="width:100%;"><option value="">請選擇</option></select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">職稱</label>
+            <select id="adminWlTitle" style="width:100%;">
+              <option value="">請選擇</option>
+              <option value="分隊長">分隊長</option>
+              <option value="副分隊長">副分隊長</option>
+              <option value="幹事">幹事</option>
+              <option value="助理幹事">助理幹事</option>
+              <option value="小隊長">小隊長</option>
+              <option value="隊員">隊員</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">角色權限</label>
+            <select id="adminWlRole" style="width:100%;">
+              <option value="member">一般成員</option>
+              <option value="officer">分隊承辦人</option>
+              <option value="admin">系統管理員</option>
+            </select>
+          </div>
         </div>
-        <!-- 分隊篩選 -->
-        <div style="margin-bottom:12px;margin-top:8px;">
-          <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-mid);margin-bottom:6px;letter-spacing:0.05em;">分隊別</label>
-          <select id="adminWlFilterUnit" onchange="filterAdminWlByUnit()"
-            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23999%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:11px;">
+        <button onclick="adminAddWhitelist()" class="btn-search" style="width:100%;">新增帳號</button>
+      </div>
+
+      <!-- 查詢列表 -->
+      <div class="card">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;letter-spacing:0.05em;">🔍 查詢成員</div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>選擇分隊</label>
+          <select id="adminWlFilterUnit" onchange="filterAdminWlByUnit()" style="width:100%;">
             <option value="">請選擇分隊</option>
           </select>
         </div>
@@ -2697,7 +2731,7 @@ async function handleGoogleLogin(response) {
       showApp(memberName, email, isAdmin, isOfficer, role);
     } else {
       spinner.classList.remove('show');
-      errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員將您的帳號加入白名單。`;
+      errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
       errorDiv.classList.add('show');
       google.accounts.id.disableAutoSelect();
     }
@@ -2950,7 +2984,7 @@ function fmtTime(v) {
 function initFooters(version) {
   const ver = version || 'v1.4.05';
   const lines = [
-    `© 2026 臺中市政府消防局潭子分隊　${ver}　版權所有，轉載必究`,
+    `© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊　${ver}　版權所有，轉載必究`,
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -5225,23 +5259,30 @@ async function loadAdminWhitelist(filterUnit) {
 
 
 async function adminAddWhitelist() {
-  const email=(document.getElementById('adminWlEmail').value||'').trim().toLowerCase();
-  const name=(document.getElementById('adminWlName').value||'').trim();
-  const unit=(document.getElementById('adminWlUnit').value||'').trim();
-  const role=document.getElementById('adminWlRole').value||'member';
-  const isAdmin=role==='admin';
-  const isOfficer=role==='officer';
-  if(!email||!name){alert('請填入 Email 和義消姓名');return;}
-  if(!unit){alert('請選擇分隊別');return;}
+  const email = (document.getElementById('adminWlEmail').value||'').trim().toLowerCase();
+  const name  = (document.getElementById('adminWlName').value||'').trim();
+  const unit  = (document.getElementById('adminWlUnit').value||'').trim();
+  const title = document.getElementById('adminWlTitle')?.value || '';
+  const role  = document.getElementById('adminWlRole').value || 'member';
+  const isAdmin   = role === 'admin';
+  const isOfficer = role === 'officer';
+  if (!email || !name) { alert('請填入 Email 和義消姓名'); return; }
+  if (!unit) { alert('請選擇分隊別'); return; }
   try {
-    const snap=await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
-    if(!snap.empty){alert('此 Email 已在白名單');return;}
-    await fbAdd(COL_WHITELIST,{email,memberName:name,role,isAdmin,isOfficer,unit});
-    document.getElementById('adminWlEmail').value='';
-    document.getElementById('adminWlName').value='';
-    document.getElementById('adminWlIsAdmin').checked=false;
-    await loadAdminWhitelist();
-  } catch(e){alert('新增失敗：'+e.message);}
+    const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (!snap.empty) { alert('此 Email 已在白名單'); return; }
+    await fbAdd(COL_WHITELIST, { email, memberName:name, title, role, isAdmin, isOfficer, unit });
+    // 重置新增表單
+    document.getElementById('adminWlEmail').value = '';
+    document.getElementById('adminWlName').value  = '';
+    const titleEl = document.getElementById('adminWlTitle');
+    if (titleEl) titleEl.value = '';
+    const roleEl = document.getElementById('adminWlRole');
+    if (roleEl) roleEl.value = 'member';
+    // 重新載入目前選擇的分隊
+    const curUnit = document.getElementById('adminWlFilterUnit')?.value || '';
+    await loadAdminWhitelist(curUnit);
+  } catch(e) { alert('新增失敗：' + e.message); }
 }
 
 function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone) {
@@ -5638,22 +5679,30 @@ function _positionAdminTabBar() {
 function adminScrollTo(sectionId) {
   const el = document.getElementById(sectionId);
   if (!el) return;
-  const scroller  = document.getElementById('appScroll');
+
+  const scroller = document.getElementById('appScroll');
   const bar      = document.getElementById('adminTabBar');
   const header   = document.querySelector('.header');
-  const headerH  = header ? header.getBoundingClientRect().height : 56;
-  const barH     = bar    ? bar.getBoundingClientRect().height    : 44;
-  // elRect.top 是相對 viewport，減去 header 和 tab bar 高度，加上目前 scrollTop
-  const elRect   = el.getBoundingClientRect();
-  const target   = (scroller ? scroller.scrollTop : 0) + elRect.top - headerH - barH - 12;
+
+  // 用實際量測的高度，每次呼叫都重新取得（手機換行時高度會變）
+  const headerH = header ? header.getBoundingClientRect().height : 56;
+  const barH    = bar    ? bar.getBoundingClientRect().height    : 44;
+  const offset  = headerH + barH + 8;
+
   if (scroller) {
-    // 暫停 observer 避免捲動過程中 tab 亂跳
+    const elTop  = el.getBoundingClientRect().top;
+    const scrollTop = scroller.scrollTop;
+    // appScroll 頂部距 viewport 頂部的距離
+    const scrollerTop = scroller.getBoundingClientRect().top;
+    const target = scrollTop + elTop - scrollerTop - barH - 8;
+
     window._adminScrolling = true;
     scroller.scrollTo({ top: target, behavior: 'smooth' });
     clearTimeout(window._adminScrollTimer);
-    window._adminScrollTimer = setTimeout(() => { window._adminScrolling = false; }, 800);
+    window._adminScrollTimer = setTimeout(() => { window._adminScrolling = false; }, 1000);
   }
-  // 立即高亮對應 tab（用 onclick 屬性比對，不依賴 index）
+
+  // 立即高亮（用 onclick 屬性比對，不靠 index）
   document.querySelectorAll('.admin-tab').forEach(t => {
     t.classList.remove('active');
     if ((t.getAttribute('onclick')||'').includes(sectionId)) t.classList.add('active');
