@@ -4880,7 +4880,7 @@ async function loadStats() {
   const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
 
   try {
-    const [attDocs, outDocs] = await Promise.all([fbList(COL_ATTEND, 'date', 'asc'), fbList(COL_OUTING, 'date', 'asc')]);
+    const [attDocs, outDocs] = await Promise.all([fbList(COL_ATTEND, 'date', 'asc'), fbList(COL_OUTING, 'date', 'asc'), loadMembers()]);
     let monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
     let monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
 
@@ -4922,7 +4922,7 @@ async function loadStats() {
     document.getElementById('statsTableTitle').textContent = `${year} 年 ${month} 月協勤排行榜${filterUnit?' — '+filterUnit:''}`;
     const tbody = document.getElementById('statsTableBody');
     tbody.innerHTML = rows.map((r,i) => {
-      const pct = totalCount > 0 ? Math.round(r.count/totalCount*100) : 0;
+      const pct = totalHours > 0 ? Math.round(r.hours/totalHours*100) : 0;
       const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
       return `<tr>
         <td style="text-align:center;font-weight:600;">${medal||i+1}</td>
@@ -9026,14 +9026,10 @@ async function initDutyPage() {
     if (_userUnit) { unitSel.value = _userUnit; filterDutyMembers(); }
   }
 
-  // 需求4：根據今日決定顯示哪個月份（20日起預設次月）
+  // 預設顯示當月（不自動跳到次月）
   const now = new Date();
   _dutyYear  = now.getFullYear();
   _dutyMonth = now.getMonth();
-  if (now.getDate() >= 20) {
-    _dutyMonth++;
-    if (_dutyMonth > 11) { _dutyMonth = 0; _dutyYear++; }
-  }
   await loadDutyData();
   onDutyTimeChange();
 }
