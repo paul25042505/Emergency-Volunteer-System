@@ -3272,16 +3272,47 @@ function scrollToPageTop(e) {
 // 動態取得 header 高度，修正 appScroll padding 和所有 sticky 元素
 function syncHeaderHeight() {
   requestAnimationFrame(() => {
-    const header = document.querySelector('.header');
+    const header    = document.querySelector('.header');
+    const scroller  = document.getElementById('appScroll');
+    const adminBar  = document.getElementById('adminTabBar');
     if (!header) return;
-    const h = Math.round(header.getBoundingClientRect().height);
-    const scroller = document.getElementById('appScroll');
-    if (scroller) scroller.style.paddingTop = h + 'px';
-    // 同步所有固定在 header 下方的 bar
-    const dutyTabBar  = document.getElementById('dutyTabBar');
-    const adminTabBar = document.getElementById('adminTabBar');
-    if (dutyTabBar)  dutyTabBar.style.top  = '0px'; // duty 用 top:0，靠 appScroll padding 對齊
-    if (adminTabBar) adminTabBar.style.top = h + 'px';
+    const headerH = Math.round(header.getBoundingClientRect().height);
+    // adminPage 開啟時，paddingTop = header + tabbar 高度
+    const adminPage = document.getElementById('adminPage');
+    const adminActive = adminPage && adminPage.classList.contains('active');
+    if (adminActive && adminBar && adminBar.style.display !== 'none') {
+      adminBar.style.top = headerH + 'px';
+      // 需要再等一幀讓 bar 位置確定後量高度
+      requestAnimationFrame(() => {
+        const barH = Math.round(adminBar.getBoundingClientRect().height);
+        if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
+      });
+    } else {
+      if (adminBar) adminBar.style.top = headerH + 'px';
+      if (scroller) scroller.style.paddingTop = headerH + 'px';
+    }
+  });
+}
+
+function _positionAdminTabBar() {
+  const bar    = document.getElementById('adminTabBar');
+  const spacer = document.getElementById('adminTabBarSpacer');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  // 雙重 rAF：確保 bar display:flex 後已渲染出完整高度才量測
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const header  = document.querySelector('.header');
+      const scroller= document.getElementById('appScroll');
+      const headerH = header ? Math.round(header.getBoundingClientRect().height) : 56;
+      bar.style.top = headerH + 'px';
+      const barH    = Math.round(bar.getBoundingClientRect().height);
+      if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
+      if (spacer) {
+        spacer.style.display = 'block';
+        spacer.style.height  = barH + 'px';
+      }
+    });
   });
 }
 
@@ -3353,6 +3384,8 @@ function navTo(pageId, fromHistory) {
     if (bar)    { bar.style.display = 'none'; }
     if (spacer) { spacer.style.display = 'none'; spacer.style.height = '0'; }
     if (_adminTabObserver) { _adminTabObserver.disconnect(); _adminTabObserver = null; }
+    // 恢復 appScroll paddingTop 為只有 header 高度
+    syncHeaderHeight();
   }
 
   closeDrawer();
@@ -5925,17 +5958,10 @@ function adminNavTo(sectionId) {
 }
 
 function _positionAdminTabBar() {
-  const bar    = document.getElementById('adminTabBar');
-  const spacer = document.getElementById('adminTabBarSpacer');
+  const bar = document.getElementById('adminTabBar');
   if (!bar) return;
   bar.style.display = 'flex';
-  syncHeaderHeight(); // 確保 top 正確
-  requestAnimationFrame(() => {
-    if (spacer) {
-      spacer.style.display = 'block';
-      spacer.style.height  = bar.getBoundingClientRect().height + 'px';
-    }
-  });
+  syncHeaderHeight(); // 內部雙重 rAF，確保 tabbar 多行高度量測正確
 }
 
 function adminScrollTo(sectionId) {
