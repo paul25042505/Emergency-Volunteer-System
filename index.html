@@ -972,6 +972,11 @@ tr:hover td { background: #fdfcfb; }
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">意見回饋</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">建議與問題回報</div>
         </button>
+        <button onclick="navTo('dutyPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📅</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">備勤排班</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">備勤排班管理</div>
+        </button>
         <button onclick="navTo('meetingPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
           <div style="font-size:1.6rem;margin-bottom:8px;">📒</div>
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">定訓與公告</div>
@@ -2481,17 +2486,17 @@ tr:hover td { background: #fdfcfb; }
 
     <!-- 視圖切換 -->
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button onclick="dutyView('month')" id="dutyTab-month"
+      <button onclick="dutyView('slots')" id="dutyTab-slots"
         style="flex:1;padding:9px;border:1.5px solid var(--red);border-radius:8px;background:var(--red);color:white;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+        🕐 時段總覽
+      </button>
+      <button onclick="dutyView('month')" id="dutyTab-month"
+        style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:8px;background:white;color:var(--text-mid);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
         📅 月視圖
       </button>
       <button onclick="dutyView('list')" id="dutyTab-list"
         style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:8px;background:white;color:var(--text-mid);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
         📋 清單
-      </button>
-      <button onclick="dutyView('slots')" id="dutyTab-slots"
-        style="flex:1;padding:9px;border:1.5px solid var(--border);border-radius:8px;background:white;color:var(--text-mid);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-        🕐 時段總覽
       </button>
     </div>
 
@@ -8734,8 +8739,15 @@ function getDutySlotCount(dateStr, slotHour) {
 
 let _dutyYear  = new Date().getFullYear();
 let _dutyMonth = new Date().getMonth();
-let _dutyView  = 'month';
+let _dutyView  = 'slots';
 let _dutyDocs  = [];
+let _trainingDates = []; // 儲存定訓日期
+
+// 判定是否為定訓時段 (18:00-22:00)
+function isTrainingTime(dateStr, slotHour) {
+  if (!_trainingDates.includes(dateStr)) return false;
+  return slotHour >= 18 && slotHour < 22;
+}
 
 async function initDutyPage() {
   // 時間選單 06:00–22:00（結束到 23:00）
@@ -8805,10 +8817,15 @@ function onDutyTimeChange() {
   }
 
   const fullSlots = slots.filter(s => s.full);
+  const trainingSlots = slots.filter(s => isTrainingTime(dateStr, s.h));
   const maxCap    = Math.max(...slots.map(s => s.cap));
 
   let msg, color, bg;
-  if (fullSlots.length === slots.length) {
+  if (trainingSlots.length > 0) {
+    const hrs = trainingSlots.map(s => String(s.h).padStart(2,'0')+':00').join('、');
+    msg = '🚫 包含定訓時段 (' + hrs + ')，此時段不開放排班';
+    color = '#b94a3a'; bg = '#fff5f5';
+  } else if (fullSlots.length === slots.length) {
     msg = '⚠️ 此時段所有小時格均已額滿，無法新增';
     color = '#7b2d00'; bg = '#fff3e0';
   } else if (fullSlots.length > 0) {
@@ -8835,8 +8852,13 @@ function filterDutyMembers() {
 
 async function loadDutyData() {
   try {
-    const docs = await fbList(COL_DUTY);
+    // 同時載入備勤資料與定訓行事曆
+    const [docs, trainingDocs] = await Promise.all([
+      fbList(COL_DUTY),
+      fbList(COL_SCHEDULE)
+    ]);
     _dutyDocs = docs;
+    _trainingDates = trainingDocs.map(d => d.date);
     renderDutyView();
   } catch(e) { console.warn('loadDutyData 失敗：', e.message); }
 }
@@ -9027,8 +9049,28 @@ function renderDutyList() {
       });
     }
 
+    // 檢查是否有定訓時段
+    const trainingSlots = [18, 19, 20, 21].filter(h => isTrainingTime(dateStr, h));
+    if (trainingSlots.length > 0) {
+      html += `
+        <div style="display:flex; gap:16px; margin-top:16px; position:relative; opacity:0.8;">
+          <div style="width:60px; font-size:0.75rem; font-weight:700; color:#e74c3c; padding-top:4px;">18:00</div>
+          <div style="flex:1; background:#fff5f5; border:1.5px dashed #ffc9c9; border-radius:12px; padding:12px; display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:12px; background:#ffc9c9; color:#c0392b; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">📒</div>
+            <div>
+              <div style="font-size:0.95rem; font-weight:700; color:#c0392b;">每月定訓</div>
+              <div style="font-size:0.7rem; color:#e74c3c; margin-top:2px;">18:00 - 22:00 (此時段不開放排班)</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     // 底部缺額快速查看
-    const vacancies = HOURS.filter(h => getDutySlotCount(dateStr, h) < getDutySlotCapacity(dateStr, h));
+    const vacancies = HOURS.filter(h => {
+      if (isTrainingTime(dateStr, h)) return false; // 定訓時段不顯示為缺額
+      return getDutySlotCount(dateStr, h) < getDutySlotCapacity(dateStr, h);
+    });
     if (vacancies.length > 0) {
       html += `
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid #f5f5f5;">
@@ -9088,48 +9130,58 @@ function renderDutySlots() {
     html += `<td style="padding:12px 4px; border:1px solid #eee; text-align:center; position:sticky; left:0; background:${rowBg}; z-index:10; font-weight:900; font-size:1.3rem; color:${isToday?'#f08c00':'#333'};">${d}</td>`;
     html += `<td style="padding:12px 4px; border:1px solid #eee; text-align:center; position:sticky; left:60px; background:${rowBg}; z-index:10; font-size:1rem; color:${isHoliday?'#fa5252':'#666'}; font-weight:700;">${weekDay}</td>`;
 
-    HOURS.forEach(h => {
-      const cap   = getDutySlotCapacity(dateStr, h);
-      const docs  = _dutyDocs.filter(doc => {
-        if (doc.date !== dateStr) return false;
-        const s = parseInt((doc.start||'0').split(':')[0]);
-        const e = parseInt((doc.end||'0').split(':')[0]);
-        return h >= s && h < e;
-      });
-      
-      html += `<td style="padding:8px 6px; border:1px solid #eee; vertical-align:middle; min-height:70px;">`;
-      html += `<div style="display:flex; flex-direction:column; gap:6px;">`;
-      
-      // 按照容量固定顯示位置
-      for (let i = 0; i < cap; i++) {
-        const doc = docs[i];
-        if (doc) {
-          // 已排班位置
-          const isMe = doc.memberName === myName;
+      HOURS.forEach(h => {
+        const cap   = getDutySlotCapacity(dateStr, h);
+        const isTraining = isTrainingTime(dateStr, h);
+        const docs  = _dutyDocs.filter(doc => {
+          if (doc.date !== dateStr) return false;
+          const s = parseInt((doc.start||'0').split(':')[0]);
+          const e = parseInt((doc.end||'0').split(':')[0]);
+          return h >= s && h < e;
+        });
+        
+        html += `<td style="padding:8px 6px; border:1px solid #eee; vertical-align:middle; min-height:70px; background:${isTraining?'#f1f3f5':''};">`;
+        html += `<div style="display:flex; flex-direction:column; gap:6px;">`;
+        
+        if (isTraining) {
+          // 定訓時段顯示
           html += `
-            <div 
-              onclick="openQuickAddDuty('${dateStr}', ${h})"
-              style="background:${isMe?'#fff3bf':'#f8f9fa'}; border:2px solid ${isMe?'#fab005':'#ddd'}; border-radius:8px; padding:8px 4px; text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.05); cursor:pointer; transition:transform 0.1s;"
-              onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
-            >
-              <span style="font-size:1.1rem; font-weight:800; color:#212529; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${doc.memberName}</span>
+            <div style="height:42px; background:#e9ecef; border:1px solid #dee2e6; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#495057; font-size:0.95rem; font-weight:700; letter-spacing:2px;">
+              定訓
             </div>
           `;
         } else {
-          // 空位 (虛線框)
-          html += `
-            <div 
-              onclick="openQuickAddDuty('${dateStr}', ${h})"
-              style="height:42px; border:2px dashed #ced4da; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#adb5bd; font-size:1.2rem; transition:all 0.2s; background:rgba(0,0,0,0.02);"
-              onmouseover="this.style.background='rgba(0,0,0,0.05)'; this.style.borderColor='#999';"
-              onmouseout="this.style.background='rgba(0,0,0,0.02)'; this.style.borderColor='#ced4da';"
-            >+</div>
-          `;
+          // 按照容量固定顯示位置
+          for (let i = 0; i < cap; i++) {
+            const doc = docs[i];
+            if (doc) {
+              // 已排班位置
+              const isMe = doc.memberName === myName;
+              html += `
+                <div 
+                  onclick="openQuickAddDuty('${dateStr}', ${h})"
+                  style="background:${isMe?'#fff3bf':'#f8f9fa'}; border:2px solid ${isMe?'#fab005':'#ddd'}; border-radius:8px; padding:8px 4px; text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.05); cursor:pointer; transition:transform 0.1s;"
+                  onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
+                >
+                  <span style="font-size:1.1rem; font-weight:800; color:#212529; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${doc.memberName}</span>
+                </div>
+              `;
+            } else {
+              // 空位 (虛線框)
+              html += `
+                <div 
+                  onclick="openQuickAddDuty('${dateStr}', ${h})"
+                  style="height:42px; border:2px dashed #ced4da; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#adb5bd; font-size:1.2rem; transition:all 0.2s; background:rgba(0,0,0,0.02);"
+                  onmouseover="this.style.background='rgba(0,0,0,0.05)'; this.style.borderColor='#999';"
+                  onmouseout="this.style.background='rgba(0,0,0,0.02)'; this.style.borderColor='#ced4da';"
+                >+</div>
+              `;
+            }
+          }
         }
-      }
-      
-      html += `</div></td>`;
-    });
+        
+        html += `</div></td>`;
+      });
     html += `</tr>`;
   }
 
@@ -9196,9 +9248,19 @@ async function addDutySchedule() {
   const startHH = parseInt(start.split(':')[0]);
   const endHH   = parseInt(end.split(':')[0]);
   const fullSlots = [];
+  const trainingSlots = [];
+  
   for (let h = startHH; h < endHH; h++) {
-    if (getDutySlotCount(date, h) >= getDutySlotCapacity(date, h))
+    if (isTrainingTime(date, h)) {
+      trainingSlots.push(String(h).padStart(2,'0') + ':00');
+    } else if (getDutySlotCount(date, h) >= getDutySlotCapacity(date, h)) {
       fullSlots.push(String(h).padStart(2,'0') + ':00');
+    }
+  }
+  
+  if (trainingSlots.length > 0) {
+    alert('⚠️ 以下時段為「每月定訓」時間，不開放排班：\n' + trainingSlots.join('、'));
+    return;
   }
   if (fullSlots.length > 0) {
     alert('⚠️ 以下時段已額滿，無法新增：\n' + fullSlots.join('、'));
@@ -9303,6 +9365,16 @@ async function editDuty(id) {
 
     if (!date || !member || !start || !end) { alert('請填寫所有欄位'); return; }
     if (start >= end) { alert('結束時間必須晚於開始時間'); return; }
+
+    // 檢查定訓時段
+    const startHH = parseInt(start.split(':')[0]);
+    const endHH = parseInt(end.split(':')[0]);
+    for (let h = startHH; h < endHH; h++) {
+      if (isTrainingTime(date, h)) {
+        alert('⚠️ 所選時段包含「每月定訓」時間 (18:00-22:00)，請重新選擇。');
+        return;
+      }
+    }
 
     try {
       await fbUpdate(COL_DUTY, id, {
