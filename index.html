@@ -689,7 +689,6 @@ tr:hover td { background: #fdfcfb; }
       <button onclick="adminNavTo('adminSec-feedback')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">💬</span>意見回饋</button>
       <button onclick="adminNavTo('adminSec-correction')" class="admin-subnav-btn" id="adminSubNav-correction"><span class="icon" style="font-size:0.75rem;">📝</span>修正申請</button>
       <button onclick="adminNavTo('adminSec-schedule')" class="admin-subnav-btn" id="adminSubNav-schedule"><span class="icon" style="font-size:0.75rem;">📅</span>定訓行事曆</button>
-      <button onclick="adminNavTo('adminSec-push')" class="admin-subnav-btn" id="adminSubNav-push"><span class="icon" style="font-size:0.75rem;">🔔</span>推播管理</button>
       <button onclick="adminNavTo('adminSec-changelog')"class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📝</span>版本紀錄</button>
       <button id="adminSubNav-loginlog" onclick="adminNavTo('adminSec-loginlog')" class="admin-subnav-btn" style="display:none;"><span class="icon" style="font-size:0.75rem;">🔐</span>登入紀錄</button>
     </div>
@@ -1991,7 +1990,6 @@ tr:hover td { background: #fdfcfb; }
       <button onclick="adminScrollTo('adminSec-feedback')" class="admin-tab">💬 回饋</button>
       <button onclick="adminScrollTo('adminSec-correction')" class="admin-tab" id="adminTab-correction">📝 修正</button>
       <button onclick="adminScrollTo('adminSec-schedule')" class="admin-tab" id="adminTab-schedule">📅 定訓</button>
-      <button onclick="adminScrollTo('adminSec-push')" class="admin-tab" id="adminTab-push">🔔 推播</button>
       <button onclick="adminScrollTo('adminSec-changelog')"class="admin-tab">📝 版本</button>
       <button id="adminTab-loginlog" onclick="adminScrollTo('adminSec-loginlog')" class="admin-tab" style="display:none;">🔐 登入紀錄</button>
     </div>
@@ -2236,61 +2234,6 @@ tr:hover td { background: #fdfcfb; }
         </div>
         <button onclick="sendTestPush()" class="btn-search" style="width:100%;">📲 發送測試通知給我</button>
         <div id="testPushStatus" style="font-size:0.78rem;margin-top:8px;text-align:center;display:none;"></div>
-      </div>
-    </div>
-
-    <!-- ══════ SECTION：推播管理 ══════ -->
-    <div class="section" id="adminSec-push">
-      <div class="section-head">
-        <div class="section-num">🔔</div>
-        <div class="section-title">推播管理</div>
-        <div class="section-line"></div>
-      </div>
-
-      <!-- 發送推播 -->
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">📤 發送推播通知</div>
-        <div class="field">
-          <label>推播對象 <span class="req">*</span></label>
-          <select id="pushTarget" style="width:100%;" onchange="onPushTargetChange()">
-            <option value="all">全部成員</option>
-            <option value="unit">指定分隊</option>
-            <option value="person">指定個人</option>
-          </select>
-        </div>
-        <div id="pushTargetUnit" class="field" style="display:none;">
-          <label>選擇分隊 <span class="req">*</span></label>
-          <select id="pushUnit" style="width:100%;"></select>
-        </div>
-        <div id="pushTargetPerson" class="field" style="display:none;">
-          <label>選擇成員 <span class="req">*</span></label>
-          <select id="pushPerson" style="width:100%;"></select>
-        </div>
-        <div class="field">
-          <label>標題 <span class="req">*</span></label>
-          <input type="text" id="pushTitle" placeholder="例：定訓提醒、出勤通知" style="width:100%;">
-        </div>
-        <div class="field">
-          <label>內容 <span class="req">*</span></label>
-          <textarea id="pushBody" placeholder="推播訊息內容..." rows="3" style="width:100%;resize:vertical;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:'Noto Sans TC',sans-serif;font-size:0.88rem;"></textarea>
-        </div>
-        <div class="field">
-          <label>同時寄送 Email</label>
-          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
-            <input type="checkbox" id="pushAlsoEmail" style="accent-color:var(--red);"> 寄送 Email 給有提供信箱的成員
-          </label>
-        </div>
-        <div id="pushSendStatus" style="display:none;margin-bottom:10px;padding:10px 14px;border-radius:6px;font-size:0.82rem;"></div>
-        <button onclick="sendAdminPush()" class="btn-search" style="width:100%;">📤 發送推播</button>
-      </div>
-
-      <!-- 推播紀錄 -->
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 推播紀錄</div>
-          <button onclick="loadPushLogs()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
-        </div>
-        <div id="pushLogList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
       </div>
     </div>
 
@@ -5464,44 +5407,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 if ('serviceWorker' in navigator) {
-  const swCode = `
-self.addEventListener('install', e => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => new Response(''))));
-
-self.addEventListener('push', e => {
-  let title = '義消系統通知';
-  let body  = '';
-  try {
-    const data = e.data ? e.data.json() : {};
-    title = data.title || title;
-    body  = data.body  || body;
-  } catch(_) {
-    body = e.data ? e.data.text() : '';
-  }
-  e.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: '/Emergency-Volunteer-System/icon-192.png',
-      badge: '/Emergency-Volunteer-System/icon-192.png',
-      tag: 'rescue-push-' + Date.now(),
-      requireInteraction: false,
-    })
-  );
-});
-
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      if (list.length > 0) return list[0].focus();
-      return clients.openWindow('/Emergency-Volunteer-System/');
-    })
-  );
-});
-  `;
+  const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response(''))));`;
   const blob = new Blob([swCode], { type: 'application/javascript' });
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
 
 // ════════════════════════════════════════
@@ -6145,7 +6053,7 @@ async function initAdminPage() {
 
   await loadUnits();
   populateUnitSelects();
-  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initPushSection()]);
+  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections()]);
   seedChangelog_v1902(); // 自動插入 v1.9.02 版本紀錄（若尚未存在）
 
   // 顯示並定位固定 tab bar
@@ -7101,107 +7009,6 @@ async function _moveChangelog(idx, dir) {
     await loadAdminChangelog();
     loadChangelog();
   } catch(e) { alert('排序失敗：'+e.message); }
-}
-
-// ════════════════════════════════════════
-// 推播管理
-// ════════════════════════════════════════
-
-const COL_PUSH_LOGS  = 'pushLogs';
-const COL_PUSH_QUEUE = 'pushQueue';
-
-function onPushTargetChange() {
-  const val = document.getElementById('pushTarget').value;
-  document.getElementById('pushTargetUnit').style.display   = val === 'unit'   ? '' : 'none';
-  document.getElementById('pushTargetPerson').style.display = val === 'person' ? '' : 'none';
-}
-
-async function initPushSection() {
-  const unitSel = document.getElementById('pushUnit');
-  if (unitSel) unitSel.innerHTML = _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
-  const personSel = document.getElementById('pushPerson');
-  if (personSel) personSel.innerHTML = members.map(m =>
-    `<option value="${m.name}">${m.name}${m.unit ? '（'+m.unit+'）' : ''}</option>`
-  ).join('');
-  await loadPushLogs();
-}
-
-async function sendAdminPush() {
-  const target    = document.getElementById('pushTarget').value;
-  const title     = document.getElementById('pushTitle').value.trim();
-  const body      = document.getElementById('pushBody').value.trim();
-  const alsoEmail = document.getElementById('pushAlsoEmail').checked;
-  const statusEl  = document.getElementById('pushSendStatus');
-
-  if (!title) { alert('請填寫推播標題'); return; }
-  if (!body)  { alert('請填寫推播內容'); return; }
-
-  let targetUnit = '', targetPerson = '';
-  if (target === 'unit')   { targetUnit   = document.getElementById('pushUnit').value;   if (!targetUnit)   { alert('請選擇分隊'); return; } }
-  if (target === 'person') { targetPerson = document.getElementById('pushPerson').value; if (!targetPerson) { alert('請選擇成員'); return; } }
-
-  statusEl.style.cssText = 'display:block;padding:10px 14px;border-radius:6px;font-size:0.82rem;background:#fff3cd;color:#856404;margin-bottom:10px;';
-  statusEl.textContent = '發送中...';
-
-  try {
-    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-
-    // 統計訂閱裝置數
-    const subSnap = await _fbDB.collection('pushSubscriptions').get();
-    const recipients = [];
-    subSnap.forEach(doc => {
-      const d = doc.data();
-      if (target === 'all') recipients.push(d);
-      else if (target === 'unit'   && d.unit === targetUnit)         recipients.push(d);
-      else if (target === 'person' && d.memberName === targetPerson) recipients.push(d);
-    });
-
-    // 寫入 pushQueue → Cloud Functions 監聽後執行推播
-    await fbAdd(COL_PUSH_QUEUE, {
-      target, targetUnit, targetPerson, title, body, alsoEmail,
-      recipientCount: recipients.length,
-      sentBy: usr.memberName || usr.name || '',
-      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
-      status: 'pending',
-    });
-
-    // 推播紀錄
-    await fbAdd(COL_PUSH_LOGS, {
-      target, targetUnit, targetPerson, title, body, alsoEmail,
-      recipientCount: recipients.length,
-      sentBy: usr.memberName || usr.name || '',
-      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-
-    statusEl.style.cssText = 'display:block;padding:10px 14px;border-radius:6px;font-size:0.82rem;background:#eafaf1;color:#1a6b35;margin-bottom:10px;';
-    statusEl.textContent = `✅ 已發送給 ${recipients.length} 個裝置${alsoEmail ? '，並寄送 Email' : ''}`;
-    document.getElementById('pushTitle').value = '';
-    document.getElementById('pushBody').value  = '';
-    document.getElementById('pushAlsoEmail').checked = false;
-    await loadPushLogs();
-  } catch(e) {
-    statusEl.style.cssText = 'display:block;padding:10px 14px;border-radius:6px;font-size:0.82rem;background:#fff0f0;color:#b94a3a;margin-bottom:10px;';
-    statusEl.textContent = '❌ 發送失敗：' + e.message;
-  }
-}
-
-async function loadPushLogs() {
-  const el = document.getElementById('pushLogList');
-  if (!el) return;
-  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
-  try {
-    const docs = await fbList(COL_PUSH_LOGS, 'sentAt', 'desc');
-    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無推播紀錄</div>'; return; }
-    el.innerHTML = '';
-    docs.slice(0,20).forEach(d => {
-      const targetLabel = d.target==='all' ? '全部成員' : d.target==='unit' ? (d.targetUnit||'')+'分隊' : (d.targetPerson||'—');
-      const dateStr = d.sentAt?.toDate ? d.sentAt.toDate().toLocaleString('zh-TW') : '—';
-      const row = document.createElement('div');
-      row.style.cssText = 'padding:12px 0;border-bottom:1px solid var(--border);';
-      row.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><div style="font-size:0.88rem;font-weight:600;color:var(--text);">${d.title||''}</div><div style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;margin-left:8px;">${dateStr}</div></div><div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:4px;">${d.body||''}</div><div style="display:flex;gap:8px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;"><span>🎯 ${targetLabel}</span><span>📱 ${d.recipientCount||0} 個裝置</span>${d.alsoEmail?'<span>📧 含 Email</span>':''}<span>by ${d.sentBy||'—'}</span></div>`;
-      el.appendChild(row);
-    });
-  } catch(e) { el.innerHTML = `<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：${e.message}</div>`; }
 }
 
 // 自動插入 v1.9.02 版本紀錄（若尚未存在）
