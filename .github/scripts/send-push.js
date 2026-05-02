@@ -100,7 +100,9 @@ async function main() {
       const titles   = meetings.map(m => m.topic || '定訓').join('、');
       try {
         await sendLineGroupMessage(
-          `🔔 明天有定訓！\n${tomorrow} ${titles}\n請準時出席，18:00 開始\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
+          `--------------------
+🚑 系統自動通知
+--------------------\n\n🔔 明天有定訓！\n${tomorrow} ${titles}\n請準時出席，19:00 開始\n\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
         );
         console.log('✅ LINE 明天定訓通知已發送');
       } catch(e) {
@@ -114,7 +116,9 @@ async function main() {
       const titles   = meetings.map(m => m.topic || '定訓').join('、');
       try {
         await sendLineGroupMessage(
-          `🔔 今天有定訓！\n${today} ${titles}\n請準時出席，18:00 開始\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
+          `--------------------
+🚑 系統自動通知
+--------------------\n\n🔔 今天有定訓！\n${today} ${titles}\n請準時出席，19:00 開始\n\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
         );
         console.log('✅ LINE 今天定訓通知已發送');
       } catch(e) {
