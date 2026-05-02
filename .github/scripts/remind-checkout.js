@@ -114,9 +114,7 @@ async function main() {
   if (LINE_ACCESS_TOKEN) {
     try {
       const lineMsg = [
-        '--------------------\n🚑 系統自動通知\n--------------------',
-    '',
-    '⚠️ 簽退提醒',
+        '⚠️ 簽退提醒',
         `${today} 以下成員尚未簽退：`,
         '',
         names.map(n => `• ${n}`).join('\n'),
