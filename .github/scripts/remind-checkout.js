@@ -31,7 +31,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // ── LINE Messaging API ──
-const LINE_GROUP_ID      = 'C15c80c35748b4d6f677477711a9be733';
+const LINE_GROUP_ID      = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
 const LINE_ACCESS_TOKEN  = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
 async function sendLineGroupMessage(text) {
