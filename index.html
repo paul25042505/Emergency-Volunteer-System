@@ -3363,79 +3363,96 @@ function scrollToPageTop(e) {
 // Pull to Refresh（下拉重新整理）
 // ════════════════════════════════════════
 function initPullToRefresh() {
-  const scroller = document.getElementById('appScroll');
-  if (!scroller) return;
-
-  // 建立提示元素
+  // 建立 spinner indicator（仿 iOS 原生風格）
   const indicator = document.createElement('div');
   indicator.id = 'pullRefreshIndicator';
   indicator.style.cssText = [
-    'position:fixed;top:0;left:0;right:0;z-index:999',
-    'display:flex;align-items:center;justify-content:center;gap:8px',
-    'background:var(--red);color:white',
-    'font-size:0.82rem;font-weight:600;font-family:"Noto Sans TC",sans-serif',
-    'padding:0 16px;height:0;overflow:hidden',
-    'transition:height 0.2s,opacity 0.2s',
-    'opacity:0;pointer-events:none',
+    'position:fixed;left:50%;z-index:999;pointer-events:none',
+    'transform:translateX(-50%) translateY(-60px)',
+    'width:36px;height:36px',
+    'background:white;border-radius:50%',
+    'box-shadow:0 2px 12px rgba(0,0,0,0.15)',
+    'display:flex;align-items:center;justify-content:center',
+    'transition:transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
+    'top:12px',
   ].join(';');
+  indicator.innerHTML = `<svg id="ptrSpinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b94a3a" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`;
   document.body.appendChild(indicator);
 
-  let startY = 0, pulling = false, triggered = false;
-  const THRESHOLD = 72; // 拉多少 px 才觸發
+  // CSS for spinner animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes ptrSpin { to { transform: rotate(360deg); } }
+    #ptrSpinner.spinning { animation: ptrSpin 0.8s linear infinite; }
+  `;
+  document.head.appendChild(style);
 
-  scroller.addEventListener('touchstart', e => {
-    if (scroller.scrollTop === 0) {
-      startY = e.touches[0].clientY;
-      pulling = true;
-      triggered = false;
-    }
-  }, { passive: true });
+  const THRESHOLD = 80;
+  let startY = 0, pulling = false, triggered = false, refreshing = false;
 
-  scroller.addEventListener('touchmove', e => {
-    if (!pulling) return;
-    const dy = e.touches[0].clientY - startY;
-    if (dy <= 0) { pulling = false; return; }
+  function setupPTR(el, isLogin) {
+    if (!el) return;
+    el.addEventListener('touchstart', e => {
+      if (refreshing) return;
+      const scrollTop = isLogin ? 0 : el.scrollTop;
+      if (scrollTop === 0) {
+        startY = e.touches[0].clientY;
+        pulling = true;
+        triggered = false;
+      }
+    }, { passive: true });
 
-    const progress = Math.min(dy / THRESHOLD, 1);
-    const h = Math.round(progress * 48);
-    indicator.style.height = h + 'px';
-    indicator.style.opacity = String(progress);
+    el.addEventListener('touchmove', e => {
+      if (!pulling || refreshing) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { pulling = false; indicator.style.transform = 'translateX(-50%) translateY(-60px)'; return; }
 
-    if (dy >= THRESHOLD && !triggered) {
-      indicator.innerHTML = '↑ 放開以重新整理';
-    } else {
-      indicator.innerHTML = '↓ 下拉重新整理';
-    }
-    triggered = dy >= THRESHOLD;
-  }, { passive: true });
+      const progress = Math.min(dy / THRESHOLD, 1);
+      const translateY = -60 + progress * 72;
+      indicator.style.transform = `translateX(-50%) translateY(${translateY}px)`;
 
-  scroller.addEventListener('touchend', async () => {
-    if (!pulling) return;
-    pulling = false;
+      // 旋轉角度跟著進度走
+      const rotation = progress * 270;
+      indicator.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
+      triggered = dy >= THRESHOLD;
+    }, { passive: true });
 
-    if (!triggered) {
-      indicator.style.height = '0';
-      indicator.style.opacity = '0';
-      return;
-    }
+    el.addEventListener('touchend', async () => {
+      if (!pulling || refreshing) return;
+      pulling = false;
 
-    // 顯示載入中
-    indicator.innerHTML = '⏳ 更新中...';
-    indicator.style.height = '44px';
-    indicator.style.opacity = '1';
+      if (!triggered) {
+        indicator.style.transform = 'translateX(-50%) translateY(-60px)';
+        return;
+      }
 
-    try {
-      await refreshCurrentPage();
-      indicator.innerHTML = '✅ 已更新';
-    } catch(e) {
-      indicator.innerHTML = '⚠️ 更新失敗';
-    }
+      // 觸發：固定位置 + 開始旋轉
+      refreshing = true;
+      indicator.style.transform = 'translateX(-50%) translateY(12px)';
+      indicator.querySelector('svg').classList.add('spinning');
+      indicator.querySelector('svg').style.transform = '';
 
-    setTimeout(() => {
-      indicator.style.height = '0';
-      indicator.style.opacity = '0';
-    }, 1200);
-  });
+      try {
+        if (isLogin) {
+          location.reload();
+        } else {
+          await refreshCurrentPage();
+        }
+      } catch(e) {}
+
+      setTimeout(() => {
+        indicator.style.transform = 'translateX(-50%) translateY(-60px)';
+        indicator.querySelector('svg').classList.remove('spinning');
+        refreshing = false;
+      }, 800);
+    });
+  }
+
+  // 主畫面 appScroll
+  setupPTR(document.getElementById('appScroll'), false);
+
+  // 登入頁面 loginScreen
+  setupPTR(document.getElementById('loginScreen'), true);
 }
 
 async function refreshCurrentPage() {
