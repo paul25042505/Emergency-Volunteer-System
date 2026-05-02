@@ -601,6 +601,29 @@ tr:hover td { background: #fdfcfb; }
     </div>
     <div id="loginSpinner">⏳ 驗證中，請稍候...</div>
     <div class="login-error" id="loginError"></div>
+
+    <!-- LINE 瀏覽器警告 -->
+    <div id="lineWarning" style="display:none;margin-bottom:0;margin-top:14px;padding:12px 14px;background:#edfbe4;border:1px solid #6fcf55;border-radius:8px;font-size:0.8rem;color:#2d6a1f;line-height:1.6;">
+      ⚠️ 偵測到 LINE 內建瀏覽器<br>
+      Google 登入需使用 <strong>Safari</strong> 或 <strong>Chrome</strong><br>
+      請點右上角「⋯」→「用瀏覽器開啟」
+    </div>
+
+    <!-- 臨時密碼登入 -->
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:0.78rem;color:var(--text-light);text-align:center;margin-bottom:10px;">無法用 Google 登入？</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="tempPassInput" placeholder="輸入臨時密碼" maxlength="20"
+          style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;outline:none;"
+          onkeydown="if(event.key==='Enter')loginWithTempPass()">
+        <button onclick="loginWithTempPass()"
+          style="background:var(--red);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;min-height:unset;">
+          登入
+        </button>
+      </div>
+      <div id="tempPassError" style="display:none;font-size:0.78rem;color:#b94a3a;margin-top:8px;text-align:center;"></div>
+    </div>
+
     <div class="login-hint">
       僅限授權義消成員登入<br>
       如無法登入請聯絡管理員
@@ -1990,6 +2013,8 @@ tr:hover td { background: #fdfcfb; }
       <button onclick="adminScrollTo('adminSec-feedback')" class="admin-tab">💬 回饋</button>
       <button onclick="adminScrollTo('adminSec-correction')" class="admin-tab" id="adminTab-correction">📝 修正</button>
       <button onclick="adminScrollTo('adminSec-schedule')" class="admin-tab" id="adminTab-schedule">📅 定訓</button>
+      <button onclick="adminScrollTo('adminSec-push')" class="admin-tab" id="adminTab-push">🔔 推播</button>
+      <button onclick="adminScrollTo('adminSec-temppass')" class="admin-tab" id="adminTab-temppass">🔑 臨時密碼</button>
       <button onclick="adminScrollTo('adminSec-changelog')"class="admin-tab">📝 版本</button>
       <button id="adminTab-loginlog" onclick="adminScrollTo('adminSec-loginlog')" class="admin-tab" style="display:none;">🔐 登入紀錄</button>
     </div>
@@ -2234,6 +2259,112 @@ tr:hover td { background: #fdfcfb; }
         </div>
         <button onclick="sendTestPush()" class="btn-search" style="width:100%;">📲 發送測試通知給我</button>
         <div id="testPushStatus" style="font-size:0.78rem;margin-top:8px;text-align:center;display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ══════ SECTION：推播管理 ══════ -->
+    <div class="section" id="adminSec-push">
+      <div class="section-head">
+        <div class="section-num">🔔</div>
+        <div class="section-title">推播管理</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">📤 發送推播通知</div>
+        <div class="field">
+          <label>推播對象 <span class="req">*</span></label>
+          <select id="pushTarget" style="width:100%;" onchange="onPushTargetChange()">
+            <option value="all">全部成員</option>
+            <option value="unit">指定分隊</option>
+            <option value="person">指定個人</option>
+          </select>
+        </div>
+        <div id="pushTargetUnit" class="field" style="display:none;">
+          <label>選擇分隊 <span class="req">*</span></label>
+          <select id="pushUnit" style="width:100%;"></select>
+        </div>
+        <div id="pushTargetPerson" class="field" style="display:none;">
+          <label>選擇成員 <span class="req">*</span></label>
+          <select id="pushPerson" style="width:100%;"></select>
+        </div>
+        <div class="field">
+          <label>標題 <span class="req">*</span></label>
+          <input type="text" id="pushTitle" placeholder="例：定訓提醒、出勤通知" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>內容 <span class="req">*</span></label>
+          <textarea id="pushBody" placeholder="推播訊息內容..." rows="3" style="width:100%;resize:vertical;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:'Noto Sans TC',sans-serif;font-size:0.88rem;"></textarea>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+            <input type="checkbox" id="pushAlsoEmail" style="accent-color:var(--red);"> 同時寄送 Email 給有提供信箱的成員
+          </label>
+        </div>
+        <div id="pushSendStatus" style="display:none;margin-bottom:10px;padding:10px 14px;border-radius:6px;font-size:0.82rem;"></div>
+        <button onclick="sendAdminPush()" class="btn-search" style="width:100%;">📤 發送推播</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 推播紀錄</div>
+          <button onclick="loadPushLogs()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+        </div>
+        <div id="pushLogList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
+      </div>
+    </div>
+
+    <!-- ══════ SECTION：臨時密碼管理 ══════ -->
+    <div class="section" id="adminSec-temppass">
+      <div class="section-head">
+        <div class="section-num">🔑</div>
+        <div class="section-title">臨時密碼管理</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 新增臨時密碼</div>
+        <div class="field">
+          <label>綁定成員 <span class="req">*</span></label>
+          <select id="tpMember" style="width:100%;"></select>
+        </div>
+        <div class="field">
+          <label>臨時密碼 <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="tpCode" placeholder="自訂密碼（4~12字元）" maxlength="12" style="flex:1;">
+            <button onclick="tpGenerate()" style="background:var(--warm);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;cursor:pointer;white-space:nowrap;min-height:unset;">隨機產生</button>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label>有效期限 <span class="req">*</span></label>
+            <select id="tpExpiry" style="width:100%;">
+              <option value="1">1 小時</option>
+              <option value="6">6 小時</option>
+              <option value="24" selected>24 小時</option>
+              <option value="72">3 天</option>
+              <option value="168">7 天</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>可使用次數</label>
+            <select id="tpUses" style="width:100%;">
+              <option value="1">1 次</option>
+              <option value="3">3 次</option>
+              <option value="5">5 次</option>
+              <option value="0" selected>無限制</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>備註（說明用途）</label>
+          <input type="text" id="tpNote" placeholder="例：協助王小明登入" style="width:100%;">
+        </div>
+        <button onclick="addTempPass()" class="btn-search" style="width:100%;">🔑 建立臨時密碼</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 現有臨時密碼</div>
+          <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+        </div>
+        <div id="tempPassList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
       </div>
     </div>
 
@@ -6053,7 +6184,7 @@ async function initAdminPage() {
 
   await loadUnits();
   populateUnitSelects();
-  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections()]);
+  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initPushSection(),initTempPassSection()]);
   seedChangelog_v1902(); // 自動插入 v1.9.02 版本紀錄（若尚未存在）
 
   // 顯示並定位固定 tab bar
@@ -7045,6 +7176,250 @@ async function seedChangelog_v1902() {
   } catch(e) {
     console.warn('seedChangelog_v1902 失敗：', e.message);
   }
+}
+
+// ════════════════════════════════════════
+// LINE 瀏覽器偵測
+// ════════════════════════════════════════
+(function() {
+  if (/Line\//i.test(navigator.userAgent || '')) {
+    const el = document.getElementById('lineWarning');
+    if (el) el.style.display = '';
+  }
+})();
+
+// ════════════════════════════════════════
+// 臨時密碼登入
+// ════════════════════════════════════════
+const COL_TEMP_PASS = 'tempPasswords';
+
+async function loginWithTempPass() {
+  const code    = (document.getElementById('tempPassInput')?.value || '').trim();
+  const errEl   = document.getElementById('tempPassError');
+  const spinner = document.getElementById('loginSpinner');
+  if (!code) { showTempPassErr('請輸入臨時密碼'); return; }
+  errEl.style.display = 'none';
+  spinner.style.display = '';
+  spinner.textContent = '⏳ 驗證中...';
+  try {
+    await ensureFirebase();
+    const now  = Date.now();
+    const snap = await _fbDB.collection(COL_TEMP_PASS)
+      .where('code', '==', code).where('active', '==', true).get();
+    if (snap.empty) { spinner.style.display='none'; showTempPassErr('密碼不正確或已失效'); return; }
+    const doc  = snap.docs[0];
+    const data = doc.data();
+    if (data.expiresAt && data.expiresAt.toMillis() < now) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已過期'); return;
+    }
+    if (data.maxUses > 0 && data.usedCount >= data.maxUses) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已達使用上限'); return;
+    }
+    const memberSnap = await _fbDB.collection('whitelist').where('memberName','==',data.memberName).get();
+    if (memberSnap.empty) { spinner.style.display='none'; showTempPassErr('找不到對應成員資料'); return; }
+    const member = memberSnap.docs[0].data();
+    await doc.ref.update({
+      usedCount: (data.usedCount || 0) + 1,
+      lastUsedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      active: data.maxUses > 0 && (data.usedCount + 1) >= data.maxUses ? false : true,
+    });
+    const sessionUser = {
+      email: member.email || '', name: member.memberName, memberName: member.memberName,
+      isAdmin: member.isAdmin || false, isOfficer: member.isOfficer || false,
+      role: member.role || 'member', unit: member.unit || '',
+      loginAt: Date.now(), loginMethod: 'tempPass',
+    };
+    sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
+    spinner.style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    await initApp();
+  } catch(e) {
+    spinner.style.display = 'none';
+    showTempPassErr('驗證失敗：' + e.message);
+  }
+}
+
+function showTempPassErr(msg) {
+  const el = document.getElementById('tempPassError');
+  if (el) { el.textContent = msg; el.style.display = ''; }
+}
+
+// ════════════════════════════════════════
+// 推播管理
+// ════════════════════════════════════════
+const COL_PUSH_LOGS  = 'pushLogs';
+const COL_PUSH_QUEUE = 'pushQueue';
+
+function onPushTargetChange() {
+  const val = document.getElementById('pushTarget').value;
+  document.getElementById('pushTargetUnit').style.display   = val==='unit'   ? '' : 'none';
+  document.getElementById('pushTargetPerson').style.display = val==='person' ? '' : 'none';
+}
+
+async function initPushSection() {
+  const unitSel = document.getElementById('pushUnit');
+  if (unitSel) unitSel.innerHTML = _unitsList.map(u => '<option value="'+u+'">'+u+'</option>').join('');
+  const personSel = document.getElementById('pushPerson');
+  if (personSel) personSel.innerHTML = members.map(m =>
+    '<option value="'+m.name+'">'+m.name+(m.unit?'（'+m.unit+'）':'')+'</option>').join('');
+  await loadPushLogs();
+}
+
+async function sendAdminPush() {
+  const target    = document.getElementById('pushTarget').value;
+  const title     = document.getElementById('pushTitle').value.trim();
+  const body      = document.getElementById('pushBody').value.trim();
+  const alsoEmail = document.getElementById('pushAlsoEmail').checked;
+  const statusEl  = document.getElementById('pushSendStatus');
+  if (!title) { alert('請填寫推播標題'); return; }
+  if (!body)  { alert('請填寫推播內容'); return; }
+  let targetUnit = '', targetPerson = '';
+  if (target==='unit')   { targetUnit   = document.getElementById('pushUnit').value;   if (!targetUnit)   { alert('請選擇分隊'); return; } }
+  if (target==='person') { targetPerson = document.getElementById('pushPerson').value; if (!targetPerson) { alert('請選擇成員'); return; } }
+  statusEl.style.cssText = 'display:block;padding:10px 14px;border-radius:6px;font-size:0.82rem;background:#fff3cd;color:#856404;margin-bottom:10px;';
+  statusEl.textContent = '發送中...';
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    const subSnap = await _fbDB.collection('pushSubscriptions').get();
+    const recipients = [];
+    subSnap.forEach(doc => {
+      const d = doc.data();
+      if (target==='all') recipients.push(d);
+      else if (target==='unit'   && d.unit===targetUnit)         recipients.push(d);
+      else if (target==='person' && d.memberName===targetPerson) recipients.push(d);
+    });
+    await fbAdd(COL_PUSH_QUEUE, {
+      target, targetUnit, targetPerson, title, body, alsoEmail,
+      recipientCount: recipients.length,
+      sentBy: usr.memberName||usr.name||'',
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'pending',
+    });
+    await fbAdd(COL_PUSH_LOGS, {
+      target, targetUnit, targetPerson, title, body, alsoEmail,
+      recipientCount: recipients.length,
+      sentBy: usr.memberName||usr.name||'',
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    statusEl.style.cssText = 'display:block;padding:10px 14px;border-radius:6px;font-size:0.82rem;background:#eafaf1;color:#1a6b35;margin-bottom:10px;';
+    statusEl.textContent = '✅ 已發送給 '+recipients.length+' 個裝置'+(alsoEmail?'，並寄送 Email':'');
+    document.getElementById('pushTitle').value = '';
+    document.getElementById('pushBody').value  = '';
+    document.getElementById('pushAlsoEmail').checked = false;
+    await loadPushLogs();
+  } catch(e) {
+    statusEl.style.cssText = 'display:block;padding:10px 14px;border-radius:6px;font-size:0.82rem;background:#fff0f0;color:#b94a3a;margin-bottom:10px;';
+    statusEl.textContent = '❌ 發送失敗：'+e.message;
+  }
+}
+
+async function loadPushLogs() {
+  const el = document.getElementById('pushLogList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
+  try {
+    const docs = await fbList(COL_PUSH_LOGS, 'sentAt', 'desc');
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無推播紀錄</div>'; return; }
+    el.innerHTML = '';
+    docs.slice(0,20).forEach(d => {
+      const targetLabel = d.target==='all'?'全部成員':d.target==='unit'?(d.targetUnit||'')+'分隊':(d.targetPerson||'—');
+      const dateStr = d.sentAt?.toDate ? d.sentAt.toDate().toLocaleString('zh-TW') : '—';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:12px 0;border-bottom:1px solid var(--border);';
+      row.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><div style="font-size:0.88rem;font-weight:600;color:var(--text);">'+d.title+'</div><div style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;margin-left:8px;">'+dateStr+'</div></div>'
+        +'<div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:4px;">'+d.body+'</div>'
+        +'<div style="display:flex;gap:8px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;"><span>🎯 '+targetLabel+'</span><span>📱 '+( d.recipientCount||0)+' 個裝置</span>'+(d.alsoEmail?'<span>📧 含 Email</span>':'')+'<span>by '+(d.sentBy||'—')+'</span></div>';
+      el.appendChild(row);
+    });
+  } catch(e) { el.innerHTML = '<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：'+e.message+'</div>'; }
+}
+
+// ════════════════════════════════════════
+// 臨時密碼管理（後台）
+// ════════════════════════════════════════
+function tpGenerate() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('tpCode').value = code;
+}
+
+async function initTempPassSection() {
+  const sel = document.getElementById('tpMember');
+  if (sel && members.length) {
+    sel.innerHTML = '<option value="">請選擇成員</option>' +
+      members.map(m => '<option value="'+m.name+'">'+m.name+(m.unit?'（'+m.unit+'）':'')+'</option>').join('');
+  }
+  await loadTempPassList();
+}
+
+async function addTempPass() {
+  const memberName = document.getElementById('tpMember').value;
+  const code       = document.getElementById('tpCode').value.trim().toUpperCase();
+  const expiryHrs  = parseInt(document.getElementById('tpExpiry').value);
+  const maxUses    = parseInt(document.getElementById('tpUses').value);
+  const note       = document.getElementById('tpNote').value.trim();
+  if (!memberName) { alert('請選擇綁定成員'); return; }
+  if (!code || code.length < 4) { alert('密碼至少需要 4 個字元'); return; }
+  const existing = await _fbDB.collection(COL_TEMP_PASS).where('code','==',code).where('active','==',true).get();
+  if (!existing.empty) { alert('此密碼已被使用中，請換一組'); return; }
+  const expiresAt = new Date(Date.now() + expiryHrs*3600*1000);
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  try {
+    await fbAdd(COL_TEMP_PASS, {
+      code, memberName, maxUses, note,
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      usedCount: 0, active: true,
+      createdBy: usr.memberName||'',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.getElementById('tpCode').value   = '';
+    document.getElementById('tpNote').value   = '';
+    document.getElementById('tpMember').value = '';
+    await loadTempPassList();
+    alert('✅ 臨時密碼「'+code+'」建立成功\n有效期：'+expiryHrs+' 小時\n可使用：'+(maxUses===0?'無限制':maxUses+'次'));
+  } catch(e) { alert('建立失敗：'+e.message); }
+}
+
+async function loadTempPassList() {
+  const el = document.getElementById('tempPassList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
+  try {
+    const docs = await fbList(COL_TEMP_PASS, 'createdAt', 'desc');
+    const now  = Date.now();
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無臨時密碼</div>'; return; }
+    el.innerHTML = '';
+    docs.slice(0,30).forEach(d => {
+      const expired  = d.expiresAt?.toMillis() < now;
+      const maxed    = d.maxUses > 0 && d.usedCount >= d.maxUses;
+      const inactive = !d.active || expired || maxed;
+      const expStr   = d.expiresAt?.toDate ? d.expiresAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);opacity:'+(inactive?'0.5':'1')+';';
+      row.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">'
+        +'<div style="display:flex;align-items:center;gap:8px;">'
+        +'<code style="background:'+(inactive?'#f0f0f0':'#fff3cd')+';border:1px solid '+(inactive?'#ddd':'#ffc107')+';border-radius:6px;padding:3px 10px;font-size:1rem;font-weight:700;letter-spacing:2px;color:'+(inactive?'#999':'#856404')+';">'+d.code+'</code>'
+        +'<span style="font-size:0.82rem;font-weight:600;color:var(--text);">'+d.memberName+'</span></div>'
+        +'<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:'+(inactive?'#f0f0f0':'#eafaf1')+';color:'+(inactive?'#999':'#1a6b35')+';"> '+(inactive?'已失效':'使用中')+'</span></div>'
+        +'<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
+        +'<span>⏰ '+expStr+'</span>'
+        +'<span>📊 '+d.usedCount+'/'+(d.maxUses===0?'∞':d.maxUses)+'</span>'
+        +(d.note?'<span>📝 '+d.note+'</span>':'')+'</div>'
+        +(!inactive?'<div style="margin-top:6px;"><button onclick="revokeTempPass(&quot;'+d.id+'&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">撤銷</button></div>':'');
+      el.appendChild(row);
+    });
+  } catch(e) { el.innerHTML = '<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：'+e.message+'</div>'; }
+}
+
+async function revokeTempPass(id) {
+  if (!confirm('確定撤銷這組臨時密碼？')) return;
+  try {
+    await fbUpdate(COL_TEMP_PASS, id, { active: false });
+    await loadTempPassList();
+  } catch(e) { alert('撤銷失敗：'+e.message); }
 }
 
 async function loadAdminChangelog() {
@@ -9650,6 +10025,163 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 // 註冊 Service Worker
+// ════════════════════════════════════════
+// LINE 瀏覽器偵測
+// ════════════════════════════════════════
+(function() {
+  const ua = navigator.userAgent || '';
+  if (/Line\//i.test(ua)) {
+    const el = document.getElementById('lineWarning');
+    if (el) el.style.display = '';
+  }
+})();
+
+// ════════════════════════════════════════
+// 臨時密碼登入
+// ════════════════════════════════════════
+
+async function loginWithTempPass() {
+  const code    = (document.getElementById('tempPassInput')?.value || '').trim();
+  const errEl   = document.getElementById('tempPassError');
+  const spinner = document.getElementById('loginSpinner');
+  if (!code) { showTempPassErr('請輸入臨時密碼'); return; }
+  errEl.style.display = 'none';
+  spinner.style.display = '';
+  spinner.textContent = '⏳ 驗證中...';
+  try {
+    await ensureFirebase();
+    const now  = Date.now();
+    const snap = await _fbDB.collection(COL_TEMP_PASS)
+      .where('code', '==', code).where('active', '==', true).get();
+    if (snap.empty) { spinner.style.display='none'; showTempPassErr('密碼不正確或已失效'); return; }
+    const doc  = snap.docs[0];
+    const data = doc.data();
+    if (data.expiresAt && data.expiresAt.toMillis() < now) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已過期'); return;
+    }
+    if (data.maxUses > 0 && data.usedCount >= data.maxUses) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已達使用上限'); return;
+    }
+    const memberSnap = await _fbDB.collection('whitelist').where('memberName', '==', data.memberName).get();
+    if (memberSnap.empty) { spinner.style.display='none'; showTempPassErr('找不到對應成員資料'); return; }
+    const member = memberSnap.docs[0].data();
+    await doc.ref.update({
+      usedCount: (data.usedCount || 0) + 1,
+      lastUsedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      active: data.maxUses > 0 && (data.usedCount + 1) >= data.maxUses ? false : true,
+    });
+    const sessionUser = {
+      email: member.email || '', name: member.memberName, memberName: member.memberName,
+      isAdmin: member.isAdmin || false, isOfficer: member.isOfficer || false,
+      role: member.role || 'member', unit: member.unit || '',
+      loginAt: Date.now(), loginMethod: 'tempPass',
+    };
+    sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
+    spinner.style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    await initApp();
+  } catch(e) {
+    spinner.style.display = 'none';
+    showTempPassErr('驗證失敗：' + e.message);
+  }
+}
+
+function showTempPassErr(msg) {
+  const el = document.getElementById('tempPassError');
+  if (el) { el.textContent = msg; el.style.display = ''; }
+}
+
+// ════════════════════════════════════════
+// 後台：臨時密碼管理
+// ════════════════════════════════════════
+function tpGenerate() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('tpCode').value = code;
+}
+
+async function initTempPassSection() {
+  const sel = document.getElementById('tpMember');
+  if (sel && members.length) {
+    sel.innerHTML = '<option value="">請選擇成員</option>' +
+      members.map(m => `<option value="${m.name}">${m.name}${m.unit?'（'+m.unit+'）':''}</option>`).join('');
+  }
+  await loadTempPassList();
+}
+
+async function addTempPass() {
+  const memberName = document.getElementById('tpMember').value;
+  const code       = document.getElementById('tpCode').value.trim().toUpperCase();
+  const expiryHrs  = parseInt(document.getElementById('tpExpiry').value);
+  const maxUses    = parseInt(document.getElementById('tpUses').value);
+  const note       = document.getElementById('tpNote').value.trim();
+  if (!memberName) { alert('請選擇綁定成員'); return; }
+  if (!code || code.length < 4) { alert('密碼至少需要 4 個字元'); return; }
+  const existing = await _fbDB.collection(COL_TEMP_PASS).where('code','==',code).where('active','==',true).get();
+  if (!existing.empty) { alert('此密碼已被使用中，請換一組'); return; }
+  const expiresAt = new Date(Date.now() + expiryHrs * 3600 * 1000);
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  try {
+    await fbAdd(COL_TEMP_PASS, {
+      code, memberName, maxUses, note,
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      usedCount: 0, active: true,
+      createdBy: usr.memberName || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.getElementById('tpCode').value   = '';
+    document.getElementById('tpNote').value   = '';
+    document.getElementById('tpMember').value = '';
+    await loadTempPassList();
+    alert('✅ 臨時密碼「' + code + '」建立成功\n有效期：' + expiryHrs + ' 小時\n可使用：' + (maxUses===0?'無限制':maxUses+'次'));
+  } catch(e) { alert('建立失敗：' + e.message); }
+}
+
+async function loadTempPassList() {
+  const el = document.getElementById('tempPassList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
+  try {
+    const docs = await fbList(COL_TEMP_PASS, 'createdAt', 'desc');
+    const now  = Date.now();
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無臨時密碼</div>'; return; }
+    el.innerHTML = '';
+    docs.slice(0,30).forEach(d => {
+      const expired  = d.expiresAt?.toMillis() < now;
+      const maxed    = d.maxUses > 0 && d.usedCount >= d.maxUses;
+      const inactive = !d.active || expired || maxed;
+      const expStr   = d.expiresAt?.toDate ? d.expiresAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);opacity:' + (inactive?'0.5':'1') + ';';
+      row.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">'
+        + '<div style="display:flex;align-items:center;gap:8px;">'
+        + '<code style="background:' + (inactive?'#f0f0f0':'#fff3cd') + ';border:1px solid ' + (inactive?'#ddd':'#ffc107') + ';border-radius:6px;padding:3px 10px;font-size:1rem;font-weight:700;letter-spacing:2px;color:' + (inactive?'#999':'#856404') + ';">' + d.code + '</code>'
+        + '<span style="font-size:0.82rem;font-weight:600;color:var(--text);">' + d.memberName + '</span></div>'
+        + '<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:' + (inactive?'#f0f0f0':'#eafaf1') + ';color:' + (inactive?'#999':'#1a6b35') + ';">' + (inactive?'已失效':'使用中') + '</span></div>'
+        + '<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
+        + '<span>⏰ ' + expStr + '</span>'
+        + '<span>📊 ' + d.usedCount + '/' + (d.maxUses===0?'∞':d.maxUses) + '</span>'
+        + (d.note ? '<span>📝 ' + d.note + '</span>' : '') + '</div>'
+        + (!inactive ? '<div style="margin-top:6px;"><button onclick="revokeTempPass(&quot;' + d.id + '&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">撤銷</button></div>' : '');
+      el.appendChild(row);
+    });
+  } catch(e) { el.innerHTML = '<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：' + e.message + '</div>'; }
+}
+
+async function revokeTempPass(id) {
+  if (!confirm('確定撤銷這組臨時密碼？')) return;
+  try {
+    await fbUpdate(COL_TEMP_PASS, id, { active: false });
+    await loadTempPassList();
+  } catch(e) { alert('撤銷失敗：' + e.message); }
+}
+
+// 自動插入 v1.9.02 版本紀錄（若尚未存在）
+
+
 async function registerSW() {
   if (!('serviceWorker' in navigator)) return null;
   // 只在 GitHub Pages 上註冊，避免開發環境報錯
