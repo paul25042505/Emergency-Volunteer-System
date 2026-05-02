@@ -1,12 +1,12 @@
 // ══════════════════════════════════════════
 // 定訓推播腳本
 // 每小時執行，依成員自訂時間推播
-// value 0-23：定訓前一天的該小時
-// value 24-33：定訓當天 08:00-17:00
+// 同時發送 LINE 群組通知
 // ══════════════════════════════════════════
 
 const webpush = require('web-push');
 const admin   = require('firebase-admin');
+const https   = require('https');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
@@ -18,6 +18,37 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY
 );
 
+const LINE_GROUP_ID     = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
+const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
+async function sendLineGroupMessage(text) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({
+      to:       LINE_GROUP_ID,
+      messages: [{ type: 'text', text }],
+    });
+    const req = https.request({
+      hostname: 'api.line.me',
+      path:     '/v2/bot/message/push',
+      method:   'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`,
+      },
+    }, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) resolve(data);
+        else reject(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`));
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 function getTWTimeInfo() {
   const now = new Date();
   const tw  = new Date(now.getTime() + 8 * 60 * 60 * 1000);
@@ -25,13 +56,11 @@ function getTWTimeInfo() {
     ? parseInt(process.env.FORCE_HOUR)
     : tw.getUTCHours();
 
-  // 今天日期
   const y0 = tw.getUTCFullYear();
   const m0 = String(tw.getUTCMonth() + 1).padStart(2, '0');
   const d0 = String(tw.getUTCDate()).padStart(2, '0');
   const today = `${y0}-${m0}-${d0}`;
 
-  // 明天日期
   const tmr = new Date(tw);
   tmr.setUTCDate(tmr.getUTCDate() + 1);
   const y1 = tmr.getUTCFullYear();
@@ -46,24 +75,16 @@ async function main() {
   const { currentHour, today, tomorrow } = getTWTimeInfo();
   console.log(`台灣時間：${currentHour}:xx，今天 ${today}，明天 ${tomorrow}`);
 
-  // 當天 08:00~17:00 對應 value 24~33（查今天的定訓）
-  // 前一天 08:00~23:00 對應 value 8~23（查明天的定訓）
-  // 前一天 00:00~07:00 對應 value 0~7（查明天的定訓）
-
   const isTodayHour = currentHour >= 8 && currentHour <= 17;
-  // 以 value 來說：當天 08:00 = value 24，以此類推
-  const notifyValueForToday  = currentHour + 24; // 今天觸發，推「今天有定訓」
-  const notifyValueForTmr    = currentHour;       // 今天觸發，推「明天有定訓」
+  const notifyValueForToday = currentHour + 24;
+  const notifyValueForTmr   = currentHour;
 
-  // 查明天有定訓的排程（前一天通知用）
   const snapTmr = await db.collection('trainingSchedule')
     .where('date', '==', tomorrow)
-    .where('notify', '==', true)
     .get();
 
-  // 查今天有定訓的排程（當天通知用，僅 08:00~17:00）
   const snapToday = isTodayHour
-    ? await db.collection('trainingSchedule').where('date', '==', today).where('notify', '==', true).get()
+    ? await db.collection('trainingSchedule').where('date', '==', today).get()
     : { empty: true, docs: [] };
 
   if (snapTmr.empty && snapToday.empty) {
@@ -71,7 +92,38 @@ async function main() {
     return;
   }
 
-  // 讀取所有訂閱
+  // ── LINE 群組通知 ──
+  if (LINE_ACCESS_TOKEN) {
+    // 明天定訓 → 只在整點 20:00（value=20）發一次 LINE，避免每小時重複
+    if (!snapTmr.empty && currentHour === 20) {
+      const meetings = snapTmr.docs.map(d => d.data());
+      const titles   = meetings.map(m => m.topic || '定訓').join('、');
+      try {
+        await sendLineGroupMessage(
+          `🔔 明天有定訓！\n${tomorrow} ${titles}\n請準時出席，18:00 開始\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
+        );
+        console.log('✅ LINE 明天定訓通知已發送');
+      } catch(e) {
+        console.log(`❌ LINE 通知失敗：${e.message}`);
+      }
+    }
+
+    // 今天定訓 → 只在 08:00 發一次
+    if (!snapToday.empty && currentHour === 8) {
+      const meetings = snapToday.docs.map(d => d.data());
+      const titles   = meetings.map(m => m.topic || '定訓').join('、');
+      try {
+        await sendLineGroupMessage(
+          `🔔 今天有定訓！\n${today} ${titles}\n請準時出席，18:00 開始\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
+        );
+        console.log('✅ LINE 今天定訓通知已發送');
+      } catch(e) {
+        console.log(`❌ LINE 通知失敗：${e.message}`);
+      }
+    }
+  }
+
+  // ── 個別推播 ──
   const subsSnap = await db.collection('pushSubscriptions').get();
   if (subsSnap.empty) { console.log('沒有訂閱記錄。'); return; }
 
@@ -82,7 +134,6 @@ async function main() {
     const sub = doc.data();
     const notifyHours = sub.notifyHours && sub.notifyHours.length ? sub.notifyHours : [20];
 
-    // ── 推播「明天有定訓」──
     if (!snapTmr.empty && notifyHours.includes(notifyValueForTmr)) {
       const meetings = snapTmr.docs.map(d => d.data());
       const units    = [...new Set(meetings.map(m => m.unit).filter(Boolean))];
@@ -93,13 +144,11 @@ async function main() {
           body:  `${tomorrow} ${titles}，請準時出席`,
           url:   'https://paul25042505.github.io/Emergency-Volunteer-System/',
         }, deletePromises);
-        if (result === 'ok') success++;
-        else if (result === 'fail') fail++;
+        if (result === 'ok') success++; else if (result === 'fail') fail++;
         continue;
       }
     }
 
-    // ── 推播「今天有定訓」(當天提醒)──
     if (!snapToday.empty && notifyHours.includes(notifyValueForToday)) {
       const meetings = snapToday.docs.map(d => d.data());
       const units    = [...new Set(meetings.map(m => m.unit).filter(Boolean))];
@@ -110,8 +159,7 @@ async function main() {
           body:  `${today} ${titles}，請準時出席`,
           url:   'https://paul25042505.github.io/Emergency-Volunteer-System/',
         }, deletePromises);
-        if (result === 'ok') success++;
-        else if (result === 'fail') fail++;
+        if (result === 'ok') success++; else if (result === 'fail') fail++;
         continue;
       }
     }
