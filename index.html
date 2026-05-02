@@ -614,7 +614,9 @@ tr:hover td { background: #fdfcfb; }
       <div style="font-size:0.78rem;color:var(--text-light);text-align:center;margin-bottom:10px;">無法用 Google 登入？</div>
       <div style="display:flex;gap:8px;">
         <input type="text" id="tempPassInput" placeholder="輸入臨時密碼" maxlength="20"
-          style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;outline:none;"
+          style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;outline:none;text-transform:uppercase;letter-spacing:2px;"
+          autocapitalize="characters" autocomplete="off" spellcheck="false"
+          oninput="this.value=this.value.toUpperCase()"
           onkeydown="if(event.key==='Enter')loginWithTempPass()">
         <button onclick="loginWithTempPass()"
           style="background:var(--red);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;min-height:unset;">
@@ -706,7 +708,7 @@ tr:hover td { background: #fdfcfb; }
       <button onclick="adminNavTo('adminSec-wl')"       class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">👤</span>成員帳號</button>
       <button onclick="adminNavTo('adminSec-att')"      class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">✍</span>簽到退紀錄</button>
       <button onclick="adminNavTo('adminSec-outing')"   class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🚑</span>協勤紀錄</button>
-      <button onclick="adminNavTo('adminSec-casetypes')" class="admin-subnav-btn" id="adminSubNav-casetypes"><span class="icon" style="font-size:0.75rem;">🏷</span>案件類型</button>
+      <button onclick="adminNavTo('adminSec-casetypes')" class="admin-subnav-btn" id="adminSubNav-casetypes"><span class="icon" style="font-size:0.75rem;">🏷</span>案由</button>
       <button onclick="adminNavTo('adminSec-items')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📦</span>物品領用</button>
       <button id="adminSubNav-announce" onclick="adminNavTo('adminSec-announce')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📢</span>公告管理</button>
       <button onclick="adminNavTo('adminSec-feedback')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">💬</span>意見回饋</button>
@@ -743,9 +745,6 @@ tr:hover td { background: #fdfcfb; }
 </div>
 
 <div id="appScroll">
-
-<!-- ══════ 簡易模式切換按鈕（固定右下角）══════ -->
-<button id="easyModeToggle" onclick="toggleEasyMode()">👴 簡易模式</button>
 
 <!-- ══════ 簡易模式頁面 ══════ -->
 <div id="easyModePage">
@@ -851,9 +850,9 @@ tr:hover td { background: #fdfcfb; }
     <div class="field">
       <label>出發時間 ～ 返隊時間</label>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
-        <input type="time" id="easyOutingTimeOut">
+        <input type="text" id="easyOutingTimeOut" placeholder="HH:MM">
         <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
-        <input type="time" id="easyOutingTimeBack">
+        <input type="text" id="easyOutingTimeBack" placeholder="HH:MM">
       </div>
     </div>
     <div class="field">
@@ -872,10 +871,10 @@ tr:hover td { background: #fdfcfb; }
       <input type="text" id="easyOutingAddress" placeholder="路名、號碼或地標">
     </div>
     <div class="field">
-      <label>案件類型 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案件類型填寫</span></label>
+      <label>案由 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案由填寫</span></label>
       <div id="easyCaseTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:4px;"></div>
       <div id="easyCaseTypeOtherField" style="display:none;margin-top:8px;">
-        <input type="text" id="easyCaseTypeOther" placeholder="請填寫實際案件類型"
+        <input type="text" id="easyCaseTypeOther" placeholder="請填寫實際案由"
           style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
       </div>
     </div>
@@ -1052,11 +1051,11 @@ tr:hover td { background: #fdfcfb; }
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label>協勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
+            <label>協勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制，例：08:30）</span></label>
             <div class="time-row">
-              <input type="time" id="timeOut" required>
+              <input type="text" id="timeOut" placeholder="HH:MM" pattern="[0-9]{2}:[0-9]{2}" required>
               <div class="time-dash">—</div>
-              <input type="time" id="timeBack" required>
+              <input type="text" id="timeBack" placeholder="HH:MM" pattern="[0-9]{2}:[0-9]{2}" required>
             </div>
           </div>
         </div>
@@ -1090,12 +1089,12 @@ tr:hover td { background: #fdfcfb; }
       <div class="section">
         <div class="section-head">
           <div class="section-num">3</div>
-          <div class="section-title">案件類型</div>
+          <div class="section-title">案由</div>
           <div class="section-line"></div>
         </div>
         <div class="card">
           <div class="field">
-            <label>案件類型 <span class="req">*</span>（單選）<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案件類型填寫</span></label>
+            <label>案由 <span class="req">*</span>（單選）<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案由填寫</span></label>
             <div class="checkbox-grid" id="caseTypeGrid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
               <!-- 由 JS 動態載入 -->
               <div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">載入中...</div>
@@ -1104,7 +1103,7 @@ tr:hover td { background: #fdfcfb; }
           <div class="field" id="caseTypeOtherField" style="display:none;">
             <input type="hidden" id="isOtherCaseType" value="0">
             <label for="caseTypeOther">其他（請說明）<span class="req">*</span></label>
-            <input type="text" id="caseTypeOther" placeholder="請輸入案件類型">
+            <input type="text" id="caseTypeOther" placeholder="請輸入案由">
           </div>
         </div>
       </div>
@@ -1269,7 +1268,7 @@ tr:hover td { background: #fdfcfb; }
           </div>
 
           <div class="field">
-            <label for="qCaseType">案件類型</label>
+            <label for="qCaseType">案由</label>
             <select id="qCaseType">
               <option value="">— 全部類型 —</option>
             </select>
@@ -1323,7 +1322,7 @@ tr:hover td { background: #fdfcfb; }
               <th>協勤時間</th>
               <th>行政區</th>
               <th>地址</th>
-              <th>案件類型</th>
+              <th>案由</th>
               <th>服務項目</th>
               <th>義消姓名</th>
               <th>備註</th>
@@ -1742,11 +1741,11 @@ tr:hover td { background: #fdfcfb; }
     </div>
 
 
-    <!-- 案件類型統計 -->
+    <!-- 案由統計 -->
     <div class="section" id="caseStatsSection" style="display:none;margin-top:8px;">
       <div class="section-head">
         <div class="section-num">🏷</div>
-        <div class="section-title">案件類型統計</div>
+        <div class="section-title">案由統計</div>
         <div class="section-line"></div>
       </div>
 
@@ -1758,7 +1757,7 @@ tr:hover td { background: #fdfcfb; }
         <!-- 圓餅圖 -->
         <div class="result-card" style="padding:16px;">
           <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
-            案件類型分布
+            案由分布
           </div>
           <div id="caseTypePieChart" style="width:100%;"></div>
           <div id="caseTypeLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;font-size:0.75rem;"></div>
@@ -1775,19 +1774,19 @@ tr:hover td { background: #fdfcfb; }
       <!-- 分隊比較長條圖（全部分隊時才顯示）-->
       <div class="result-card" id="caseUnitCompareCard" style="padding:16px;margin-bottom:16px;display:none;">
         <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
-          各分隊案件類型比較
+          各分隊案由比較
         </div>
         <canvas id="caseUnitChart" style="max-height:280px;"></canvas>
       </div>
 
       <!-- 明細表格 -->
       <div class="result-card" style="padding:0;">
-        <div class="result-head"><h3>案件類型明細</h3></div>
+        <div class="result-head"><h3>案由明細</h3></div>
         <div class="result-table-wrap">
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr>
-                <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案件類型</th>
+                <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案由</th>
                 <th style="padding:10px 12px;background:var(--warm);text-align:center;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案件數</th>
                 <th style="padding:10px 12px;background:var(--warm);text-align:center;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">佔比</th>
                 <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">佔比圖</th>
@@ -2007,7 +2006,7 @@ tr:hover td { background: #fdfcfb; }
       <button onclick="adminScrollTo('adminSec-wl')"       class="admin-tab">👤 帳號</button>
       <button onclick="adminScrollTo('adminSec-att')"      class="admin-tab">✍ 簽到退</button>
       <button onclick="adminScrollTo('adminSec-outing')"   class="admin-tab">🚑 協勤</button>
-      <button onclick="adminScrollTo('adminSec-casetypes')" class="admin-tab" id="adminTab-casetypes">🏷 案件類型</button>
+      <button onclick="adminScrollTo('adminSec-casetypes')" class="admin-tab" id="adminTab-casetypes">🏷 案由</button>
       <button onclick="adminScrollTo('adminSec-items')"    class="admin-tab">📦 物品</button>
       <button id="adminTab-announce" onclick="adminScrollTo('adminSec-announce')" class="admin-tab">📢 公告</button>
       <button onclick="adminScrollTo('adminSec-feedback')" class="admin-tab">💬 回饋</button>
@@ -2063,6 +2062,7 @@ tr:hover td { background: #fdfcfb; }
               <option value="助理幹事">助理幹事</option>
               <option value="小隊長">小隊長</option>
               <option value="隊員">隊員</option>
+              <option value="分隊承辦人">分隊承辦人</option>
             </select>
           </div>
           <div class="field" style="margin:0;">
@@ -2141,11 +2141,11 @@ tr:hover td { background: #fdfcfb; }
       <div id="adminOutList" style="margin-top:12px;overflow-x:auto;"></div>
     </div>
     <div class="section" id="adminSec-casetypes">
-      <div class="section-head"><div class="section-num">🏷</div><div class="section-title">案件類型管理</div><div class="section-line"></div>
+      <div class="section-head"><div class="section-num">🏷</div><div class="section-title">案由管理</div><div class="section-line"></div>
         <button onclick="loadAdminCaseTypes()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" id="newCaseTypeInput" placeholder="輸入新案件類型" style="flex:1;">
+        <input type="text" id="newCaseTypeInput" placeholder="輸入新案由" style="flex:1;">
         <button onclick="addCaseType()" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 18px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:'Noto Sans TC',sans-serif;">新增</button>
       </div>
       <div id="adminCaseTypeList"></div>
@@ -2270,8 +2270,14 @@ tr:hover td { background: #fdfcfb; }
       <div class="card" style="margin-bottom:16px;">
         <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 新增臨時密碼</div>
         <div class="field">
+          <label>分隊別 <span class="req">*</span></label>
+          <select id="tpUnit" style="width:100%;" onchange="filterTpMembers()">
+            <option value="">請選擇分隊別</option>
+          </select>
+        </div>
+        <div class="field">
           <label>綁定成員 <span class="req">*</span></label>
-          <select id="tpMember" style="width:100%;"></select>
+          <select id="tpMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select>
         </div>
         <div class="field">
           <label>臨時密碼 <span class="req">*</span></label>
@@ -3549,7 +3555,7 @@ async function loadMembers() {
     // 從 whitelist 讀取（整合帳號與成員資料，unit 一定有）
     const wlDocs = await fbList(COL_WHITELIST);
     if (wlDocs.length > 0) {
-      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
       members = wlDocs.map(d=>({
         id: d.id, name: d.memberName||'', title: d.title||'',
         unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
@@ -3575,7 +3581,12 @@ async function loadMembers() {
 
 function renderMemberList() {
   const list = document.getElementById('memberList');
-  const countEl = document.getElementById('memberCount'); if (countEl) countEl.textContent = members.length + ' 人';
+  const countEl = document.getElementById('memberCount');
+  if (countEl) {
+    const regularCount = members.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人').length;
+    const officerCount = members.filter(m => m.role === 'officer' || m.title === '分隊承辦人').length;
+    countEl.textContent = regularCount + ' 人' + (officerCount > 0 ? '（另有承辦人 ' + officerCount + ' 位）' : '');
+  }
   if (members.length === 0) {
     list.innerHTML = '<div class="member-empty"><span class="empty-icon">👥</span>尚未新增任何成員</div>';
     return;
@@ -3583,9 +3594,9 @@ function renderMemberList() {
   list.innerHTML = members.map((m, i) => `
     <div class="member-item" draggable="true" data-index="${i}">
       <div class="drag-handle" title="拖曳排序"><span></span><span></span><span></span></div>
-      <div class="member-avatar">${m.name.charAt(0)}</div>
+      <div class="member-avatar" style="${m.role==='officer'?'background:#8e44ad;':m.role==='admin'?'background:#2471a3;':''}">${m.name.charAt(0)}</div>
       <div class="member-info">
-        <div class="member-name">${m.name}</div>
+        <div class="member-name">${m.name}${m.role==='officer'?'<span style="margin-left:6px;font-size:0.65rem;background:#f0e6ff;color:#8e44ad;border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">承辦人</span>':m.role==='admin'?'<span style="margin-left:6px;font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">管理員</span>':''}</div>
         ${m.title ? `<div class="member-title">${m.title}</div>` : ''}
       </div>
       <button class="btn-delete" onclick="deleteMember(${i})">刪除</button>
@@ -3757,11 +3768,11 @@ function setAttDuty(type) {
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
 
 function submitOutingForm() {
-  // 最優先：其他案件類型必填檢查（靠 hidden input 判斷，不靠動態 id）
+  // 最優先：其他案由必填檢查（靠 hidden input 判斷，不靠動態 id）
   if (document.getElementById('isOtherCaseType')?.value === '1') {
     const _otherInput = document.getElementById('caseTypeOther');
     if (!_otherInput || !_otherInput.value.trim()) {
-      alert('選擇「其他」時必須填寫實際案件類型，否則無法送出');
+      alert('選擇「其他」時必須填寫實際案由，否則無法送出');
       if (_otherInput) _otherInput.focus();
       return;
     }
@@ -3787,12 +3798,12 @@ function submitOutingForm() {
   if (!_timeBack) { alert('請填入返勤時間'); return; }
   if (!_district) { alert('請選擇行政區'); return; }
   if (!_address)  { alert('請填入詳細地址'); return; }
-  if (!selectedCaseType) { alert('請選擇案件類型'); return; }
+  if (!selectedCaseType) { alert('請選擇案由'); return; }
   // 同步檢查（備用）
   if (document.getElementById('isOtherCaseType')?.value === '1') {
     const otherInput = document.getElementById('caseTypeOther');
     if (!otherInput || !otherInput.value.trim()) {
-      alert('選擇「其他」時必須填寫實際案件類型，否則無法送出');
+      alert('選擇「其他」時必須填寫實際案由，否則無法送出');
       otherInput && otherInput.focus();
       return;
     }
@@ -5016,7 +5027,7 @@ async function loadStats() {
     document.getElementById('statsTableCard').style.display = 'block';
     document.getElementById('statsEmptyMsg').style.display = 'none';
 
-    // 案件類型統計
+    // 案由統計
     renderCaseTypeStats(monthOut, filterUnit, memberUnitMap, year, month);
   } catch(e) {
     document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
@@ -5514,7 +5525,7 @@ async function loadAdminWhitelist(filterUnit) {
     docs = docs.filter(d => (d.unit||'') === filterUnit);
     if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">' + (filterUnit ? '此分隊暫無成員' : '尚無資料') + '</div>'; return; }
 
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
     docs.sort(function(a,b){
       var au=a.unit||'未分配', bu=b.unit||'未分配';
       if(au!==bu) return au>bu?1:-1;
@@ -5668,7 +5679,7 @@ function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,ph
   certExp = certExp || '';
   title   = title   || '';
   phone   = phone   || '';
-  var TITLES = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+  var TITLES = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
   var titleOpts = '<option value="">請選擇</option>' +
     TITLES.map(function(t){ return '<option value="'+t+'"'+(t===title?' selected':'')+'>'+t+'</option>'; }).join('');
   var roleOpts =
@@ -5719,7 +5730,7 @@ async function loadAdminMembers() {
   try {
     const docs=await fbList(COL_MEMBERS);
     if(!docs.length){el.innerHTML='<div style="color:var(--text-light);">尚無成員</div>';return;}
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
     docs.sort((a,b) => {
       if ((a.unit||'') !== (b.unit||'')) return (a.unit||'') > (b.unit||'') ? 1 : -1;
       const ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
@@ -5760,7 +5771,7 @@ function adminEditMem(id,name,title,unit,cert,certExp) {
     <div class="field"><label>姓名</label><input type="text" id="aeMName" value="${name}" style="width:100%;"></div>
     <div class="field"><label>職稱</label><select id="aeMTitle" style="width:100%;">
       <option value="">請選擇</option>
-      ${['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'].map(t=>`<option value="\${t}" \${t===title?'selected':''}>\${t}</option>`).join('')}
+      ${['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'].map(t=>`<option value="\${t}" \${t===title?'selected':''}>\${t}</option>`).join('')}
     </select></div>
     <div class="field"><label>分隊別</label><select id="aeMUnit" style="width:100%;"><option value="">請選擇</option>${getUnitsSelectOptions(unit)}</select></div>
     <div class="field"><label>證照等級</label><select id="aeMCert" style="width:100%;">
@@ -5916,7 +5927,7 @@ async function loadAdminOuting() {
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;min-width:540px;';
     table.innerHTML = `<thead><tr style="background:var(--warm);">
-      ${['日期','時間','行政區','姓名','案件類型','服務項目','操作'].map(s=>`<th style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;">${s}</th>`).join('')}
+      ${['日期','時間','行政區','姓名','案由','服務項目','操作'].map(s=>`<th style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;">${s}</th>`).join('')}
     </tr></thead>`;
 
     const tbody = document.createElement('tbody');
@@ -5950,9 +5961,9 @@ async function adminEditOut(id) {
   document.getElementById('adminEditTitle').textContent='編輯協勤紀錄';
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
-    <div class="field"><label>案件類型</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
-    <div class="field"><label>協勤時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" style="width:100%;"></div>
-    <div class="field"><label>返勤時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" style="width:100%;"></div>
+    <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
+    <div class="field"><label>協勤時間</label><input type="text" id="aeOOut" value="${doc.timeOut||''}" placeholder="HH:MM（24小時制）" pattern="[0-9]{2}:[0-9]{2}" style="width:100%;"></div>
+    <div class="field"><label>返勤時間</label><input type="text" id="aeOBack" value="${doc.timeBack||''}" placeholder="HH:MM（24小時制）" pattern="[0-9]{2}:[0-9]{2}" style="width:100%;"></div>
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
@@ -6645,41 +6656,57 @@ function filterMemberList() {
   const unit = (document.getElementById('memberFilterUnit')?.value || '').trim();
   const container = document.getElementById('memberListContainer');
   if (!container) return;
-  // 選回「請選擇」時清空
   if (!unit) {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
     return;
   }
-  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
   const filtered = members.filter(m => (m.unit||'').trim() === unit.trim());
   if (!filtered.length) {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>此分隊暫無成員</div>';
     return;
   }
   filtered.sort(function(a, b) {
+    // 承辦人排最下面
+    const aIsOfficer = a.role === 'officer' || a.title === '分隊承辦人';
+    const bIsOfficer = b.role === 'officer' || b.title === '分隊承辦人';
+    if (aIsOfficer !== bIsOfficer) return aIsOfficer ? 1 : -1;
     var ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
     if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
     return (a.name||'') > (b.name||'') ? 1 : -1;
   });
 
-  // 表格式顯示：# 姓名 職稱 證照
+  // 一般成員（排除承辦人，管理員仍算在人數內）
+  const regularMembers  = filtered.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人');
+  const officerMembers  = filtered.filter(m => m.role === 'officer' || m.title === '分隊承辦人');
+
   var rows = '';
-  filtered.forEach(function(m, i) {
+  var idx = 1;
+  filtered.forEach(function(m) {
+    const isOfficer = m.role === 'officer' || m.title === '分隊承辦人';
+    const isAdmin   = m.role === 'admin';
     var cert = m.cert
       ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 8px;">' + m.cert + '</span>'
       : '<span style="font-size:0.68rem;color:var(--text-light);">—</span>';
-    var bg = i % 2 === 0 ? 'white' : 'var(--warm)';
+    var bg = isOfficer ? '#fdf0ff' : (idx % 2 === 0 ? 'white' : 'var(--warm)');
+    var nameCell = (m.name||'—');
+    if (isOfficer) nameCell += ' <span style="font-size:0.65rem;background:#f0e6ff;color:#8e44ad;border-radius:4px;padding:1px 5px;font-weight:600;">承辦人</span>';
+    if (isAdmin)   nameCell += ' <span style="font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:4px;padding:1px 5px;font-weight:600;">管理員</span>';
+    var numCell = isOfficer ? '<span style="color:var(--text-light);">—</span>' : idx++;
     rows += '<tr style="background:' + bg + ';">'
-      + '<td style="padding:11px 8px;text-align:center;font-size:0.78rem;color:var(--text-light);font-weight:500;">' + (i+1) + '</td>'
-      + '<td style="padding:11px 14px;font-weight:600;font-size:0.88rem;">' + (m.name||'—') + '</td>'
+      + '<td style="padding:11px 8px;text-align:center;font-size:0.78rem;color:var(--text-light);font-weight:500;">' + numCell + '</td>'
+      + '<td style="padding:11px 14px;font-weight:600;font-size:0.88rem;">' + nameCell + '</td>'
       + '<td style="padding:11px 14px;font-size:0.83rem;color:var(--text-mid);">' + (m.title||'—') + '</td>'
       + '<td style="padding:11px 14px;">' + cert + '</td>'
       + '</tr>';
   });
 
+  const countStr = '共 ' + regularMembers.length + ' 人'
+    + (officerMembers.length ? '（另有承辦人 ' + officerMembers.length + ' 位）' : '');
+
   container.innerHTML =
     '<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);">'
-    + '<div style="padding:8px 14px;font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);border-bottom:1px solid var(--border);">共 ' + filtered.length + ' 人</div>'
+    + '<div style="padding:8px 14px;font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);border-bottom:1px solid var(--border);">' + countStr + '</div>'
     + '<table style="width:100%;border-collapse:collapse;">'
     + '<thead><tr style="background:var(--red);color:white;">'
     + '<th style="padding:10px 8px;text-align:center;font-size:0.78rem;font-weight:600;width:36px;">#</th>'
@@ -7206,12 +7233,24 @@ function tpGenerate() {
 }
 
 async function initTempPassSection() {
-  const sel = document.getElementById('tpMember');
-  if (sel && members.length) {
-    sel.innerHTML = '<option value="">請選擇成員</option>' +
-      members.map(m => '<option value="'+m.name+'">'+m.name+(m.unit?'（'+m.unit+'）':'')+'</option>').join('');
+  // 分隊別選單
+  const unitSel = document.getElementById('tpUnit');
+  if (unitSel) {
+    unitSel.innerHTML = '<option value="">請選擇分隊別</option>' +
+      _unitsList.map(u => '<option value="'+u+'">'+u+'</option>').join('');
   }
+  document.getElementById('tpMember').innerHTML = '<option value="">— 請先選擇分隊別 —</option>';
   await loadTempPassList();
+}
+
+function filterTpMembers() {
+  const unit = document.getElementById('tpUnit')?.value || '';
+  const sel  = document.getElementById('tpMember');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊別 —</option>'; return; }
+  const filtered = members.filter(m => (m.unit||'') === unit);
+  sel.innerHTML = '<option value="">請選擇成員</option>' +
+    filtered.map(m => '<option value="'+m.name+'">'+m.name+(m.title?'（'+m.title+'）':'')+'</option>').join('');
 }
 
 async function addTempPass() {
@@ -7874,10 +7913,10 @@ async function easyDoOuting() {
   if (!timeBack)    { alert('請填入返隊時間'); return; }
   if (!district)    { alert('請選擇行政區'); return; }
   if (!address)     { alert('請填入詳細地址'); return; }
-  if (!easyCTSelected) { alert('請選擇案件類型'); return; }
+  if (!easyCTSelected) { alert('請選擇案由'); return; }
   if (easyCTSelected.value === '__other__') {
     if (!easyCTOtherVal) {
-      alert('選擇「其他」時必須填寫實際案件類型，否則無法送出');
+      alert('選擇「其他」時必須填寫實際案由，否則無法送出');
       document.getElementById('easyCaseTypeOther')?.focus();
       return;
     }
@@ -8093,7 +8132,7 @@ async function meetingDelete(id, title) {
 
 
 // ════════════════════════════════════════
-// 案件類型
+// 案由
 // ════════════════════════════════════════
 const DEFAULT_CASE_TYPES = ['路倒','急病','外傷','心臟病','呼吸困難','意識不清','車禍','燙傷'];
 let _caseTypesList = [];
@@ -8166,7 +8205,7 @@ function renderCaseTypeGrid() {
   grid.appendChild(otherLbl);
 }
 
-// 查詢頁面的案件類型下拉
+// 查詢頁面的案由下拉
 function populateCaseTypeSelect() {
   const sel = document.getElementById('qCaseType');
   if (!sel) return;
@@ -8174,7 +8213,7 @@ function populateCaseTypeSelect() {
     _caseTypesList.map(ct => `<option value="${ct}">${ct}</option>`).join('');
 }
 
-// ── 後台案件類型管理 ──
+// ── 後台案由管理 ──
 async function loadAdminCaseTypes() {
   await loadCaseTypes();
   const el = document.getElementById('adminCaseTypeList');
@@ -8203,8 +8242,8 @@ async function loadAdminCaseTypes() {
 async function addCaseType() {
   const inp = document.getElementById('newCaseTypeInput');
   const name = (inp?.value || '').trim();
-  if (!name) { alert('請輸入案件類型名稱'); return; }
-  if (_caseTypesList.includes(name)) { alert('已有相同的案件類型'); return; }
+  if (!name) { alert('請輸入案由名稱'); return; }
+  if (_caseTypesList.includes(name)) { alert('已有相同的案由'); return; }
   try {
     await fbAdd(COL_CASETYPES, { name, order: _caseTypesList.length });
     inp.value = '';
@@ -8238,7 +8277,7 @@ async function deleteCaseType(name) {
 
 
 // ════════════════════════════════════════
-// 案件類型統計圖表
+// 案由統計圖表
 // ════════════════════════════════════════
 let _pieChart = null, _barChart = null, _unitChart = null;
 
@@ -8264,7 +8303,7 @@ function renderCaseTypeStats(outDocs, filterUnit, memberUnitMap, year, month) {
   }
   section.style.display = '';
 
-  // ── 統計案件類型數量 ──
+  // ── 統計案由數量 ──
   const typeCount = {};
   docs.forEach(d => {
     const t = (d.caseType || '').trim() || '未分類';
@@ -8282,8 +8321,8 @@ function renderCaseTypeStats(outDocs, filterUnit, memberUnitMap, year, month) {
   const overview = document.getElementById('caseStatsOverview');
   overview.innerHTML = `
     <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">案件總數</div></div>
-    <div class="stat-card"><div class="stat-num">${uniqueTypes}</div><div class="stat-label">案件類型數</div></div>
-    <div class="stat-card"><div class="stat-num" style="font-size:1.1rem;">${topType[0]}</div><div class="stat-label">最多案件類型</div></div>
+    <div class="stat-card"><div class="stat-num">${uniqueTypes}</div><div class="stat-label">案由數</div></div>
+    <div class="stat-card"><div class="stat-num" style="font-size:1.1rem;">${topType[0]}</div><div class="stat-label">最多案由</div></div>
     <div class="stat-card"><div class="stat-num">${topType[1]}</div><div class="stat-label">${topType[0]} 件數</div></div>
   `;
 
@@ -9955,89 +9994,6 @@ function showTempPassErr(msg) {
 // ════════════════════════════════════════
 // 後台：臨時密碼管理
 // ════════════════════════════════════════
-function tpGenerate() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  document.getElementById('tpCode').value = code;
-}
-
-async function initTempPassSection() {
-  const sel = document.getElementById('tpMember');
-  if (sel && members.length) {
-    sel.innerHTML = '<option value="">請選擇成員</option>' +
-      members.map(m => `<option value="${m.name}">${m.name}${m.unit?'（'+m.unit+'）':''}</option>`).join('');
-  }
-  await loadTempPassList();
-}
-
-async function addTempPass() {
-  const memberName = document.getElementById('tpMember').value;
-  const code       = document.getElementById('tpCode').value.trim().toUpperCase();
-  const expiryHrs  = parseInt(document.getElementById('tpExpiry').value);
-  const maxUses    = parseInt(document.getElementById('tpUses').value);
-  const note       = document.getElementById('tpNote').value.trim();
-  if (!memberName) { alert('請選擇綁定成員'); return; }
-  if (!code || code.length < 4) { alert('密碼至少需要 4 個字元'); return; }
-  const existing = await _fbDB.collection(COL_TEMP_PASS).where('code','==',code).where('active','==',true).get();
-  if (!existing.empty) { alert('此密碼已被使用中，請換一組'); return; }
-  const expiresAt = new Date(Date.now() + expiryHrs * 3600 * 1000);
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  try {
-    await fbAdd(COL_TEMP_PASS, {
-      code, memberName, maxUses, note,
-      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-      usedCount: 0, active: true,
-      createdBy: usr.memberName || '',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    document.getElementById('tpCode').value   = '';
-    document.getElementById('tpNote').value   = '';
-    document.getElementById('tpMember').value = '';
-    await loadTempPassList();
-    alert('✅ 臨時密碼「' + code + '」建立成功\n有效期：' + expiryHrs + ' 小時\n可使用：' + (maxUses===0?'無限制':maxUses+'次'));
-  } catch(e) { alert('建立失敗：' + e.message); }
-}
-
-async function loadTempPassList() {
-  const el = document.getElementById('tempPassList');
-  if (!el) return;
-  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
-  try {
-    const docs = await fbList(COL_TEMP_PASS, 'createdAt', 'desc');
-    const now  = Date.now();
-    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無臨時密碼</div>'; return; }
-    el.innerHTML = '';
-    docs.slice(0,30).forEach(d => {
-      const expired  = d.expiresAt?.toMillis() < now;
-      const maxed    = d.maxUses > 0 && d.usedCount >= d.maxUses;
-      const inactive = !d.active || expired || maxed;
-      const expStr   = d.expiresAt?.toDate ? d.expiresAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
-      const row = document.createElement('div');
-      row.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);opacity:' + (inactive?'0.5':'1') + ';';
-      row.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">'
-        + '<div style="display:flex;align-items:center;gap:8px;">'
-        + '<code style="background:' + (inactive?'#f0f0f0':'#fff3cd') + ';border:1px solid ' + (inactive?'#ddd':'#ffc107') + ';border-radius:6px;padding:3px 10px;font-size:1rem;font-weight:700;letter-spacing:2px;color:' + (inactive?'#999':'#856404') + ';">' + d.code + '</code>'
-        + '<span style="font-size:0.82rem;font-weight:600;color:var(--text);">' + d.memberName + '</span></div>'
-        + '<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:' + (inactive?'#f0f0f0':'#eafaf1') + ';color:' + (inactive?'#999':'#1a6b35') + ';">' + (inactive?'已失效':'使用中') + '</span></div>'
-        + '<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
-        + '<span>⏰ ' + expStr + '</span>'
-        + '<span>📊 ' + d.usedCount + '/' + (d.maxUses===0?'∞':d.maxUses) + '</span>'
-        + (d.note ? '<span>📝 ' + d.note + '</span>' : '') + '</div>'
-        + (!inactive ? '<div style="margin-top:6px;"><button onclick="revokeTempPass(&quot;' + d.id + '&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">撤銷</button></div>' : '');
-      el.appendChild(row);
-    });
-  } catch(e) { el.innerHTML = '<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：' + e.message + '</div>'; }
-}
-
-async function revokeTempPass(id) {
-  if (!confirm('確定撤銷這組臨時密碼？')) return;
-  try {
-    await fbUpdate(COL_TEMP_PASS, id, { active: false });
-    await loadTempPassList();
-  } catch(e) { alert('撤銷失敗：' + e.message); }
-}
-
 // 自動插入 v1.9.02 版本紀錄（若尚未存在）
 
 
@@ -10203,6 +10159,9 @@ function checkPWAPrompts() {
   await registerSW();
 })();
 </script>
+
+<!-- ══════ 簡易模式切換按鈕（固定右下角，放在 body 層級）══════ -->
+<button id="easyModeToggle" onclick="toggleEasyMode()">👴 簡易模式</button>
 
 </body>
 </html>
