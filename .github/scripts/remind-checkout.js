@@ -1,12 +1,13 @@
 // ══════════════════════════════════════════
 // 簽退提醒腳本
 // 每天台灣時間 22:00 執行
-// 找出今日有簽到但尚未簽退的人，發送推播 + Email
+// 找出今日有簽到但尚未簽退的人，發送推播 + Email + LINE 群組
 // ══════════════════════════════════════════
 
-const webpush  = require('web-push');
-const admin    = require('firebase-admin');
+const webpush    = require('web-push');
+const admin      = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const https      = require('https');
 
 // ── 初始化 Firebase Admin ──
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -29,6 +30,38 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// ── LINE Messaging API ──
+const LINE_GROUP_ID      = 'C15c80c35748b4d6f677477711a9be733';
+const LINE_ACCESS_TOKEN  = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
+async function sendLineGroupMessage(text) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({
+      to:       LINE_GROUP_ID,
+      messages: [{ type: 'text', text }],
+    });
+    const req = https.request({
+      hostname: 'api.line.me',
+      path:     '/v2/bot/message/push',
+      method:   'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`,
+      },
+    }, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) resolve(data);
+        else reject(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`));
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 // ── 取得今天台灣時間的日期字串 ──
 function getTodayStr() {
   const now = new Date();
@@ -43,7 +76,6 @@ async function main() {
   const today = getTodayStr();
   console.log(`檢查 ${today} 尚未簽退的人...`);
 
-  // 查詢今日有簽到但沒有簽退的紀錄
   const attSnap = await db.collection('attendance')
     .where('date', '==', today)
     .get();
@@ -57,16 +89,15 @@ async function main() {
     return;
   }
 
-  console.log(`共 ${notCheckedOut.length} 人尚未簽退：${notCheckedOut.map(d => d.memberName).join('、')}`);
+  const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
+  console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
 
   // 讀取 whitelist 取得 email
   const wlSnap = await db.collection('whitelist').get();
   const emailMap = {};
   wlSnap.docs.forEach(d => {
     const data = d.data();
-    if (data.memberName && data.email) {
-      emailMap[data.memberName] = data.email;
-    }
+    if (data.memberName && data.email) emailMap[data.memberName] = data.email;
   });
 
   // 讀取推播訂閱
@@ -79,11 +110,33 @@ async function main() {
 
   const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
 
+  // ── ① LINE 群組通知（一則訊息列出所有人）──
+  if (LINE_ACCESS_TOKEN) {
+    try {
+      const lineMsg = [
+        '⚠️ 簽退提醒',
+        `${today} 以下成員尚未簽退：`,
+        '',
+        names.map(n => `• ${n}`).join('\n'),
+        '',
+        '請盡快登入系統完成簽退。',
+        siteUrl,
+      ].join('\n');
+      await sendLineGroupMessage(lineMsg);
+      console.log('✅ LINE 群組通知已發送');
+    } catch(err) {
+      console.log(`❌ LINE 群組通知失敗：${err.message}`);
+    }
+  } else {
+    console.log('⚠️ 未設定 LINE_CHANNEL_ACCESS_TOKEN，跳過 LINE 通知');
+  }
+
+  // ── ② 個別推播 + Email ──
   for (const rec of notCheckedOut) {
     const name = rec.memberName || '';
     console.log(`\n處理：${name}`);
 
-    // ── 推播通知 ──
+    // 推播通知
     const sub = subMap[name];
     if (sub) {
       const payload = JSON.stringify({
@@ -109,7 +162,7 @@ async function main() {
       console.log(`  ⚠️ 無推播訂閱`);
     }
 
-    // ── Email 通知 ──
+    // Email 通知
     const email = emailMap[name];
     if (email) {
       try {
