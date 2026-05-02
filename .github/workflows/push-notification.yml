@@ -2,9 +2,13 @@ name: 定訓前一天推播通知
 
 on:
   schedule:
-    # 每天台灣時間晚上 8 點執行（UTC+8，所以 UTC 12:00）
-    - cron: '0 12 * * *'
-  workflow_dispatch: # 允許手動觸發測試
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      force_hour:
+        description: '強制測試：指定台灣時間幾點（留空=使用當前時間）'
+        required: false
+        default: ''
 
 jobs:
   send-notification:
@@ -24,7 +28,8 @@ jobs:
 
       - name: 執行推播腳本
         env:
-          VAPID_PUBLIC_KEY: "BLt-Ma7FVRAYTqD9G8nAoE76gpu0fuYO9tSP_u9qgBzYteCx5tXYbwWna0cGZJJgqXx2sUTRXmLpi4z5spU4vRE"
+          VAPID_PUBLIC_KEY: "BGcqrd4ZF5ShqfaQuzdsMw2ZC3Bz3IR2Qpwr9n3ofPQSRgwxcr_NgdplWZx5oz-tTSW3KhNoEXGzWGw9MB3oIF0"
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FORCE_HOUR: ${{ github.event.inputs.force_hour }}
         run: node .github/scripts/send-push.js
