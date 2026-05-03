@@ -1542,7 +1542,7 @@ tr:hover td { background: #fdfcfb; }
           <thead>
             <tr>
               <th>#</th><th>日期</th><th>類別</th><th>姓名</th><th>職稱</th>
-              <th>簽到</th><th>簽退</th><th>協勤時數</th>
+              <th>簽到</th><th>簽退</th><th>簽到簽名</th><th>簽退簽名</th><th>協勤時數</th>
               <th>協勤次數</th><th>服務人次</th><th>操作</th>
             </tr>
           </thead>
@@ -1585,6 +1585,26 @@ tr:hover td { background: #fdfcfb; }
     <div class="field"><label>協勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
     <div class="field"><label>協勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
     <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>簽到簽名</span>
+        <button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button>
+      </label>
+      <div id="aqEditCheckinPrev" style="margin-bottom:4px;display:none;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
+      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>簽退簽名</span>
+        <button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button>
+      </label>
+      <div id="aqEditCheckoutPrev" style="margin-bottom:4px;display:none;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
+      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
     <div style="display:flex;gap:10px;margin-top:8px;">
       <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
       <button onclick="closeAttEdit()" class="btn-reset">取消</button>
@@ -2903,10 +2923,14 @@ async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collecti
 async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();}
 async function verifyWhitelist(email){
   await ensureFirebase();
-  const s=await _fbDB.collection(COL_WHITELIST).where('email','==',email.toLowerCase().trim()).get();
+  const em = email.toLowerCase().trim();
+  // 先查主 email，查無再查 extraEmails 陣列
+  let s = await _fbDB.collection(COL_WHITELIST).where('email','==',em).get();
+  if (s.empty) {
+    s = await _fbDB.collection(COL_WHITELIST).where('extraEmails','array-contains',em).get();
+  }
   if(s.empty)return null;
   const d=s.docs[0].data();
-  // isAdmin:true 或 role:'admin' 任一為真都算管理員（向下相容）
   const isAdminFlag = d.isAdmin === true || d.role === 'admin';
   const isOfficerFlag = d.isOfficer === true || d.role === 'officer';
   const role = isAdminFlag ? 'admin' : (isOfficerFlag ? 'officer' : (d.role || 'member'));
@@ -3104,11 +3128,9 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   setTimeout(checkCertExpiry, 1500);
   setTimeout(checkPWAPrompts, 4000);
 
-  // 顯示簡易模式切換按鈕（管理員/承辦人不顯示）
-  if (!isAdmin && !isOfficer) {
-    var easyBtn = document.getElementById('easyModeToggle');
-    if (easyBtn) easyBtn.style.display = 'block';
-  }
+  // 顯示簡易模式切換按鈕（所有人皆可使用）
+  var easyBtn = document.getElementById('easyModeToggle');
+  if (easyBtn) easyBtn.style.display = 'block';
   // 確保簡易模式頁面隱藏，回到一般模式
   _easyMode = false;
   var easyPage = document.getElementById('easyModePage');
@@ -3889,6 +3911,48 @@ function setAttDuty(type) {
   document.getElementById('attDutyType').value = type;
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
+
+// ── 後台編輯簽名板共用工具 ──────────────────────────────
+const _aeCtxMap = {};
+function aeInitCanvas(canvasId) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const ratio = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  cv.width  = rect.width  * ratio;
+  cv.height = rect.height * ratio;
+  const ctx = cv.getContext('2d');
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const state = { ctx, drawing: false, hasSig: false };
+  _aeCtxMap[canvasId] = state;
+  function getP(e) {
+    const r = cv.getBoundingClientRect();
+    const s = e.touches ? e.touches[0] : e;
+    return { x: s.clientX - r.left, y: s.clientY - r.top };
+  }
+  cv.addEventListener('mousedown',  e => { state.drawing=true; const p=getP(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+  cv.addEventListener('mousemove',  e => { if(!state.drawing)return; const p=getP(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasSig=true; });
+  cv.addEventListener('mouseup',    () => state.drawing=false);
+  cv.addEventListener('mouseleave', () => state.drawing=false);
+  cv.addEventListener('touchstart', e => { e.preventDefault(); state.drawing=true; const p=getP(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }, {passive:false});
+  cv.addEventListener('touchmove',  e => { e.preventDefault(); if(!state.drawing)return; const p=getP(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasSig=true; }, {passive:false});
+  cv.addEventListener('touchend',   () => state.drawing=false);
+}
+function aeGetSig(canvasId) {
+  const state = _aeCtxMap[canvasId];
+  if (!state || !state.hasSig) return '';
+  return document.getElementById(canvasId).toDataURL('image/png');
+}
+function aeCanvasClear(canvasId) {
+  const state = _aeCtxMap[canvasId];
+  if (!state) return;
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  state.ctx.clearRect(0, 0, cv.width, cv.height);
+  state.hasSig = false;
+}
+// ────────────────────────────────────────────────────────
 
 function submitOutingForm() {
   // 最優先：其他案由必填檢查（靠 hidden input 判斷，不靠動態 id）
@@ -4812,7 +4876,7 @@ function fmtAqTime(v) {
 function renderAttQueryResults() {
   const tbody = document.getElementById('aqResultBody');
   if (aqFiltered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-light);padding:30px;">查無紀錄</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-light);padding:30px;">查無紀錄</td></tr>';
   } else {
     const _usrAq = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
     const _isAdminAq = _usrAq.isAdmin||false, _isOfficerAq = _usrAq.isOfficer||false;
@@ -4827,6 +4891,11 @@ function renderAttQueryResults() {
       const hrs   = r.hours  !== undefined ? r.hours  : (r['協勤時數'] !== undefined ? r['協勤時數'] : 0);
       const cnt   = r.count   !== undefined ? r.count   : (r['協勤次數'] !== undefined ? r['協勤次數'] : 0);
       const svc   = r.service !== undefined ? r.service : (r['服務人次'] !== undefined ? r['服務人次'] : 0);
+      const cinSig  = r.checkinSig  || '';
+      const coutSig = r.checkoutSig || '';
+      const sigCell = (sig) => sig
+        ? `<img src="${sig}" style="height:44px;max-width:100px;display:block;margin:auto;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;">`
+        : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
       // 操作按鈕
       const isOwnerAq = name === _myNameAq;
       const recTimeAq = r._t ? (r._t.seconds||0)*1000 : (date ? new Date(date).getTime() : 0);
@@ -4850,6 +4919,8 @@ function renderAttQueryResults() {
         '<td style="white-space:nowrap;">'+title+'</td>' +
         '<td style="white-space:nowrap;">'+cin+'</td>' +
         '<td style="white-space:nowrap;">'+cout+'</td>' +
+        '<td style="text-align:center;padding:4px;">'+sigCell(cinSig)+'</td>' +
+        '<td style="text-align:center;padding:4px;">'+sigCell(coutSig)+'</td>' +
         '<td style="text-align:center;">'+hrs+'</td>' +
         '<td style="text-align:center;">'+cnt+'</td>' +
         '<td style="text-align:center;">'+svc+'</td>' +
@@ -4878,8 +4949,20 @@ function openAttEdit(idx) {
   document.getElementById('aqEditHours').value   = r.hours   !== undefined ? r.hours   : ((r['協勤時數'] !== undefined && r['協勤時數'] !== '') ? r['協勤時數'] : 0);
   document.getElementById('aqEditCount').value   = r.count   !== undefined ? r.count   : ((r['協勤次數'] !== undefined && r['協勤次數'] !== '') ? r['協勤次數'] : 0);
   document.getElementById('aqEditService').value = r.service !== undefined ? r.service : ((r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0);
+  // 顯示舊簽名預覽
+  const cinPrev  = document.getElementById('aqEditCheckinPrev');
+  const cinImg   = document.getElementById('aqEditCheckinPrevImg');
+  const cinNote  = document.getElementById('aqEditCheckinPrevNote');
+  const coutPrev = document.getElementById('aqEditCheckoutPrev');
+  const coutImg  = document.getElementById('aqEditCheckoutPrevImg');
+  const coutNote = document.getElementById('aqEditCheckoutPrevNote');
+  if (r.checkinSig)  { cinImg.src  = r.checkinSig;  cinPrev.style.display='block';  cinNote.style.display='block';  }
+  else               { cinPrev.style.display='none';  cinNote.style.display='none';  }
+  if (r.checkoutSig) { coutImg.src = r.checkoutSig; coutPrev.style.display='block'; coutNote.style.display='block'; }
+  else               { coutPrev.style.display='none'; coutNote.style.display='none'; }
   document.getElementById('aqEditModal').style.display = 'flex';
   autoCalcEditHours();
+  setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
 }
 
 function closeAttEdit() {
@@ -4889,21 +4972,25 @@ function closeAttEdit() {
 async function saveAttEdit() {
   const idx = parseInt(document.getElementById('aqEditRow').value);
   const r = aqFiltered[idx];
-  const updated = {
-    action: 'updateAttendance',
-    rowIndex: r._row,
-    date:         document.getElementById('aqEditDate').value,
-    dutyType:     document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤',
-    memberName:   r['姓名'],
-    checkinTime:  document.getElementById('aqEditCheckin').value,
-    checkoutTime: document.getElementById('aqEditCheckout').value,
-    hours:        document.getElementById('aqEditHours').value,
-    count:        document.getElementById('aqEditCount').value,
-    service:      document.getElementById('aqEditService').value,
-  };
+  const checkinSigNew  = aeGetSig('aqEditCheckinCanvas');
+  const checkoutSigNew = aeGetSig('aqEditCheckoutCanvas');
   const btn = document.querySelector('#aqEditModal .btn-search');
   btn.textContent = '儲存中...'; btn.disabled = true;
   try {
+    if (r.id) {
+      await fbSet(COL_ATTEND, r.id, {
+        date:        document.getElementById('aqEditDate').value,
+        dutyType:    document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤',
+        memberName:  r.memberName || r['姓名'] || '',
+        checkinTime: document.getElementById('aqEditCheckin').value,
+        checkoutTime:document.getElementById('aqEditCheckout').value,
+        hours:       parseFloat(document.getElementById('aqEditHours').value) || 0,
+        count:       parseInt(document.getElementById('aqEditCount').value)   || 0,
+        service:     parseInt(document.getElementById('aqEditService').value) || 0,
+        checkinSig:  checkinSigNew  || r.checkinSig  || '',
+        checkoutSig: checkoutSigNew || r.checkoutSig || '',
+      });
+    }
     closeAttEdit();
     doAttQuery();
   } catch(e) {
@@ -5723,6 +5810,14 @@ async function loadAdminWhitelist(filterUnit) {
       emailDiv.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
       emailDiv.textContent = d.email||'';
       info.appendChild(emailDiv);
+      if (d.extraEmails && d.extraEmails.length) {
+        d.extraEmails.forEach(function(em) {
+          var exDiv = document.createElement('div');
+          exDiv.style.cssText = 'font-size:0.72rem;color:var(--text-light);opacity:0.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          exDiv.textContent = '+ ' + em;
+          info.appendChild(exDiv);
+        });
+      }
       if (d.phone) {
         var phoneDiv = document.createElement('div');
         phoneDiv.style.cssText = 'font-size:0.75rem;color:var(--text-mid);margin-top:1px;';
@@ -5798,12 +5893,15 @@ async function adminAddWhitelist() {
   } catch(e) { alert('新增失敗：' + e.message); }
 }
 
-function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone) {
+async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone) {
   if (!role || role==='member') role = isAdmin ? 'admin' : (role||'member');
   cert    = cert    || '';
   certExp = certExp || '';
   title   = title   || '';
   phone   = phone   || '';
+  // 讀取現有 extraEmails
+  let extraEmails = [];
+  try { const d = await fbGet(COL_WHITELIST, id); if (d && Array.isArray(d.extraEmails)) extraEmails = d.extraEmails; } catch(e) {}
   var TITLES = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
   var titleOpts = '<option value="">請選擇</option>' +
     TITLES.map(function(t){ return '<option value="'+t+'"'+(t===title?' selected':'')+'>'+t+'</option>'; }).join('');
@@ -5816,9 +5914,20 @@ function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,ph
     '<option value="EMT-1"'+(cert==='EMT-1'?' selected':'')+'>EMT-1</option>'+
     '<option value="EMT-2"'+(cert==='EMT-2'?' selected':'')+'>EMT-2</option>'+
     '<option value="EMT-P"'+(cert==='EMT-P'?' selected':'')+'>EMT-P（中級）</option>';
+  function buildExtraEmailsHtml(arr) {
+    var rows = arr.map(function(em, i) {
+      return '<div style="display:flex;gap:6px;margin-bottom:6px;">'+
+        '<input type="email" value="'+em+'" style="flex:1;background:white;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);box-sizing:border-box;" '+
+        'oninput="window.aeWlExtraEmails['+i+']=this.value.trim().toLowerCase()">'+
+        '<button type="button" onclick="window.aeWlRemoveExtra('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:6px 10px;font-size:0.82rem;color:#b94a3a;cursor:pointer;">✕</button>'+
+        '</div>';
+    }).join('');
+    return rows+'<button type="button" onclick="window.aeWlAddExtra()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:7px 14px;font-size:0.82rem;cursor:pointer;color:var(--text-mid);width:100%;margin-top:2px;">＋ 新增信箱</button>';
+  }
   document.getElementById('adminEditTitle').textContent='編輯帳號資料';
   document.getElementById('adminEditFields').innerHTML =
-    '<div class="field"><label>Email</label><input type="email" id="aeWlEmail" value="'+email+'" style="width:100%;background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;"></div>'+
+    '<div class="field"><label>主要 Email</label><input type="email" id="aeWlEmail" value="'+email+'" style="width:100%;background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;"></div>'+
+    '<div class="field"><label>額外信箱 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（同一人的其他 Google 帳號）</span></label><div id="aeWlExtraList">'+buildExtraEmailsHtml(extraEmails)+'</div></div>'+
     '<div class="field"><label>義消姓名</label><input type="text" id="aeWlName" value="'+memberName+'" style="width:100%;background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;"></div>'+
     '<div class="field"><label>分隊別</label><select id="aeWlUnit" style="width:100%;"><option value="">請選擇</option>'+getUnitsSelectOptions(unit)+'</select></div>'+
     '<div class="field"><label>職稱</label><select id="aeWlTitle" style="width:100%;">'+titleOpts+'</select></div>'+
@@ -5826,14 +5935,26 @@ function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,ph
     '<div class="field"><label>證照等級</label><select id="aeWlCert" style="width:100%;">'+certOpts+'</select></div>'+
     '<div class="field"><label>證照效期</label><input type="date" id="aeWlCertExp" value="'+certExp+'" style="width:100%;background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;"></div>'+
     '<div class="field"><label>手機號碼</label><input type="tel" id="aeWlPhone" value="'+phone+'" placeholder="例：0912345678" style="width:100%;background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;"></div>';
+  window.aeWlExtraEmails = extraEmails.slice();
+  window.aeWlAddExtra = function() {
+    window.aeWlExtraEmails.push('');
+    document.getElementById('aeWlExtraList').innerHTML = buildExtraEmailsHtml(window.aeWlExtraEmails);
+  };
+  window.aeWlRemoveExtra = function(i) {
+    window.aeWlExtraEmails.splice(i, 1);
+    document.getElementById('aeWlExtraList').innerHTML = buildExtraEmailsHtml(window.aeWlExtraEmails);
+  };
   adminEditSave = async function() {
     var r = document.getElementById('aeWlRole').value || 'member';
+    const mainEmail = document.getElementById('aeWlEmail').value.trim().toLowerCase();
+    const cleanExtras = window.aeWlExtraEmails.map(e => e.trim().toLowerCase()).filter(e => e && e !== mainEmail);
     try {
       await fbSet(COL_WHITELIST, id, {
-        email:      document.getElementById('aeWlEmail').value.trim().toLowerCase(),
-        memberName: document.getElementById('aeWlName').value.trim(),
-        unit:       document.getElementById('aeWlUnit').value.trim(),
-        title:      document.getElementById('aeWlTitle').value || '',
+        email:       mainEmail,
+        extraEmails: cleanExtras,
+        memberName:  document.getElementById('aeWlName').value.trim(),
+        unit:        document.getElementById('aeWlUnit').value.trim(),
+        title:       document.getElementById('aeWlTitle').value || '',
         role: r, isAdmin: r==='admin', isOfficer: r==='officer',
         cert:    document.getElementById('aeWlCert').value || '',
         certExp: document.getElementById('aeWlCertExp').value || '',
@@ -5997,9 +6118,30 @@ async function adminEditAtt(id) {
     <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" style="width:100%;"></div>
     <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
     <div class="field"><label>協勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
-    <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>`;
+    <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>簽到簽名</span>
+        <button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button>
+      </label>
+      ${doc.checkinSig ? `<div style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>` : ''}
+      <div class="sig-wrap"><canvas id="aeACheckinCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>簽退簽名</span>
+        <button type="button" onclick="aeCanvasClear('aeACheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button>
+      </label>
+      ${doc.checkoutSig ? `<div style="margin-bottom:4px;"><img src="${doc.checkoutSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>` : ''}
+      <div class="sig-wrap"><canvas id="aeACheckoutCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>`;
+  setTimeout(()=>{ aeInitCanvas('aeACheckinCanvas'); aeInitCanvas('aeACheckoutCanvas'); }, 50);
   adminEditSave=async()=>{
     try {
+      const checkinSigNew  = aeGetSig('aeACheckinCanvas');
+      const checkoutSigNew = aeGetSig('aeACheckoutCanvas');
       await fbSet(COL_ATTEND,id,{
         date:document.getElementById('aeADate').value,
         dutyType:document.getElementById('aeADuty').value,
@@ -6009,6 +6151,8 @@ async function adminEditAtt(id) {
         hours:parseFloat(document.getElementById('aeAHours').value)||0,
         count:parseInt(document.getElementById('aeACount').value)||0,
         service:parseInt(document.getElementById('aeASvc').value)||0,
+        checkinSig:  checkinSigNew  || doc.checkinSig  || '',
+        checkoutSig: checkoutSigNew || doc.checkoutSig || '',
       });
       document.getElementById('adminEditModal').style.display='none';
       await loadAdminAttendance();
@@ -6093,9 +6237,20 @@ async function adminEditOut(id) {
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
-    <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>`;
+    <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;">
+        <span>義消簽名</span>
+        <button type="button" onclick="aeCanvasClear('aeOSigCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button>
+      </label>
+      ${doc.signature ? `<div style="margin-bottom:4px;"><img src="${doc.signature}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>` : ''}
+      <div class="sig-wrap"><canvas id="aeOSigCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>`;
+  setTimeout(()=>{ aeInitCanvas('aeOSigCanvas'); }, 50);
   adminEditSave=async()=>{
     try {
+      const sigNew = aeGetSig('aeOSigCanvas');
       await fbSet(COL_OUTING,id,{
         date:document.getElementById('aeODate').value,
         caseType:document.getElementById('aeOCaseType').value.trim(),
@@ -6106,6 +6261,7 @@ async function adminEditOut(id) {
         services:document.getElementById('aeOSvc').value.trim(),
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
+        signature: sigNew || doc.signature || '',
       });
       document.getElementById('adminEditModal').style.display='none';
       await loadAdminOuting();
