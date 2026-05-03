@@ -854,9 +854,9 @@ tr:hover td { background: #fdfcfb; }
     <div class="field">
       <label>出發時間 ～ 返隊時間</label>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
-        <input type="text" id="easyOutingTimeOut" placeholder="HH:MM">
+        <input type="time" id="easyOutingTimeOut">
         <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
-        <input type="text" id="easyOutingTimeBack" placeholder="HH:MM">
+        <input type="time" id="easyOutingTimeBack">
       </div>
     </div>
     <div class="field">
@@ -1055,11 +1055,11 @@ tr:hover td { background: #fdfcfb; }
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label>協勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制，例：08:30）</span></label>
+            <label>協勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
             <div class="time-row">
-              <input type="text" id="timeOut" placeholder="HH:MM" pattern="[0-9]{2}:[0-9]{2}" required>
+              <input type="time" id="timeOut" required>
               <div class="time-dash">—</div>
-              <input type="text" id="timeBack" placeholder="HH:MM" pattern="[0-9]{2}:[0-9]{2}" required>
+              <input type="time" id="timeBack" required>
             </div>
           </div>
         </div>
@@ -5993,8 +5993,8 @@ async function adminEditAtt(id) {
     <div class="field"><label>日期</label><input type="date" id="aeADate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>類別</label><select id="aeADuty" style="width:100%;"><option ${(doc.dutyType||'協勤')==='協勤'?'selected':''}>協勤</option><option ${doc.dutyType==='公差'?'selected':''}>公差</option></select></div>
     <div class="field"><label>姓名</label><input type="text" id="aeAName" value="${doc.memberName||''}" style="width:100%;"></div>
-    <div class="field"><label>簽到時間</label><input type="text" id="aeAIn" value="${doc.checkinTime||''}" placeholder="HH:MM" style="width:100%;"></div>
-    <div class="field"><label>簽退時間</label><input type="text" id="aeAOut" value="${doc.checkoutTime||''}" placeholder="HH:MM" style="width:100%;"></div>
+    <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" style="width:100%;"></div>
+    <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" style="width:100%;"></div>
     <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
     <div class="field"><label>協勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>`;
@@ -6087,8 +6087,8 @@ async function adminEditOut(id) {
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
-    <div class="field"><label>協勤時間</label><input type="text" id="aeOOut" value="${doc.timeOut||''}" placeholder="HH:MM（24小時制）" pattern="[0-9]{2}:[0-9]{2}" style="width:100%;"></div>
-    <div class="field"><label>返勤時間</label><input type="text" id="aeOBack" value="${doc.timeBack||''}" placeholder="HH:MM（24小時制）" pattern="[0-9]{2}:[0-9]{2}" style="width:100%;"></div>
+    <div class="field"><label>協勤時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" style="width:100%;"></div>
+    <div class="field"><label>返勤時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" style="width:100%;"></div>
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
