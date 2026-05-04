@@ -567,7 +567,8 @@ tr:hover td { background: #fdfcfb; }
 .ios-toggle input:checked + .ios-toggle-slider::before { transform: translateX(20px); }
 
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
 // ════════════════════════════════════════
 // 批次匯入工具
 // ════════════════════════════════════════
@@ -682,7 +683,10 @@ function _downloadCSV(content, filename) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 1000);
 }
 
 </script>
