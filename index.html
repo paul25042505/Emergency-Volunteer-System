@@ -181,6 +181,14 @@ label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-
 label .req { color: var(--red); margin-left: 2px; }
 
 /* 修復6：統一所有輸入元件高度 */
+input[type="time"] {
+  -webkit-appearance: none;
+}
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field,
+input[type="time"]::-webkit-datetime-edit-ampm-field {
+  -webkit-appearance: none;
+}
 input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
   width: 100%; border: 1px solid var(--border); border-radius: 4px;
   padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
@@ -592,72 +600,92 @@ function importResultHtml(ok, fail, failList) {
 
 // ── 簽到簽退匯入 ──
 async function importAttCSV() {
-  const file = document.getElementById('importAttFile').files[0];
   const resultEl = document.getElementById('importAttResult');
-  if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
-  resultEl.innerHTML = '匯入中，請稍候…';
-  const text = await file.text();
-  const lines = parseImportCSV(text);
-  let ok = 0, fail = 0, failList = [];
-  for (let i = 0; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim());
-    // date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service
-    const [date, dutyType, memberName, checkinTime, checkoutTime, hoursRaw, countRaw, serviceRaw] = cols;
-    if (!date || !memberName) { fail++; failList.push({row:i+1, reason:'缺少日期或姓名'}); continue; }
-    try {
-      // 日期格式統一為 yyyy-MM-dd
-      const dateFmt = date.replace(/\//g, '-');
-      await fbAdd(COL_ATTEND, {
-        date: dateFmt,
-        dutyType: dutyType || '協勤',
-        memberName,
-        checkinTime:  checkinTime  || '',
-        checkoutTime: checkoutTime || '',
-        hours:   parseFloat(hoursRaw)   || 0,
-        count:   parseInt(countRaw)     || 0,
-        service: parseInt(serviceRaw)   || 0,
-        checkinSig: '', checkoutSig: '',
-      });
-      ok++;
-    } catch(e) { fail++; failList.push({row:i+1, reason:e.message||'寫入失敗'}); }
+  try {
+    const file = document.getElementById('importAttFile').files[0];
+    if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
+    resultEl.innerHTML = '匯入中，請稍候…';
+    const text = await file.text();
+    const lines = parseImportCSV(text);
+    let ok = 0, fail = 0, failList = [];
+    for (let i = 0; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim());
+      // date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service
+      const [date, dutyType, memberName, checkinTime, checkoutTime, hoursRaw, countRaw, serviceRaw] = cols;
+      if (!date || !memberName) { fail++; failList.push({row:i+1, reason:'缺少日期或姓名'}); continue; }
+      try {
+        // 日期格式統一為 yyyy-MM-dd
+        const [_dy,_dm,_dd] = date.replace(/\//g,'-').split('-');
+        const dateFmt = _dy+'-'+String(_dm).padStart(2,'0')+'-'+String(_dd).padStart(2,'0');
+        await fbAdd(COL_ATTEND, {
+          date: dateFmt,
+          dutyType: dutyType || '協勤',
+          memberName,
+          checkinTime:  checkinTime  || '',
+          checkoutTime: checkoutTime || '',
+          hours:   parseFloat(hoursRaw)   || 0,
+          count:   parseInt(countRaw)     || 0,
+          service: parseInt(serviceRaw)   || 0,
+          checkinSig: '', checkoutSig: '',
+        });
+        ok++;
+      } catch(e) { fail++; failList.push({row:i+1, reason:e.message||'寫入失敗'}); console.error('匯入失敗 row'+(i+1), e); }
+    }
+    if (ok === 0 && fail === 0) {
+      resultEl.innerHTML = '<span style="color:var(--red);">CSV 無有效資料列，請確認格式。</span>';
+      return;
+    }
+    resultEl.innerHTML = importResultHtml(ok, fail, failList);
+    if (ok > 0) { document.getElementById('importAttFile').value = ''; }
+  } catch(outerErr) {
+    console.error('importAttCSV 外層錯誤:', outerErr);
+    resultEl.innerHTML = '<span style="color:var(--red);">❌ 匯入錯誤：' + (outerErr.message || outerErr) + '</span>';
   }
-  resultEl.innerHTML = importResultHtml(ok, fail, failList);
-  if (ok > 0) { document.getElementById('importAttFile').value = ''; }
 }
 
 // ── 協勤案件匯入 ──
 async function importOutCSV() {
-  const file = document.getElementById('importOutFile').files[0];
   const resultEl = document.getElementById('importOutResult');
-  if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
-  resultEl.innerHTML = '匯入中，請稍候…';
-  const text = await file.text();
-  const lines = parseImportCSV(text);
-  let ok = 0, fail = 0, failList = [];
-  for (let i = 0; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim());
-    // date, caseType, timeOut, timeBack, district, address, services, note, memberName
-    const [date, caseType, timeOut, timeBack, district, address, services, note, memberName] = cols;
-    if (!date || !memberName) { fail++; failList.push({row:i+1, reason:'缺少日期或姓名'}); continue; }
-    try {
-      const dateFmt = date.replace(/\//g, '-');
-      await fbAdd(COL_OUTING, {
-        date: dateFmt,
-        caseType:  caseType  || '',
-        timeOut:   timeOut   || '',
-        timeBack:  timeBack  || '',
-        district:  district  || '',
-        address:   address   || '',
-        services:  services  || '',
-        note:      note      || '',
-        memberName,
-        signature: '',
-      });
-      ok++;
-    } catch(e) { fail++; failList.push({row:i+1, reason:e.message||'寫入失敗'}); }
+  try {
+    const file = document.getElementById('importOutFile').files[0];
+    if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
+    resultEl.innerHTML = '匯入中，請稍候…';
+    const text = await file.text();
+    const lines = parseImportCSV(text);
+    let ok = 0, fail = 0, failList = [];
+    for (let i = 0; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim());
+      // date, caseType, timeOut, timeBack, district, address, services, note, memberName
+      const [date, caseType, timeOut, timeBack, district, address, services, note, memberName] = cols;
+      if (!date || !memberName) { fail++; failList.push({row:i+1, reason:'缺少日期或姓名'}); continue; }
+      try {
+        const [_dy,_dm,_dd] = date.replace(/\//g,'-').split('-');
+        const dateFmt = _dy+'-'+String(_dm).padStart(2,'0')+'-'+String(_dd).padStart(2,'0');
+        await fbAdd(COL_OUTING, {
+          date: dateFmt,
+          caseType:  caseType  || '',
+          timeOut:   timeOut   || '',
+          timeBack:  timeBack  || '',
+          district:  district  || '',
+          address:   address   || '',
+          services:  services  || '',
+          note:      note      || '',
+          memberName,
+          signature: '',
+        });
+        ok++;
+      } catch(e) { fail++; failList.push({row:i+1, reason:e.message||'寫入失敗'}); console.error('匯入失敗 row'+(i+1), e); }
+    }
+    if (ok === 0 && fail === 0) {
+      resultEl.innerHTML = '<span style="color:var(--red);">CSV 無有效資料列，請確認格式。</span>';
+      return;
+    }
+    resultEl.innerHTML = importResultHtml(ok, fail, failList);
+    if (ok > 0) { document.getElementById('importOutFile').value = ''; }
+  } catch(outerErr) {
+    console.error('importOutCSV 外層錯誤:', outerErr);
+    resultEl.innerHTML = '<span style="color:var(--red);">❌ 匯入錯誤：' + (outerErr.message || outerErr) + '</span>';
   }
-  resultEl.innerHTML = importResultHtml(ok, fail, failList);
-  if (ok > 0) { document.getElementById('importOutFile').value = ''; }
 }
 
 // ── CSV 範本下載 ──
@@ -5745,6 +5773,16 @@ async function saveEditItem() {
 // DOMContentLoaded
 // ════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // ── 強制所有 time input 使用 24 小時制 ──
+  function enforce24h() {
+    document.querySelectorAll('input[type="time"]').forEach(el => {
+      el.setAttribute('lang', 'en-GB');
+    });
+  }
+  enforce24h();
+  // 動態新增的 input（如 modal）也要處理
+  new MutationObserver(enforce24h).observe(document.body, { childList: true, subtree: true });
+
   // ── Pull to Refresh ──
   initPullToRefresh();
   initFootersWithVersion();
