@@ -567,7 +567,90 @@ tr:hover td { background: #fdfcfb; }
 .ios-toggle input:checked + .ios-toggle-slider::before { transform: translateX(20px); }
 
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer>
+// ════ 批次匯入工具 ════
+function parseImportCSV(text) {
+  text = text.replace(/^﻿/, '').replace(/
+/g,'
+').replace(/
+/g,'
+');
+  const lines = text.split('
+').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const first = lines[0] ? lines[0].split(',') : [];
+  const isHeader = first.some(c => /^[a-zA-Z]/.test(c.trim()));
+  return isHeader ? lines.slice(1) : lines;
+}
+function importResultHtml(ok, fail, failList) {
+  let html = '';
+  if (ok > 0) html += `<span style="color:#2e7d32;font-weight:600;">✅ 成功匯入 ${ok} 筆</span>`;
+  if (fail > 0) html += `<span style="color:var(--red);margin-left:12px;">⚠ 失敗 ${fail} 筆</span>`;
+  if (failList.length) html += '<div style="margin-top:6px;color:var(--red);font-size:0.75rem;">' + failList.slice(0,5).map(f=>`第${f.row}列：${f.reason}`).join('<br>') + (failList.length>5?`<br>…等共${failList.length}筆`:'') + '</div>';
+  return html;
+}
+async function importAttCSV() {
+  const resultEl = document.getElementById('importAttResult');
+  try {
+    const file = document.getElementById('importAttFile').files[0];
+    if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
+    resultEl.innerHTML = '匯入中，請稍候…';
+    const lines = parseImportCSV(await file.text());
+    let ok=0, fail=0, failList=[];
+    for (let i=0; i<lines.length; i++) {
+      const [date,dutyType,memberName,checkinTime,checkoutTime,hoursRaw,countRaw,serviceRaw] = lines[i].split(',').map(c=>c.trim());
+      if (!date||!memberName){fail++;failList.push({row:i+1,reason:'缺少日期或姓名'});continue;}
+      try {
+        const [y,m,d2] = date.replace(/\//g,'-').split('-');
+        const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+        const mem = members.find(m=>m.name===memberName)||{};
+        await fbAdd(COL_ATTEND,{date:dateFmt,dutyType:dutyType||'協勤',memberName,unit:mem.unit||'',title:mem.title||'',checkinTime:checkinTime||'',checkoutTime:checkoutTime||'',hours:parseFloat(hoursRaw)||0,count:parseInt(countRaw)||0,service:parseInt(serviceRaw)||0,checkinSig:'',checkoutSig:''});
+        ok++;
+      } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
+    }
+    resultEl.innerHTML = (ok===0&&fail===0) ? '<span style="color:var(--red);">CSV 無有效資料</span>' : importResultHtml(ok,fail,failList);
+    if(ok>0) document.getElementById('importAttFile').value='';
+  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
+}
+async function importOutCSV() {
+  const resultEl = document.getElementById('importOutResult');
+  try {
+    const file = document.getElementById('importOutFile').files[0];
+    if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
+    resultEl.innerHTML = '匯入中，請稍候…';
+    const lines = parseImportCSV(await file.text());
+    let ok=0, fail=0, failList=[];
+    for (let i=0; i<lines.length; i++) {
+      const [date,caseType,timeOut,timeBack,district,address,services,note,memberName] = lines[i].split(',').map(c=>c.trim());
+      if (!date||!memberName){fail++;failList.push({row:i+1,reason:'缺少日期或姓名'});continue;}
+      try {
+        const [y,m,d2] = date.replace(/\//g,'-').split('-');
+        const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+        const mem = members.find(m=>m.name===memberName)||{};
+        await fbAdd(COL_OUTING,{date:dateFmt,caseType:caseType||'',timeOut:timeOut||'',timeBack:timeBack||'',district:district||'',address:address||'',services:services||'',note:note||'',memberName,unit:mem.unit||'',title:mem.title||'',signature:''});
+        ok++;
+      } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
+    }
+    resultEl.innerHTML = (ok===0&&fail===0) ? '<span style="color:var(--red);">CSV 無有效資料</span>' : importResultHtml(ok,fail,failList);
+    if(ok>0) document.getElementById('importOutFile').value='';
+  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
+}
+function downloadAttTemplate() {
+  _dlCSV(['date,dutyType,memberName,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2'].join('
+'), '簽到簽退匯入範本.csv');
+}
+function downloadOutTemplate() {
+  _dlCSV(['date,caseType,timeOut,timeBack,district,address,services,note,memberName','2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖'].join('
+'), '協勤案件匯入範本.csv');
+}
+function _dlCSV(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+content],{type:'text/csv;charset=utf-8;'}));
+  a.download = filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);document.body.removeChild(a);},1000);
+}
+
+</script>
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -2033,6 +2116,7 @@ tr:hover td { background: #fdfcfb; }
       <button onclick="adminScrollTo('adminSec-temppass')" class="admin-tab" id="adminTab-temppass">🔑 臨時密碼</button>
       <button onclick="adminScrollTo('adminSec-changelog')"class="admin-tab">📝 版本</button>
       <button id="adminTab-loginlog" onclick="adminScrollTo('adminSec-loginlog')" class="admin-tab" style="display:none;">🔐 登入紀錄</button>
+      <button onclick="adminScrollTo('adminSec-import')" class="admin-tab">📥 批次匯入</button>
     </div>
     <!-- tab bar 佔位，避免內容被蓋住 -->
     <div id="adminTabBarSpacer" style="display:none;height:8px;"></div>
@@ -2398,6 +2482,46 @@ tr:hover td { background: #fdfcfb; }
       </div>
       <div id="adminLoginLogList">
         <div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>
+      </div>
+    </div>
+
+    <div class="section" id="adminSec-import">
+      <div class="section-head">
+        <div class="section-num">📥</div>
+        <div class="section-title">批次匯入</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">
+          上傳 CSV 檔案即可批次新增資料。簽名欄位可留空，之後再由當事人補簽。<br>
+          <span style="color:var(--red);font-weight:600;">注意：重複資料不會自動偵測，請先確認再匯入。</span>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
+          <div style="font-weight:600;font-size:0.92rem;margin-bottom:10px;color:var(--text);">✍ 簽到簽退紀錄</div>
+          <div style="font-size:0.75rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:monospace;line-height:1.8;">
+            欄位：date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service<br>
+            範例：2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="importAttFile" accept=".csv" style="flex:1;min-width:0;">
+            <button onclick="downloadAttTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.8rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 下載範本</button>
+            <button onclick="importAttCSV()" class="btn-search" style="min-height:unset;padding:8px 18px;white-space:nowrap;">匯入</button>
+          </div>
+          <div id="importAttResult" style="margin-top:10px;font-size:0.82rem;"></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <div style="font-weight:600;font-size:0.92rem;margin-bottom:10px;color:var(--text);">🚑 協勤案件紀錄</div>
+          <div style="font-size:0.75rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:monospace;line-height:1.8;">
+            欄位：date, caseType, timeOut, timeBack, district, address, services, note, memberName<br>
+            範例：2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="importOutFile" accept=".csv" style="flex:1;min-width:0;">
+            <button onclick="downloadOutTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.8rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 下載範本</button>
+            <button onclick="importOutCSV()" class="btn-search" style="min-height:unset;padding:8px 18px;white-space:nowrap;">匯入</button>
+          </div>
+          <div id="importOutResult" style="margin-top:10px;font-size:0.82rem;"></div>
+        </div>
       </div>
     </div>
 
@@ -4941,8 +5065,7 @@ async function saveAttEdit() {
   const idx = parseInt(document.getElementById('aqEditRow').value);
   const r = aqFiltered[idx];
   if (!r || !r.id) { alert('找不到紀錄 ID，無法儲存'); return; }
-  const checkinSigNew  = aeGetSig('aqEditCheckinCanvas');
-  const checkoutSigNew = aeGetSig('aqEditCheckoutCanvas');
+  const cinNew=aeGetSig('aqEditCheckinCanvas'), coutNew=aeGetSig('aqEditCheckoutCanvas');
   const btn = document.querySelector('#aqEditModal .btn-search');
   btn.textContent = '儲存中...'; btn.disabled = true;
   try {
@@ -4955,8 +5078,8 @@ async function saveAttEdit() {
       hours:       parseFloat(document.getElementById('aqEditHours').value)||0,
       count:       parseInt(document.getElementById('aqEditCount').value)||0,
       service:     parseInt(document.getElementById('aqEditService').value)||0,
-      checkinSig:  checkinSigNew  || r.checkinSig  || '',
-      checkoutSig: checkoutSigNew || r.checkoutSig || '',
+      checkinSig:  cinNew  || r.checkinSig  || '',
+      checkoutSig: coutNew || r.checkoutSig || '',
     });
     closeAttEdit();
     await doAttQuery();
@@ -6001,9 +6124,9 @@ async function loadAdminAttendance() {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:white;border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow-x:auto;';
 
-    const ths = 'padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
-    const tds = 'padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
-    const sigA = (sig) => sig ? `<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">` : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
+    const ths='padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
+    const tds='padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
+    const sigA=(sig)=>sig?`<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">`:`<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;min-width:780px;';
     table.innerHTML = `<thead><tr>
@@ -6050,8 +6173,8 @@ async function adminEditAtt(id) {
     <div class="field"><label>日期</label><input type="date" id="aeADate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>類別</label><select id="aeADuty" style="width:100%;"><option ${(doc.dutyType||'協勤')==='協勤'?'selected':''}>協勤</option><option ${doc.dutyType==='公差'?'selected':''}>公差</option></select></div>
     <div class="field"><label>姓名</label><input type="text" id="aeAName" value="${doc.memberName||''}" style="width:100%;"></div>
-    <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" style="width:100%;"></div>
-    <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" style="width:100%;"></div>
+    <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
     <div class="field"><label>協勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
@@ -6067,10 +6190,13 @@ async function adminEditAtt(id) {
       <div class="sig-wrap"><canvas id="aeACheckoutCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>`;
-  setTimeout(()=>{ aeInitCanvas('aeACheckinCanvas'); aeInitCanvas('aeACheckoutCanvas'); },50);
+  setTimeout(()=>{ aeInitCanvas('aeACheckinCanvas'); aeInitCanvas('aeACheckoutCanvas');
+    // 強制 24hr（iOS 需在 input 插入 DOM 後再設定）
+    ['aeAIn','aeAOut'].forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('lang','en-GB');el.setAttribute('data-time-24','1');}});
+  },50);
   adminEditSave=async()=>{
     try {
-      const cinSigNew=aeGetSig('aeACheckinCanvas'), coutSigNew=aeGetSig('aeACheckoutCanvas');
+      const cinN=aeGetSig('aeACheckinCanvas'), coutN=aeGetSig('aeACheckoutCanvas');
       await fbSet(COL_ATTEND,id,{
         date:document.getElementById('aeADate').value,
         dutyType:document.getElementById('aeADuty').value,
@@ -6080,8 +6206,8 @@ async function adminEditAtt(id) {
         hours:parseFloat(document.getElementById('aeAHours').value)||0,
         count:parseInt(document.getElementById('aeACount').value)||0,
         service:parseInt(document.getElementById('aeASvc').value)||0,
-        checkinSig:  cinSigNew  || doc.checkinSig  || '',
-        checkoutSig: coutSigNew || doc.checkoutSig || '',
+        checkinSig:  cinN  || doc.checkinSig  || '',
+        checkoutSig: coutN || doc.checkoutSig || '',
       });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('attQueryPage')?.classList.contains('active')) await doAttQuery();
@@ -6123,9 +6249,9 @@ async function loadAdminOuting() {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:white;border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow-x:auto;';
 
-    const ths2 = 'padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
-    const tds2 = 'padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
-    const sigB = (sig) => sig ? `<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">` : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
+    const ths2='padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
+    const tds2='padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
+    const sigB=(sig)=>sig?`<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">`:`<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;min-width:780px;';
     table.innerHTML = `<thead><tr>
@@ -6169,8 +6295,8 @@ async function adminEditOut(id) {
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
-    <div class="field"><label>協勤時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" style="width:100%;"></div>
-    <div class="field"><label>返勤時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" style="width:100%;"></div>
+    <div class="field"><label>協勤時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>返勤時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
@@ -6182,10 +6308,12 @@ async function adminEditOut(id) {
       <div class="sig-wrap"><canvas id="aeOSigCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>`;
-  setTimeout(()=>aeInitCanvas('aeOSigCanvas'),50);
+  setTimeout(()=>{ aeInitCanvas('aeOSigCanvas');
+    ['aeOOut','aeOBack'].forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('lang','en-GB');el.setAttribute('data-time-24','1');}});
+  },50);
   adminEditSave=async()=>{
     try {
-      const sigNew=aeGetSig('aeOSigCanvas');
+      const sigN=aeGetSig('aeOSigCanvas');
       await fbSet(COL_OUTING,id,{
         date:document.getElementById('aeODate').value,
         caseType:document.getElementById('aeOCaseType').value.trim(),
@@ -6196,7 +6324,7 @@ async function adminEditOut(id) {
         services:document.getElementById('aeOSvc').value.trim(),
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
-        signature: sigNew || doc.signature || '',
+        signature: sigN || doc.signature || '',
       });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('queryPage')?.classList.contains('active')) await doQuery();
@@ -6257,7 +6385,7 @@ function adminNavTo(sectionId) {
   }
   adminScrollTo(sectionId);
   document.querySelectorAll('.admin-subnav-btn').forEach(b => b.classList.remove('active-subnav'));
-  const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog'];
+  const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import'];
   const idx = secIds.indexOf(sectionId);
   const btns = document.querySelectorAll('.admin-subnav-btn');
   if (btns[idx]) btns[idx].classList.add('active-subnav');
@@ -6373,8 +6501,8 @@ async function initAdminPage() {
   // IntersectionObserver：滾動時自動高亮對應 tab
   if (_adminTabObserver) _adminTabObserver.disconnect();
   const secIds = isAdminOnly
-    ? ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog']
-    : ['adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-feedback','adminSec-correction','adminSec-schedule'];
+    ? ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import']
+    : ['adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-import'];
   const tabs = document.querySelectorAll('.admin-tab');
   const scroller = document.getElementById('appScroll');
   _adminTabObserver = new IntersectionObserver(entries => {
