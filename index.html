@@ -2929,37 +2929,175 @@ function _dlCSV(content, filename) {
 <!-- Signature Modal -->
 <!-- ══════ 申請修正 Modal ══════ -->
 <div id="correctionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
-  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:480px;margin-top:20px;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
-    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">📝 申請資料修正</div>
-    <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:16px;">超過 24 小時的紀錄需由承辦人審核後修正</div>
+  <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:520px;margin-top:20px;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
+
+    <!-- 標題 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+      <span style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);">申請修正勤務紀錄</span>
+      <span style="background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;margin-left:4px;">待審核</span>
+    </div>
+    <div style="font-size:0.76rem;color:var(--text-light);margin-bottom:16px;padding-left:17px;">超過 24 小時的紀錄需由承辦人審核後修正</div>
+
     <input type="hidden" id="corrType">
     <input type="hidden" id="corrDocId">
-    <div class="field">
-      <label>紀錄日期</label>
-      <div id="corrDateDisplay" style="padding:8px 0;font-size:0.9rem;color:var(--text-mid);"></div>
+
+    <!-- 原始紀錄區 -->
+    <div style="background:var(--warm);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:10px;letter-spacing:0.04em;">原始紀錄</div>
+      <div id="corrOrigGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px 14px;"></div>
     </div>
+
+    <!-- 修正原因 -->
     <div class="field">
-      <label>義消姓名</label>
-      <div id="corrNameDisplay" style="padding:8px 0;font-size:0.9rem;color:var(--text-mid);"></div>
+      <label style="margin-bottom:8px;display:block;">修正原因</label>
+      <div id="corrReasonTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        <button type="button" class="corr-tag active" onclick="toggleCorrTag(this)">時間登錯</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">簽名遺漏</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">人次有誤</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">系統錯誤</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">其他</button>
+      </div>
+      <textarea id="corrReason" placeholder="補充說明原因（選填）" style="min-height:56px;"></textarea>
     </div>
-    <div class="field">
-      <label>需要修正的項目 <span class="req">*</span></label>
-      <input type="text" id="corrField" placeholder="例：服務項目、時間、地址">
+
+    <!-- 修正內容（依類型顯示不同欄位） -->
+    <!-- ══ 簽到退記錄修正欄位 ══
+         注意：時間欄位一律使用 24 小時制（HH:MM），
+         本系統所有時間輸入/顯示皆為 24 小時制，禁止改為 12 小時制。
+    -->
+    <div id="corrFieldsAttendance" style="display:none;">
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">修正內容</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>簽到時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：18:00 -->
+          <input type="text" id="corrCheckin" placeholder="例：18:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrCheckin')">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>簽退時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：22:00 -->
+          <input type="text" id="corrCheckout" placeholder="例：22:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrCheckout')">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>協勤次數</label>
+          <input type="number" id="corrCount" min="0" oninput="markCorrChanged(this,'corrCount')">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>服務人次</label>
+          <input type="number" id="corrService" min="0" oninput="markCorrChanged(this,'corrService')">
+        </div>
+      </div>
+      <!-- 修正對比 -->
+      <div id="corrDiffArea" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
+        <div id="corrDiffList"></div>
+      </div>
+      <!-- 簽名區：每格獨立一列確保手機版面不擠壓，高度 130px 方便手寫 -->
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">重新簽名</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽到簽名</div>
+          <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
+            <canvas id="corrSigIn" width="480" height="130" style="display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;"></canvas>
+            <div id="corrSigInHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
+          </div>
+          <button type="button" onclick="clearCorrSig('corrSigIn','corrSigInHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
+          <div style="clear:both;"></div>
+        </div>
+        <div>
+          <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽退簽名</div>
+          <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
+            <canvas id="corrSigOut" width="480" height="130" style="display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;"></canvas>
+            <div id="corrSigOutHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
+          </div>
+          <button type="button" onclick="clearCorrSig('corrSigOut','corrSigOutHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
+          <div style="clear:both;"></div>
+        </div>
+      </div>
     </div>
-    <div class="field">
-      <label>正確內容 <span class="req">*</span></label>
-      <textarea id="corrCorrect" placeholder="請填寫正確的資料內容" style="min-height:80px;"></textarea>
+
+    <!-- ══ 協勤紀錄修正欄位 ══
+         注意：時間欄位一律使用 24 小時制（HH:MM），
+         本系統所有時間輸入/顯示皆為 24 小時制，禁止改為 12 小時制。
+         版面以手機為主（max-width:480px），欄位單欄排列，簽名欄高度 160px。
+    -->
+    <div id="corrFieldsOuting" style="display:none;">
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">修正內容</div>
+      <!-- 時間欄位：單欄排列，手機版面較舒適 -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>出勤時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：07:00 -->
+          <input type="text" id="corrTimeOut" placeholder="例：07:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeOut')">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>返勤時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：12:00 -->
+          <input type="text" id="corrTimeBack" placeholder="例：12:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeBack')">
+        </div>
+      </div>
+      <div class="field">
+        <label>地址</label>
+        <input type="text" id="corrAddress" placeholder="出勤地址" oninput="markCorrChanged(this,'corrAddress')">
+      </div>
+      <div class="field">
+        <label>案件類別</label>
+        <input type="text" id="corrCaseType" placeholder="案件類別" oninput="markCorrChanged(this,'corrCaseType')">
+      </div>
+      <div class="field">
+        <label>服務項目</label>
+        <input type="text" id="corrServices" placeholder="服務項目（以、分隔）" oninput="markCorrChanged(this,'corrServices')">
+      </div>
+      <!-- 修正對比 -->
+      <div id="corrDiffAreaOuting" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
+        <div id="corrDiffListOuting"></div>
+      </div>
+      <!-- 簽名：全寬單欄，高度 160px 方便手機手寫 -->
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">重新簽名</div>
+      <div>
+        <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽名</div>
+        <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
+          <canvas id="corrSigOuting" width="480" height="160" style="display:block;width:100%;height:160px;cursor:crosshair;touch-action:none;"></canvas>
+          <div id="corrSigOutingHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
+        </div>
+        <button type="button" onclick="clearCorrSig('corrSigOuting','corrSigOutingHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
+        <div style="clear:both;"></div>
+      </div>
     </div>
-    <div class="field">
-      <label>說明原因</label>
-      <textarea id="corrReason" placeholder="填寫錯誤原因（選填）" style="min-height:60px;"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:16px;">
+
+    <!-- 按鈕 -->
+    <div style="display:flex;gap:8px;margin-top:18px;">
       <button onclick="submitCorrection()" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">送出申請</button>
       <button onclick="document.getElementById('correctionModal').style.display='none'" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.9rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
     </div>
   </div>
 </div>
+
+<style>
+.corr-tag {
+  font-size: 0.76rem; padding: 4px 11px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-mid); cursor: pointer; transition: all 0.15s;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.corr-tag.active {
+  background: var(--red-faint); border-color: var(--red); color: var(--red);
+}
+.corr-changed {
+  border-color: #E67E22 !important;
+  background: #FEF9F0 !important;
+}
+.corr-diff-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; padding: 4px 0;
+  border-bottom: 1px solid #f0e0cc;
+}
+.corr-diff-row:last-child { border-bottom: none; }
+</style>
 
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -4351,7 +4489,8 @@ function renderQueryResults(records) {
         ? '<img data-sig="'+i+'" style="height:40px;cursor:pointer;border:1px solid var(--border);border-radius:3px;" title="點擊放大">'
         : '—';
       const isOwnerQ = r.memberName === _myNameQ;
-      const recTimeQ = r._t ? (r._t.seconds||0)*1000 : (r.date ? new Date(r.date).getTime() : 0);
+      // 24小時判斷：以勤務日期(r.date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
+      const recTimeQ = r.date ? new Date(r.date+'T00:00').getTime() : 0;
       const within24Q = recTimeQ && (Date.now()-recTimeQ < 86400000);
       let actionCell = '';
       if (_isAdminQ || _isOfficerQ) {
@@ -4361,10 +4500,7 @@ function renderQueryResults(records) {
       } else if (isOwnerQ && within24Q) {
         actionCell = '<button onclick="openOutingEdit('+i+')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">✏️ 編輯</button>';
       } else if (isOwnerQ) {
-        const _idQ = (r.id||'').replace(/'/g,'&#39;');
-        const _dtQ = (r.date||'').replace(/'/g,'&#39;');
-        const _nmQ = (r.memberName||'').replace(/'/g,'&#39;');
-        actionCell = '<button onclick="openCorrectionModal(&quot;outing&quot;,&quot;'+_idQ+'&quot;,&quot;'+_dtQ+'&quot;,&quot;'+_nmQ+'&quot;)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
+        actionCell = '<button data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
       }
       return '<tr>' +
         '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+seqNum+'</td>' +
@@ -4995,7 +5131,8 @@ function renderAttQueryResults() {
         : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
       // 操作按鈕
       const isOwnerAq = name === _myNameAq;
-      const recTimeAq = r._t ? (r._t.seconds||0)*1000 : (date ? new Date(date).getTime() : 0);
+      // 24小時判斷：以勤務日期(date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
+      const recTimeAq = date ? new Date(date+'T00:00').getTime() : 0;
       const within24Aq = recTimeAq && (Date.now()-recTimeAq < 86400000);
       let aqActionBtn = '';
       if (_isAdminAq || _isOfficerAq) {
@@ -5003,10 +5140,7 @@ function renderAttQueryResults() {
       } else if (isOwnerAq && within24Aq) {
         aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button>';
       } else if (isOwnerAq) {
-        const _id2 = (r.id||'').replace(/'/g,'&#39;');
-        const _dt2 = date.replace(/'/g,'&#39;');
-        const _nm2 = name.replace(/'/g,'&#39;');
-        aqActionBtn = '<button style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;" onclick="openCorrectionModal(&quot;attendance&quot;,&quot;'+_id2+'&quot;,&quot;'+_dt2+'&quot;,&quot;'+_nm2+'&quot;)">📝 申請修正</button>';
+        aqActionBtn = '<button data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
       }
       return '<tr>' +
         '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+(i+1)+'</td>' +
@@ -9180,40 +9314,254 @@ async function deleteSchedule(id, date) {
 // 修正申請
 // ════════════════════════════════════════
 
-function openCorrectionModal(type, docId, date, memberName) {
-  document.getElementById('corrType').value        = type;
-  document.getElementById('corrDocId').value       = docId;
-  document.getElementById('corrDateDisplay').textContent  = date;
-  document.getElementById('corrNameDisplay').textContent  = memberName;
-  document.getElementById('corrField').value       = '';
-  document.getElementById('corrCorrect').value     = '';
-  document.getElementById('corrReason').value      = '';
+// ── 暫存原始值（用來比較修改差異）
+var _corrOriginals = {};
+
+// 自動補冒號：輸入4碼數字時自動格式化為 HH:MM（24小時制）
+function fmtCorrTime(el) {
+  let v = el.value.replace(/[^0-9]/g,'');
+  if (v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2,4);
+  el.value = v;
+}
+
+function corrModalFromBtn(btn) {
+  const type = btn.getAttribute('data-type');
+  const idx  = parseInt(btn.getAttribute('data-idx'));
+  const record = type === 'outing' ? filteredRecords[idx] : aqFiltered[idx];
+  openCorrectionModal(type, record);
+}
+
+function openCorrectionModal(type, record) {
+  document.getElementById('corrType').value  = type;
+  document.getElementById('corrDocId').value = record.id || '';
+  document.getElementById('corrReason').value = '';
+
+  // 重置 reason tags
+  document.querySelectorAll('.corr-tag').forEach(t => t.classList.remove('active'));
+  const firstTag = document.querySelector('.corr-tag');
+  if (firstTag) firstTag.classList.add('active');
+
+  // 原始紀錄 grid
+  const grid = document.getElementById('corrOrigGrid');
+  grid.innerHTML = '';
+  function origItem(label, val) {
+    if (val === undefined || val === null || val === '') return;
+    const d = document.createElement('div');
+    d.innerHTML = '<div style="font-size:0.7rem;color:var(--text-light);">'+label+'</div><div style="font-size:0.84rem;font-weight:600;color:var(--text);">'+(val||'—')+'</div>';
+    grid.appendChild(d);
+  }
+
+  // 隱藏兩組欄位，待下方依 type 顯示
+  document.getElementById('corrFieldsAttendance').style.display = 'none';
+  document.getElementById('corrFieldsOuting').style.display = 'none';
+
+  if (type === 'attendance') {
+    const cin  = record.checkinTime  || record['簽到時間'] || '';
+    const cout = record.checkoutTime || record['簽退時間'] || '';
+    const hrs  = record.hours  !== undefined ? record.hours  : (record['協勤時數'] !== undefined ? record['協勤時數'] : '');
+    const cnt  = record.count  !== undefined ? record.count  : (record['協勤次數'] !== undefined ? record['協勤次數'] : '');
+    const svc  = record.service !== undefined ? record.service : (record['服務人次'] !== undefined ? record['服務人次'] : '');
+
+    origItem('日期',     record.date || '');
+    origItem('義消',     record.memberName || record['姓名'] || '');
+    origItem('簽到',     cin);
+    origItem('簽退',     cout);
+    origItem('協勤時數', hrs !== '' ? hrs + ' 小時' : '');
+    origItem('協勤次數', cnt !== '' ? cnt + ' 次' : '');
+    origItem('服務人次', svc !== '' ? svc + ' 人' : '');
+
+    _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
+
+    document.getElementById('corrCheckin').value  = cin;
+    document.getElementById('corrCheckout').value = cout;
+    document.getElementById('corrCount').value    = cnt;
+    document.getElementById('corrService').value  = svc;
+    ['corrCheckin','corrCheckout','corrCount','corrService'].forEach(id => {
+      document.getElementById(id).classList.remove('corr-changed');
+    });
+    document.getElementById('corrDiffArea').style.display = 'none';
+    document.getElementById('corrFieldsAttendance').style.display = 'block';
+    clearCorrSig('corrSigIn','corrSigInHint');
+    clearCorrSig('corrSigOut','corrSigOutHint');
+    initCorrCanvas('corrSigIn','corrSigInHint');
+    initCorrCanvas('corrSigOut','corrSigOutHint');
+
+  } else {
+    origItem('日期',     record.date || '');
+    origItem('義消',     record.memberName || '');
+    origItem('出勤',     record.timeOut || '');
+    origItem('返勤',     record.timeBack || '');
+    origItem('行政區',   record.district || '');
+    origItem('地址',     record.address || '');
+    origItem('案件類別', record.caseType || '');
+
+    _corrOriginals = {
+      corrTimeOut:  record.timeOut  || '',
+      corrTimeBack: record.timeBack || '',
+      corrAddress:  record.address  || '',
+      corrCaseType: record.caseType || '',
+      corrServices: record.services || '',
+    };
+
+    document.getElementById('corrTimeOut').value   = record.timeOut  || '';
+    document.getElementById('corrTimeBack').value  = record.timeBack || '';
+    document.getElementById('corrAddress').value   = record.address  || '';
+    document.getElementById('corrCaseType').value  = record.caseType || '';
+    document.getElementById('corrServices').value  = record.services || '';
+    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'].forEach(id => {
+      document.getElementById(id).classList.remove('corr-changed');
+    });
+    document.getElementById('corrDiffAreaOuting').style.display = 'none';
+    document.getElementById('corrFieldsOuting').style.display = 'block';
+    clearCorrSig('corrSigOuting','corrSigOutingHint');
+    initCorrCanvas('corrSigOuting','corrSigOutingHint');
+  }
+
   document.getElementById('correctionModal').style.display = 'flex';
 }
 
-async function submitCorrection() {
-  const type     = document.getElementById('corrType').value;
-  const docId    = document.getElementById('corrDocId').value;
-  const field    = document.getElementById('corrField').value.trim();
-  const correct  = document.getElementById('corrCorrect').value.trim();
-  const reason   = document.getElementById('corrReason').value.trim();
-  const date     = document.getElementById('corrDateDisplay').textContent;
-  const name     = document.getElementById('corrNameDisplay').textContent;
+function toggleCorrTag(el) {
+  el.classList.toggle('active');
+}
 
-  if (!field)   { alert('請填寫需要修正的項目'); return; }
-  if (!correct) { alert('請填寫正確內容'); return; }
+function markCorrChanged(el, id) {
+  const orig = _corrOriginals[id] !== undefined ? String(_corrOriginals[id]) : '';
+  el.classList.toggle('corr-changed', el.value !== orig);
+  updateCorrDiff();
+}
+
+function updateCorrDiff() {
+  const type = document.getElementById('corrType').value;
+  if (type === 'attendance') {
+    const ids = ['corrCheckin','corrCheckout','corrCount','corrService'];
+    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'協勤次數', corrService:'服務人次' };
+    const diffs = ids.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
+    });
+    const area = document.getElementById('corrDiffArea');
+    const list = document.getElementById('corrDiffList');
+    if (!diffs.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+    list.innerHTML = diffs.map(id => {
+      const el = document.getElementById(id);
+      return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
+    }).join('');
+  } else {
+    const ids = ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'];
+    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返勤時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目' };
+    const diffs = ids.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
+    });
+    const area = document.getElementById('corrDiffAreaOuting');
+    const list = document.getElementById('corrDiffListOuting');
+    if (!diffs.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+    list.innerHTML = diffs.map(id => {
+      const el = document.getElementById(id);
+      return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
+    }).join('');
+  }
+}
+
+var _corrCanvasInited = {};
+function initCorrCanvas(canvasId, hintId) {
+  if (_corrCanvasInited[canvasId]) return;
+  _corrCanvasInited[canvasId] = true;
+  const canvas = document.getElementById(canvasId);
+  const hint   = document.getElementById(hintId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let hasSig = false;
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const sx = canvas.width / canvas.offsetWidth;
+    const sy = canvas.height / canvas.offsetHeight;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+  }
+  ctx.strokeStyle = '#1e1a17'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  canvas.addEventListener('mousedown', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (!hasSig) { hasSig = true; if (hint) hint.style.opacity = '0'; } });
+  canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+  canvas.addEventListener('mouseup',   () => drawing = false);
+  canvas.addEventListener('mouseleave',() => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (!hasSig) { hasSig = true; if (hint) hint.style.opacity = '0'; } }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, { passive: false });
+  canvas.addEventListener('touchend',   () => drawing = false);
+}
+
+function clearCorrSig(canvasId, hintId) {
+  _corrCanvasInited[canvasId] = false;
+  const canvas = document.getElementById(canvasId);
+  const hint   = document.getElementById(hintId);
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  if (hint) hint.style.opacity = '1';
+}
+
+function getCorrSigData(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return '';
+  const ctx = canvas.getContext('2d');
+  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const hasContent = Array.from(px).some((v, i) => i % 4 === 3 && v > 0);
+  return hasContent ? canvas.toDataURL('image/png') : '';
+}
+
+async function submitCorrection() {
+  const type  = document.getElementById('corrType').value;
+  const docId = document.getElementById('corrDocId').value;
+  const reason = document.getElementById('corrReason').value.trim();
+  const reasonTags = Array.from(document.querySelectorAll('.corr-tag.active')).map(t => t.textContent).join('、');
 
   const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+
+  // 收集修改後的欄位（只送有異動的）
+  let correctedFields = {};
+  let hasDiff = false;
+
+  if (type === 'attendance') {
+    const ids = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service' };
+    for (const [elId, field] of Object.entries(ids)) {
+      const el = document.getElementById(elId);
+      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
+        correctedFields[field] = el.value;
+        hasDiff = true;
+      }
+    }
+    const sigIn  = getCorrSigData('corrSigIn');
+    const sigOut = getCorrSigData('corrSigOut');
+    if (sigIn)  { correctedFields.checkinSig  = sigIn;  hasDiff = true; }
+    if (sigOut) { correctedFields.checkoutSig = sigOut; hasDiff = true; }
+  } else {
+    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services' };
+    for (const [elId, field] of Object.entries(ids)) {
+      const el = document.getElementById(elId);
+      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
+        correctedFields[field] = el.value;
+        hasDiff = true;
+      }
+    }
+    const sigOuting = getCorrSigData('corrSigOuting');
+    if (sigOuting) { correctedFields.signature = sigOuting; hasDiff = true; }
+  }
+
+  if (!hasDiff && !reason && !reasonTags) {
+    alert('請至少修改一個欄位或簽名後再送出'); return;
+  }
+
   try {
     await fbAdd(COL_CORRECTION, {
-      type,       // 'outing' | 'attendance'
+      type,
       docId,
-      date,
-      memberName: name,
-      field,
-      correct,
+      reasonTags,
       reason,
-      status:     'pending',  // pending | approved | rejected
+      correctedFields,
+      originals: _corrOriginals,
+      status:      'pending',
       submittedBy: usr.memberName || usr.name || '',
       submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
