@@ -1675,21 +1675,22 @@ function _dlCSV(content, filename) {
     <div class="field"><label>協勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
     <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      <label><span>簽到簽名</span></label>
       <div id="aqEditCheckinPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
-      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽退簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      <label><span>簽退簽名</span></label>
       <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
-      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
     <div style="display:flex;gap:10px;margin-top:8px;">
-      <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
+      <!-- id="aqEditSaveBtn"：一般編輯時文字為「儲存」，申請修正模式時切換為「送出申請」 -->
+      <button id="aqEditSaveBtn" onclick="aqEditSaveBtnClick()" class="btn-search" style="flex:1;">儲存</button>
       <button onclick="closeAttEdit()" class="btn-reset">取消</button>
     </div>
   </div>
@@ -2565,8 +2566,9 @@ function _dlCSV(content, filename) {
     <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px;" id="adminEditTitle">編輯資料</div>
     <div id="adminEditFields"></div>
     <div style="display:flex;gap:10px;margin-top:20px;">
-      <button onclick="adminEditSave()" class="btn-search" style="flex:1;">儲　存</button>
-      <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset">取消</button>
+      <!-- id="adminEditSaveBtn"：申請修正模式時文字切換為「送出申請」 -->
+      <button id="adminEditSaveBtn" onclick="adminEditSaveBtnClick()" class="btn-search" style="flex:1;">儲　存</button>
+      <button onclick="document.getElementById('adminEditModal').style.display='none';_corrMode=false;" class="btn-reset">取消</button>
     </div>
   </div>
 </div>
@@ -2933,177 +2935,7 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- Signature Modal -->
-<!-- ══════ 申請修正 Modal ══════ -->
-<div id="correctionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
-  <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:520px;margin-top:20px;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
-
-    <!-- 標題 -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <div style="width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
-      <span style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);">申請修正勤務紀錄</span>
-      <span style="background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;margin-left:4px;">待審核</span>
-    </div>
-    <div style="font-size:0.76rem;color:var(--text-light);margin-bottom:16px;padding-left:17px;">超過 24 小時的紀錄需由承辦人審核後修正</div>
-
-    <input type="hidden" id="corrType">
-    <input type="hidden" id="corrDocId">
-
-    <!-- 原始紀錄區 -->
-    <div style="background:var(--warm);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
-      <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:10px;letter-spacing:0.04em;">原始紀錄</div>
-      <div id="corrOrigGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px 14px;"></div>
-    </div>
-
-    <!-- 修正原因 -->
-    <div class="field">
-      <label style="margin-bottom:8px;display:block;">修正原因</label>
-      <div id="corrReasonTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-        <button type="button" class="corr-tag active" onclick="toggleCorrTag(this)">時間登錯</button>
-        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">簽名遺漏</button>
-        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">人次有誤</button>
-        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">系統錯誤</button>
-        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">其他</button>
-      </div>
-      <textarea id="corrReason" placeholder="補充說明原因（選填）" style="min-height:56px;"></textarea>
-    </div>
-
-    <!-- 修正內容（依類型顯示不同欄位） -->
-    <!-- ══ 簽到退記錄修正欄位 ══
-         注意：時間欄位一律使用 24 小時制（HH:MM），
-         本系統所有時間輸入/顯示皆為 24 小時制，禁止改為 12 小時制。
-    -->
-    <div id="corrFieldsAttendance" style="display:none;">
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">修正內容</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="field" style="margin-bottom:0;">
-          <label>簽到時間</label>
-          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：18:00 -->
-          <input type="text" id="corrCheckin" placeholder="例：18:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrCheckin')">
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>簽退時間</label>
-          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：22:00 -->
-          <input type="text" id="corrCheckout" placeholder="例：22:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrCheckout')">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-        <div class="field" style="margin-bottom:0;">
-          <label>協勤次數</label>
-          <input type="number" id="corrCount" min="0" oninput="markCorrChanged(this,'corrCount')">
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>服務人次</label>
-          <input type="number" id="corrService" min="0" oninput="markCorrChanged(this,'corrService')">
-        </div>
-      </div>
-      <!-- 修正對比 -->
-      <div id="corrDiffArea" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
-        <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
-        <div id="corrDiffList"></div>
-      </div>
-      <!-- 簽名區：每格獨立一列確保手機版面不擠壓，高度 130px 方便手寫 -->
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">重新簽名</div>
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div>
-          <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽到簽名</div>
-          <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
-            <canvas id="corrSigIn" width="480" height="130" style="display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;"></canvas>
-            <div id="corrSigInHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
-          </div>
-          <button type="button" onclick="clearCorrSig('corrSigIn','corrSigInHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
-          <div style="clear:both;"></div>
-        </div>
-        <div>
-          <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽退簽名</div>
-          <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
-            <canvas id="corrSigOut" width="480" height="130" style="display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;"></canvas>
-            <div id="corrSigOutHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
-          </div>
-          <button type="button" onclick="clearCorrSig('corrSigOut','corrSigOutHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
-          <div style="clear:both;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ 協勤紀錄修正欄位 ══
-         注意：時間欄位一律使用 24 小時制（HH:MM），
-         本系統所有時間輸入/顯示皆為 24 小時制，禁止改為 12 小時制。
-         版面以手機為主（max-width:480px），欄位單欄排列，簽名欄高度 160px。
-    -->
-    <div id="corrFieldsOuting" style="display:none;">
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">修正內容</div>
-      <!-- 時間欄位：單欄排列，手機版面較舒適 -->
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
-        <div class="field" style="margin-bottom:0;">
-          <label>出勤時間</label>
-          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：07:00 -->
-          <input type="text" id="corrTimeOut" placeholder="例：07:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeOut')">
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>返勤時間</label>
-          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：12:00 -->
-          <input type="text" id="corrTimeBack" placeholder="例：12:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeBack')">
-        </div>
-      </div>
-      <div class="field">
-        <label>地址</label>
-        <input type="text" id="corrAddress" placeholder="出勤地址" oninput="markCorrChanged(this,'corrAddress')">
-      </div>
-      <div class="field">
-        <label>案件類別</label>
-        <input type="text" id="corrCaseType" placeholder="案件類別" oninput="markCorrChanged(this,'corrCaseType')">
-      </div>
-      <div class="field">
-        <label>服務項目</label>
-        <input type="text" id="corrServices" placeholder="服務項目（以、分隔）" oninput="markCorrChanged(this,'corrServices')">
-      </div>
-      <!-- 修正對比 -->
-      <div id="corrDiffAreaOuting" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
-        <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
-        <div id="corrDiffListOuting"></div>
-      </div>
-      <!-- 簽名：全寬單欄，高度 160px 方便手機手寫 -->
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">重新簽名</div>
-      <div>
-        <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽名</div>
-        <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
-          <canvas id="corrSigOuting" width="480" height="160" style="display:block;width:100%;height:160px;cursor:crosshair;touch-action:none;"></canvas>
-          <div id="corrSigOutingHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
-        </div>
-        <button type="button" onclick="clearCorrSig('corrSigOuting','corrSigOutingHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
-        <div style="clear:both;"></div>
-      </div>
-    </div>
-
-    <!-- 按鈕 -->
-    <div style="display:flex;gap:8px;margin-top:18px;">
-      <button onclick="submitCorrection()" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">送出申請</button>
-      <button onclick="document.getElementById('correctionModal').style.display='none'" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.9rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
-    </div>
-  </div>
-</div>
-
-<style>
-.corr-tag {
-  font-size: 0.76rem; padding: 4px 11px; border-radius: 20px;
-  border: 1px solid var(--border); background: transparent;
-  color: var(--text-mid); cursor: pointer; transition: all 0.15s;
-  font-family: 'Noto Sans TC', sans-serif;
-}
-.corr-tag.active {
-  background: var(--red-faint); border-color: var(--red); color: var(--red);
-}
-.corr-changed {
-  border-color: #E67E22 !important;
-  background: #FEF9F0 !important;
-}
-.corr-diff-row {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.78rem; padding: 4px 0;
-  border-bottom: 1px solid #f0e0cc;
-}
-.corr-diff-row:last-child { border-bottom: none; }
-</style>
+<!-- ══════ 申請修正：直接借用 aqEditModal / adminEditModal 外觀，送出走申請流程 ══════ -->
 
 <div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
   <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -4192,6 +4024,15 @@ function aeInitCanvas(canvasId) {
 function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return document.getElementById(id).toDataURL('image/png'); }
 function aeCanvasClear(id){ const s=_aeCtxMap[id]; if(!s)return; const cv=document.getElementById(id); if(!cv)return; s.ctx.clearRect(0,0,cv.width,cv.height); s.hasSig=false; }
 
+// 管理員刪除簽名：隱藏舊簽名圖、標記 deleted=1、清空 canvas
+function aeDeleteSig(wrapId, deletedInputId) {
+  if (!confirm('確定刪除此簽名？刪除後儲存才會生效。')) return;
+  const wrap = document.getElementById(wrapId);
+  if (wrap) wrap.style.display = 'none';
+  const flag = document.getElementById(deletedInputId);
+  if (flag) flag.value = '1';
+}
+
 function submitOutingForm() {
   // 最優先：其他案由必填檢查（靠 hidden input 判斷，不靠動態 id）
   if (document.getElementById('isOtherCaseType')?.value === '1') {
@@ -4337,7 +4178,7 @@ let allRecords = [];
 let filteredRecords = [];
 
 async function updateQueryMemberSelect() {
-  try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) {}
+  try { await Promise.all([loadMembers(), loadUnits(), loadCaseTypes()]); } catch(e) {}
 
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const isAdmin   = usr.isAdmin   || false;
@@ -5185,9 +5026,9 @@ function openAttEdit(idx) {
   document.getElementById('aqEditService').value = r.service !== undefined ? r.service : ((r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0);
   const cinPrev=document.getElementById('aqEditCheckinPrev'), cinImg=document.getElementById('aqEditCheckinPrevImg'), cinNote=document.getElementById('aqEditCheckinPrevNote');
   const coutPrev=document.getElementById('aqEditCheckoutPrev'), coutImg=document.getElementById('aqEditCheckoutPrevImg'), coutNote=document.getElementById('aqEditCheckoutPrevNote');
-  if(r.checkinSig){cinImg.src=r.checkinSig;cinPrev.style.display='block';cinNote.style.display='block';}
+  if(r.checkinSig){cinImg.src=r.checkinSig;cinPrev.style.display='block';cinNote.style.display='flex';}
   else{cinPrev.style.display='none';cinNote.style.display='none';}
-  if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='block';}
+  if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='flex';}
   else{coutPrev.style.display='none';coutNote.style.display='none';}
   document.getElementById('aqEditModal').style.display = 'flex';
   autoCalcEditHours();
@@ -6316,14 +6157,14 @@ async function adminEditAtt(id) {
     <div class="field"><label>協勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
-      ${doc.checkinSig?`<div style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <label><span>簽到簽名</span></label>
+      ${doc.checkinSig?`<div id="aeACheckinPrevWrap" style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeACheckinPrevWrap','aeACheckinDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeACheckinDeleted" value="0">`:''}
       <div class="sig-wrap"><canvas id="aeACheckinCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽退簽名</span><button type="button" onclick="aeCanvasClear('aeACheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
-      ${doc.checkoutSig?`<div style="margin-bottom:4px;"><img src="${doc.checkoutSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <label><span>簽退簽名</span></label>
+      ${doc.checkoutSig?`<div id="aeACheckoutPrevWrap" style="margin-bottom:4px;"><img src="${doc.checkoutSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeACheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeACheckoutPrevWrap','aeACheckoutDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeACheckoutDeleted" value="0">`:''}
       <div class="sig-wrap"><canvas id="aeACheckoutCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>`;
@@ -6334,6 +6175,8 @@ async function adminEditAtt(id) {
   adminEditSave=async()=>{
     try {
       const cinN=aeGetSig('aeACheckinCanvas'), coutN=aeGetSig('aeACheckoutCanvas');
+      const cinDel  = document.getElementById('aeACheckinDeleted')?.value  === '1';
+      const coutDel = document.getElementById('aeACheckoutDeleted')?.value === '1';
       await fbSet(COL_ATTEND,id,{
         date:document.getElementById('aeADate').value,
         dutyType:document.getElementById('aeADuty').value,
@@ -6343,8 +6186,8 @@ async function adminEditAtt(id) {
         hours:parseFloat(document.getElementById('aeAHours').value)||0,
         count:parseInt(document.getElementById('aeACount').value)||0,
         service:parseInt(document.getElementById('aeASvc').value)||0,
-        checkinSig:  cinN  || doc.checkinSig  || '',
-        checkoutSig: coutN || doc.checkoutSig || '',
+        checkinSig:  cinDel  ? '' : (cinN  || doc.checkinSig  || ''),
+        checkoutSig: coutDel ? '' : (coutN || doc.checkoutSig || ''),
       });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('attQueryPage')?.classList.contains('active')) await doAttQuery();
@@ -6440,8 +6283,8 @@ async function adminEditOut(id) {
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
     <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>義消簽名</span><button type="button" onclick="aeCanvasClear('aeOSigCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
-      ${doc.signature?`<div style="margin-bottom:4px;"><img src="${doc.signature}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <label><span>義消簽名</span></label>
+      ${doc.signature?`<div id="aeOSigPrevWrap" style="margin-bottom:4px;"><img src="${doc.signature}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeOSigCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeOSigPrevWrap','aeOSigDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeOSigDeleted" value="0">`:''}
       <div class="sig-wrap"><canvas id="aeOSigCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>`;
@@ -6451,6 +6294,7 @@ async function adminEditOut(id) {
   adminEditSave=async()=>{
     try {
       const sigN=aeGetSig('aeOSigCanvas');
+      const sigDel = document.getElementById('aeOSigDeleted')?.value === '1';
       await fbSet(COL_OUTING,id,{
         date:document.getElementById('aeODate').value,
         caseType:document.getElementById('aeOCaseType').value.trim(),
@@ -6461,7 +6305,7 @@ async function adminEditOut(id) {
         services:document.getElementById('aeOSvc').value.trim(),
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
-        signature: sigN || doc.signature || '',
+        signature: sigDel ? '' : (sigN || doc.signature || ''),
       });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('queryPage')?.classList.contains('active')) await doQuery();
@@ -6613,27 +6457,27 @@ async function initAdminPage() {
       if (!btn.id || !btn.id.includes('loginlog')) btn.style.display = '';
     });
   }
-  // 設定登入紀錄分隊篩選
-  if (isAdminOnly) {
-    const llUnit = document.getElementById('loginLogUnit');
-    if (llUnit) {
-      await loadUnits();
-      llUnit.innerHTML = '<option value="">— 全部分隊 —</option>' +
-        _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
-    }
-  }
-
-  await loadUnits();
-  populateUnitSelects();
-  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection()]);
-  seedChangelog_v1902(); // 自動插入 v1.9.02 版本紀錄（若尚未存在）
-
-  // 顯示並定位固定 tab bar
+  // ── tab bar 立即顯示，所有網路請求全部丟背景，不阻塞 UI ──
   _positionAdminTabBar();
-
-  // 預設高亮第一個 tab
   const firstTab = document.querySelector('.admin-tab');
   if (firstTab) firstTab.classList.add('active');
+
+  // 背景載入（不 await，不阻塞 tab bar 顯示）
+  (async () => {
+    // 設定登入紀錄分隊篩選
+    if (isAdminOnly) {
+      const llUnit = document.getElementById('loginLogUnit');
+      if (llUnit) {
+        await loadUnits();
+        llUnit.innerHTML = '<option value="">— 全部分隊 —</option>' +
+          _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+      }
+    }
+    await loadUnits();
+    populateUnitSelects();
+    await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection()]);
+    seedChangelog_v1902(); // 自動插入 v1.9.02 版本紀錄（若尚未存在）
+  })();
 
   // IntersectionObserver：滾動時自動高亮對應 tab
   if (_adminTabObserver) _adminTabObserver.disconnect();
@@ -9348,13 +9192,18 @@ async function deleteSchedule(id, date) {
 // ── 暫存原始值（用來比較修改差異）
 var _corrOriginals = {};
 
-// 自動補冒號：輸入4碼數字時自動格式化為 HH:MM（24小時制）
-function fmtCorrTime(el) {
-  let v = el.value.replace(/[^0-9]/g,'');
-  if (v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2,4);
-  el.value = v;
-}
+// ══════════════════════════════════════════════
+// 申請修正：借用 aqEditModal（簽到退）/ adminEditModal（協勤）
+// 差異只在送出按鈕：一般成員走申請流程而非直接存檔
+// ══════════════════════════════════════════════
 
+// _corrMode=true 表示目前是申請修正模式（而非直接編輯）
+var _corrMode = false;
+var _corrType = '';   // 'attendance' | 'outing'
+var _corrDocId = '';  // Firestore doc id
+var _corrOrigRecord = null; // 原始 record
+
+// 申請修正入口：data-type 按鈕呼叫
 function corrModalFromBtn(btn) {
   const type = btn.getAttribute('data-type');
   const idx  = parseInt(btn.getAttribute('data-idx'));
@@ -9362,241 +9211,165 @@ function corrModalFromBtn(btn) {
   openCorrectionModal(type, record);
 }
 
+// 開啟申請修正表單（複用既有 modal，切換到申請模式）
 function openCorrectionModal(type, record) {
-  document.getElementById('corrType').value  = type;
-  document.getElementById('corrDocId').value = record.id || '';
-  document.getElementById('corrReason').value = '';
-
-  // 重置 reason tags
-  document.querySelectorAll('.corr-tag').forEach(t => t.classList.remove('active'));
-  const firstTag = document.querySelector('.corr-tag');
-  if (firstTag) firstTag.classList.add('active');
-
-  // 原始紀錄 grid
-  const grid = document.getElementById('corrOrigGrid');
-  grid.innerHTML = '';
-  function origItem(label, val) {
-    if (val === undefined || val === null || val === '') return;
-    const d = document.createElement('div');
-    d.innerHTML = '<div style="font-size:0.7rem;color:var(--text-light);">'+label+'</div><div style="font-size:0.84rem;font-weight:600;color:var(--text);">'+(val||'—')+'</div>';
-    grid.appendChild(d);
-  }
-
-  // 隱藏兩組欄位，待下方依 type 顯示
-  document.getElementById('corrFieldsAttendance').style.display = 'none';
-  document.getElementById('corrFieldsOuting').style.display = 'none';
+  _corrMode = true;
+  _corrType = type;
+  _corrDocId = record.id || '';
+  _corrOrigRecord = record;
 
   if (type === 'attendance') {
-    const cin  = record.checkinTime  || record['簽到時間'] || '';
-    const cout = record.checkoutTime || record['簽退時間'] || '';
-    const hrs  = record.hours  !== undefined ? record.hours  : (record['協勤時數'] !== undefined ? record['協勤時數'] : '');
-    const cnt  = record.count  !== undefined ? record.count  : (record['協勤次數'] !== undefined ? record['協勤次數'] : '');
-    const svc  = record.service !== undefined ? record.service : (record['服務人次'] !== undefined ? record['服務人次'] : '');
-
-    origItem('日期',     record.date || '');
-    origItem('義消',     record.memberName || record['姓名'] || '');
-    origItem('簽到',     cin);
-    origItem('簽退',     cout);
-    origItem('協勤時數', hrs !== '' ? hrs + ' 小時' : '');
-    origItem('協勤次數', cnt !== '' ? cnt + ' 次' : '');
-    origItem('服務人次', svc !== '' ? svc + ' 人' : '');
-
-    _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
-
-    document.getElementById('corrCheckin').value  = cin;
-    document.getElementById('corrCheckout').value = cout;
-    document.getElementById('corrCount').value    = cnt;
-    document.getElementById('corrService').value  = svc;
-    ['corrCheckin','corrCheckout','corrCount','corrService'].forEach(id => {
-      document.getElementById(id).classList.remove('corr-changed');
-    });
-    document.getElementById('corrDiffArea').style.display = 'none';
-    document.getElementById('corrFieldsAttendance').style.display = 'block';
-    clearCorrSig('corrSigIn','corrSigInHint');
-    clearCorrSig('corrSigOut','corrSigOutHint');
-    initCorrCanvas('corrSigIn','corrSigInHint');
-    initCorrCanvas('corrSigOut','corrSigOutHint');
+    // 借用 aqEditModal：先用 openAttEdit 填入資料，再切換按鈕
+    // 找到 record 在 aqFiltered 中的 index
+    let idx = aqFiltered.findIndex(r => r.id === record.id);
+    if (idx === -1) {
+      // 不在 filtered 裡，手動推入
+      aqFiltered.push(record);
+      idx = aqFiltered.length - 1;
+    }
+    openAttEdit(idx);
+    // 切換標題與按鈕文字
+    const modal = document.getElementById('aqEditModal');
+    const h3 = modal.querySelector('h3');
+    if (h3) h3.textContent = '申請修正－簽到退紀錄';
+    const btn = document.getElementById('aqEditSaveBtn');
+    if (btn) btn.textContent = '送出申請';
 
   } else {
-    origItem('日期',     record.date || '');
-    origItem('義消',     record.memberName || '');
-    origItem('出勤',     record.timeOut || '');
-    origItem('返勤',     record.timeBack || '');
-    origItem('行政區',   record.district || '');
-    origItem('地址',     record.address || '');
-    origItem('案件類別', record.caseType || '');
-
-    _corrOriginals = {
-      corrTimeOut:  record.timeOut  || '',
-      corrTimeBack: record.timeBack || '',
-      corrAddress:  record.address  || '',
-      corrCaseType: record.caseType || '',
-      corrServices: record.services || '',
-    };
-
-    document.getElementById('corrTimeOut').value   = record.timeOut  || '';
-    document.getElementById('corrTimeBack').value  = record.timeBack || '';
-    document.getElementById('corrAddress').value   = record.address  || '';
-    document.getElementById('corrCaseType').value  = record.caseType || '';
-    document.getElementById('corrServices').value  = record.services || '';
-    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'].forEach(id => {
-      document.getElementById(id).classList.remove('corr-changed');
+    // 借用 adminEditModal：呼叫 adminEditOut 填入資料，再切換按鈕
+    adminEditOut(record.id).then(() => {
+      document.getElementById('adminEditTitle').textContent = '申請修正－協勤紀錄';
+      const btn = document.getElementById('adminEditSaveBtn');
+      if (btn) btn.textContent = '送出申請';
     });
-    document.getElementById('corrDiffAreaOuting').style.display = 'none';
-    document.getElementById('corrFieldsOuting').style.display = 'block';
-    clearCorrSig('corrSigOuting','corrSigOutingHint');
-    initCorrCanvas('corrSigOuting','corrSigOutingHint');
   }
-
-  document.getElementById('correctionModal').style.display = 'flex';
 }
 
-function toggleCorrTag(el) {
-  el.classList.toggle('active');
-}
-
-function markCorrChanged(el, id) {
-  const orig = _corrOriginals[id] !== undefined ? String(_corrOriginals[id]) : '';
-  el.classList.toggle('corr-changed', el.value !== orig);
-  updateCorrDiff();
-}
-
-function updateCorrDiff() {
-  const type = document.getElementById('corrType').value;
-  if (type === 'attendance') {
-    const ids = ['corrCheckin','corrCheckout','corrCount','corrService'];
-    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'協勤次數', corrService:'服務人次' };
-    const diffs = ids.filter(id => {
-      const el = document.getElementById(id);
-      return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
-    });
-    const area = document.getElementById('corrDiffArea');
-    const list = document.getElementById('corrDiffList');
-    if (!diffs.length) { area.style.display = 'none'; return; }
-    area.style.display = 'block';
-    list.innerHTML = diffs.map(id => {
-      const el = document.getElementById(id);
-      return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
-    }).join('');
+// aqEditModal 儲存按鈕統一入口
+function aqEditSaveBtnClick() {
+  if (_corrMode && _corrType === 'attendance') {
+    submitCorrectionFromAqEdit();
   } else {
-    const ids = ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'];
-    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返勤時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目' };
-    const diffs = ids.filter(id => {
-      const el = document.getElementById(id);
-      return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
-    });
-    const area = document.getElementById('corrDiffAreaOuting');
-    const list = document.getElementById('corrDiffListOuting');
-    if (!diffs.length) { area.style.display = 'none'; return; }
-    area.style.display = 'block';
-    list.innerHTML = diffs.map(id => {
-      const el = document.getElementById(id);
-      return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
-    }).join('');
+    saveAttEdit();
   }
 }
 
-var _corrCanvasInited = {};
-function initCorrCanvas(canvasId, hintId) {
-  if (_corrCanvasInited[canvasId]) return;
-  _corrCanvasInited[canvasId] = true;
-  const canvas = document.getElementById(canvasId);
-  const hint   = document.getElementById(hintId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let drawing = false;
-  let hasSig = false;
-
-  function getPos(e) {
-    const r = canvas.getBoundingClientRect();
-    const sx = canvas.width / canvas.offsetWidth;
-    const sy = canvas.height / canvas.offsetHeight;
-    const src = e.touches ? e.touches[0] : e;
-    return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+// adminEditModal 儲存按鈕統一入口
+function adminEditSaveBtnClick() {
+  if (_corrMode && _corrType === 'outing') {
+    submitCorrectionFromAdminEdit();
+  } else {
+    adminEditSave();
   }
-  ctx.strokeStyle = '#1e1a17'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-
-  canvas.addEventListener('mousedown', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (!hasSig) { hasSig = true; if (hint) hint.style.opacity = '0'; } });
-  canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-  canvas.addEventListener('mouseup',   () => drawing = false);
-  canvas.addEventListener('mouseleave',() => drawing = false);
-  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (!hasSig) { hasSig = true; if (hint) hint.style.opacity = '0'; } }, { passive: false });
-  canvas.addEventListener('touchmove',  e => { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, { passive: false });
-  canvas.addEventListener('touchend',   () => drawing = false);
 }
 
-function clearCorrSig(canvasId, hintId) {
-  _corrCanvasInited[canvasId] = false;
-  const canvas = document.getElementById(canvasId);
-  const hint   = document.getElementById(hintId);
-  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-  if (hint) hint.style.opacity = '1';
-}
-
-function getCorrSigData(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return '';
-  const ctx = canvas.getContext('2d');
-  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  const hasContent = Array.from(px).some((v, i) => i % 4 === 3 && v > 0);
-  return hasContent ? canvas.toDataURL('image/png') : '';
-}
-
-async function submitCorrection() {
-  const type  = document.getElementById('corrType').value;
-  const docId = document.getElementById('corrDocId').value;
-  const reason = document.getElementById('corrReason').value.trim();
-  const reasonTags = Array.from(document.querySelectorAll('.corr-tag.active')).map(t => t.textContent).join('、');
-
+// 從 aqEditModal 送出簽到退申請
+async function submitCorrectionFromAqEdit() {
   const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const orig = _corrOrigRecord || {};
 
-  // 收集修改後的欄位（只送有異動的）
-  let correctedFields = {};
-  let hasDiff = false;
+  // 收集修改後欄位
+  const newCheckin  = document.getElementById('aqEditCheckin')?.value || '';
+  const newCheckout = document.getElementById('aqEditCheckout')?.value || '';
+  const newHours    = parseFloat(document.getElementById('aqEditHours')?.value) || 0;
+  const newCount    = parseInt(document.getElementById('aqEditCount')?.value) || 0;
+  const newService  = parseInt(document.getElementById('aqEditService')?.value) || 0;
+  const newDuty     = document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤';
+  const cinNew      = aeGetSig('aqEditCheckinCanvas');
+  const coutNew     = aeGetSig('aqEditCheckoutCanvas');
 
-  if (type === 'attendance') {
-    const ids = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service' };
-    for (const [elId, field] of Object.entries(ids)) {
-      const el = document.getElementById(elId);
-      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
-        correctedFields[field] = el.value;
-        hasDiff = true;
-      }
-    }
-    const sigIn  = getCorrSigData('corrSigIn');
-    const sigOut = getCorrSigData('corrSigOut');
-    if (sigIn)  { correctedFields.checkinSig  = sigIn;  hasDiff = true; }
-    if (sigOut) { correctedFields.checkoutSig = sigOut; hasDiff = true; }
-  } else {
-    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services' };
-    for (const [elId, field] of Object.entries(ids)) {
-      const el = document.getElementById(elId);
-      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
-        correctedFields[field] = el.value;
-        hasDiff = true;
-      }
-    }
-    const sigOuting = getCorrSigData('corrSigOuting');
-    if (sigOuting) { correctedFields.signature = sigOuting; hasDiff = true; }
-  }
+  const correctedFields = {
+    dutyType:    newDuty,
+    checkinTime: newCheckin,
+    checkoutTime:newCheckout,
+    hours:       newHours,
+    count:       newCount,
+    service:     newService,
+    checkinSig:  cinNew  || orig.checkinSig  || '',
+    checkoutSig: coutNew || orig.checkoutSig || '',
+  };
 
-  if (!hasDiff && !reason && !reasonTags) {
-    alert('請至少修改一個欄位或簽名後再送出'); return;
-  }
+  const originals = {
+    dutyType:    orig.dutyType    || '',
+    checkinTime: orig.checkinTime || '',
+    checkoutTime:orig.checkoutTime|| '',
+    hours:       orig.hours       || 0,
+    count:       orig.count       || 0,
+    service:     orig.service     || 0,
+  };
 
   try {
     await fbAdd(COL_CORRECTION, {
-      type,
-      docId,
-      reasonTags,
-      reason,
+      type:           'attendance',
+      docId:          _corrDocId,
+      memberName:     orig.memberName || '',
+      date:           orig.date || '',
       correctedFields,
-      originals: _corrOriginals,
-      status:      'pending',
-      submittedBy: usr.memberName || usr.name || '',
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      originals,
+      status:         'pending',
+      submittedBy:    usr.memberName || usr.name || '',
+      submittedAt:    firebase.firestore.FieldValue.serverTimestamp(),
     });
-    document.getElementById('correctionModal').style.display = 'none';
+    _corrMode = false;
+    document.getElementById('aqEditModal').style.display = 'none';
+    // 還原按鈕文字
+    const h3 = document.querySelector('#aqEditModal h3');
+    if (h3) h3.textContent = '編輯紀錄';
+    const btn = document.getElementById('aqEditSaveBtn');
+    if (btn) btn.textContent = '儲存';
+    alert('✅ 申請已送出，承辦人審核後會修改資料。');
+  } catch(e) { alert('送出失敗：' + e.message); }
+}
+
+// 從 adminEditModal 送出協勤申請
+async function submitCorrectionFromAdminEdit() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const orig = _corrOrigRecord || {};
+
+  const sigN = aeGetSig('aeOSigCanvas');
+  const correctedFields = {
+    date:       document.getElementById('aeODate')?.value || '',
+    caseType:   document.getElementById('aeOCaseType')?.value.trim() || '',
+    timeOut:    document.getElementById('aeOOut')?.value || '',
+    timeBack:   document.getElementById('aeOBack')?.value || '',
+    district:   document.getElementById('aeODist')?.value.trim() || '',
+    address:    document.getElementById('aeOAddr')?.value.trim() || '',
+    services:   document.getElementById('aeOSvc')?.value.trim() || '',
+    note:       document.getElementById('aeONote')?.value.trim() || '',
+    memberName: document.getElementById('aeOName')?.value.trim() || '',
+    signature:  sigN || orig.signature || '',
+  };
+
+  const originals = {
+    date:       orig.date       || '',
+    caseType:   orig.caseType   || '',
+    timeOut:    orig.timeOut    || '',
+    timeBack:   orig.timeBack   || '',
+    district:   orig.district   || '',
+    address:    orig.address    || '',
+    services:   orig.services   || '',
+    note:       orig.note       || '',
+    memberName: orig.memberName || '',
+  };
+
+  try {
+    await fbAdd(COL_CORRECTION, {
+      type:           'outing',
+      docId:          _corrDocId,
+      memberName:     orig.memberName || '',
+      date:           orig.date || '',
+      correctedFields,
+      originals,
+      status:         'pending',
+      submittedBy:    usr.memberName || usr.name || '',
+      submittedAt:    firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    _corrMode = false;
+    document.getElementById('adminEditModal').style.display = 'none';
+    // 還原標題與按鈕
+    document.getElementById('adminEditTitle').textContent = '編輯資料';
+    const btn = document.getElementById('adminEditSaveBtn');
+    if (btn) btn.textContent = '儲　存';
     alert('✅ 申請已送出，承辦人審核後會修改資料。');
   } catch(e) { alert('送出失敗：' + e.message); }
 }
@@ -9683,14 +9456,69 @@ async function handleCorrection(corrId, docId, type, action) {
       status: action,
       handledAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+
     if (action === 'approved' && docId) {
-      // 跳到對應編輯介面
+      // 取得申請單中成員填寫的 correctedFields（含簽名）
+      const corrDoc = await fbGet(COL_CORRECTION, corrId);
+      const fields = corrDoc?.correctedFields || {};
+
+      // 輔助函式：把 base64 簽名畫到 canvas，並設 hasSig=true 讓 aeGetSig 能取得
+      function drawSigToCanvas(canvasId, base64) {
+        if (!base64) return;
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const img = new Image();
+        img.onload = () => {
+          const ctx = canvas.getContext('2d');
+          // aeInitCanvas 用 devicePixelRatio 縮放，drawImage 要用 CSS 尺寸
+          const ratio = window.devicePixelRatio || 1;
+          const w = canvas.width / ratio;
+          const h = canvas.height / ratio;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, w, h);
+          // 讓 aeGetSig 能取得這個簽名
+          if (_aeCtxMap[canvasId]) _aeCtxMap[canvasId].hasSig = true;
+        };
+        img.src = base64;
+      }
+
       if (type === 'outing') {
-        adminEditOut(docId);
+        // adminEditOut 內部有 setTimeout(aeInitCanvas, 50)
+        // 所以我們要在 aeInitCanvas 執行後才 drawImage → 用 150ms 確保順序正確
+        await adminEditOut(docId);
+        setTimeout(() => {
+          if (fields.date)       { const el=document.getElementById('aeODate');      if(el) el.value=fields.date; }
+          if (fields.caseType)   { const el=document.getElementById('aeOCaseType');  if(el) el.value=fields.caseType; }
+          if (fields.timeOut)    { const el=document.getElementById('aeOOut');       if(el) el.value=fields.timeOut; }
+          if (fields.timeBack)   { const el=document.getElementById('aeOBack');      if(el) el.value=fields.timeBack; }
+          if (fields.district)   { const el=document.getElementById('aeODist');      if(el) el.value=fields.district; }
+          if (fields.address)    { const el=document.getElementById('aeOAddr');      if(el) el.value=fields.address; }
+          if (fields.services)   { const el=document.getElementById('aeOSvc');       if(el) el.value=fields.services; }
+          if (fields.note)       { const el=document.getElementById('aeONote');      if(el) el.value=fields.note; }
+          if (fields.memberName) { const el=document.getElementById('aeOName');      if(el) el.value=fields.memberName; }
+          // 簽名：aeInitCanvas 已在 50ms 執行完，這裡 150ms 後畫入並設 hasSig=true
+          drawSigToCanvas('aeOSigCanvas', fields.signature);
+          document.getElementById('adminEditTitle').textContent = '核准修正－協勤紀錄（請確認後儲存）';
+        }, 150);
+
       } else {
-        adminEditAtt(docId);
+        // adminEditAtt 內部也有 setTimeout(aeInitCanvas, 50)
+        await adminEditAtt(docId);
+        setTimeout(() => {
+          if (fields.checkinTime)            { const el=document.getElementById('aeAIn');    if(el) el.value=fields.checkinTime; }
+          if (fields.checkoutTime)           { const el=document.getElementById('aeAOut');   if(el) el.value=fields.checkoutTime; }
+          if (fields.hours   !== undefined)  { const el=document.getElementById('aeAHours'); if(el) el.value=fields.hours; }
+          if (fields.count   !== undefined)  { const el=document.getElementById('aeACount'); if(el) el.value=fields.count; }
+          if (fields.service !== undefined)  { const el=document.getElementById('aeASvc');   if(el) el.value=fields.service; }
+          if (fields.dutyType) { const el=document.getElementById('aeADuty'); if(el) el.value=fields.dutyType; }
+          // 簽名：aeInitCanvas 已在 50ms 執行完，這裡 150ms 後畫入並設 hasSig=true
+          drawSigToCanvas('aeACheckinCanvas',  fields.checkinSig);
+          drawSigToCanvas('aeACheckoutCanvas', fields.checkoutSig);
+          document.getElementById('adminEditTitle').textContent = '核准修正－簽到退紀錄（請確認後儲存）';
+        }, 150);
       }
     }
+
     await loadAdminCorrections();
   } catch(e) { alert('操作失敗：' + e.message); }
 }
