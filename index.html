@@ -824,8 +824,6 @@ function _dlCSV(content, filename) {
 
 <div id="appScroll">
 
-</div>
-
 <!-- ══════ PAGE 0：儀表板 ══════ -->
 <div class="page active" id="dashboardPage">
   <div class="form-wrap">
@@ -965,7 +963,7 @@ function _dlCSV(content, filename) {
         <div class="easy-name" id="formEasyGreetName">您好</div>
         <div class="easy-date" id="formEasyGreetDate"></div>
       </div>
-      <div class="easy-form-card" id="easyOutingCard">
+      <div class="easy-form-card" id="easyOutingCard" style="display:none;">
         <div class="easy-form-title">📋 協勤案件登錄</div>
         <div class="field">
           <label>協勤日期</label>
@@ -1348,7 +1346,7 @@ function _dlCSV(content, filename) {
         <div class="easy-name" id="attEasyGreetName">您好</div>
         <div class="easy-date" id="attEasyGreetDate"></div>
       </div>
-      <div class="easy-btn-wrap" id="attEasyMainBtns">
+      <div class="easy-btn-wrap" id="easyMainBtns">
         <button class="easy-big-btn checkin-btn" onclick="easyShowCheckin()">
           <span class="easy-icon">✅</span>
           <span>簽　到</span>
@@ -8342,11 +8340,8 @@ function _easyBuildCaseTypeGrid() {
 }
 
 function easyShowOuting() {
-  document.getElementById('easyMainBtns').style.display = 'none';
-  document.getElementById('easyCheckinCard').classList.remove('show');
-  document.getElementById('easyCheckoutList').style.display = 'none';
-  document.getElementById('easyCheckoutCard').classList.remove('show');
-  document.getElementById('easyOutingCard').classList.add('show');
+  // formPage 簡易模式：直接顯示協勤卡片（不需操作 attEasySection 的元素）
+  document.getElementById('easyOutingCard').style.display = 'block';
 
   // 填今日日期和時間
   const now = new Date();
@@ -8377,7 +8372,7 @@ function easyShowOuting() {
   // 確保案由已載入（若還沒載入就先載）
   if (!_caseTypesList.length) {
     loadCaseTypes().then(() => {
-      if (document.getElementById('easyOutingCard').classList.contains('show')) {
+      if (document.getElementById('easyOutingCard').style.display !== 'none') {
         _easyBuildCaseTypeGrid();
       }
     });
