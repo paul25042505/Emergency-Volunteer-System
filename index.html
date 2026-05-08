@@ -57,16 +57,7 @@ body {
 .page.active { display: block; }
 
 
-/* ── 簡易模式切換按鈕 ── */
-#easyModeToggle {
-  position: fixed; bottom: 80px; right: 16px; z-index: 300;
-  background: var(--red); color: white; border: none; border-radius: 50px;
-  padding: 10px 16px; font-size: 0.82rem; font-family: 'Noto Sans TC', sans-serif;
-  font-weight: 600; letter-spacing: 0.05em; cursor: pointer;
-  box-shadow: 0 4px 16px rgba(192,57,43,0.4); display: none;
-  transition: background 0.15s, transform 0.15s;
-}
-#easyModeToggle:hover { background: var(--red-dark); transform: scale(1.05); }
+/* ── 簡易模式樣式（in-page，內嵌於各頁面）── */
 .easy-greeting { text-align: center; margin-bottom: 28px; }
 .easy-greeting .easy-name { font-family: "Noto Serif TC", serif; font-size: 1.5rem; font-weight: 700; color: var(--text); letter-spacing: 0.08em; }
 .easy-greeting .easy-date { font-size: 1rem; color: var(--text-mid); margin-top: 6px; letter-spacing: 0.05em; }
@@ -833,166 +824,6 @@ function _dlCSV(content, filename) {
 
 <div id="appScroll">
 
-<!-- ══════ 簡易模式頁面 ══════ -->
-<div id="easyModePage">
-  <div class="easy-greeting">
-    <div class="easy-name" id="easyGreetName">您好</div>
-    <div class="easy-date" id="easyGreetDate"></div>
-  </div>
-
-  <!-- 兩個大按鈕 -->
-  <div class="easy-btn-wrap" id="easyMainBtns">
-    <button class="easy-big-btn checkin-btn" onclick="easyShowCheckin()">
-      <span class="easy-icon">✅</span>
-      <span>簽　到</span>
-      <span class="easy-hint">出勤開始時點此</span>
-    </button>
-    <button class="easy-big-btn checkout-btn" onclick="easyShowCheckout()">
-      <span class="easy-icon">🏠</span>
-      <span>簽　退</span>
-      <span class="easy-hint">結束出勤時點此</span>
-    </button>
-    <button class="easy-big-btn outing-btn" onclick="easyShowOuting()">
-      <span class="easy-icon">📋</span>
-      <span>協勤登錄</span>
-      <span class="easy-hint">協勤案件結束後填寫</span>
-    </button>
-  </div>
-
-  <!-- 簽到表單 -->
-  <div class="easy-form-card" id="easyCheckinCard">
-    <div class="easy-form-title">✅ 簽到登錄</div>
-    <div class="field">
-      <label>分隊別</label>
-      <select id="easyUnitSel" onchange="easyFilterMembers()">
-        <option value="">請選擇分隊</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>義消成員</label>
-      <select id="easyMemberSel">
-        <option value="">— 請先選擇分隊 —</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>簽到時間</label>
-      <select id="easyCheckinTime"></select>
-    </div>
-    <div class="field">
-      <label>簽到簽名</label>
-      <div class="sig-wrap">
-        <canvas id="easyCheckinCanvas"></canvas>
-        <div class="sig-footer">
-          <span>請用手指在上方簽名</span>
-          <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
-        </div>
-      </div>
-    </div>
-    <button class="easy-submit-btn do-checkin" onclick="easyDoCheckin()">確認簽到</button>
-    <button class="easy-cancel-btn" onclick="easyBack()">← 返回</button>
-  </div>
-
-  <!-- 簽退：先選人 -->
-  <div class="easy-checkout-list" id="easyCheckoutList" style="display:none;">
-    <div style="text-align:center;font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:0.06em;">
-      🏠 請選擇要簽退的成員
-    </div>
-    <div id="easyCheckoutItems"></div>
-    <button class="easy-cancel-btn" style="max-width:420px;display:block;margin:0 auto;" onclick="easyBack()">← 返回</button>
-  </div>
-
-  <!-- 簽退表單 -->
-  <div class="easy-form-card" id="easyCheckoutCard">
-    <div class="easy-form-title">🏠 簽退登錄</div>
-    <div style="text-align:center;font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:16px;" id="easyCheckoutName"></div>
-    <div class="field">
-      <label>簽到時間</label>
-      <div id="easyCheckinRef" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);"></div>
-    </div>
-    <div class="field">
-      <label>簽退時間</label>
-      <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
-    </div>
-    <div class="field">
-      <label>簽退簽名</label>
-      <div class="sig-wrap">
-        <canvas id="easyCheckoutCanvas"></canvas>
-        <div class="sig-footer">
-          <span>請用手指在上方簽名</span>
-          <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
-        </div>
-      </div>
-    </div>
-    <button class="easy-submit-btn do-checkout" onclick="easyDoCheckout()">確認簽退</button>
-    <button class="easy-cancel-btn" onclick="easyBackToCheckoutList()">← 返回選人</button>
-  </div>
-
-  <!-- 協勤登錄表單 -->
-  <div class="easy-form-card" id="easyOutingCard">
-    <div class="easy-form-title">📋 協勤案件登錄</div>
-    <div class="field">
-      <label>協勤日期</label>
-      <input type="date" id="easyOutingDate">
-    </div>
-    <div class="field">
-      <label>出發時間 ～ 返隊時間</label>
-      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
-        <input type="time" id="easyOutingTimeOut">
-        <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
-        <input type="time" id="easyOutingTimeBack">
-      </div>
-    </div>
-    <div class="field">
-      <label>行政區</label>
-      <select id="easyOutingDistrict">
-        <option value="">— 請選擇區域 —</option>
-        <option value="臺中市潭子區">臺中市潭子區</option>
-        <option value="臺中市豐原區">臺中市豐原區</option>
-        <option value="臺中市神岡區">臺中市神岡區</option>
-        <option value="臺中市大雅區">臺中市大雅區</option>
-        <option value="臺中市北屯區">臺中市北屯區</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>詳細地址</label>
-      <input type="text" id="easyOutingAddress" placeholder="路名、號碼或地標">
-    </div>
-    <div class="field">
-      <label>案由 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案由填寫</span></label>
-      <div id="easyCaseTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:4px;"></div>
-      <div id="easyCaseTypeOtherField" style="display:none;margin-top:8px;">
-        <input type="text" id="easyCaseTypeOther" placeholder="請填寫實際案由"
-          style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
-      </div>
-    </div>
-    <div class="field">
-      <label>服務項目（可複選）</label>
-      <div id="easyServiceGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
-    </div>
-    <div class="field">
-      <label>義消姓名</label>
-      <select id="easyOutingUnitSel" onchange="easyOutingFilterMembers()" style="margin-bottom:10px;">
-        <option value="">請選擇分隊</option>
-      </select>
-      <select id="easyOutingMemberSel">
-        <option value="">— 請先選擇分隊 —</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>義消簽名</label>
-      <div class="sig-wrap">
-        <canvas id="easyOutingCanvas"></canvas>
-        <div class="sig-footer">
-          <span>請用手指在上方簽名</span>
-          <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
-        </div>
-      </div>
-    </div>
-    <button class="easy-submit-btn" style="background:var(--red);" onclick="easyDoOuting()">送出協勤紀錄</button>
-    <button class="easy-cancel-btn" onclick="easyBack()">← 返回</button>
-  </div>
-
-
 </div>
 
 <!-- ══════ PAGE 0：儀表板 ══════ -->
@@ -1124,6 +955,79 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE 1：協勤案件登錄 ══════ -->
 <div class="page" id="formPage">
   <div class="form-wrap">
+    <!-- 簡易模式切換按鈕 -->
+    <div style="text-align:right;margin-bottom:12px;">
+      <button id="formEasyBtn" onclick="toggleFormEasyMode()" style="background:var(--red);color:white;border:none;border-radius:50px;padding:9px 18px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;letter-spacing:0.05em;cursor:pointer;box-shadow:0 4px 12px rgba(192,57,43,0.3);">👴 簡易模式</button>
+    </div>
+    <!-- 簡易模式協勤區塊 -->
+    <div id="formEasySection" style="display:none;">
+      <div class="easy-greeting">
+        <div class="easy-name" id="formEasyGreetName">您好</div>
+        <div class="easy-date" id="formEasyGreetDate"></div>
+      </div>
+      <div class="easy-form-card" id="easyOutingCard">
+        <div class="easy-form-title">📋 協勤案件登錄</div>
+        <div class="field">
+          <label>協勤日期</label>
+          <input type="date" id="easyOutingDate">
+        </div>
+        <div class="field">
+          <label>出發時間 ～ 返隊時間</label>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
+            <input type="time" id="easyOutingTimeOut">
+            <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
+            <input type="time" id="easyOutingTimeBack">
+          </div>
+        </div>
+        <div class="field">
+          <label>行政區</label>
+          <select id="easyOutingDistrict">
+            <option value="">— 請選擇區域 —</option>
+            <option value="臺中市潭子區">臺中市潭子區</option>
+            <option value="臺中市豐原區">臺中市豐原區</option>
+            <option value="臺中市神岡區">臺中市神岡區</option>
+            <option value="臺中市大雅區">臺中市大雅區</option>
+            <option value="臺中市北屯區">臺中市北屯區</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>詳細地址</label>
+          <input type="text" id="easyOutingAddress" placeholder="路名、號碼或地標">
+        </div>
+        <div class="field">
+          <label>案由 <span class="req">*</span></label>
+          <div id="easyCaseTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:4px;"></div>
+          <div id="easyCaseTypeOtherField" style="display:none;margin-top:8px;">
+            <input type="text" id="easyCaseTypeOther" placeholder="請填寫實際案由"
+              style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
+          </div>
+        </div>
+        <div class="field">
+          <label>服務項目（可複選）</label>
+          <div id="easyServiceGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
+        </div>
+        <div class="field">
+          <label>義消姓名</label>
+          <select id="easyOutingUnitSel" onchange="easyOutingFilterMembers()" style="margin-bottom:10px;">
+            <option value="">請選擇分隊</option>
+          </select>
+          <select id="easyOutingMemberSel">
+            <option value="">— 請先選擇分隊 —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>義消簽名</label>
+          <div class="sig-wrap">
+            <canvas id="easyOutingCanvas"></canvas>
+            <div class="sig-footer">
+              <span>請用手指在上方簽名</span>
+              <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
+            </div>
+          </div>
+        </div>
+        <button class="easy-submit-btn" style="background:var(--red);" onclick="easyDoOuting()">送出協勤紀錄</button>
+      </div>
+    </div>
     <form id="recordForm" novalidate>
       <div class="section">
         <div class="section-head">
@@ -1434,6 +1338,108 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE 4：簽到簽退 ══════ -->
 <div class="page" id="attendancePage">
   <div class="attendance-wrap">
+    <!-- 簡易模式切換按鈕 -->
+    <div style="text-align:right;margin-bottom:12px;">
+      <button id="attEasyBtn" onclick="toggleAttEasyMode()" style="background:var(--red);color:white;border:none;border-radius:50px;padding:9px 18px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;letter-spacing:0.05em;cursor:pointer;box-shadow:0 4px 12px rgba(192,57,43,0.3);">👴 簡易模式</button>
+    </div>
+    <!-- 簡易模式簽到退區塊 -->
+    <div id="attEasySection" style="display:none;">
+      <div class="easy-greeting">
+        <div class="easy-name" id="attEasyGreetName">您好</div>
+        <div class="easy-date" id="attEasyGreetDate"></div>
+      </div>
+      <div class="easy-btn-wrap" id="attEasyMainBtns">
+        <button class="easy-big-btn checkin-btn" onclick="easyShowCheckin()">
+          <span class="easy-icon">✅</span>
+          <span>簽　到</span>
+          <span class="easy-hint">出勤開始時點此</span>
+        </button>
+        <button class="easy-big-btn checkout-btn" onclick="easyShowCheckout()">
+          <span class="easy-icon">🏠</span>
+          <span>簽　退</span>
+          <span class="easy-hint">結束出勤時點此</span>
+        </button>
+      </div>
+      <!-- 簽到表單 -->
+      <div class="easy-form-card" id="easyCheckinCard" style="display:none;">
+        <div class="easy-form-title">✅ 簽到登錄</div>
+        <div class="field">
+          <label>分隊別</label>
+          <select id="easyUnitSel" onchange="easyFilterMembers()">
+            <option value="">請選擇分隊</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>義消成員</label>
+          <select id="easyMemberSel">
+            <option value="">— 請先選擇分隊 —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>簽到時間</label>
+          <select id="easyCheckinTime"></select>
+        </div>
+        <div class="field">
+          <label>簽到簽名</label>
+          <div class="sig-wrap">
+            <canvas id="easyCheckinCanvas"></canvas>
+            <div class="sig-footer">
+              <span>請用手指在上方簽名</span>
+              <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
+            </div>
+          </div>
+        </div>
+        <button class="easy-submit-btn do-checkin" onclick="easyDoCheckin()">確認簽到</button>
+        <button class="easy-cancel-btn" onclick="easyBack()">← 返回</button>
+      </div>
+      <!-- 簽退：先選人 -->
+      <div class="easy-checkout-list" id="easyCheckoutList" style="display:none;">
+        <div style="text-align:center;font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:0.06em;">
+          🏠 請選擇要簽退的成員
+        </div>
+        <div id="easyCheckoutItems"></div>
+        <button class="easy-cancel-btn" style="max-width:420px;display:block;margin:0 auto;" onclick="easyBack()">← 返回</button>
+      </div>
+      <!-- 簽退表單 -->
+      <div class="easy-form-card" id="easyCheckoutCard" style="display:none;">
+        <div class="easy-form-title">🏠 簽退登錄</div>
+        <div style="text-align:center;font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:16px;" id="easyCheckoutName"></div>
+        <div class="field">
+          <label>簽到時間</label>
+          <div id="easyCheckinRef" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);"></div>
+        </div>
+        <div class="field">
+          <label>簽退時間</label>
+          <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>協勤時數</label>
+            <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>協勤次數</label>
+            <div style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>服務人次</label>
+            <input type="number" id="easyServiceCount" min="0" value="0" style="font-size:1rem;text-align:center;">
+          </div>
+        </div>
+        <div class="field">
+          <label>簽退簽名</label>
+          <div class="sig-wrap">
+            <canvas id="easyCheckoutCanvas"></canvas>
+            <div class="sig-footer">
+              <span>請用手指在上方簽名</span>
+              <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
+            </div>
+          </div>
+        </div>
+        <button class="easy-submit-btn do-checkout" onclick="easyDoCheckout()">確認簽退</button>
+        <button class="easy-cancel-btn" onclick="easyBackToCheckoutList()">← 返回選人</button>
+      </div>
+    </div>
     <div id="attMain" style="display:block;">
       <div class="section">
         <div class="section-head">
@@ -3381,13 +3387,8 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   setTimeout(checkCertExpiry, 1500);
   setTimeout(checkPWAPrompts, 4000);
 
-  // 顯示簡易模式切換按鈕（所有人皆可使用）
-  var easyBtn = document.getElementById('easyModeToggle');
-  if (easyBtn) easyBtn.style.display = 'block';
-  // 確保簡易模式頁面隱藏，回到一般模式
-  _easyMode = false;
-  var easyPage = document.getElementById('easyModePage');
-  if (easyPage) easyPage.style.display = 'none';
+  // 簡易模式已內嵌於各頁面，無需全域按鈕
+  // 確保簡易模式關閉
 
   // 登入後根據 hash 決定顯示哪個頁面
   const hashPage   = location.hash.replace('#', '');
@@ -3610,8 +3611,10 @@ function buildTimeOptions(selId, selectedVal) {
   const sel = document.getElementById(selId);
   if (!sel) return;
   sel.innerHTML = '';
-  for (let h = 0; h < 24; h++) {
+  // 簽到退時間限制 06:00 ~ 23:00
+  for (let h = 6; h <= 23; h++) {
     for (let m of [0, 15, 30, 45]) {
+      if (h === 23 && m > 0) continue; // 23:00 為最後一個選項
       const val = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
       const opt = document.createElement('option');
       opt.value = val;
@@ -8022,47 +8025,64 @@ async function devLoadUnits() {
 
 
 // ════════════════════════════════════════
-// 簡易模式
+// 簡易模式（in-page，內嵌於各頁面最上方）
 // ════════════════════════════════════════
-let _easyMode = false;
 let _easyCheckinCtx = null;
 let _easyCheckoutCtx = null;
 let _easyCheckinHasSig = false;
 let _easyCheckoutHasSig = false;
 let _easyCheckoutTarget = null;
 
-function toggleEasyMode() {
-  _easyMode = !_easyMode;
-  localStorage.setItem('easyMode', _easyMode ? '1' : '0');
-  applyEasyMode();
+// ── 簽到退頁面的簡易模式切換 ──
+function toggleAttEasyMode() {
+  const sec = document.getElementById('attEasySection');
+  const main = document.getElementById('attMain');
+  const btn = document.getElementById('attEasyBtn');
+  const isOpen = sec.style.display !== 'none';
+  if (isOpen) {
+    sec.style.display = 'none';
+    main.style.display = 'block';
+    btn.textContent = '👴 簡易模式';
+  } else {
+    sec.style.display = 'block';
+    main.style.display = 'none';
+    btn.textContent = '← 一般模式';
+    _easyFillGreeting('attEasyGreetName', 'attEasyGreetDate');
+    easyBack();
+    easyInitUnits();
+  }
 }
 
-function applyEasyMode() {
-  const btn = document.getElementById('easyModeToggle');
-  const easyPage = document.getElementById('easyModePage');
-  if (_easyMode) {
-    // 隱藏所有一般頁面，顯示簡易模式
-    document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
-    easyPage.style.display = 'block';
-    if (btn) btn.textContent = '⬅ 一般模式';
-    // 填入日期和姓名
-    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    const name = usr.memberName || usr.name || '';
-    const el = document.getElementById('easyGreetName');
-    if (el) el.textContent = name ? name + '，您好！' : '您好！';
-    const dateEl = document.getElementById('easyGreetDate');
-    if (dateEl) {
-      const now = new Date();
-      const wd = ['日','一','二','三','四','五','六'][now.getDay()];
-      dateEl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月 ' + now.getDate() + ' 日（週' + wd + '）';
-    }
-    easyBack();
-    // 初始化分隊選單
-    easyInitUnits();
+// ── 協勤頁面的簡易模式切換 ──
+function toggleFormEasyMode() {
+  const sec = document.getElementById('formEasySection');
+  const form = document.getElementById('recordForm');
+  const btn = document.getElementById('formEasyBtn');
+  const isOpen = sec.style.display !== 'none';
+  if (isOpen) {
+    sec.style.display = 'none';
+    form.style.display = 'block';
+    btn.textContent = '👴 簡易模式';
   } else {
-    easyPage.style.display = 'none';
-    if (btn) btn.textContent = '👴 簡易模式';
-    navTo('dashboardPage');
+    sec.style.display = 'block';
+    form.style.display = 'none';
+    btn.textContent = '← 一般模式';
+    _easyFillGreeting('formEasyGreetName', 'formEasyGreetDate');
+    easyShowOuting();
+  }
+}
+
+// 填入問候語和日期
+function _easyFillGreeting(nameId, dateId) {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const name = usr.memberName || usr.name || '';
+  const el = document.getElementById(nameId);
+  if (el) el.textContent = name ? name + '，您好！' : '您好！';
+  const dateEl = document.getElementById(dateId);
+  if (dateEl) {
+    const now = new Date();
+    const wd = ['日','一','二','三','四','五','六'][now.getDay()];
+    dateEl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月 ' + now.getDate() + ' 日（週' + wd + '）';
   }
 }
 
@@ -8129,6 +8149,9 @@ function easyOpenCheckout(key) {
   document.getElementById('easyCheckoutName').textContent = s.memberName || key;
   document.getElementById('easyCheckinRef').textContent = '簽到時間：' + (s.checkinTime || '');
   buildTimeOptions('easyCheckoutTime', roundTo15(new Date()));
+  const svcEl = document.getElementById('easyServiceCount'); if (svcEl) svcEl.value = '0';
+  const hdEl = document.getElementById('easyHoursDisplay'); if (hdEl) hdEl.textContent = '—';
+  easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').classList.add('show');
   _easyCheckoutHasSig = false;
@@ -8153,7 +8176,13 @@ function easyBackToCheckoutList() {
 }
 
 function easyAutoCalcHours() {
-  // 無需在簡易模式顯示小時，由 doCheckout 自動計算
+  const session = attSessions[_easyCheckoutTarget];
+  if (!session) return;
+  const checkoutTime = document.getElementById('easyCheckoutTime')?.value;
+  if (!checkoutTime) return;
+  const h = calcHours(session.checkinTime, checkoutTime);
+  const display = document.getElementById('easyHoursDisplay');
+  if (display) display.textContent = h > 0 ? h + ' 小時' : '—';
 }
 
 function easyInitCanvas(type) {
@@ -8235,12 +8264,13 @@ async function easyDoCheckin() {
 
 async function easyDoCheckout() {
   const checkoutTime = document.getElementById('easyCheckoutTime').value;
-  if (!checkoutTime)      { alert('請選擇簽退時間'); return; }
+  if (!checkoutTime)        { alert('請選擇簽退時間'); return; }
   if (!_easyCheckoutHasSig) { alert('請完成簽退簽名'); return; }
 
   const session    = attSessions[_easyCheckoutTarget];
   const memberName = session.memberName || _easyCheckoutTarget;
   const hours      = calcHours(session.checkinTime, checkoutTime);
+  const service    = parseInt(document.getElementById('easyServiceCount')?.value) || 0;
   const date       = session.date || new Date().toLocaleDateString('sv');
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkoutSig = _easyCheckoutCtx.canvas.toDataURL('image/png');
@@ -8250,9 +8280,10 @@ async function easyDoCheckout() {
 
   try {
     if (session.fbDocId) {
-      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count: 0, service: 0 }).catch(() => {});
+      // count 固定 1（本次出勤即為 1 次協勤），service 由成員填寫
+      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
     } else {
-      fbAdd(COL_ATTEND, { date, dutyType: session.dutyType||'協勤', title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count: 0, service: 0 }).catch(() => {});
+      fbAdd(COL_ATTEND, { date, dutyType: session.dutyType||'協勤', title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
     }
 
     attSessions[_easyCheckoutTarget].done        = true;
@@ -10896,8 +10927,10 @@ function checkPWAPrompts() {
 })();
 </script>
 
-<!-- ══════ 簡易模式切換按鈕（固定右下角，放在 body 層級）══════ -->
-<button id="easyModeToggle" onclick="toggleEasyMode()">👴 簡易模式</button>
+</div>
+
+
+
 
 </body>
 </html>

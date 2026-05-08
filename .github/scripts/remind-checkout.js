@@ -80,17 +80,9 @@ async function main() {
     .where('date', '==', today)
     .get();
 
-  const notCheckedOut = attSnap.docs
-    .map(d => d.data())
-    .filter(d => d.checkinTime && !d.checkoutTime);
-
-  if (!notCheckedOut.length) {
-    console.log('今日所有人都已簽退，不需要提醒。');
-    return;
-  }
-
-  const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
-  console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
+  const allRecords    = attSnap.docs.map(d => d.data());
+  const notCheckedOut = allRecords.filter(d => d.checkinTime && !d.checkoutTime);
+  const checkedOut    = allRecords.filter(d => d.checkinTime && d.checkoutTime);
 
   // 讀取 whitelist 取得 email
   const wlSnap = await db.collection('whitelist').get();
@@ -110,28 +102,66 @@ async function main() {
 
   const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
 
-  // ── ① LINE 群組通知（一則訊息列出所有人）──
   if (LINE_ACCESS_TOKEN) {
-    try {
-      const lineMsg = [
-        '⚠️ 簽退提醒',
-        `${today} 以下成員尚未簽退：`,
-        '',
-        names.map(n => `• ${n}`).join('\n'),
-        '',
-        '請盡快登入系統完成簽退。',
-        siteUrl,
-      ].join('\n');
-      await sendLineGroupMessage(lineMsg);
-      console.log('✅ LINE 群組通知已發送');
-    } catch(err) {
-      console.log(`❌ LINE 群組通知失敗：${err.message}`);
+
+    // ── ① 簽退提醒（尚未簽退的人）──
+    if (notCheckedOut.length) {
+      const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
+      console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
+      try {
+        const lineMsg = [
+          '⚠️ 簽退提醒',
+          `${today} 以下成員尚未簽退：`,
+          '',
+          names.map(n => `• ${n}`).join('\n'),
+          '',
+          '請盡快登入系統完成簽退。',
+          siteUrl,
+          '',
+          '※ 本通知由系統自動發送，請勿回覆。',
+        ].join('\n');
+        await sendLineGroupMessage(lineMsg);
+        console.log('✅ LINE 簽退提醒已發送');
+      } catch(err) {
+        console.log(`❌ LINE 簽退提醒失敗：${err.message}`);
+      }
+    } else {
+      console.log('今日所有人都已簽退，不發送簽退提醒。');
     }
+
+    // ── ② 今日協勤統計（已完成簽退的人）──
+    if (checkedOut.length) {
+      try {
+        const summaryLines = checkedOut.map(d =>
+          `• ${d.memberName}　時數：${d.hours ?? 0}h　次數：${d.count ?? 0}次　服務人次：${d.service ?? 0}人`
+        );
+        const summaryMsg = [
+          '📋 今日協勤統計',
+          `${today} 已完成簽退人員：`,
+          '',
+          ...summaryLines,
+          '',
+          '※ 本通知由系統自動發送，請勿回覆。',
+        ].join('\n');
+        await sendLineGroupMessage(summaryMsg);
+        console.log('✅ LINE 協勤統計通知已發送');
+      } catch(err) {
+        console.log(`❌ LINE 協勤統計通知失敗：${err.message}`);
+      }
+    } else {
+      console.log('今日尚無完成簽退人員，跳過統計通知。');
+    }
+
   } else {
     console.log('⚠️ 未設定 LINE_CHANNEL_ACCESS_TOKEN，跳過 LINE 通知');
   }
 
-  // ── ② 個別推播 + Email ──
+  // ── ③ 個別推播 + Email（僅針對尚未簽退的人）──
+  if (!notCheckedOut.length) {
+    console.log('\n提醒完成！');
+    return;
+  }
+
   for (const rec of notCheckedOut) {
     const name = rec.memberName || '';
     console.log(`\n處理：${name}`);
