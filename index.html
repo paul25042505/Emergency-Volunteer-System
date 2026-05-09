@@ -824,6 +824,30 @@ function _dlCSV(content, filename) {
   <div class="form-wrap">
     <!-- 公告區（多則）-->
     <div id="announcementBar" style="display:none;margin-bottom:12px;"></div>
+
+    <!-- 日期時間 + 天氣（左右兩卡片）-->
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:14px;">
+      <!-- 左：日期時間 -->
+      <div style="background:white;border-radius:12px;padding:18px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;min-height:100px;">
+        <div id="dashInfoDate" style="font-size:0.92rem;font-weight:600;color:var(--text-light);font-family:'Noto Serif TC',serif;letter-spacing:0.03em;"></div>
+        <div id="dashInfoTime" style="font-size:2.4rem;font-weight:700;color:var(--text);letter-spacing:0.04em;font-variant-numeric:tabular-nums;line-height:1;margin-top:8px;"></div>
+      </div>
+      <!-- 右：天氣 -->
+      <div id="dashInfoWeather" style="background:white;border-radius:12px;padding:16px 12px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+        <span id="dashWeatherIcon" style="font-size:2rem;line-height:1;"></span>
+        <div id="dashWeatherTemp" style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.2;margin-top:2px;"></div>
+        <div id="dashWeatherDesc" style="font-size:0.72rem;color:var(--text-light);text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- 今日班表（公告下方） -->
+    <div id="todayScheduleSection" style="display:none;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="width:4px;height:18px;background:var(--red);border-radius:2px;flex-shrink:0;"></div>
+        <span style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);">今日班表</span>
+      </div>
+      <div id="todayScheduleList"></div>
+    </div>
     <!-- 緊急公告彈窗 -->
     <div id="urgentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;align-items:center;justify-content:center;padding:16px;">
       <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:80vh;overflow-y:auto;">
@@ -841,7 +865,6 @@ function _dlCSV(content, filename) {
         <div class="section-num" style="font-size:0.75rem;">今</div>
         <div class="section-title">今日概況</div>
         <div class="section-line"></div>
-        <span id="dashDate" style="font-size:0.75rem;color:var(--text-light);white-space:nowrap;"></span>
       </div>
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
         <div class="stat-card">
@@ -965,7 +988,7 @@ function _dlCSV(content, filename) {
           <input type="date" id="easyOutingDate">
         </div>
         <div class="field">
-          <label>出動時間 ～ 返隊時間</label>
+          <label>出發時間 ～ 返隊時間</label>
           <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
             <input type="time" id="easyOutingTimeOut">
             <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
@@ -3124,6 +3147,7 @@ var COL_ITEMS = 'items', COL_FEEDBACK = 'feedback', COL_UNITS = 'units', COL_CHA
 var COL_LOGINLOG = 'loginLogs';
 var COL_MEETING  = 'meetingRecords';
 var COL_CORRECTION = 'correctionRequests';
+var COL_DUTY = 'dutySchedule'; // 班表（提前定義供 loadDashboard 使用）
 var COL_CASETYPES = 'caseTypes';
 
 // Firebase 初始化（SDK 用 defer 載入，window.onload 後才 init）
@@ -3387,6 +3411,13 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   startIdleTimer();
   setTimeout(checkCertExpiry, 1500);
   setTimeout(checkPWAPrompts, 4000);
+  // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
+  setTimeout(async () => {
+    if (!allItems || allItems.length === 0) {
+      try { const docs = await fbList(COL_ITEMS); allItems = docs || []; } catch(e) {}
+    }
+    showPendingItemsAlert();
+  }, 3000);
 
   // 簡易模式已內嵌於各頁面，無需全域按鈕
   // 確保簡易模式關閉
@@ -3897,13 +3928,107 @@ function closeDrawer() {
 // ════════════════════════════════════════
 // Dashboard（修復2：日期比對）
 // ════════════════════════════════════════
+// ── 首頁日期時間每秒更新 ──
+let _dashClockTimer = null;
+function startDashClock() {
+  function update() {
+    const now = new Date();
+    const dateEl = document.getElementById('dashInfoDate');
+    const timeEl = document.getElementById('dashInfoTime');
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  }
+  update();
+  clearInterval(_dashClockTimer);
+  _dashClockTimer = setInterval(update, 1000);
+}
+
+// ── 抓台中市天氣（Open-Meteo 免費 API）──
+async function loadDashWeather() {
+  try {
+    // 台中市潭子區座標
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=24.21&longitude=120.70&current=temperature_2m,weathercode&timezone=Asia%2FTaipei');
+    const data = await res.json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weathercode;
+    // WMO weather code 對應
+    const weatherMap = [
+      [0,  '☀️', '晴天'],
+      [1,  '🌤', '大致晴朗'],
+      [2,  '⛅', '部分多雲'],
+      [3,  '☁️', '陰天'],
+      [45, '🌫', '霧'],
+      [48, '🌫', '霧'],
+      [51, '🌦', '毛毛雨'],
+      [53, '🌦', '毛毛雨'],
+      [55, '🌦', '毛毛雨'],
+      [61, '🌧', '小雨'],
+      [63, '🌧', '中雨'],
+      [65, '🌧', '大雨'],
+      [71, '🌨', '小雪'],
+      [73, '🌨', '中雪'],
+      [75, '🌨', '大雪'],
+      [80, '🌦', '陣雨'],
+      [81, '🌧', '陣雨'],
+      [82, '⛈', '強陣雨'],
+      [95, '⛈', '雷陣雨'],
+      [96, '⛈', '雷陣雨'],
+      [99, '⛈', '雷陣雨'],
+    ];
+    const match = weatherMap.slice().reverse().find(([c]) => code >= c) || ['', '🌡', ''];
+    document.getElementById('dashWeatherIcon').textContent = match[1];
+    document.getElementById('dashWeatherTemp').textContent = temp + '°C';
+    document.getElementById('dashWeatherDesc').textContent = match[2] || '潭子';
+  } catch(e) {
+    document.getElementById('dashInfoWeather').style.display = 'none';
+  }
+}
+
 async function loadDashboard() {
   const today = new Date();
   const todayStr = today.toLocaleDateString('sv');
   const monthStr = todayStr.substring(0, 7);
 
-  document.getElementById('dashDate').textContent =
-    today.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+  // 啟動時鐘和天氣（公告下方資訊列）
+  startDashClock();
+  loadDashWeather();
+
+  // 載入今日班表（直接用 where 查詢今日）
+  try {
+    await ensureFirebase();
+    const dutySnap = await _fbDB.collection('dutySchedule')
+      .where('date', '==', todayStr)
+      .get();
+    const todayDuty = dutySnap.docs
+      .map(d => ({id: d.id, ...d.data()}))
+      .sort((a, b) => (a.start||'').localeCompare(b.start||''));
+
+    const sec  = document.getElementById('todayScheduleSection');
+    const list = document.getElementById('todayScheduleList');
+
+    sec.style.display = '';
+    if (todayDuty.length > 0) {
+      list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+        ${todayDuty.map(d => `
+        <div style="background:white;border-radius:10px;padding:14px 12px;box-shadow:0 1px 6px rgba(0,0,0,0.08);border:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.88rem;flex-shrink:0;">${(d.memberName||'?').charAt(0)}</div>
+            <div style="min-width:0;">
+              <div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div>
+              <div style="font-size:0.7rem;color:var(--text-light);">${d.unit||''}</div>
+            </div>
+          </div>
+          <div style="background:var(--warm);border-radius:6px;padding:5px 8px;text-align:center;">
+            <span style="font-size:0.8rem;font-weight:600;color:var(--red);">${d.start||'?'} － ${d.end||'?'}</span>
+          </div>
+        </div>`).join('')}
+      </div>`;
+    } else {
+      list.innerHTML = '<div style="background:white;border-radius:10px;padding:18px;text-align:center;color:var(--text-light);font-size:0.85rem;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border);">今日無排班人員</div>';
+    }
+  } catch(e) {
+    document.getElementById('todayScheduleSection').style.display = 'none';
+  }
 
   try {
     const [attDocs, outDocs] = await Promise.all([
@@ -4300,7 +4425,7 @@ function goToAttQuery() {
   }, 300);
 }
 
-// ── 簽到後檢查待領物品並提示 ──
+// ── 登入後檢查待領物品並提示（不需等到簽到）──
 function showPendingItemsAlert() {
   if (!allItems || allItems.length === 0) return;
 
@@ -4493,7 +4618,7 @@ async function doQuery() {
     return true;
   });
 
-  // 依日期和出動時間排序（預設遞增）
+  // 依日期和出發時間排序（預設遞增）
   _qSortAsc = true;
   _applyQuerySort();
   renderQueryResults(filteredRecords);
@@ -4889,8 +5014,6 @@ async function doCheckin() {
     }).catch(() => {});
 
 
-    // 簽到成功後：若有未領取物品，彈出提示
-    showPendingItemsAlert();
 
     // 重置簽到表單
     document.getElementById('attMemberSel').value = '';
@@ -6383,7 +6506,7 @@ async function loadAdminOuting() {
       docs=docs.filter(d=>unitNames.has(d.memberName||''));
     }
     if(member)docs=docs.filter(d=>(d.memberName||'')===member);
-    // 由舊到新：日期 + 出動時間
+    // 由舊到新：日期 + 出發時間
     docs.sort((a,b)=>{
       const ka=(a.date||'')+(a.timeOut||'');
       const kb=(b.date||'')+(b.timeOut||'');
@@ -7698,8 +7821,7 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'none';
-    await initApp();
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
   } catch(e) {
     spinner.style.display = 'none';
     showTempPassErr('驗證失敗：' + e.message);
@@ -8467,7 +8589,7 @@ async function easyDoOuting() {
     : '';
 
   if (!date)        { alert('請選擇協勤日期'); return; }
-  if (!timeOut)     { alert('請填入出動時間'); return; }
+  if (!timeOut)     { alert('請填入出發時間'); return; }
   if (!timeBack)    { alert('請填入返隊時間'); return; }
   if (!district)    { alert('請選擇行政區'); return; }
   if (!address)     { alert('請填入詳細地址'); return; }
@@ -10750,8 +10872,7 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'none';
-    await initApp();
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
   } catch(e) {
     spinner.style.display = 'none';
     showTempPassErr('驗證失敗：' + e.message);
