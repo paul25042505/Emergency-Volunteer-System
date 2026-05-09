@@ -1,7 +1,10 @@
 // ══════════════════════════════════════════
 // 簽退提醒腳本
 // 每天台灣時間 22:00 執行
-// 找出今日有簽到但尚未簽退的人，發送推播 + Email + LINE 群組
+// ① 明日班表提醒
+// ② 今日未簽退提醒
+// ③ 今日協勤統計
+// ④ 個別推播 + Email（未簽退者）
 // ══════════════════════════════════════════
 
 const webpush    = require('web-push');
@@ -31,8 +34,8 @@ const transporter = nodemailer.createTransport({
 });
 
 // ── LINE Messaging API ──
-const LINE_GROUP_ID      = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
-const LINE_ACCESS_TOKEN  = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const LINE_GROUP_ID     = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
+const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
 async function sendLineGroupMessage(text) {
   return new Promise((resolve, reject) => {
@@ -62,29 +65,33 @@ async function sendLineGroupMessage(text) {
   });
 }
 
-// ── 取得今天台灣時間的日期字串 ──
-function getTodayStr() {
+// ── 台灣時間日期字串（offsetDays: 0=今日, 1=明日）──
+function getTWDateStr(offsetDays = 0) {
   const now = new Date();
   const tw  = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  const y   = tw.getUTCFullYear();
-  const m   = String(tw.getUTCMonth() + 1).padStart(2, '0');
-  const d   = String(tw.getUTCDate()).padStart(2, '0');
+  tw.setUTCDate(tw.getUTCDate() + offsetDays);
+  const y = tw.getUTCFullYear();
+  const m = String(tw.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(tw.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
 async function main() {
-  const today = getTodayStr();
-  console.log(`檢查 ${today} 尚未簽退的人...`);
+  const today    = getTWDateStr(0);
+  const tomorrow = getTWDateStr(1);
 
+  console.log(`今日：${today}　明日：${tomorrow}`);
+
+  // ── 讀取今日出勤紀錄 ──
   const attSnap = await db.collection('attendance')
     .where('date', '==', today)
     .get();
 
   const allRecords    = attSnap.docs.map(d => d.data());
   const notCheckedOut = allRecords.filter(d => d.checkinTime && !d.checkoutTime);
-  const checkedOut    = allRecords.filter(d => d.checkinTime && d.checkoutTime);
+  const checkedOut    = allRecords.filter(d => d.checkinTime &&  d.checkoutTime);
 
-  // 讀取 whitelist 取得 email
+  // ── 讀取 whitelist（email）──
   const wlSnap = await db.collection('whitelist').get();
   const emailMap = {};
   wlSnap.docs.forEach(d => {
@@ -92,7 +99,7 @@ async function main() {
     if (data.memberName && data.email) emailMap[data.memberName] = data.email;
   });
 
-  // 讀取推播訂閱
+  // ── 讀取推播訂閱 ──
   const subsSnap = await db.collection('pushSubscriptions').get();
   const subMap = {};
   subsSnap.docs.forEach(d => {
@@ -104,7 +111,43 @@ async function main() {
 
   if (LINE_ACCESS_TOKEN) {
 
-    // ── ① 簽退提醒（尚未簽退的人）──
+    // ── ① 明日班表提醒 ──
+    try {
+      const dutySnap = await db.collection('dutySchedule')
+        .where('date', '==', tomorrow)
+        .get();
+
+      if (!dutySnap.empty) {
+        // 依開始時間排序
+        const slots = dutySnap.docs
+          .map(d => d.data())
+          .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+
+        const dutyLines = slots.map(d =>
+          `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
+        );
+
+        const dutyMsg = [
+          '📅 明日班表提醒',
+          `${tomorrow} 備勤人員如下：`,
+          '',
+          ...dutyLines,
+          '',
+          '⚠️ 請準時協勤，如有事故請提前修改班表。',
+          '',
+          '※ 本通知由系統自動發送，請勿回覆。',
+        ].join('\n');
+
+        await sendLineGroupMessage(dutyMsg);
+        console.log('✅ LINE 明日班表提醒已發送');
+      } else {
+        console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
+      }
+    } catch(err) {
+      console.log(`❌ LINE 明日班表提醒失敗：${err.message}`);
+    }
+
+    // ── ② 今日未簽退提醒 ──
     if (notCheckedOut.length) {
       const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
       console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
@@ -129,7 +172,7 @@ async function main() {
       console.log('今日所有人都已簽退，不發送簽退提醒。');
     }
 
-    // ── ② 今日協勤統計（已完成簽退的人）──
+    // ── ③ 今日協勤統計 ──
     if (checkedOut.length) {
       try {
         const summaryLines = checkedOut.map(d =>
@@ -156,7 +199,7 @@ async function main() {
     console.log('⚠️ 未設定 LINE_CHANNEL_ACCESS_TOKEN，跳過 LINE 通知');
   }
 
-  // ── ③ 個別推播 + Email（僅針對尚未簽退的人）──
+  // ── ④ 個別推播 + Email（僅針對尚未簽退的人）──
   if (!notCheckedOut.length) {
     console.log('\n提醒完成！');
     return;
