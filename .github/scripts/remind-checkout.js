@@ -1,285 +1,10944 @@
-// ══════════════════════════════════════════
-// 簽退提醒腳本
-// 每天台灣時間 22:00 執行
-// ① 明日班表提醒
-// ② 今日未簽退提醒
-// ③ 今日協勤統計
-// ④ 個別推播 + Email（未簽退者）
-// ══════════════════════════════════════════
-
-const webpush    = require('web-push');
-const admin      = require('firebase-admin');
-const nodemailer = require('nodemailer');
-const https      = require('https');
-
-// ── 初始化 Firebase Admin ──
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-const db = admin.firestore();
-
-// ── 設定 VAPID ──
-webpush.setVapidDetails(
-  'mailto:paul25042505@gmail.com',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
-
-// ── 設定 Gmail SMTP ──
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
-
-// ── LINE Messaging API ──
-const LINE_GROUP_ID     = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
-const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-
-async function sendLineGroupMessage(text) {
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      to:       LINE_GROUP_ID,
-      messages: [{ type: 'text', text }],
-    });
-    const req = https.request({
-      hostname: 'api.line.me',
-      path:     '/v2/bot/message/push',
-      method:   'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`,
-      },
-    }, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode === 200) resolve(data);
-        else reject(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`));
-      });
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>救護義消系統</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iI2MwMzkyYiIvPgogIDxyZWN0IHg9IjEwOCIgeT0iMjA2IiB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEwMCIgcng9IjE4IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjIwNiIgeT0iMTA4IiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjI5NiIgcng9IjE4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=">
+<link rel="manifest" href="/Emergency-Volunteer-System/manifest.json">
+<link rel="apple-touch-icon" href="/Emergency-Volunteer-System/icon-192.png">
+<meta name="theme-color" content="#c0392b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="義消系統">
+<meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #c0392b;
+  --red-dark: #922b21;
+  --red-mid: #e74c3c;
+  --red-faint: #fdf0ee;
+  --cream: #faf7f2;
+  --warm: #f4ede3;
+  --border: #e0d5c8;
+  --border-dark: #c8b9a8;
+  --text: #1e1a17;
+  --text-mid: #5a4f46;
+  --text-light: #9c8c80;
+  --white: #ffffff;
+  --section-gap: 24px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  background: var(--cream);
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text);
+  color-scheme: light;
+  display: flex;
+  flex-direction: column;
+}
+/* 主捲動區 */
+#appScroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+  padding-top: 56px;
 }
 
-// ── 台灣時間日期字串（offsetDays: 0=今日, 1=明日）──
-function getTWDateStr(offsetDays = 0) {
-  const now = new Date();
-  const tw  = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  tw.setUTCDate(tw.getUTCDate() + offsetDays);
-  const y = tw.getUTCFullYear();
-  const m = String(tw.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(tw.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+/* ── Pages ── */
+.page { display: none; }
+.page.active { display: block; }
+
+
+/* ── 簡易模式樣式（in-page，內嵌於各頁面）── */
+.easy-greeting { text-align: center; margin-bottom: 28px; }
+.easy-greeting .easy-name { font-family: "Noto Serif TC", serif; font-size: 1.5rem; font-weight: 700; color: var(--text); letter-spacing: 0.08em; }
+.easy-greeting .easy-date { font-size: 1rem; color: var(--text-mid); margin-top: 6px; letter-spacing: 0.05em; }
+.easy-btn-wrap { display: flex; flex-direction: column; gap: 20px; max-width: 420px; margin: 0 auto; }
+.easy-big-btn { width: 100%; padding: 36px 24px; border: none; border-radius: 16px; font-family: "Noto Serif TC", serif; font-size: 1.6rem; font-weight: 700; letter-spacing: 0.12em; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); transition: transform 0.15s, box-shadow 0.15s; min-height: 140px; }
+.easy-big-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+.easy-big-btn .easy-icon { font-size: 2.4rem; }
+.easy-big-btn.checkin-btn  { background: #27ae60; color: white; }
+.easy-big-btn.checkout-btn { background: #2980b9; color: white; }
+.easy-big-btn .easy-hint { font-size: 0.85rem; font-family: "Noto Sans TC", sans-serif; font-weight: 400; opacity: 0.85; letter-spacing: 0.04em; }
+.easy-form-card { display: none; max-width: 420px; margin: 20px auto 0; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.easy-form-card.show { display: block; }
+.easy-form-title { font-family: "Noto Serif TC", serif; font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 20px; text-align: center; letter-spacing: 0.08em; }
+.easy-form-card label { font-size: 1rem; font-weight: 600; color: var(--text-mid); margin-bottom: 8px; }
+.easy-form-card select, .easy-form-card input { font-size: 1.05rem; padding: 13px 16px; min-height: 52px; border-radius: 8px; }
+.easy-submit-btn { width: 100%; padding: 18px; border: none; border-radius: 10px; font-family: "Noto Serif TC", serif; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; margin-top: 20px; color: white; }
+.easy-submit-btn.do-checkin  { background: #27ae60; }
+.easy-submit-btn.do-checkout { background: #2980b9; }
+.easy-cancel-btn { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: white; font-size: 1rem; color: var(--text-mid); cursor: pointer; margin-top: 10px; }
+.easy-checkout-list { max-width: 420px; margin: 20px auto 0; }
+.easy-checkout-item { background: white; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.07); cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; }
+.easy-checkout-item:hover { border-color: #2980b9; }
+.easy-checkout-item .eco-name { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+.easy-checkout-item .eco-time { font-size: 0.9rem; color: var(--text-mid); margin-top: 3px; }
+.easy-checkout-item .eco-arrow { font-size: 1.4rem; color: #2980b9; }
+.easy-big-btn.outing-btn { background: var(--red); color: white; }
+.easy-service-btn {
+  padding: 12px 8px; border: 2px solid var(--border); border-radius: 8px;
+  background: #fafaf8; font-size: 0.88rem; color: var(--text-mid);
+  cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.3;
+  font-family: "Noto Sans TC", sans-serif;
+}
+.easy-service-btn.selected { border-color: var(--red); background: var(--red-faint); color: var(--red); font-weight: 600; }
+
+/* ── Overlay ── */
+.overlay {
+  display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 190;
+}
+.overlay.open { display: block; }
+
+/* ── Drawer ── */
+.drawer {
+  position: fixed; top: 56px; left: 0; height: calc(100% - 56px); width: 260px;
+  background: var(--text); z-index: 199;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display: flex; flex-direction: column;
+}
+.drawer.open { transform: translateX(0); }
+
+.drawer nav { padding: 16px 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.drawer nav button {
+  display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+  text-decoration: none; color: rgba(255,255,255,0.75); font-size: 0.9rem;
+  letter-spacing: 0.05em; border-left: 3px solid transparent;
+  transition: all 0.15s; cursor: pointer; background: none; width: 100%;
+  font-family: 'Noto Sans TC', sans-serif;
+  border-top: none; border-right: none; border-bottom: none;
+}
+.drawer nav button:hover, .drawer nav button.active-nav {
+  color: white; background: rgba(255,255,255,0.07); border-left-color: var(--red-mid);
+}
+.drawer nav button .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+/* ── Header ── */
+.header {
+  background: var(--red) !important; color: white !important; padding: 0; position: fixed; top: 0; left: 0; right: 0; z-index: 200; overflow: hidden;
+}
+.header-inner {
+  position: relative; z-index: 2; display: flex; align-items: center;
+  padding: 14px 16px 14px 62px; min-height: 56px;
+}
+.header-deco { position: absolute; right: -20px; top: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.05); border-radius: 50%; z-index: 1; }
+.header-deco2 { position: absolute; right: 60px; bottom: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.04); border-radius: 50%; z-index: 1; }
+.header-cross { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 160px; opacity: 0.05; z-index: 1; pointer-events: none; line-height: 1; }
+.menu-btn {
+  position: absolute; top: 50%; left: 18px; transform: translateY(-50%);
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 4px; color: white; width: 38px; height: 38px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; z-index: 5; transition: background 0.15s;
+}
+.menu-btn:hover { background: rgba(255,255,255,0.25); }
+.menu-btn span { display: block; width: 18px; height: 2px; background: white; border-radius: 2px; }
+.header-text h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1.2; white-space: nowrap; }
+.header-text p { margin-top: 2px; font-size: 0.68rem; opacity: 0.7; letter-spacing: 0.06em; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+
+/* ── Form / Members wrap ── */
+.form-wrap, .members-wrap {
+  max-width: 700px; margin: 0 auto; padding: 28px 16px 64px;
 }
 
-async function main() {
-  const today    = getTWDateStr(0);
-  const tomorrow = getTWDateStr(1);
+/* ── Section ── */
+.section { margin-bottom: var(--section-gap); }
+.section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.section-num {
+  width: 26px; height: 26px; background: var(--red); color: white; border-radius: 50%;
+  font-size: 0.72rem; font-weight: 700; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.section-title { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.14em; color: var(--text); }
+.section-line { flex: 1; height: 1px; background: var(--border); }
 
-  console.log(`今日：${today}　明日：${tomorrow}`);
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.card-divider { height: 1px; background: var(--border); margin: 18px 0; }
 
-  // ── 讀取今日出勤紀錄 ──
-  const attSnap = await db.collection('attendance')
-    .where('date', '==', today)
-    .get();
+/* ── Fields ── */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.05em; }
+label .req { color: var(--red); margin-left: 2px; }
 
-  const allRecords    = attSnap.docs.map(d => d.data());
-  const notCheckedOut = allRecords.filter(d => d.checkinTime && !d.checkoutTime);
-  const checkedOut    = allRecords.filter(d => d.checkinTime &&  d.checkoutTime);
+/* 修復6：統一所有輸入元件高度 */
+input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text); background: white;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  appearance: none; -webkit-appearance: none;
+  min-height: 42px; line-height: 1.4; vertical-align: middle;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239c8c80' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.1); background: white;
+}
+textarea { resize: vertical; min-height: 82px; }
+input[readonly], input.input-readonly {
+  background: #fafaf8 !important;
+  color: var(--text-light) !important;
+  cursor: not-allowed;
+}
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.time-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: end; }
+.time-dash { text-align: center; padding: 0 8px 10px; color: var(--text-light); font-size: 1.1rem; }
 
-  // ── 讀取 whitelist（email）──
-  const wlSnap = await db.collection('whitelist').get();
-  const emailMap = {};
-  wlSnap.docs.forEach(d => {
-    const data = d.data();
-    if (data.memberName && data.email) emailMap[data.memberName] = data.email;
+/* ── Checkboxes ── */
+.checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+.cb-item {
+  display: flex; align-items: center; gap: 9px; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 5px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  font-size: 0.88rem; color: var(--text-mid); user-select: none; background: #fafaf8;
+}
+.cb-item:hover { border-color: var(--red); background: var(--red-faint); color: var(--text); }
+.cb-item input[type="checkbox"] { accent-color: var(--red); flex-shrink: 0; width: auto; border: none; padding: 0; background: none; box-shadow: none; min-height: unset; }
+.cb-item input[type="radio"] { accent-color: var(--red); flex-shrink: 0; width: auto; border: none; padding: 0; background: none; box-shadow: none; min-height: unset; }
+.cb-item.checked { border-color: var(--red); background: var(--red-faint); color: var(--text); box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
+
+/* ── Signature ── */
+.sig-wrap { border: 1.5px solid var(--border); border-radius: 5px; overflow: hidden; background: #fafaf8; }
+.sig-wrap canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(--warm); border-top: 1px solid var(--border); }
+.sig-footer span { font-size: 0.73rem; color: var(--text-light); letter-spacing: 0.04em; }
+.btn-clear { background: none; border: 1px solid var(--border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(--text-mid); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; min-height: unset; }
+.btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+
+/* ── Submit ── */
+.submit-section { margin-top: 8px; }
+.btn-submit {
+  width: 100%; background: var(--red); color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(192,57,43,0.25); position: relative; overflow: hidden;
+  min-height: unset;
+}
+.btn-submit::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
+.btn-submit:hover { background: var(--red-dark); box-shadow: 0 6px 20px rgba(192,57,43,0.35); }
+.btn-submit:active { transform: scale(0.99); }
+.btn-submit:disabled { background: #bba09a; box-shadow: none; cursor: not-allowed; }
+
+/* ── Success ── */
+.success-msg { display: none; text-align: center; padding: 24px; background: #eafaf1; border: 1px solid #a9dfbf; border-radius: 6px; margin-top: 16px; }
+.success-msg.show { display: block; }
+.success-icon { width: 48px; height: 48px; background: #27ae60; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 1.4rem; color: white; }
+.success-msg h3 { font-family: 'Noto Serif TC', serif; color: #1a6b35; font-size: 1rem; letter-spacing: 0.08em; margin-bottom: 4px; }
+.success-msg p { font-size: 0.83rem; color: #2d8a4a; }
+
+/* ── Footer ── */
+.form-footer { text-align: center; margin-top: 28px; font-size: 0.72rem; color: var(--text-light); letter-spacing: 0.04em; line-height: 1.8; }
+
+/* ── Members Page ── */
+.member-add-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.add-row { display: flex; gap: 10px; }
+.add-row input { flex: 1; }
+.btn-add {
+  background: var(--red); color: white; border: none; border-radius: 4px;
+  padding: 10px 20px; font-size: 0.88rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
+  min-height: unset;
+}
+.btn-add:hover { background: var(--red-dark); }
+
+.member-list-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.member-list-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.member-list-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
+.member-count { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; }
+.member-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.85rem; letter-spacing: 0.05em; }
+.member-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+.member-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+.member-item:last-child { border-bottom: none; }
+.member-item:hover { background: #fdfcfb; }
+.member-avatar { width: 36px; height: 36px; background: var(--red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 700; flex-shrink: 0; margin-right: 14px; font-family: 'Noto Serif TC', serif; }
+.member-name { flex: 1; font-size: 0.95rem; color: var(--text); letter-spacing: 0.03em; }
+.member-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.member-info .member-name { flex: unset; }
+.member-title { font-size: 0.75rem; color: var(--text-light); letter-spacing: 0.04em; }
+.btn-delete { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 5px 12px; font-size: 0.75rem; color: var(--text-light); cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; min-height: unset; }
+.btn-delete:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+
+.drag-handle {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 10px 8px 0; cursor: grab; flex-shrink: 0; opacity: 0.35;
+  transition: opacity 0.15s;
+}
+.drag-handle:active { cursor: grabbing; }
+.drag-handle span { display: block; width: 16px; height: 2px; background: var(--text-mid); border-radius: 2px; }
+.member-item:hover .drag-handle { opacity: 0.7; }
+.member-item.dragging { opacity: 0.4; background: var(--warm); }
+.member-item.drag-over { border-top: 2px solid var(--red); background: var(--red-faint); }
+
+/* ── Query Page ── */
+.query-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
+
+.filter-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
+.filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.filter-actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn-search {
+  flex: 1; background: var(--red); color: white; border: none; border-radius: 4px;
+  padding: 11px; font-size: 0.9rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s;
+  min-height: unset;
+}
+.btn-search:hover { background: var(--red-dark); }
+.btn-reset {
+  background: none; border: 1px solid var(--border-dark); border-radius: 4px;
+  padding: 11px 18px; font-size: 0.88rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text-mid); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  min-height: unset;
+}
+.btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-num { font-family: 'Noto Serif TC', serif; font-size: 1.8rem; font-weight: 700; color: var(--red); line-height: 1; }
+.stat-label { font-size: 0.72rem; color: var(--text-light); margin-top: 6px; letter-spacing: 0.06em; }
+
+/* Result table */
+.result-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.result-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.result-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
+
+
+.result-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+th { background: var(--warm); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text-mid); border-bottom: 1px solid var(--border); white-space: nowrap; letter-spacing: 0.04em; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fdfcfb; }
+.tag { display: inline-block; background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 3px; padding: 1px 6px; font-size: 0.72rem; margin: 1px; white-space: nowrap; }
+
+.query-empty { text-align: center; padding: 40px 20px; color: var(--text-light); font-size: 0.85rem; }
+.query-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+.loading-msg { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85rem; }
+
+/* ── Admin Sub-Nav in Drawer ── */
+#adminSubNav {
+  border-left: 2px solid rgba(192,57,43,0.4);
+  margin: 0 0 4px 32px;
+}
+.admin-subnav-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  color: rgba(255,255,255,0.55); font-size: 0.8rem;
+  letter-spacing: 0.04em; border-left: 2px solid transparent;
+  transition: all 0.15s; cursor: pointer; background: none; width: 100%;
+  font-family: 'Noto Sans TC', sans-serif;
+  border-top: none; border-right: none; border-bottom: none;
+}
+.admin-subnav-btn:hover, .admin-subnav-btn.active-subnav {
+  color: white; background: rgba(255,255,255,0.07); border-left-color: var(--red-mid);
+}
+
+
+.admin-tab {
+  background: var(--white); border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 9px; font-size: 0.72rem; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text-mid); cursor: pointer; white-space: nowrap;
+  transition: all 0.15s; min-height: unset;
+}
+.admin-tab:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+.admin-tab.active { background: var(--red); color: white; border-color: var(--red); font-weight: 600; }
+
+
+.attendance-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
+.status-banner {
+  border-radius: 6px; padding: 14px 20px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px; font-size: 0.88rem; font-weight: 500;
+}
+.status-banner.idle { background: var(--warm); border: 1px solid var(--border); color: var(--text-mid); }
+.status-banner.checked-in { background: #eafaf1; border: 1px solid #a9dfbf; color: #1a6b35; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.status-banner.idle .status-dot { background: var(--text-light); }
+.status-banner.checked-in .status-dot { background: #27ae60; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.btn-checkin {
+  width: 100%; background: #27ae60; color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(39,174,96,0.3); min-height: unset;
+}
+.btn-checkin:hover { background: #219a52; }
+.btn-checkout {
+  width: 100%; background: var(--red); color: white; border: none; padding: 16px;
+  font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
+  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(192,57,43,0.25); min-height: unset;
+}
+.btn-checkout:hover { background: var(--red-dark); }
+.time-badge {
+  display: inline-block; background: var(--red-faint); color: var(--red-dark);
+  border: 1px solid #f0bab4; border-radius: 4px; padding: 3px 10px;
+  font-size: 0.82rem; font-weight: 600; font-family: 'Noto Serif TC', serif;
+  letter-spacing: 0.06em;
+}
+.att-status-badge {
+  font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.att-status-badge.idle { background: var(--warm); color: var(--text-light); border: 1px solid var(--border); }
+.att-status-badge.in { background: #eafaf1; color: #1a6b35; border: 1px solid #a9dfbf; }
+.att-status-badge.done { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; }
+.att-member-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 14px; font-size: 0.78rem; cursor: pointer; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; white-space: nowrap;
+  min-height: unset;
+}
+.att-member-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+.att-member-btn.checkin-btn { border-color: #27ae60; color: #27ae60; }
+.att-member-btn.checkin-btn:hover { background: #eafaf1; }
+@media (max-width: 520px) {
+  .row-2 { grid-template-columns: 1fr; }
+  .header-text h1 { font-size: 1.1rem; }
+  .header-text p { max-width: 120px; }
+  .checkbox-grid { grid-template-columns: 1fr 1fr; }
+  .form-wrap, .members-wrap { padding: 20px 12px 48px; }
+  .card { padding: 16px; }
+  .add-row { flex-direction: column; }
+  .filter-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .stat-num { font-size: 1.4rem; }
+}
+
+
+/* ── 備勤排班手機版 ── */
+.duty-view-tab {
+  flex:1; padding:11px 4px; border:none; background:white;
+  color:var(--text-light); font-size:0.78rem; font-weight:600;
+  cursor:pointer; font-family:'Noto Sans TC',sans-serif;
+  border-bottom:2.5px solid transparent; transition:color .15s,border-color .15s;
+}
+.duty-view-tab-active { color:var(--red); border-bottom-color:var(--red); }
+.duty-day-card { display:flex; background:white; border-bottom:1px solid var(--border); }
+.duty-day-num { width:56px; min-width:56px; padding:14px 0 14px 14px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+.duty-day-num .d-num { font-size:2rem; font-weight:700; line-height:1; }
+.duty-day-num .d-week { font-size:0.7rem; margin-top:2px; }
+.duty-day-body { flex:1; padding:12px 14px 12px 8px; min-width:0; }
+.duty-person-card { background:var(--red-faint); border:1px solid #f5c6c0; border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; align-items:flex-start; gap:10px; }
+.duty-person-avatar { width:36px; height:36px; border-radius:50%; background:var(--red); color:white; font-size:0.85rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.duty-slot-tag { display:inline-block; font-size:0.72rem; padding:3px 8px; border-radius:20px; margin:2px; font-weight:500; }
+.duty-slots-day { background:white; border-bottom:1px solid var(--border); }
+.duty-slots-day-header { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; cursor:pointer; }
+.duty-slots-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:0 16px 12px; }
+.duty-slot-cell { border-radius:8px; padding:6px 4px; text-align:center; font-size:0.7rem; line-height:1.4; cursor:pointer; }
+.duty-slot-cell .slot-hour { font-weight:700; font-size:0.78rem; }
+.duty-slot-cell .slot-name { font-size:0.62rem; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.duty-slot-cell .slot-left { font-size:0.62rem; margin-top:1px; }
+/* ── Duty Toggle ── */
+.duty-toggle { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; }
+.duty-btn {
+  flex: 1; padding: 10px 0; font-size: 0.95rem; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; letter-spacing: 0.12em; border: none; background: #fafaf8;
+  color: var(--text-mid); cursor: pointer; transition: background 0.15s, color 0.15s;
+  min-height: unset;
+}
+.duty-btn:first-child { border-right: 1px solid var(--border); }
+.duty-btn.active { background: var(--red); color: white; }
+.duty-btn:not(.active):hover { background: var(--red-faint); color: var(--red); }
+
+/* ── Stats Table ── */
+.stats-table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+.stats-table th { background:var(--warm); padding:10px 12px; text-align:left; font-weight:600; color:var(--text-mid); border-bottom:1px solid var(--border); white-space:nowrap; }
+.stats-table td { padding:10px 12px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
+.stats-table tr:last-child td { border-bottom:none; }
+.stats-table tr:hover td { background:#fdfcfb; }
+.rank-badge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:0.72rem; font-weight:700; }
+.rank-1 { background:#f1c40f; color:#7d6608; }
+.rank-2 { background:#bdc3c7; color:#555; }
+.rank-3 { background:#cd7f32; color:#fff; }
+.rank-other { background:var(--warm); color:var(--text-light); }
+.bar-wrap { display:flex; align-items:center; gap:8px; }
+.bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; min-width:40px; }
+.bar-fill { height:100%; background:var(--red); border-radius:3px; transition:width 0.4s ease; }
+
+
+/* ── Profile Page ── */
+.profile-select-card { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); margin-bottom:20px; }
+.profile-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.profile-stat { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:16px; text-align:center; }
+.profile-stat .num { font-family:'Noto Serif TC',serif; font-size:1.6rem; font-weight:700; color:var(--red); line-height:1; }
+.profile-stat .lbl { font-size:0.7rem; color:var(--text-light); margin-top:6px; letter-spacing:0.05em; }
+.timeline { position:relative; padding-left:20px; }
+.timeline::before { content:''; position:absolute; left:6px; top:0; bottom:0; width:2px; background:var(--border); }
+.tl-item { position:relative; margin-bottom:16px; }
+.tl-dot { position:absolute; left:-17px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--red); border:2px solid white; box-shadow:0 0 0 2px var(--border); }
+.tl-date { font-size:0.72rem; color:var(--text-light); margin-bottom:3px; }
+.tl-card { background:var(--white); border:1px solid var(--border); border-radius:5px; padding:10px 14px; font-size:0.83rem; }
+.month-tab-row { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.month-tab { padding:5px 14px; border:1px solid var(--border); border-radius:20px; font-size:0.8rem; cursor:pointer; background:var(--white); color:var(--text-mid); transition:all 0.15s; font-family:'Noto Sans TC',sans-serif; min-height:unset; }
+.month-tab.active { background:var(--red); color:white; border-color:var(--red); }
+
+/* ── Login Screen ── */
+#loginScreen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: var(--cream); z-index: 9999;
+  padding: 32px 24px;
+}
+.login-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+  padding: 40px 32px; max-width: 360px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
+}
+.login-logo {
+  width: 72px; height: 72px; background: var(--red); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; font-size: 2rem; color: white;
+}
+.login-title {
+  font-family: 'Noto Serif TC', serif; font-size: 1.3rem; font-weight: 700;
+  color: var(--text); letter-spacing: 0.1em; margin-bottom: 6px;
+}
+.login-sub {
+  font-size: 0.78rem; color: var(--text-light); letter-spacing: 0.06em;
+  margin-bottom: 28px; line-height: 1.6;
+}
+.login-divider { height: 1px; background: var(--border); margin: 24px 0; }
+.login-hint {
+  font-size: 0.72rem; color: var(--text-light); margin-top: 20px;
+  line-height: 1.7; letter-spacing: 0.04em;
+}
+.login-error {
+  display: none; background: #fdf0ee; border: 1px solid #f0bab4;
+  border-radius: 6px; padding: 12px 16px; margin-top: 16px;
+  font-size: 0.82rem; color: var(--red-dark); line-height: 1.6;
+}
+.login-error.show { display: block; }
+#loginSpinner {
+  display: none; margin: 16px auto 0;
+  font-size: 0.82rem; color: var(--text-light); letter-spacing: 0.04em;
+}
+#loginSpinner.show { display: block; }
+/* ── iOS Toggle Switch ── */
+.ios-toggle-wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0;
+}
+.ios-toggle-wrap label { font-size: 0.88rem; color: var(--text); flex: 1; cursor: pointer; }
+.ios-toggle {
+  position: relative; width: 51px; height: 31px; flex-shrink: 0; flex-grow: 0;
+}
+.ios-toggle input { opacity: 0; width: 0; height: 0; }
+.ios-toggle-slider {
+  position: absolute; inset: 0; background: #ddd; border-radius: 31px;
+  cursor: pointer; transition: background 0.25s;
+}
+.ios-toggle-slider::before {
+  content: ''; position: absolute;
+  width: 27px; height: 27px; left: 2px; top: 2px;
+  background: white; border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  transition: transform 0.25s;
+}
+.ios-toggle input:checked + .ios-toggle-slider { background: #34c759; }
+.ios-toggle input:checked + .ios-toggle-slider::before { transform: translateX(20px); }
+
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer>
+// ════ 批次匯入工具 ════
+function parseImportCSV(text) {
+  text = text.replace(/^﻿/, '').replace(/
+/g,'
+').replace(/
+/g,'
+');
+  const lines = text.split('
+').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const first = lines[0] ? lines[0].split(',') : [];
+  const isHeader = first.some(c => /^[a-zA-Z]/.test(c.trim()));
+  return isHeader ? lines.slice(1) : lines;
+}
+function importResultHtml(ok, fail, failList) {
+  let html = '';
+  if (ok > 0) html += `<span style="color:#2e7d32;font-weight:600;">✅ 成功匯入 ${ok} 筆</span>`;
+  if (fail > 0) html += `<span style="color:var(--red);margin-left:12px;">⚠ 失敗 ${fail} 筆</span>`;
+  if (failList.length) html += '<div style="margin-top:6px;color:var(--red);font-size:0.75rem;">' + failList.slice(0,5).map(f=>`第${f.row}列：${f.reason}`).join('<br>') + (failList.length>5?`<br>…等共${failList.length}筆`:'') + '</div>';
+  return html;
+}
+async function importAttCSV() {
+  const resultEl = document.getElementById('importAttResult');
+  try {
+    const file = document.getElementById('importAttFile').files[0];
+    if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
+    resultEl.innerHTML = '匯入中，請稍候…';
+    const lines = parseImportCSV(await file.text());
+    let ok=0, fail=0, failList=[];
+    for (let i=0; i<lines.length; i++) {
+      const [date,dutyType,memberName,checkinTime,checkoutTime,hoursRaw,countRaw,serviceRaw] = lines[i].split(',').map(c=>c.trim());
+      if (!date||!memberName){fail++;failList.push({row:i+1,reason:'缺少日期或姓名'});continue;}
+      try {
+        const [y,m,d2] = date.replace(/\//g,'-').split('-');
+        const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+        const mem = members.find(m=>m.name===memberName)||{};
+        await fbAdd(COL_ATTEND,{date:dateFmt,dutyType:dutyType||'協勤',memberName,unit:mem.unit||'',title:mem.title||'',checkinTime:checkinTime||'',checkoutTime:checkoutTime||'',hours:parseFloat(hoursRaw)||0,count:parseInt(countRaw)||0,service:parseInt(serviceRaw)||0,checkinSig:'',checkoutSig:''});
+        ok++;
+      } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
+    }
+    resultEl.innerHTML = (ok===0&&fail===0) ? '<span style="color:var(--red);">CSV 無有效資料</span>' : importResultHtml(ok,fail,failList);
+    if(ok>0) document.getElementById('importAttFile').value='';
+  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
+}
+async function importOutCSV() {
+  const resultEl = document.getElementById('importOutResult');
+  try {
+    const file = document.getElementById('importOutFile').files[0];
+    if (!file) { resultEl.innerHTML = '<span style="color:var(--red);">請先選擇 CSV 檔案</span>'; return; }
+    resultEl.innerHTML = '匯入中，請稍候…';
+    const lines = parseImportCSV(await file.text());
+    let ok=0, fail=0, failList=[];
+    for (let i=0; i<lines.length; i++) {
+      const [date,caseType,timeOut,timeBack,district,address,services,note,memberName] = lines[i].split(',').map(c=>c.trim());
+      if (!date||!memberName){fail++;failList.push({row:i+1,reason:'缺少日期或姓名'});continue;}
+      try {
+        const [y,m,d2] = date.replace(/\//g,'-').split('-');
+        const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+        const mem = members.find(m=>m.name===memberName)||{};
+        await fbAdd(COL_OUTING,{date:dateFmt,caseType:caseType||'',timeOut:timeOut||'',timeBack:timeBack||'',district:district||'',address:address||'',services:services||'',note:note||'',memberName,unit:mem.unit||'',title:mem.title||'',signature:''});
+        ok++;
+      } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
+    }
+    resultEl.innerHTML = (ok===0&&fail===0) ? '<span style="color:var(--red);">CSV 無有效資料</span>' : importResultHtml(ok,fail,failList);
+    if(ok>0) document.getElementById('importOutFile').value='';
+  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
+}
+function downloadAttTemplate() {
+  _dlCSV(['date,dutyType,memberName,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2'].join('
+'), '簽到簽退匯入範本.csv');
+}
+function downloadOutTemplate() {
+  _dlCSV(['date,caseType,timeOut,timeBack,district,address,services,note,memberName','2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖'].join('
+'), '協勤案件匯入範本.csv');
+}
+function _dlCSV(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+content],{type:'text/csv;charset=utf-8;'}));
+  a.download = filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);document.body.removeChild(a);},1000);
+}
+
+</script>
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+<!-- ══════ 登入畫面 ══════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">✚</div>
+    <div class="login-title">救護義消系統</div>
+    <div class="login-sub">
+      臺中市義勇消防總隊<br>鳳凰救護大隊
+    </div>
+    <div class="login-divider"></div>
+    <!-- Google 登入按鈕 -->
+    <div id="g_id_onload"
+      data-client_id="280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com"
+      data-callback="handleGoogleLogin"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="outline"
+      data-text="sign_in_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+      data-width="280">
+    </div>
+    <div id="loginSpinner">⏳ 驗證中，請稍候...</div>
+    <div class="login-error" id="loginError"></div>
+
+    <!-- LINE 瀏覽器警告 -->
+    <div id="lineWarning" style="display:none;margin-bottom:0;margin-top:14px;padding:12px 14px;background:#edfbe4;border:1px solid #6fcf55;border-radius:8px;font-size:0.8rem;color:#2d6a1f;line-height:1.6;">
+      ⚠️ 偵測到 LINE 內建瀏覽器<br>
+      Google 登入需使用 <strong>Safari</strong> 或 <strong>Chrome</strong><br>
+      請點右上角「⋯」→「用瀏覽器開啟」
+    </div>
+
+    <!-- 臨時密碼登入 -->
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:0.78rem;color:var(--text-light);text-align:center;margin-bottom:10px;">無法用 Google 登入？</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="tempPassInput" placeholder="輸入臨時密碼" maxlength="20"
+          style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;outline:none;text-transform:uppercase;letter-spacing:2px;"
+          autocapitalize="characters" autocomplete="off" spellcheck="false"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter')loginWithTempPass()">
+        <button onclick="loginWithTempPass()"
+          style="background:var(--red);color:white;border:none;border-radius:8px;padding:10px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;min-height:unset;">
+          登入
+        </button>
+      </div>
+      <div id="tempPassError" style="display:none;font-size:0.78rem;color:#b94a3a;margin-top:8px;text-align:center;"></div>
+    </div>
+
+    <div class="login-hint">
+      僅限授權義消成員登入<br>
+      如無法登入請聯絡管理員
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <button onclick="showLoginFeedback()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 20px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;width:100%;transition:all 0.15s;min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">
+          💬 意見回饋 / 聯絡我們
+        </button>
+        <a href="https://lin.ee/6UjuqWl" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;background:#06C755;color:white;border:none;border-radius:6px;padding:8px 20px;font-size:0.78rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;width:100%;box-sizing:border-box;text-decoration:none;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.070 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+          加入官方 LINE 帳號
+        </a>
+      </div>
+    </div>
+    <!-- 登入頁意見回饋表單（展開式）-->
+    <div id="loginFeedbackForm" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:10px;font-weight:600;">💬 意見回饋</div>
+      <div style="margin-bottom:8px;">
+        <input type="text" id="lfName" placeholder="姓名（可留空匿名）" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;background:white;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <textarea id="lfContent" rows="3" placeholder="請填寫您的問題或建議..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="submitLoginFeedback()" style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:9px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;cursor:pointer;min-height:unset;">送出</button>
+        <button onclick="hideLoginFeedback()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:9px 16px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;color:var(--text-mid);cursor:pointer;min-height:unset;">取消</button>
+      </div>
+      <div id="lfStatus" style="font-size:0.8rem;margin-top:8px;text-align:center;display:none;"></div>
+    </div>
+    <!-- 開發者快速登入（僅 localhost 顯示）-->
+    <div id="devLoginArea" style="display:none;margin-top:20px;border-top:1px dashed #e0d5c8;padding-top:16px;">
+      <div style="font-size:0.72rem;color:var(--text-light);text-align:center;margin-bottom:10px;letter-spacing:0.06em;">🛠 開發者快速登入</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <button onclick="devLoginAs('admin')"
+          style="padding:10px 4px;border:1.5px solid #ffc107;border-radius:8px;background:#fff3cd;color:#856404;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
+          ⚙️ 系統管理員
+        </button>
+        <button onclick="devLoginAs('officer')"
+          style="padding:10px 4px;border:1.5px solid #9ec5fe;border-radius:8px;background:#cfe2ff;color:#084298;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
+          📋 分隊承辦人
+        </button>
+        <button onclick="devLoginAs('member')"
+          style="padding:10px 4px;border:1.5px solid #ced4da;border-radius:8px;background:#e9ecef;color:#495057;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
+          👤 一般成員
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">分隊：</span>
+        <select id="devUnitSel" style="flex:1;font-size:0.78rem;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:white;color:var(--text);">
+          <option value="潭子分隊">潭子分隊</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+        <span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">姓名（成員/承辦）：</span>
+        <input id="devNameInput" type="text" placeholder="例：林弘科" style="flex:1;font-size:0.78rem;padding:5px 8px;border:1px solid var(--border);border-radius:6px;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<!-- Drawer -->
+<div class="drawer" id="drawer">
+
+  <nav>
+    <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
+    <button id="nav-profile" onclick="navTo('profilePage')"><span class="icon">👤</span>個人基本資料</button>
+    <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
+    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>待領物品</button>
+    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍</span>簽到簽退登錄</button>
+    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
+    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>協勤案件登錄</button>
+    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>協勤紀錄查詢</button>
+    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
+    <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>協勤統計</button>
+    <button id="nav-feedback" onclick="navTo('feedbackPage')"><span class="icon">💬</span>意見回饋</button>
+    <button id="nav-duty" onclick="navTo('dutyPage')"><span class="icon">📅</span>備勤排班</button>
+    <button id="nav-meeting" onclick="navTo('meetingPage')"><span class="icon">📒</span>定訓與公告</button>
+    <button id="nav-changelog" onclick="navTo('changelogPage')"><span class="icon">📝</span>版本修改紀錄</button>
+    <button id="nav-admin" onclick="navTo('adminPage')" style="display:none;border-top:1px solid rgba(255,255,255,0.15);margin-top:8px;padding-top:12px;"><span class="icon">⚙️</span>管理員後台</button>
+    <!-- 後台子導覽（管理員才顯示，進入 adminPage 後展開）-->
+    <div id="adminSubNav" style="display:none;">
+      <button onclick="adminNavTo('adminSec-units')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🏢</span>分隊管理</button>
+      <button onclick="adminNavTo('adminSec-wl')"       class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">👤</span>成員帳號</button>
+      <button onclick="adminNavTo('adminSec-att')"      class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">✍</span>簽到退紀錄</button>
+      <button onclick="adminNavTo('adminSec-outing')"   class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🚑</span>協勤紀錄</button>
+      <button onclick="adminNavTo('adminSec-casetypes')" class="admin-subnav-btn" id="adminSubNav-casetypes"><span class="icon" style="font-size:0.75rem;">🏷</span>案由</button>
+      <button onclick="adminNavTo('adminSec-items')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📦</span>物品領用</button>
+      <button id="adminSubNav-announce" onclick="adminNavTo('adminSec-announce')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📢</span>公告管理</button>
+      <button onclick="adminNavTo('adminSec-feedback')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">💬</span>意見回饋</button>
+      <button onclick="adminNavTo('adminSec-correction')" class="admin-subnav-btn" id="adminSubNav-correction"><span class="icon" style="font-size:0.75rem;">📝</span>修正申請</button>
+      <button onclick="adminNavTo('adminSec-schedule')" class="admin-subnav-btn" id="adminSubNav-schedule"><span class="icon" style="font-size:0.75rem;">📅</span>定訓行事曆</button>
+      <button onclick="adminNavTo('adminSec-changelog')"class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📝</span>版本紀錄</button>
+      <button id="adminSubNav-loginlog" onclick="adminNavTo('adminSec-loginlog')" class="admin-subnav-btn" style="display:none;"><span class="icon" style="font-size:0.75rem;">🔐</span>登入紀錄</button>
+    </div>
+  </nav>
+</div>
+
+<!-- ══════ SHARED HEADER ══════ -->
+<div class="header" onclick="scrollToPageTop(event)" style="cursor:pointer;">
+  <div class="header-deco"></div>
+  <div class="header-deco2"></div>
+  <div class="header-cross">✚</div>
+  <div class="header-inner">
+    <button class="menu-btn" onclick="openDrawer()" aria-label="選單">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="header-text">
+      <h1 id="pageTitle">救護義消系統</h1>
+      <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
+    </div>
+    <div id="headerUserCard" style="display:none;margin-left:auto;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+        <span id="headerUserInfo" style="font-size:0.8rem;color:white;font-weight:600;letter-spacing:0.04em;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <span id="headerUserBadge" style="display:none;font-size:0.6rem;background:rgba(255,215,0,0.25);border:1px solid rgba(255,215,0,0.5);border-radius:10px;padding:1px 7px;color:rgba(255,235,150,1);letter-spacing:0.06em;">管理員</span>
+      </div>
+      <div id="headerAvatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:white;flex-shrink:0;"></div>
+      <button onclick="logout()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.85);font-size:0.7rem;padding:5px 10px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">登出</button>
+    </div>
+  </div>
+</div>
+
+<div id="appScroll">
+
+<!-- ══════ PAGE 0：儀表板 ══════ -->
+<div class="page active" id="dashboardPage">
+  <div class="form-wrap">
+    <!-- 公告區（多則）-->
+    <div id="announcementBar" style="display:none;margin-bottom:12px;"></div>
+    <!-- 緊急公告彈窗 -->
+    <div id="urgentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;align-items:center;justify-content:center;padding:16px;">
+      <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:1.4rem;">🚨</span>
+          <span style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--red);">緊急公告</span>
+        </div>
+        <div id="urgentText" style="font-size:0.88rem;line-height:1.7;color:var(--text);margin-bottom:20px;white-space:pre-wrap;"></div>
+        <button onclick="confirmUrgent()" class="btn-submit" style="width:100%;">已閱，確認關閉</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">今</div>
+        <div class="section-title">今日概況</div>
+        <div class="section-line"></div>
+        <span id="dashDate" style="font-size:0.75rem;color:var(--text-light);white-space:nowrap;"></span>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodayAtt">—</div>
+          <div class="stat-label">今日協勤筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodayMembers">—</div>
+          <div class="stat-label">今日簽到人數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashTodaySignin">—</div>
+          <div class="stat-label">目前在線人數</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">月</div>
+        <div class="section-title">本月累計</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(2,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthAtt">—</div>
+          <div class="stat-label">協勤總筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthHours">—</div>
+          <div class="stat-label">協勤總時數</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num" style="font-size:0.75rem;">⚡</div>
+        <div class="section-title">快速入口</div>
+        <div class="section-line"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人基本資料</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">聯絡資訊與證照</div>
+        </button>
+        <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">分隊成員查詢</div>
+        </button>
+        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取簽名</div>
+        </button>
+        <button id="quick-attendance" onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">✍</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤簽到</div>
+        </button>
+        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📊</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退查詢</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤紀錄查詢</div>
+        </button>
+        <button id="quick-form" onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤案件登錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤案件記錄</div>
+        </button>
+        <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤紀錄查詢</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤記錄查詢</div>
+        </button>
+        <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤統計</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤排行榜</div>
+        </button>
+        <button onclick="navTo('feedbackPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">💬</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">意見回饋</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">建議與問題回報</div>
+        </button>
+        <button onclick="navTo('dutyPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📅</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">備勤排班</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">備勤時段排班</div>
+        </button>
+        <button onclick="navTo('meetingPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📒</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">定訓與公告</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">定訓記錄與公告</div>
+        </button>
+      </div>
+    </div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE 1：協勤案件登錄 ══════ -->
+<div class="page" id="formPage">
+  <div class="form-wrap">
+    <!-- 簡易模式切換按鈕 -->
+    <div style="text-align:right;margin-bottom:12px;">
+      <button id="formEasyBtn" onclick="toggleFormEasyMode()" style="background:var(--red);color:white;border:none;border-radius:50px;padding:9px 18px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;letter-spacing:0.05em;cursor:pointer;box-shadow:0 4px 12px rgba(192,57,43,0.3);">👴 簡易模式</button>
+    </div>
+    <!-- 簡易模式協勤區塊 -->
+    <div id="formEasySection" style="display:none;">
+      <div class="easy-greeting">
+        <div class="easy-name" id="formEasyGreetName">您好</div>
+        <div class="easy-date" id="formEasyGreetDate"></div>
+      </div>
+      <div class="easy-form-card" id="easyOutingCard" style="display:none;">
+        <div class="easy-form-title">📋 協勤案件登錄</div>
+        <div class="field">
+          <label>協勤日期</label>
+          <input type="date" id="easyOutingDate">
+        </div>
+        <div class="field">
+          <label>出發時間 ～ 返隊時間</label>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
+            <input type="time" id="easyOutingTimeOut">
+            <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
+            <input type="time" id="easyOutingTimeBack">
+          </div>
+        </div>
+        <div class="field">
+          <label>行政區</label>
+          <select id="easyOutingDistrict">
+            <option value="">— 請選擇區域 —</option>
+            <option value="臺中市潭子區">臺中市潭子區</option>
+            <option value="臺中市豐原區">臺中市豐原區</option>
+            <option value="臺中市神岡區">臺中市神岡區</option>
+            <option value="臺中市大雅區">臺中市大雅區</option>
+            <option value="臺中市北屯區">臺中市北屯區</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>詳細地址</label>
+          <input type="text" id="easyOutingAddress" placeholder="路名、號碼或地標">
+        </div>
+        <div class="field">
+          <label>案由 <span class="req">*</span></label>
+          <div id="easyCaseTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:4px;"></div>
+          <div id="easyCaseTypeOtherField" style="display:none;margin-top:8px;">
+            <input type="text" id="easyCaseTypeOther" placeholder="請填寫實際案由"
+              style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
+          </div>
+        </div>
+        <div class="field">
+          <label>服務項目（可複選）</label>
+          <div id="easyServiceGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
+        </div>
+        <div class="field">
+          <label>義消姓名</label>
+          <select id="easyOutingUnitSel" onchange="easyOutingFilterMembers()" style="margin-bottom:10px;">
+            <option value="">請選擇分隊</option>
+          </select>
+          <select id="easyOutingMemberSel">
+            <option value="">— 請先選擇分隊 —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>義消簽名</label>
+          <div class="sig-wrap">
+            <canvas id="easyOutingCanvas"></canvas>
+            <div class="sig-footer">
+              <span>請用手指在上方簽名</span>
+              <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
+            </div>
+          </div>
+        </div>
+        <button class="easy-submit-btn" style="background:var(--red);" onclick="easyDoOuting()">送出協勤紀錄</button>
+      </div>
+    </div>
+    <form id="recordForm" novalidate>
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">1</div>
+          <div class="section-title">基本資訊</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="date">協勤日期 <span class="req">*</span></label>
+            <input type="date" id="date" required>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>出動時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
+            <div class="time-row">
+              <input type="time" id="timeOut" required>
+              <div class="time-dash">—</div>
+              <input type="time" id="timeBack" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">2</div>
+          <div class="section-title">協勤地點</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="district">行政區 <span class="req">*</span></label>
+            <select id="district" required>
+              <option value="">— 請選擇區域 —</option>
+              <option value="臺中市潭子區">臺中市潭子區</option>
+              <option value="臺中市豐原區">臺中市豐原區</option>
+              <option value="臺中市神岡區">臺中市神岡區</option>
+              <option value="臺中市大雅區">臺中市大雅區</option>
+              <option value="臺中市北屯區">臺中市北屯區</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="address">詳細地址 <span class="req">*</span></label>
+            <input type="text" id="address" placeholder="路名、號碼或地標" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">3</div>
+          <div class="section-title">案由</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label>案由 <span class="req">*</span>（單選）<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案由填寫</span></label>
+            <div class="checkbox-grid" id="caseTypeGrid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
+              <!-- 由 JS 動態載入 -->
+              <div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">載入中...</div>
+            </div>
+          </div>
+          <div class="field" id="caseTypeOtherField" style="display:none;">
+            <input type="hidden" id="isOtherCaseType" value="0">
+            <label for="caseTypeOther">其他（請說明）<span class="req">*</span></label>
+            <input type="text" id="caseTypeOther" placeholder="請輸入案由">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">4</div>
+          <div class="section-title">服務內容</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            
+            <label>服務項目 <span class="req">*</span>（可複選）</label>
+            <div class="checkbox-grid" id="serviceGrid">
+              <label class="cb-item"><input type="checkbox" value="保暖"> 保暖</label>
+              <label class="cb-item"><input type="checkbox" value="心理支持"> 心理支持</label>
+              <label class="cb-item"><input type="checkbox" value="生命徵象量測"> 生命徵象量測</label>
+              <label class="cb-item"><input type="checkbox" value="協助患者姿勢擺位（平躺、側臥等）"> 協助患者姿勢擺位（平躺、側臥等）</label>
+              <label class="cb-item"><input type="checkbox" value="心肺復甦術（CPR）"> 心肺復甦術（CPR）</label>
+              <label class="cb-item"><input type="checkbox" value="協助操作AED"> 協助操作AED</label>
+              <label class="cb-item"><input type="checkbox" value="協助給氧"> 協助給氧</label>
+              <label class="cb-item"><input type="checkbox" value="協助抽吸"> 協助抽吸</label>
+              <label class="cb-item"><input type="checkbox" value="協助使用LUCAS"> 協助使用LUCAS</label>
+              
+              <label class="cb-item"><input type="checkbox" value="協助使用心電圖"> 協助使用心電圖</label>
+              <label class="cb-item"><input type="checkbox" value="協助使用支氣管擴張劑"> 協助使用支氣管擴張劑</label>
+              <label class="cb-item"><input type="checkbox" value="協助使用NTG"> 協助使用NTG</label>
+              <label class="cb-item"><input type="checkbox" value="靜脈注射（IV）"> 靜脈注射（IV）</label>
+              <label class="cb-item"><input type="checkbox" value="測量血糖"> 測量血糖</label>
+              <label class="cb-item"><input type="checkbox" value="協助止血"> 協助止血</label>
+              <label class="cb-item"><input type="checkbox" value="包紮傷口"> 包紮傷口</label>
+              <label class="cb-item"><input type="checkbox" value="使用止血帶"> 使用止血帶</label>
+              <label class="cb-item"><input type="checkbox" value="骨折固定"> 骨折固定</label>
+              <label class="cb-item"><input type="checkbox" value="頸圈固定"> 頸圈固定</label>
+              <label class="cb-item"><input type="checkbox" value="拒絕送醫"> 拒絕送醫</label>
+              <label class="cb-item"><input type="checkbox" value="空跑"> 空跑</label>
+            </div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label for="note">備註說明</label>
+            <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">5</div>
+          <div class="section-title">協勤義消簽名</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label>分隊別 <span class="req">*</span></label>
+            <select id="formUnitSel" onchange="filterFormMembers()" style="width:100%;">
+              <option value="">請選擇分隊</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="memberSelect">協勤義消姓名 <span class="req">*</span></label>
+            <select id="memberSelect" required>
+              <option value="">— 請先選擇分隊 —</option>
+            </select>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>義消簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="sigCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-section">
+        <button type="button" class="btn-submit" onclick="submitOutingForm()">送　出　紀　錄</button>
+      </div>
+      <div class="success-msg" id="successMsg">
+        <div class="success-icon">✓</div>
+        <h3>紀錄已成功送出</h3>
+        <p>感謝您的服務，協勤資料已記錄完成。</p>
+        <p style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:6px;padding:8px 12px;margin-top:10px;line-height:1.6;">
+          💡 如有填寫錯誤，可至「協勤紀錄查詢」申請修正
+        </p>
+        <button type="button" onclick="goToQuery()" style="margin-top:10px;background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">查看協勤紀錄 →</button>
+      </div>
+      <div class="site-footer-placeholder"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════ PAGE 2：成員管理 ══════ -->
+<div class="page" id="membersPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">👥</div>
+        <div class="section-title">成員管理</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+    <!-- 分隊篩選 -->
+    <div class="filter-card" style="padding:16px 20px;">
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;letter-spacing:0.04em;">分隊別</label>
+      <select id="memberFilterUnit" onchange="filterMemberList()"
+        style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23999%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;background-size:12px;">
+        <option value="">請選擇分隊</option>
+      </select>
+    </div>
+    <div id="memberListContainer" style="margin-top:12px;"></div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE 3：協勤查詢 ══════ -->
+<div class="page" id="queryPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">篩選條件</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="qDateFrom">日期（起）</label>
+            <input type="date" id="qDateFrom">
+          </div>
+          <div class="field">
+            <label for="qDateTo">日期（迄）</label>
+            <input type="date" id="qDateTo">
+          </div>
+          <div class="field">
+            <label for="qUnit">分隊別</label>
+            <select id="qUnit" onchange="filterQueryMembers()">
+              <option value="">— 全部分隊 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qMember">義消姓名</label>
+            <select id="qMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qDistrict">行政區</label>
+            <select id="qDistrict">
+              <option value="">— 全部區域 —</option>
+              <option value="臺中市潭子區">臺中市潭子區</option>
+              <option value="臺中市豐原區">臺中市豐原區</option>
+              <option value="臺中市神岡區">臺中市神岡區</option>
+              <option value="臺中市大雅區">臺中市大雅區</option>
+              <option value="臺中市北屯區">臺中市北屯區</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="qCaseType">案由</label>
+            <select id="qCaseType">
+              <option value="">— 全部類型 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qService">服務項目</label>
+            <select id="qService">
+              <option value="">— 全部項目 —</option>
+              <option value="保暖">保暖</option>
+              <option value="心理支持">心理支持</option>
+              <option value="生命徵象量測">生命徵象量測</option>
+              <option value="心肺復甦術（CPR）">心肺復甦術（CPR）</option>
+              <option value="協助操作AED">協助操作AED</option>
+              <option value="協助給氧">協助給氧</option>
+              <option value="協助抽吸">協助抽吸</option>
+              <option value="協助使用LUCAS">協助使用LUCAS</option>
+              <option value="協助止血">協助止血</option>
+              <option value="包紮傷口">包紮傷口</option>
+              <option value="使用止血帶">使用止血帶</option>
+              <option value="骨折固定">骨折固定</option>
+              <option value="頸圈固定">頸圈固定</option>
+              <option value="拒絕送醫">拒絕送醫</option>
+              <option value="空跑">空跑</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-search" onclick="doQuery()">查　詢</button>
+          <button class="btn-reset" onclick="resetQuery()">清除條件</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="statsRow" style="display:none;">
+      <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">協勤總筆數</div></div>
+      <div class="stat-card"><div class="stat-num" id="statMembers">0</div><div class="stat-label">協勤人數</div></div>
+      <div class="stat-card"><div class="stat-num" id="statDays">0</div><div class="stat-label">協勤天數</div></div>
+    </div>
+
+    <div class="result-card" id="resultCard" style="display:none;">
+      <div class="result-head">
+        <h3>查詢結果</h3>
+        <button id="qSortBtn" onclick="toggleQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
+      </div>
+      <div class="result-table-wrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>日期</th>
+              <th>出動時間</th>
+              <th>行政區</th>
+              <th>地址</th>
+              <th>案由</th>
+              <th>服務項目</th>
+              <th>義消姓名</th>
+              <th>備註</th>
+              <th>簽名</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <div id="queryInitMsg" class="query-empty">
+      <span class="empty-icon">🔍</span>
+      請設定篩選條件後按「查詢」
+    </div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE 4：簽到簽退 ══════ -->
+<div class="page" id="attendancePage">
+  <div class="attendance-wrap">
+    <!-- 簡易模式切換按鈕 -->
+    <div style="text-align:right;margin-bottom:12px;">
+      <button id="attEasyBtn" onclick="toggleAttEasyMode()" style="background:var(--red);color:white;border:none;border-radius:50px;padding:9px 18px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;letter-spacing:0.05em;cursor:pointer;box-shadow:0 4px 12px rgba(192,57,43,0.3);">👴 簡易模式</button>
+    </div>
+    <!-- 簡易模式簽到退區塊 -->
+    <div id="attEasySection" style="display:none;">
+      <div class="easy-greeting">
+        <div class="easy-name" id="attEasyGreetName">您好</div>
+        <div class="easy-date" id="attEasyGreetDate"></div>
+      </div>
+      <div class="easy-btn-wrap" id="easyMainBtns">
+        <button class="easy-big-btn checkin-btn" onclick="easyShowCheckin()">
+          <span class="easy-icon">✅</span>
+          <span>簽　到</span>
+          <span class="easy-hint">出勤開始時點此</span>
+        </button>
+        <button class="easy-big-btn checkout-btn" onclick="easyShowCheckout()">
+          <span class="easy-icon">🏠</span>
+          <span>簽　退</span>
+          <span class="easy-hint">結束出勤時點此</span>
+        </button>
+      </div>
+      <!-- 簽到表單 -->
+      <div class="easy-form-card" id="easyCheckinCard" style="display:none;">
+        <div class="easy-form-title">✅ 簽到登錄</div>
+        <div class="field">
+          <label>分隊別</label>
+          <select id="easyUnitSel" onchange="easyFilterMembers()">
+            <option value="">請選擇分隊</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>義消成員</label>
+          <select id="easyMemberSel">
+            <option value="">— 請先選擇分隊 —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>簽到時間</label>
+          <select id="easyCheckinTime"></select>
+        </div>
+        <div class="field">
+          <label>簽到簽名</label>
+          <div class="sig-wrap">
+            <canvas id="easyCheckinCanvas"></canvas>
+            <div class="sig-footer">
+              <span>請用手指在上方簽名</span>
+              <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
+            </div>
+          </div>
+        </div>
+        <button class="easy-submit-btn do-checkin" onclick="easyDoCheckin()">確認簽到</button>
+        <button class="easy-cancel-btn" onclick="easyBack()">← 返回</button>
+      </div>
+      <!-- 簽退：先選人 -->
+      <div class="easy-checkout-list" id="easyCheckoutList" style="display:none;">
+        <div style="text-align:center;font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:16px;letter-spacing:0.06em;">
+          🏠 請選擇要簽退的成員
+        </div>
+        <div id="easyCheckoutItems"></div>
+        <button class="easy-cancel-btn" style="max-width:420px;display:block;margin:0 auto;" onclick="easyBack()">← 返回</button>
+      </div>
+      <!-- 簽退表單 -->
+      <div class="easy-form-card" id="easyCheckoutCard" style="display:none;">
+        <div class="easy-form-title">🏠 簽退登錄</div>
+        <div style="text-align:center;font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:16px;" id="easyCheckoutName"></div>
+        <div class="field">
+          <label>簽到時間</label>
+          <div id="easyCheckinRef" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);"></div>
+        </div>
+        <div class="field">
+          <label>簽退時間</label>
+          <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div class="field" style="margin-bottom:0;">
+            <label>協勤時數</label>
+            <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>出勤次數</label>
+            <div style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>服務人次</label>
+            <input type="number" id="easyServiceCount" min="0" value="0" style="font-size:1rem;text-align:center;">
+          </div>
+        </div>
+        <div class="field">
+          <label>簽退簽名</label>
+          <div class="sig-wrap">
+            <canvas id="easyCheckoutCanvas"></canvas>
+            <div class="sig-footer">
+              <span>請用手指在上方簽名</span>
+              <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
+            </div>
+          </div>
+        </div>
+        <button class="easy-submit-btn do-checkout" onclick="easyDoCheckout()">確認簽退</button>
+        <button class="easy-cancel-btn" onclick="easyBackToCheckoutList()">← 返回選人</button>
+      </div>
+    </div>
+    <div id="attMain" style="display:block;">
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">✍</div>
+          <div class="section-title">簽到</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="row-2" style="margin-bottom:18px;">
+            <div class="field" style="margin-bottom:0;">
+              <label for="attDate">日期</label>
+              <input type="date" id="attDate">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label for="attCheckinTime">簽到時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
+              <select id="attCheckinTime" style="width:100%;"></select>
+            </div>
+          </div>
+          <div class="field">
+            <label>類別 <span class="req">*</span></label>
+            <div class="duty-toggle">
+              <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('協勤')">協勤</button>
+              <button type="button" class="duty-btn" id="attDutyPub" onclick="setAttDuty('公差')">公差</button>
+            </div>
+            <input type="hidden" id="attDutyType" value="協勤">
+          </div>
+          <div class="field">
+            <label>分隊別 <span class="req">*</span></label>
+            <select id="attUnitSel" onchange="filterAttMembers()" style="width:100%;">
+              <option value="">請選擇分隊</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="attMemberSel">義消成員 <span class="req">*</span></label>
+            <select id="attMemberSel">
+              <option value="">— 請選擇 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>簽到簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="attCheckinCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
+              </div>
+            </div>
+          </div>
+          <div class="submit-section">
+            <button type="button" class="btn-checkin" onclick="doCheckin()">確認簽到</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.8rem;">名</div>
+          <div class="section-title">已簽到名單</div>
+          <div class="section-line"></div>
+          <span style="font-size:0.75rem;color:var(--text-light);">點擊成員進行簽退</span>
+        </div>
+        <div class="member-list-card">
+          <div id="attCheckinList">
+            <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
+          </div>
+        </div>
+      </div>
+      <div class="site-footer-placeholder"></div>
+    </div>
+
+    <!-- ── 簽退畫面 ── -->
+    <div id="attCheckoutView" style="display:none;">
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num" style="font-size:0.9rem;">←</div>
+          <div class="section-title" id="attCheckoutName">成員姓名</div>
+          <div class="section-line"></div>
+          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;min-height:unset;">← 返回</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-num">✓</div>
+          <div class="section-title">簽退</div>
+          <div class="section-line"></div>
+        </div>
+        <div class="card">
+          <div class="field" style="background:var(--warm);border-radius:4px;padding:10px 14px;margin-bottom:16px;">
+            <span style="font-size:0.78rem;color:var(--text-mid);">簽到時間：</span>
+            <span class="time-badge" id="attCheckinTimeRef"></span>
+          </div>
+          <div class="field">
+            <label>簽退時間 <span class="req">*</span></label>
+            
+            <select id="attCheckoutTime" style="width:100%;" onchange="autoCalcHours()"></select>
+          </div>
+          <div class="field">
+            <label>簽退簽名 <span class="req">*</span></label>
+            <div class="sig-wrap">
+              <canvas id="attCheckoutCanvas"></canvas>
+              <div class="sig-footer">
+                <span>請用滑鼠或手指於上方簽名</span>
+                <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
+              </div>
+            </div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>協勤時數</label>
+            <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;" readonly>
+          </div>
+          <div class="field">
+            <label>出勤次數</label>
+            <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
+          </div>
+          <div class="field">
+            <label>服務人次 <span class="req">*</span></label>
+            <input type="number" id="attService" min="0" step="1" placeholder="0" style="width:100%;">
+          </div>
+          <div class="submit-section" style="margin-top:16px;">
+            <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-msg" id="attSuccessMsg">
+        <div class="success-icon">✓</div>
+        <h3>簽退完成</h3>
+        <p id="attSuccessDetail">紀錄已成功儲存。</p>
+        <p style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:6px;padding:8px 12px;margin-top:10px;line-height:1.6;">
+          💡 如有填寫錯誤，可至「簽到退記錄查詢」申請修正
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+          <button type="button" onclick="goToAttQuery()" style="background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">查看簽到紀錄 →</button>
+        </div>
+      </div>
+      <div class="site-footer-placeholder"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE 5：簽到簽退查詢 ══════ -->
+<div class="page" id="attQueryPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">篩選條件</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label for="aqDateFrom">日期（起）</label>
+            <input type="date" id="aqDateFrom">
+          </div>
+          <div class="field">
+            <label for="aqDateTo">日期（迄）</label>
+            <input type="date" id="aqDateTo">
+          </div>
+          <div class="field">
+            <label for="aqUnit">分隊別</label>
+            <select id="aqUnit" onchange="filterAqMembers()">
+              <option value="">— 全部分隊 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aqMember">義消姓名</label>
+            <select id="aqMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aqDutyType">類別</label>
+            <select id="aqDutyType">
+              <option value="">— 全部類別 —</option>
+              <option value="協勤">協勤</option>
+              <option value="公差">公差</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-search" onclick="doAttQuery()">查　詢</button>
+          <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-card" id="aqResultCard" style="display:none;">
+      <div class="result-head">
+        <h3>查詢結果</h3>
+        <button id="aqSortBtn" onclick="toggleAttQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
+      </div>
+      <div class="result-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>日期</th><th>類別</th><th>姓名</th><th>職稱</th>
+              <th>簽到</th><th>簽退</th><th>簽到簽名</th><th>簽退簽名</th><th>協勤時數</th>
+              <th>出勤次數</th><th>服務人次</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="aqResultBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="aqInitMsg" class="query-empty">
+      <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
+    </div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- 編輯 Modal -->
+<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:16px;color:var(--text);">編輯紀錄</h3>
+    <input type="hidden" id="aqEditRow">
+    <div class="field"><label>日期</label><input type="date" id="aqEditDate" style="width:100%;"></div>
+    <div class="field"><label>姓名</label><input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;"></div>
+    <div class="field">
+      <label>類別</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+        <label id="aqEditDutyAttLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--red);border-radius:10px;cursor:pointer;background:var(--red-faint);font-weight:600;font-size:0.95rem;color:var(--red);transition:all 0.15s;">
+          <input type="radio" name="aqEditDuty" id="aqEditDutyAtt" value="協勤" checked style="display:none;" onchange="updateDutyStyle()">
+          🚑 協勤
+        </label>
+        <label id="aqEditDutyPubLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-weight:500;font-size:0.95rem;color:var(--text-light);transition:all 0.15s;">
+          <input type="radio" name="aqEditDuty" id="aqEditDutyPub" value="公差" style="display:none;" onchange="updateDutyStyle()">
+          🔧 公差
+        </label>
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
+      <div class="field"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
+    </div>
+    <div class="field"><label>協勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
+    <div class="field"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
+    <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      <div id="aqEditCheckinPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
+      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽退簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
+      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
+      <button onclick="closeAttEdit()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：報表 ══════ -->
+<div class="page" id="reportPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📑</div>
+        <div class="section-title">選擇報表</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card">
+        <!-- 報表1 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">1</span>
+            簽到簽退紀錄表
+          </div>
+          <div class="filter-grid">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <select id="rpt1Unit" style="width:100%;"><option value="">載入中...</option></select>
+            </div>
+            <div class="field">
+              <label>民國年份</label>
+              <select id="rpt1Year" style="width:100%;"></select>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <select id="rpt1Month" style="width:100%;">
+                <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+              </select>
+            </div>
+          </div>
+          <div id="rpt1Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions"><button class="btn-search" onclick="generateRpt1()" id="rpt1Btn">⬇ 產生並下載</button></div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
+
+        <!-- 報表2 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">2</span>
+            救護義消服勤表
+          </div>
+          <div class="filter-grid">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <select id="rpt2Unit" style="width:100%;"><option value="">載入中...</option></select>
+            </div>
+            <div class="field">
+              <label>民國年份</label>
+              <select id="rpt2Year" style="width:100%;"></select>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <select id="rpt2Month" style="width:100%;">
+                <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+              </select>
+            </div>
+          </div>
+          <div id="rpt2Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions"><button class="btn-search" onclick="generateRpt2()" id="rpt2Btn">⬇ 產生並下載</button></div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 20px;">
+
+        <!-- 報表3 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;font-size:0.9rem;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:20px;height:20px;background:var(--red);border-radius:4px;color:white;font-size:0.7rem;line-height:20px;text-align:center;">3</span>
+            救護協勤紀錄表
+          </div>
+          <div class="filter-grid">
+            <div class="field" style="grid-column:1/-1;">
+              <label>分隊別</label>
+              <select id="rpt3Unit" style="width:100%;"><option value="">載入中...</option></select>
+            </div>
+            <div class="field">
+              <label>民國年份</label>
+              <select id="rpt3Year" style="width:100%;"></select>
+            </div>
+            <div class="field">
+              <label>月份</label>
+              <select id="rpt3Month" style="width:100%;">
+                <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+              </select>
+            </div>
+          </div>
+          <div id="rpt3Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
+          <div class="filter-actions"><button class="btn-search" onclick="generateRpt3()" id="rpt3Btn">⬇ 產生並下載</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：月統計 ══════ -->
+<div class="page" id="statsPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📈</div>
+        <div class="section-title">月協勤統計</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card" style="margin-bottom:16px;">
+        <div class="filter-grid">
+          <div class="field"><label>年份</label><select id="statsYear" style="width:100%;" onchange="loadStats()"></select></div>
+          <div class="field">
+            <label>月份</label>
+            <select id="statsMonth" style="width:100%;" onchange="loadStats()">
+              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>分隊別</label>
+            <select id="statsUnit" style="width:100%;" onchange="loadStats()">
+              <option value="">— 全部分隊 —</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="stats-row" id="statsOverview" style="display:none;margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num" id="statsTotal">0</div><div class="stat-label">協勤總筆數</div></div>
+        <div class="stat-card"><div class="stat-num" id="statsMemCount">0</div><div class="stat-label">協勤人數</div></div>
+        <div class="stat-card"><div class="stat-num" id="statsTotalHours">0</div><div class="stat-label">協勤總時數</div></div>
+      </div>
+      <div class="result-card" id="statsTableCard" style="display:none;">
+        <div class="result-head"><h3 id="statsTableTitle">協勤排行榜</h3></div>
+        <div class="result-table-wrap">
+          <table class="stats-table">
+            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>出勤次數</th><th>協勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
+            <tbody id="statsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="statsEmptyMsg" class="query-empty"><span class="empty-icon">📈</span>載入中...</div>
+    </div>
+
+
+    <!-- 案由統計 -->
+    <div class="section" id="caseStatsSection" style="display:none;margin-top:8px;">
+      <div class="section-head">
+        <div class="section-num">🏷</div>
+        <div class="section-title">案由統計</div>
+        <div class="section-line"></div>
+      </div>
+
+      <!-- 數字摘要 -->
+      <div class="stats-row" id="caseStatsOverview" style="margin-bottom:16px;"></div>
+
+      <!-- 圖表區：圓餅 + 長條並排 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="caseChartsGrid">
+        <!-- 圓餅圖 -->
+        <div class="result-card" style="padding:16px;">
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
+            案由分布
+          </div>
+          <div id="caseTypePieChart" style="width:100%;"></div>
+          <div id="caseTypeLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;font-size:0.75rem;"></div>
+        </div>
+        <!-- 長條圖 -->
+        <div class="result-card" style="padding:16px;">
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
+            各類型案件數
+          </div>
+          <div id="caseTypeBarChart" style="width:100%;"></div>
+        </div>
+      </div>
+
+      <!-- 分隊比較長條圖（全部分隊時才顯示）-->
+      <div class="result-card" id="caseUnitCompareCard" style="padding:16px;margin-bottom:16px;display:none;">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
+          各分隊案由比較
+        </div>
+        <canvas id="caseUnitChart" style="max-height:280px;"></canvas>
+      </div>
+
+      <!-- 明細表格 -->
+      <div class="result-card" style="padding:0;">
+        <div class="result-head"><h3>案由明細</h3></div>
+        <div class="result-table-wrap">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案由</th>
+                <th style="padding:10px 12px;background:var(--warm);text-align:center;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案件數</th>
+                <th style="padding:10px 12px;background:var(--warm);text-align:center;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">佔比</th>
+                <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">佔比圖</th>
+              </tr>
+            </thead>
+            <tbody id="caseTypeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：物品領用 ══════ -->
+<div class="page" id="itemsPage">
+  <div class="query-wrap">
+
+    <!-- 新增物品（僅管理員/承辦人可見）-->
+    <div class="section" id="itemAddSection" style="display:none;">
+      <div class="section-head">
+        <div class="section-num">＋</div>
+        <div class="section-title">新增物品</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label for="itemName">物品名稱 <span class="req">*</span></label>
+          <input type="text" id="itemName" placeholder="例：聘書、協勤慰問品">
+        </div>
+        <div class="field">
+          <label for="itemNote">備註說明</label>
+          <input type="text" id="itemNote" placeholder="例：114年春節、共3份">
+        </div>
+        <div class="field">
+          <label>分隊別 <span class="req">*</span></label>
+          <select id="itemUnit" onchange="filterMembersByUnit()" style="width:100%;">
+            <option value="">請選擇分隊</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>領取人 <span class="req">*</span>（可複選）</label>
+          <div id="itemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <button onclick="addItem()" class="btn-submit" style="letter-spacing:0.1em;">新增物品</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待領清單 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📦</div>
+        <div class="section-title">待領清單</div>
+        <div class="section-line"></div>
+        <button onclick="reloadItemsList()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div class="filter-card" style="margin-bottom:16px;padding:14px 16px;">
+        <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-mid);margin-bottom:6px;letter-spacing:0.05em;">分隊別 <span class="req">*</span></label>
+        <select id="itemsListUnit" onchange="reloadItemsList()" style="width:100%;">
+          <option value="">請選擇分隊</option>
+        </select>
+        <div id="itemsListUnitHint" style="display:none;font-size:0.72rem;color:var(--text-light);margin-top:5px;">🔒 僅限查看本分隊</div>
+      </div>
+      <div id="itemsList">
+        <div class="query-empty"><span class="empty-icon">📦</span>請先選擇分隊</div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- 領取簽名 Modal -->
+<div id="claimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;" id="claimModalTitle">領取物品</div>
+    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:20px;" id="claimModalSub"></div>
+    <div style="background:var(--warm);border-radius:5px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--text-mid);">
+      領取人：<b id="claimModalName"></b>
+    </div>
+    <div class="field">
+      <label>領取簽名 <span class="req">*</span></label>
+      <div class="sig-wrap">
+        <canvas id="claimSigCanvas"></canvas>
+        <div class="sig-footer">
+          <span>請用滑鼠或手指於上方簽名</span>
+          <button type="button" class="btn-clear" onclick="clearClaimSig()">清除重簽</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="submitClaim()" class="btn-search" style="flex:1;letter-spacing:0.1em;">確認領取</button>
+      <button onclick="closeClaimModal()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 待領物品提示 Modal -->
+<div id="pendingItemsAlert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <span style="font-size:1.4rem;">📦</span>
+      <div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:#8b3a3a;">尚有物品待領取</div>
+        <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px;">請盡速完成領取，謝謝！</div>
+      </div>
+    </div>
+    <div id="pendingItemsList" style="font-size:0.85rem;color:var(--text);line-height:2;margin-bottom:20px;max-height:200px;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="navTo('itemsPage');document.getElementById('pendingItemsAlert').style.display='none';" style="flex:1;background:#b94a3a;border:none;border-radius:6px;padding:10px;font-size:0.85rem;color:white;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:500;">前往領取</button>
+      <button onclick="document.getElementById('pendingItemsAlert').style.display='none';" style="background:none;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.85rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">稍後再說</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：意見回饋 ══════ -->
+<div class="page" id="feedbackPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">💬</div>
+        <div class="section-title">意見回饋</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+
+    <!-- 分隊選單 -->
+    <div class="filter-card" style="padding:16px 20px;margin-bottom:16px;">
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;letter-spacing:0.04em;">分隊別 <span class="req">*</span></label>
+      <select id="fbUnit" onchange="onFbUnitChange()"
+        style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23999%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;background-size:12px;">
+        <option value="">請選擇分隊</option>
+      </select>
+    </div>
+
+    <!-- 留言者：大卡片選擇 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;letter-spacing:0.04em;">留言者</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <label id="fbAnonLabel" onclick="selectFbSender('anon')"
+          style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px 12px;border:2px solid var(--red);border-radius:12px;cursor:pointer;background:var(--red-faint);transition:all 0.15s;">
+          <input type="radio" name="fbSender" id="fbAnon" value="anon" checked style="display:none;">
+          <span style="font-size:2rem;">🎭</span>
+          <span style="font-weight:700;font-size:0.95rem;color:var(--red);">匿名</span>
+          <span style="font-size:0.72rem;color:var(--text-light);text-align:center;">不顯示姓名</span>
+        </label>
+        <label id="fbNamedLabel" onclick="selectFbSender('named')"
+          style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px 12px;border:2px solid var(--border);border-radius:12px;cursor:pointer;background:white;transition:all 0.15s;">
+          <input type="radio" name="fbSender" id="fbNamed" value="named" style="display:none;">
+          <span style="font-size:2rem;">👤</span>
+          <span style="font-weight:600;font-size:0.95rem;color:var(--text-mid);">具名</span>
+          <span style="font-size:0.72rem;color:var(--text-light);text-align:center;">顯示成員姓名</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 具名時的成員選單 -->
+    <div id="fbNameField" class="filter-card" style="padding:16px 20px;margin-bottom:16px;display:none;">
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;letter-spacing:0.04em;">成員姓名</label>
+      <select id="fbName"
+        style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23999%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;background-size:12px;">
+        <option value="">請先選分隊</option>
+      </select>
+    </div>
+
+    <!-- 類別 + 內容 -->
+    <div class="card" style="margin-bottom:16px;">
+
+      <div class="field">
+        <label style="font-size:0.78rem;font-weight:600;color:var(--text-mid);letter-spacing:0.04em;">類別</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <label class="fb-cat-btn" data-val="建議" onclick="selectFbCat(this)"
+            style="display:flex;align-items:center;gap:8px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-size:0.88rem;font-weight:500;color:var(--text-mid);transition:all 0.15s;">
+            <input type="radio" name="fbCat" value="建議" style="display:none;">💡 建議
+          </label>
+          <label class="fb-cat-btn" data-val="問題回報" onclick="selectFbCat(this)"
+            style="display:flex;align-items:center;gap:8px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-size:0.88rem;font-weight:500;color:var(--text-mid);transition:all 0.15s;">
+            <input type="radio" name="fbCat" value="問題回報" style="display:none;">🐛 問題回報
+          </label>
+          <label class="fb-cat-btn" data-val="功能請求" onclick="selectFbCat(this)"
+            style="display:flex;align-items:center;gap:8px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-size:0.88rem;font-weight:500;color:var(--text-mid);transition:all 0.15s;">
+            <input type="radio" name="fbCat" value="功能請求" style="display:none;">✨ 功能請求
+          </label>
+          <label class="fb-cat-btn" data-val="其他" onclick="selectFbCat(this)"
+            style="display:flex;align-items:center;gap:8px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-size:0.88rem;font-weight:500;color:var(--text-mid);transition:all 0.15s;">
+            <input type="radio" name="fbCat" value="其他" style="display:none;">💭 其他
+          </label>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:16px;">
+        <label style="font-size:0.78rem;font-weight:600;color:var(--text-mid);letter-spacing:0.04em;">內容 <span class="req">*</span></label>
+        <textarea id="fbContent" placeholder="請填寫您的意見或建議..." rows="5"
+          style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;resize:vertical;outline:none;color:var(--text);background:white;margin-top:8px;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <button onclick="submitFeedback()" class="btn-submit" style="width:100%;letter-spacing:0.1em;margin-top:4px;">送出意見</button>
+      <div id="fbStatus" style="margin-top:12px;font-size:0.85rem;text-align:center;display:none;padding:10px;border-radius:6px;"></div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：管理員後台 ══════ -->
+<div class="page" id="adminPage">
+  <div class="query-wrap">
+
+    <!-- 後台導覽 Tab -->
+    <div id="adminTabBar" style="display:none;position:fixed;top:56px;left:0;right:0;z-index:150;background:var(--cream);padding:5px 10px 6px;border-bottom:2px solid var(--border);gap:4px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <button onclick="adminScrollTo('adminSec-units')"    class="admin-tab">🏢 分隊</button>
+      <button onclick="adminScrollTo('adminSec-wl')"       class="admin-tab">👤 帳號</button>
+      <button onclick="adminScrollTo('adminSec-att')"      class="admin-tab">✍ 簽到退</button>
+      <button onclick="adminScrollTo('adminSec-outing')"   class="admin-tab">🚑 協勤</button>
+      <button onclick="adminScrollTo('adminSec-casetypes')" class="admin-tab" id="adminTab-casetypes">🏷 案由</button>
+      <button onclick="adminScrollTo('adminSec-items')"    class="admin-tab">📦 物品</button>
+      <button id="adminTab-announce" onclick="adminScrollTo('adminSec-announce')" class="admin-tab">📢 公告</button>
+      <button onclick="adminScrollTo('adminSec-feedback')" class="admin-tab">💬 回饋</button>
+      <button onclick="adminScrollTo('adminSec-correction')" class="admin-tab" id="adminTab-correction">📝 修正</button>
+      <button onclick="adminScrollTo('adminSec-schedule')" class="admin-tab" id="adminTab-schedule">📅 定訓</button>
+      <button onclick="adminScrollTo('adminSec-temppass')" class="admin-tab" id="adminTab-temppass">🔑 臨時密碼</button>
+      <button onclick="adminScrollTo('adminSec-changelog')"class="admin-tab">📝 版本</button>
+      <button id="adminTab-loginlog" onclick="adminScrollTo('adminSec-loginlog')" class="admin-tab" style="display:none;">🔐 登入紀錄</button>
+      <button onclick="adminScrollTo('adminSec-import')" class="admin-tab">📥 批次匯入</button>
+    </div>
+    <!-- tab bar 佔位，避免內容被蓋住 -->
+    <div id="adminTabBarSpacer" style="display:none;height:8px;"></div>
+
+    <div class="section" id="adminSec-units">
+      <div class="section-head"><div class="section-num">🏢</div><div class="section-title">分隊管理</div><div class="section-line"></div>
+        <button onclick="loadAdminUnits()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <input type="text" id="adminUnitName" placeholder="分隊名稱（例：潭子分隊）" style="flex:1;">
+          <button onclick="adminAddUnit()" class="btn-search" style="min-height:unset;padding:6px 14px;">新增</button>
+        </div>
+        <div id="adminUnitList"></div>
+      </div>
+    </div>
+
+    <div class="section" id="adminSec-wl">
+      <div class="section-head"><div class="section-num">👤</div><div class="section-title">成員帳號管理</div><div class="section-line"></div>
+        <button onclick="loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <!-- 新增帳號 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:12px;letter-spacing:0.05em;">＋ 新增帳號</div>
+        <div class="filter-grid" style="margin-bottom:12px;">
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">Email <span class="req">*</span></label>
+            <input type="email" id="adminWlEmail" placeholder="example@gmail.com" style="width:100%;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">義消姓名 <span class="req">*</span></label>
+            <input type="text" id="adminWlName" placeholder="姓名" style="width:100%;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
+            <select id="adminWlUnit" style="width:100%;"><option value="">請選擇</option></select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">職稱</label>
+            <select id="adminWlTitle" style="width:100%;">
+              <option value="">請選擇</option>
+              <option value="分隊長">分隊長</option>
+              <option value="副分隊長">副分隊長</option>
+              <option value="幹事">幹事</option>
+              <option value="助理幹事">助理幹事</option>
+              <option value="小隊長">小隊長</option>
+              <option value="隊員">隊員</option>
+              <option value="分隊承辦人">分隊承辦人</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">角色權限</label>
+            <select id="adminWlRole" style="width:100%;">
+              <option value="member">一般成員</option>
+              <option value="officer">分隊承辦人</option>
+              <option value="admin">系統管理員</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="adminAddWhitelist()" class="btn-search" style="width:100%;">新增帳號</button>
+      </div>
+
+      <!-- 查詢列表 -->
+      <div class="card">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;letter-spacing:0.05em;">🔍 查詢成員</div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>選擇分隊</label>
+          <select id="adminWlFilterUnit" onchange="filterAdminWlByUnit()" style="width:100%;">
+            <option value="">請選擇分隊</option>
+          </select>
+        </div>
+        <div id="adminWlList">
+          <div style="color:var(--text-light);padding:8px 0;font-size:0.85rem;">請先選擇分隊</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="adminSec-att">
+      <div class="section-head"><div class="section-num">✍</div><div class="section-title">簽到簽退紀錄</div><div class="section-line"></div></div>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field"><label>日期（起）</label><input type="date" id="adminAttFrom"></div>
+          <div class="field"><label>日期（迄）</label><input type="date" id="adminAttTo"></div>
+          <div class="field"><label>分隊別</label>
+            <select id="adminAttUnit" onchange="adminAttUnitChange()">
+              <option value="">— 全部分隊 —</option>
+            </select>
+          </div>
+          <div class="field"><label>義消姓名</label>
+            <select id="adminAttMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions" style="display:flex;gap:8px;">
+          <button class="btn-search" onclick="loadAdminAttendance()" style="flex:1;">查　詢</button>
+          <button onclick="adminClearDate('adminAttFrom','adminAttTo');document.getElementById('adminAttUnit').value='';document.getElementById('adminAttMember').value='';adminAttUnitChange();loadAdminAttendance();" class="btn-reset" style="white-space:nowrap;">全部</button>
+        </div>
+      </div>
+      <div id="adminAttList" style="margin-top:12px;overflow-x:auto;"></div>
+    </div>
+    <div class="section" id="adminSec-outing">
+      <div class="section-head"><div class="section-num">📋</div><div class="section-title">協勤紀錄管理</div><div class="section-line"></div></div>
+      <div class="filter-card">
+        <div class="filter-grid">
+          <div class="field"><label>日期（起）</label><input type="date" id="adminOutFrom"></div>
+          <div class="field"><label>日期（迄）</label><input type="date" id="adminOutTo"></div>
+          <div class="field"><label>分隊別</label>
+            <select id="adminOutUnit" onchange="adminOutUnitChange()">
+              <option value="">— 全部分隊 —</option>
+            </select>
+          </div>
+          <div class="field"><label>義消姓名</label>
+            <select id="adminOutMember">
+              <option value="">— 全部成員 —</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions" style="display:flex;gap:8px;">
+          <button class="btn-search" onclick="loadAdminOuting()" style="flex:1;">查　詢</button>
+          <button onclick="adminClearDate('adminOutFrom','adminOutTo');document.getElementById('adminOutUnit').value='';document.getElementById('adminOutMember').value='';adminOutUnitChange();loadAdminOuting();" class="btn-reset" style="white-space:nowrap;">全部</button>
+        </div>
+      </div>
+      <div id="adminOutList" style="margin-top:12px;overflow-x:auto;"></div>
+    </div>
+    <div class="section" id="adminSec-casetypes">
+      <div class="section-head"><div class="section-num">🏷</div><div class="section-title">案由管理</div><div class="section-line"></div>
+        <button onclick="loadAdminCaseTypes()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="newCaseTypeInput" placeholder="輸入新案由" style="flex:1;">
+        <button onclick="addCaseType()" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 18px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:'Noto Sans TC',sans-serif;">新增</button>
+      </div>
+      <div id="adminCaseTypeList"></div>
+    </div>
+
+    <div class="section" id="adminSec-items">
+      <div class="section-head"><div class="section-num">📦</div><div class="section-title">物品領用管理</div><div class="section-line"></div>
+        <button onclick="loadAdminItems()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div id="adminItemList"></div>
+    </div>
+    <div class="section" id="adminSec-announce">
+      <div class="section-head">
+        <div class="section-num">📢</div>
+        <div class="section-title">公告管理</div>
+        <div class="section-line"></div>
+        <button onclick="showAnnounceForm(null)" class="btn-search" style="min-height:unset;padding:4px 14px;font-size:0.78rem;">＋ 新增公告</button>
+      </div>
+
+      <!-- 新增/編輯表單 -->
+      <div id="announceForm" style="display:none;background:var(--warm);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <input type="hidden" id="anFormId">
+        <div class="field" style="margin-bottom:10px;">
+          <label style="font-size:0.78rem;">公告內容 <span class="req">*</span></label>
+          <textarea id="anFormText" rows="3" placeholder="填寫公告內容..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:vertical;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">開始日期 <span class="req">*</span></label>
+            <input type="date" id="anFormStart" style="width:100%;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">結束日期 <span class="req">*</span></label>
+            <input type="date" id="anFormEnd" style="width:100%;">
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;font-weight:400;">
+            <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> 🚨 緊急公告（彈窗顯示）
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;font-weight:400;">
+            <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂顯示
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="saveAnnounceForm()" class="btn-search" style="flex:1;min-height:unset;">發布公告</button>
+          <button onclick="hideAnnounceForm()" class="btn-reset" style="min-height:unset;">取消</button>
+        </div>
+        <div id="anFormStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
+      </div>
+
+      <!-- 公告列表 -->
+      <div id="adminAnnounceList">
+        <div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>
+      </div>
+    </div>
+
+    <div class="section" id="adminSec-feedback">
+      <div class="section-head"><div class="section-num">💬</div><div class="section-title">意見回饋</div><div class="section-line"></div>
+        <button onclick="loadAdminFeedback()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div id="adminFeedbackList"></div>
+    </div>
+
+    <div class="section" id="adminSec-correction">
+      <div class="section-head">
+        <div class="section-num">📝</div>
+        <div class="section-title">修正申請</div>
+        <div class="section-line"></div>
+        <button onclick="loadAdminCorrections()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div id="adminCorrectionList" style="margin-top:4px;"></div>
+    </div>
+
+    <div class="section" id="adminSec-schedule">
+      <div class="section-head">
+        <div class="section-num">📅</div>
+        <div class="section-title">定訓行事曆</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" style="margin-bottom:12px;">
+        <div class="filter-grid">
+          <div class="field">
+            <label>定訓日期 <span class="req">*</span></label>
+            <input type="date" id="scheduleDate">
+          </div>
+          <div class="field">
+            <label>分隊 <span class="req">*</span></label>
+            <select id="scheduleUnit">
+              <option value="">請選擇分隊</option>
+            </select>
+          </div>
+
+          <div class="field" style="grid-column:1/-1;">
+            <label>主題／備註</label>
+            <input type="text" id="scheduleTopic" placeholder="例：CPR 複訓、指導醫師出席">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+          <button onclick="addSchedule()" class="btn-search" style="margin-left:auto;min-height:unset;padding:8px 20px;font-size:0.85rem;">新增</button>
+        </div>
+      </div>
+      <div id="adminScheduleList" style="margin-top:4px;"></div>
+
+      <!-- 測試推播 -->
+      <div class="card" style="margin-top:16px;background:var(--warm);border:1px dashed var(--border);">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;">🧪 測試推播</div>
+        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;line-height:1.6;">
+          立即發送測試通知，確認推播功能是否正常。
+        </div>
+        <button onclick="sendTestPush()" class="btn-search" style="width:100%;">📲 發送測試通知給我</button>
+        <div id="testPushStatus" style="font-size:0.78rem;margin-top:8px;text-align:center;display:none;"></div>
+      </div>
+    </div>
+    <!-- ══════ SECTION：臨時密碼管理 ══════ -->
+    <div class="section" id="adminSec-temppass">
+      <div class="section-head">
+        <div class="section-num">🔑</div>
+        <div class="section-title">臨時密碼管理</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 新增臨時密碼</div>
+        <div class="field">
+          <label>分隊別 <span class="req">*</span></label>
+          <select id="tpUnit" style="width:100%;" onchange="filterTpMembers()">
+            <option value="">請選擇分隊別</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>綁定成員 <span class="req">*</span></label>
+          <select id="tpMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select>
+        </div>
+        <div class="field">
+          <label>臨時密碼 <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="tpCode" placeholder="自訂密碼（4~12字元）" maxlength="12" style="flex:1;">
+            <button onclick="tpGenerate()" style="background:var(--warm);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;cursor:pointer;white-space:nowrap;min-height:unset;">隨機產生</button>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label>有效期限 <span class="req">*</span></label>
+            <select id="tpExpiry" style="width:100%;">
+              <option value="1">1 小時</option>
+              <option value="6">6 小時</option>
+              <option value="24" selected>24 小時</option>
+              <option value="72">3 天</option>
+              <option value="168">7 天</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>可使用次數</label>
+            <select id="tpUses" style="width:100%;">
+              <option value="1">1 次</option>
+              <option value="3">3 次</option>
+              <option value="5">5 次</option>
+              <option value="0" selected>無限制</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>備註（說明用途）</label>
+          <input type="text" id="tpNote" placeholder="例：協助王小明登入" style="width:100%;">
+        </div>
+        <button onclick="addTempPass()" class="btn-search" style="width:100%;">🔑 建立臨時密碼</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 現有臨時密碼</div>
+          <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+        </div>
+        <div id="tempPassList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
+      </div>
+    </div>
+
+    <div class="section" id="adminSec-changelog">
+      <div class="section-head">
+        <div class="section-num">📝</div>
+        <div class="section-title">版本修改紀錄管理</div>
+        <div class="section-line"></div>
+        <button onclick="showChangelogForm(null)" class="btn-search" style="min-height:unset;padding:4px 14px;font-size:0.78rem;">＋ 新增版本</button>
+      </div>
+      <!-- 新增/編輯表單 -->
+      <div id="changelogForm" style="display:none;background:var(--warm);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <input type="hidden" id="clFormId">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">版本號 <span class="req">*</span></label>
+            <input type="text" id="clFormVersion" placeholder="例：v1.6.0" style="width:100%;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">日期 <span class="req">*</span></label>
+            <input type="date" id="clFormDate" style="width:100%;">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label style="font-size:0.78rem;">標題 <span class="req">*</span></label>
+          <input type="text" id="clFormTitle" placeholder="例：Firebase 全面整合" style="width:100%;">
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:6px;font-weight:600;">內容項目</div>
+        <div id="clFormItems" style="margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
+          <button onclick="saveChangelog()" class="btn-search" style="flex:1;">儲存</button>
+          <button onclick="hideChangelogForm()" class="btn-reset">取消</button>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.8rem;cursor:pointer;font-weight:400;white-space:nowrap;color:var(--red);">
+            <input type="checkbox" id="clFormIsLatest" style="accent-color:var(--red);"> 標為最新版本
+          </label>
+        </div>
+      </div>
+      <div id="adminChangelogList"></div>
+    </div>
+
+    <!-- 登入紀錄（僅系統管理員可見）-->
+    <div class="section" id="adminSec-loginlog" style="display:none;">
+      <div class="section-head">
+        <div class="section-num">🔐</div>
+        <div class="section-title">登入紀錄</div>
+        <div class="section-line"></div>
+        <button onclick="loadLoginLog()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <div class="filter-card" style="margin-bottom:12px;padding:14px 16px;">
+        <div class="filter-grid">
+          <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="loginLogFrom" style="width:100%;"></div>
+          <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="loginLogTo" style="width:100%;"></div>
+          <div class="field" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
+        </div>
+        <div class="filter-actions" style="margin-top:12px;">
+          <button class="btn-search" onclick="loadLoginLog()">查　詢</button>
+          <button class="btn-reset" onclick="resetLoginLog()">清除</button>
+        </div>
+      </div>
+      <div id="adminLoginLogList">
+        <div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>
+      </div>
+    </div>
+
+    <div class="section" id="adminSec-import">
+      <div class="section-head">
+        <div class="section-num">📥</div>
+        <div class="section-title">批次匯入</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">
+          上傳 CSV 檔案即可批次新增資料。簽名欄位可留空，之後再由當事人補簽。<br>
+          <span style="color:var(--red);font-weight:600;">注意：重複資料不會自動偵測，請先確認再匯入。</span>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
+          <div style="font-weight:600;font-size:0.92rem;margin-bottom:10px;color:var(--text);">✍ 簽到簽退紀錄</div>
+          <div style="font-size:0.75rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:monospace;line-height:1.8;">
+            欄位：date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service<br>
+            範例：2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="importAttFile" accept=".csv" style="flex:1;min-width:0;">
+            <button onclick="downloadAttTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.8rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 下載範本</button>
+            <button onclick="importAttCSV()" class="btn-search" style="min-height:unset;padding:8px 18px;white-space:nowrap;">匯入</button>
+          </div>
+          <div id="importAttResult" style="margin-top:10px;font-size:0.82rem;"></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <div style="font-weight:600;font-size:0.92rem;margin-bottom:10px;color:var(--text);">🚑 協勤案件紀錄</div>
+          <div style="font-size:0.75rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:monospace;line-height:1.8;">
+            欄位：date, caseType, timeOut, timeBack, district, address, services, note, memberName<br>
+            範例：2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="importOutFile" accept=".csv" style="flex:1;min-width:0;">
+            <button onclick="downloadOutTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.8rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 下載範本</button>
+            <button onclick="importOutCSV()" class="btn-search" style="min-height:unset;padding:8px 18px;white-space:nowrap;">匯入</button>
+          </div>
+          <div id="importOutResult" style="margin-top:10px;font-size:0.82rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- 管理員編輯 Modal -->
+<!-- ── 定訓行事曆編輯 Modal ── -->
+<div id="scheduleEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:350;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:16px;color:var(--text);">編輯定訓排程</h3>
+    <input type="hidden" id="schedEditId">
+    <div class="field">
+      <label>定訓日期 <span class="req">*</span></label>
+      <input type="date" id="schedEditDate" style="width:100%;">
+    </div>
+    <div class="field">
+      <label>分隊 <span class="req">*</span></label>
+      <select id="schedEditUnit" style="width:100%;"></select>
+    </div>
+    <div class="field">
+      <label>主題／備註</label>
+      <input type="text" id="schedEditTopic" placeholder="例：CPR 複訓" style="width:100%;">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button onclick="saveScheduleEdit()" class="btn-search" style="flex:1;">儲存</button>
+      <button onclick="closeScheduleEdit()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:350;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px;" id="adminEditTitle">編輯資料</div>
+    <div id="adminEditFields"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="adminEditSave()" class="btn-search" style="flex:1;">儲　存</button>
+      <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：個人基本資料 ══════ -->
+<div class="page" id="profilePage">
+  <div class="form-wrap">
+
+    <!-- 證照到期警示（若效期不足6個月）-->
+    <div id="profileCertAlert" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:none;">
+      <div style="font-weight:600;color:#856404;font-size:0.9rem;">🔔 證照效期即將到期</div>
+      <div id="profileCertAlertMsg" style="font-size:0.82rem;color:#856404;margin-top:4px;"></div>
+    </div>
+
+    <!-- 基本資訊 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">1</div>
+        <div class="section-title">基本資訊</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label>姓名</label>
+          <div id="profileName" style="padding:10px 0;font-size:0.95rem;font-weight:600;color:var(--text);">—</div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="field">
+          <label>分隊別</label>
+          <div id="profileUnit" style="padding:10px 0;font-size:0.92rem;color:var(--text);">—</div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="field">
+          <label>職稱／職別</label>
+          <div id="profileTitle" style="padding:10px 0;font-size:0.92rem;color:var(--text);">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 聯絡方式 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">2</div>
+        <div class="section-title">聯絡方式</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label>電子郵件</label>
+          <div id="profileEmail" style="padding:10px 0;font-size:0.88rem;color:var(--text-mid);word-break:break-all;">—</div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="field">
+          <label>手機號碼</label>
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+            <input type="tel" id="profilePhone" placeholder="請輸入手機號碼"
+              style="flex:1;width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;box-sizing:border-box;outline:none;"
+              onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+            <button onclick="saveProfilePhone()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:10px 18px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">儲存</button>
+          </div>
+          <div id="profilePhoneStatus" style="font-size:0.75rem;color:#1a6b35;display:none;margin-top:6px;">✓ 已儲存</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 證照狀態 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">3</div>
+        <div class="section-title">證照狀態</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <!-- 檢視模式 -->
+        <div id="profileCertView">
+          <div class="field">
+            <label>證照等級</label>
+            <div id="profileCert" style="padding:10px 0;font-size:0.92rem;color:var(--text);">—</div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>效期至</label>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+              <div id="profileCertExpDisplay" style="font-size:0.92rem;color:var(--text);flex:1;">—</div>
+              <div id="profileCertStatus" style="font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;"></div>
+            </div>
+          </div>
+          <!-- 編輯按鈕（開放期間才顯示）-->
+          <div id="profileCertEditBtnWrap" style="display:none;margin-top:10px;">
+            <button onclick="profileShowCertEdit()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 18px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;width:100%;">
+              ✏️ 更新我的證照資訊
+            </button>
+          </div>
+        </div>
+
+        <!-- 編輯模式（預設隱藏）-->
+        <div id="profileCertEdit" style="display:none;">
+          <div class="field">
+            <label>證照等級 <span class="req">*</span></label>
+            <select id="profileCertSel" style="width:100%;">
+              <option value="">— 請選擇 —</option>
+              <option value="EMT-1">EMT-1</option>
+              <option value="EMT-2">EMT-2</option>
+              <option value="EMT-P">EMT-P（中級）</option>
+            </select>
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
+            <label>效期至 <span class="req">*</span></label>
+            <input type="date" id="profileCertExpInput" style="width:100%;">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button onclick="saveProfileCert()" style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">儲存</button>
+            <button onclick="profileHideCertEdit()" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
+          </div>
+          <div id="profileCertSaveStatus" style="font-size:0.75rem;color:#1a6b35;display:none;margin-top:8px;text-align:center;">✓ 證照資訊已儲存</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 裝置設定 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📱</div>
+        <div class="section-title">裝置設定</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <!-- 加入主畫面 -->
+        <div class="field">
+          <label>加入主畫面</label>
+          <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:10px;line-height:1.6;">安裝到手機桌面後可接收推播通知</div>
+          <button onclick="resetAndShowPWA()" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            📲 顯示安裝引導
+          </button>
+        </div>
+        <div class="card-divider"></div>
+        <!-- 推播通知開關 -->
+        <div class="field">
+          <div class="ios-toggle-wrap">
+            <div>
+              <div style="font-size:0.88rem;font-weight:500;color:var(--text);">推播通知</div>
+              <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px;line-height:1.5;">開啟後可接收定訓提醒、簽退提醒等通知</div>
+            </div>
+            <label class="ios-toggle" style="margin-left:16px;width:51px;min-width:51px;max-width:51px;height:31px;display:block;">
+              <input type="checkbox" id="notifToggle" onchange="onNotifToggleChange(this.checked)">
+              <span class="ios-toggle-slider"></span>
+            </label>
+          </div>
+          <div id="notifStatusMsg" style="font-size:0.75rem;margin-top:8px;color:var(--text-light);"></div>
+        </div>
+        <div class="card-divider"></div>
+        <!-- 自訂推播時間 -->
+        <div class="field">
+          <label>定訓提醒時間 <span style="font-size:0.72rem;color:var(--text-light);margin-left:4px;">（最多 3 個）</span></label>
+          <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;line-height:1.6;">定訓前一天，在您設定的時間點推播提醒</div>
+          <div id="notifyHoursWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+            <!-- 動態產生 -->
+          </div>
+          <button onclick="addNotifyHourRow()" id="addNotifyHourBtn"
+            style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            ＋ 新增時間
+          </button>
+          <button onclick="saveNotifyHours()" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-top:8px;">
+            儲存提醒時間
+          </button>
+          <div id="notifyHoursStatus" style="font-size:0.75rem;color:#1a6b35;display:none;margin-top:6px;text-align:center;">✓ 已儲存</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：備勤排班 ══════ -->
+<div class="page" id="dutyPage">
+  <div style="padding:0;max-width:100%;">
+
+    <!-- ── 視圖切換 Tab ── -->
+    <div id="dutyTabBar" style="display:flex;border-bottom:2px solid var(--border);background:white;position:sticky;top:0;z-index:10;">
+      <button onclick="dutyView('month')" id="dutyTab-month" class="duty-view-tab duty-view-tab-active">📅 月視圖</button>
+      <button onclick="dutyView('list')"  id="dutyTab-list"  class="duty-view-tab">📋 班表明細</button>
+    </div>
+
+    <!-- ── 月份導覽 ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:white;border-bottom:1px solid var(--border);">
+      <button onclick="dutyMonthNav(-1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
+      <div id="dutyMonthLabel" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
+      <button onclick="dutyMonthNav(1)"  style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
+    </div>
+
+    <!-- ── 月視圖 ── -->
+    <div id="dutyMonthView" style="padding:12px 16px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:4px;">
+        <div style="text-align:center;font-size:0.68rem;color:#c0392b;font-weight:600;padding:4px 0;">日</div>
+        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">一</div>
+        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">二</div>
+        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">三</div>
+        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">四</div>
+        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">五</div>
+        <div style="text-align:center;font-size:0.68rem;color:#3498db;padding:4px 0;">六</div>
+      </div>
+      <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;font-size:0.7rem;color:var(--text-light);">
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#7f8c8d;"></div>額滿</div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#e67e22;"></div>部分已排</div>
+        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#27ae60;"></div>未排班</div>
+        <div style="display:flex;align-items:center;gap:4px;">🔴 假日</div>
+      </div>
+    </div>
+
+    <!-- ── 清單視圖 ── -->
+    <div id="dutyListView" style="display:none;">
+      <div id="dutyListContent"></div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ── 備勤快速新增 Modal（每日＋按鈕觸發） ── -->
+<!-- ── 備勤快速新增 Modal ── -->
+<div id="dutyQuickAddModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:4px;color:var(--text);">新增備勤</h3>
+    <div id="dutyQuickAddDate" style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;"></div>
+    <div class="field">
+      <label>分隊別 <span class="req">*</span></label>
+      <select id="qaUnit" style="width:100%;" onchange="filterQAMembers()"><option value="">請選擇分隊別</option></select>
+    </div>
+    <div class="field">
+      <label>義消姓名 <span class="req">*</span></label>
+      <select id="qaMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select>
+    </div>
+    <div class="row-2">
+      <div class="field"><label>開始時間 <span class="req">*</span></label><select id="qaStart" style="width:100%;"></select></div>
+      <div class="field"><label>結束時間 <span class="req">*</span></label><select id="qaEnd" style="width:100%;"></select></div>
+    </div>
+    <div id="qaCapHint" style="display:none;margin-bottom:10px;padding:9px 12px;border-radius:6px;font-size:0.8rem;"></div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button onclick="submitQuickAdd()" class="btn-search" style="flex:1;">新增備勤</button>
+      <button onclick="closeQuickAdd()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 備勤編輯 Modal ── -->
+<div id="dutyEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:4px;color:var(--text);">編輯備勤</h3>
+    <input type="hidden" id="editDutyId">
+    <div id="editDutyInfo" style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;"></div>
+    <div class="row-2">
+      <div class="field"><label>開始時間 <span class="req">*</span></label><select id="editDutyStart" style="width:100%;"></select></div>
+      <div class="field"><label>結束時間 <span class="req">*</span></label><select id="editDutyEnd" style="width:100%;"></select></div>
+    </div>
+    <div id="editCapHint" style="display:none;margin-bottom:10px;padding:9px 12px;border-radius:6px;font-size:0.8rem;"></div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button onclick="submitDutyEdit()" class="btn-search" style="flex:1;">儲存</button>
+      <button onclick="deleteDutyFromEdit()" style="flex:1;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">刪除</button>
+    </div>
+    <div style="margin-top:8px;">
+      <button onclick="closeDutyEdit()" class="btn-reset" style="width:100%;">取消</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+<!-- ══════ PAGE：定訓與公告 ══════ -->
+<div class="page" id="meetingPage">
+  <div class="form-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📒</div>
+        <div class="section-title">定訓與公告</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+
+    <!-- 新增按鈕（承辦人/管理員才顯示） -->
+    <div id="meetingAddWrap" style="display:none;margin-bottom:20px;">
+      <button onclick="meetingShowForm(null)" style="background:var(--red);color:white;border:none;border-radius:6px;padding:12px 24px;font-size:0.92rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;cursor:pointer;letter-spacing:0.05em;">＋ 新增定訓與公告</button>
+    </div>
+
+    <!-- 新增／編輯表單（預設隱藏） -->
+    <div id="meetingForm" style="display:none;background:white;border:1px solid var(--border);border-radius:8px;padding:22px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+      <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:18px;letter-spacing:0.08em;" id="meetingFormTitle">新增定訓記錄</div>
+      <div class="field">
+        <label>標題 <span class="req">*</span></label>
+        <input type="text" id="meetingTitle" placeholder="定訓會議記錄">
+      </div>
+      <div class="field">
+        <label>日期 <span class="req">*</span></label>
+        <input type="date" id="meetingDate">
+      </div>
+
+      <div class="field">
+        <label>分隊 <span class="req">*</span></label>
+        <select id="meetingUnit">
+          <option value="">請選擇分隊</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>會議內容 <span class="req">*</span></label>
+        <textarea id="meetingContent" style="min-height:220px;line-height:1.8;" placeholder="請貼上或輸入會議記錄內容..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button onclick="meetingSave()" style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:13px;font-size:0.95rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">儲存</button>
+        <button onclick="meetingHideForm()" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:13px;font-size:0.95rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">取消</button>
+      </div>
+    </div>
+
+    <!-- 記錄列表 -->
+    <div id="meetingList">
+      <div class="query-empty"><span class="empty-icon">📒</span>載入中...</div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：版本修改紀錄 ══════ -->
+<div class="page" id="changelogPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📝</div>
+        <div class="section-title">版本修改紀錄</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+    <div id="changelogList">
+      <div class="query-empty"><span class="empty-icon">📝</span>載入中...</div>
+    </div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+
+<!-- 編輯物品領取人 Modal -->
+<div id="editItemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
+    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">編輯領取人</div>
+    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:16px;" id="editItemModalTitle"></div>
+    <div class="field">
+      <label>成員名單（勾選＝列為領取人）</label>
+      <div id="editItemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;max-height:280px;overflow-y:auto;"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="saveEditItem()" class="btn-search" style="flex:1;letter-spacing:0.1em;">儲存</button>
+      <button onclick="closeEditItemModal()" class="btn-reset">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Signature Modal -->
+<!-- ══════ 申請修正 Modal ══════ -->
+<div id="correctionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+  <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:520px;margin-top:20px;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
+
+    <!-- 標題 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+      <span style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);">申請修正勤務紀錄</span>
+      <span style="background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;margin-left:4px;">待審核</span>
+    </div>
+    <div style="font-size:0.76rem;color:var(--text-light);margin-bottom:16px;padding-left:17px;">超過 24 小時的紀錄需由承辦人審核後修正</div>
+
+    <input type="hidden" id="corrType">
+    <input type="hidden" id="corrDocId">
+
+    <!-- 原始紀錄區 -->
+    <div style="background:var(--warm);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:10px;letter-spacing:0.04em;">原始紀錄</div>
+      <div id="corrOrigGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px 14px;"></div>
+    </div>
+
+    <!-- 修正原因 -->
+    <div class="field">
+      <label style="margin-bottom:8px;display:block;">修正原因</label>
+      <div id="corrReasonTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        <button type="button" class="corr-tag active" onclick="toggleCorrTag(this)">時間登錯</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">簽名遺漏</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">人次有誤</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">系統錯誤</button>
+        <button type="button" class="corr-tag" onclick="toggleCorrTag(this)">其他</button>
+      </div>
+      <textarea id="corrReason" placeholder="補充說明原因（選填）" style="min-height:56px;"></textarea>
+    </div>
+
+    <!-- 修正內容（依類型顯示不同欄位） -->
+    <!-- ══ 簽到退記錄修正欄位 ══
+         注意：時間欄位一律使用 24 小時制（HH:MM），
+         本系統所有時間輸入/顯示皆為 24 小時制，禁止改為 12 小時制。
+    -->
+    <div id="corrFieldsAttendance" style="display:none;">
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">修正內容</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>簽到時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：18:00 -->
+          <input type="text" id="corrCheckin" placeholder="例：18:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrCheckin')">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>簽退時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：22:00 -->
+          <input type="text" id="corrCheckout" placeholder="例：22:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrCheckout')">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>出勤次數</label>
+          <input type="number" id="corrCount" min="0" oninput="markCorrChanged(this,'corrCount')">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>服務人次</label>
+          <input type="number" id="corrService" min="0" oninput="markCorrChanged(this,'corrService')">
+        </div>
+      </div>
+      <!-- 修正對比 -->
+      <div id="corrDiffArea" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
+        <div id="corrDiffList"></div>
+      </div>
+      <!-- 簽名區：每格獨立一列確保手機版面不擠壓，高度 130px 方便手寫 -->
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">重新簽名</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽到簽名</div>
+          <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
+            <canvas id="corrSigIn" width="480" height="130" style="display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;"></canvas>
+            <div id="corrSigInHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
+          </div>
+          <button type="button" onclick="clearCorrSig('corrSigIn','corrSigInHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
+          <div style="clear:both;"></div>
+        </div>
+        <div>
+          <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽退簽名</div>
+          <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
+            <canvas id="corrSigOut" width="480" height="130" style="display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;"></canvas>
+            <div id="corrSigOutHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
+          </div>
+          <button type="button" onclick="clearCorrSig('corrSigOut','corrSigOutHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
+          <div style="clear:both;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 協勤紀錄修正欄位 ══
+         注意：時間欄位一律使用 24 小時制（HH:MM），
+         本系統所有時間輸入/顯示皆為 24 小時制，禁止改為 12 小時制。
+         版面以手機為主（max-width:480px），欄位單欄排列，簽名欄高度 160px。
+    -->
+    <div id="corrFieldsOuting" style="display:none;">
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">修正內容</div>
+      <!-- 時間欄位：單欄排列，手機版面較舒適 -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>出動時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：07:00 -->
+          <input type="text" id="corrTimeOut" placeholder="例：07:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeOut')">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>返隊時間</label>
+          <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：12:00 -->
+          <input type="text" id="corrTimeBack" placeholder="例：12:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeBack')">
+        </div>
+      </div>
+      <div class="field">
+        <label>地址</label>
+        <input type="text" id="corrAddress" placeholder="出勤地址" oninput="markCorrChanged(this,'corrAddress')">
+      </div>
+      <div class="field">
+        <label>案由</label>
+        <input type="text" id="corrCaseType" placeholder="案件類別" oninput="markCorrChanged(this,'corrCaseType')">
+      </div>
+      <div class="field">
+        <label>服務項目</label>
+        <input type="text" id="corrServices" placeholder="服務項目（以、分隔）" oninput="markCorrChanged(this,'corrServices')">
+      </div>
+      <!-- 修正對比 -->
+      <div id="corrDiffAreaOuting" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
+        <div id="corrDiffListOuting"></div>
+      </div>
+      <!-- 簽名：全寬單欄，高度 160px 方便手機手寫 -->
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">重新簽名</div>
+      <div>
+        <div style="font-size:0.76rem;color:var(--text-mid);margin-bottom:5px;">簽名</div>
+        <div style="position:relative;border:1px solid var(--border);border-radius:6px;background:var(--cream);overflow:hidden;">
+          <canvas id="corrSigOuting" width="480" height="160" style="display:block;width:100%;height:160px;cursor:crosshair;touch-action:none;"></canvas>
+          <div id="corrSigOutingHint" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.76rem;color:var(--text-light);pointer-events:none;">請在此簽名</div>
+        </div>
+        <button type="button" onclick="clearCorrSig('corrSigOuting','corrSigOutingHint')" style="margin-top:4px;font-size:0.75rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:white;color:var(--text-mid);cursor:pointer;float:right;">清除</button>
+        <div style="clear:both;"></div>
+      </div>
+    </div>
+
+    <!-- 按鈕 -->
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button onclick="submitCorrection()" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">送出申請</button>
+      <button onclick="document.getElementById('correctionModal').style.display='none'" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.9rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.corr-tag {
+  font-size: 0.76rem; padding: 4px 11px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-mid); cursor: pointer; transition: all 0.15s;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.corr-tag.active {
+  background: var(--red-faint); border-color: var(--red); color: var(--red);
+}
+.corr-changed {
+  border-color: #E67E22 !important;
+  background: #FEF9F0 !important;
+}
+.corr-diff-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; padding: 4px 0;
+  border-bottom: 1px solid #f0e0cc;
+}
+.corr-diff-row:last-child { border-bottom: none; }
+</style>
+
+<div id="sigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;cursor:pointer;">
+  <div style="background:white;border-radius:8px;padding:16px;max-width:90vw;max-height:90vh;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <img id="sigModalImg" style="max-width:80vw;max-height:80vh;display:block;">
+    <p style="text-align:center;margin-top:10px;font-size:0.75rem;color:#9c8c80;font-family:'Noto Sans TC',sans-serif;">點擊任意處關閉</p>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// Firebase 初始化與工具函式
+// ════════════════════════════════════════
+var _fbDB = null;
+var COL_WHITELIST = 'whitelist', COL_MEMBERS = 'members';
+var COL_OUTING = 'outingRecords', COL_ATTEND = 'attendance';
+var COL_ITEMS = 'items', COL_FEEDBACK = 'feedback', COL_UNITS = 'units', COL_CHANGELOG = 'changelogs';
+var COL_LOGINLOG = 'loginLogs';
+var COL_MEETING  = 'meetingRecords';
+var COL_CORRECTION = 'correctionRequests';
+var COL_CASETYPES = 'caseTypes';
+
+// Firebase 初始化（SDK 用 defer 載入，window.onload 後才 init）
+var _fbReady = false;
+var _unitsList = []; // 分隊列表快取
+async function loadUnits() {
+  try {
+    const docs = await fbList(COL_UNITS);
+    _unitsList = docs.map(d => d.name||'').filter(Boolean).sort();
+    return _unitsList;
+  } catch(e) { return _unitsList; }
+}
+function getUnitsSelectOptions(selected) {
+  return _unitsList.map(u =>
+    `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`
+  ).join('');
+}
+var _fbInitPromise = null;
+
+function ensureFirebase() {
+  if (_fbReady) return Promise.resolve();
+  if (_fbInitPromise) return _fbInitPromise;
+  _fbInitPromise = new Promise(function(resolve, reject) {
+    function tryInit() {
+      if (typeof firebase === 'undefined') {
+        setTimeout(tryInit, 50); return;
+      }
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyB2dIDRYOAkoRkoJGD0XkuxamQ_vLS58fI",
+            authDomain: "rescue-volunteer-a33f1.firebaseapp.com",
+            projectId: "rescue-volunteer-a33f1",
+            storageBucket: "rescue-volunteer-a33f1.firebasestorage.app",
+            messagingSenderId: "1054665034207",
+            appId: "1:1054665034207:web:bbc1bb9d542e3b4bb49c6a"
+          });
+        }
+        _fbDB = firebase.firestore();
+        _fbReady = true;
+        resolve();
+      } catch(e) { console.warn('Firebase init failed:', e); resolve(); }
+    }
+    tryInit();
   });
+  return _fbInitPromise;
+}
 
-  // ── 讀取推播訂閱 ──
-  const subsSnap = await db.collection('pushSubscriptions').get();
-  const subMap = {};
-  subsSnap.docs.forEach(d => {
-    const data = d.data();
-    if (data.memberName) subMap[data.memberName] = data;
-  });
+async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;}
+async function fbList(col, orderByField, orderDir) {
+  await ensureFirebase();
+  let q = _fbDB.collection(col).limit(1000);
+  if (orderByField) q = q.orderBy(orderByField, orderDir || 'asc');
+  const s = await q.get();
+  return s.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
+async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});}
+async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);}
+async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();}
+async function verifyWhitelist(email){
+  await ensureFirebase();
+  const em = email.toLowerCase().trim();
+  let s = await _fbDB.collection(COL_WHITELIST).where('email','==',em).get();
+  if (s.empty) s = await _fbDB.collection(COL_WHITELIST).where('extraEmails','array-contains',em).get();
+  if(s.empty)return null;
+  const d=s.docs[0].data();
+  const isAdminFlag = d.isAdmin === true || d.role === 'admin';
+  const isOfficerFlag = d.isOfficer === true || d.role === 'officer';
+  const role = isAdminFlag ? 'admin' : (isOfficerFlag ? 'officer' : (d.role || 'member'));
+  return{allowed:true,memberName:d.memberName||'',isAdmin:isAdminFlag,isOfficer:isOfficerFlag,role,unit:d.unit||''};
+}
 
-  const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
+// ════════════════════════════════════════
+// Google 登入驗證
+// ════════════════════════════════════════
 
-  if (LINE_ACCESS_TOKEN) {
+const CLIENT_ID       = '280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com';
+const SPREADSHEET_ID  = '1XPlhFHkJbSwKk_dhVSccSFzz6MVosnxgh40NPSf1nn0';
 
-    // ── ① 明日班表提醒 ──
+// ── 後端驗證（JSONP 方式，避免 CORS 問題）──
+function verifyWithBackend(idToken) {
+  return new Promise((resolve) => {
+    const cbName = 'verifyCb_' + Date.now();
+    let done = false;
+
+    window[cbName] = function(data) {
+      done = true;
+      delete window[cbName];
+      document.getElementById('jsonpVerifyScript')?.remove();
+      resolve(data);
+    };
+
+    // idToken 太長無法放 URL，改傳 email（從前端解析）
+    // Apps Script 端用 email 直接查白名單
     try {
-      const dutySnap = await db.collection('dutySchedule')
-        .where('date', '==', tomorrow)
-        .get();
+      const payload = parseJWT(idToken);
+      const email   = (payload.email || '').trim();
+      const name    = payload.name   || '';
 
-      if (!dutySnap.empty) {
-        // 依開始時間排序
-        const slots = dutySnap.docs
-          .map(d => d.data())
-          .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+      const url = BASE_URL
+        + '?action=verifyLogin'
+        + '&email='    + encodeURIComponent(email)
+        + '&name='     + encodeURIComponent(name)
+        + '&callback=' + cbName;
 
-        const dutyLines = slots.map(d =>
-          `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
-        );
+      const script = document.createElement('script');
+      script.id  = 'jsonpVerifyScript';
+      script.src = url;
+      script.onerror = () => {
+        if (!done) { done = true; delete window[cbName]; resolve(null); }
+      };
+      document.head.appendChild(script);
 
-        const dutyMsg = [
-          '📅 明日班表提醒',
-          `${tomorrow} 備勤人員如下：`,
-          '',
-          ...dutyLines,
-          '',
-          '⚠️ 請準時協勤，如有事故請提前修改班表。',
-          '',
-          '※ 本通知由系統自動發送，請勿回覆。',
-        ].join('\n');
+      // 10 秒逾時
+      setTimeout(() => {
+        if (!done) {
+          done = true;
+          delete window[cbName];
+          document.getElementById('jsonpVerifyScript')?.remove();
+          resolve(null);
+        }
+      }, 10000);
+    } catch(e) {
+      resolve(null);
+    }
+  });
+}
 
-        await sendLineGroupMessage(dutyMsg);
-        console.log('✅ LINE 明日班表提醒已發送');
+// ── 前端備援：直接向 Sheets API 讀取白名單 ──
+// 當 Apps Script 無回應時啟用，從試算表「白名單」工作表 A 欄讀取
+async function verifyWithSheetsDirect(email) {
+  try {
+    // 使用 Google Sheets API（公開讀取，試算表需設為「知道連結的人可檢視」）
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/白名單!A2:A?key=AIzaSyD-placeholder`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('Sheets API 無法存取');
+    const data   = await res.json();
+    const emails = (data.values || []).flat().map(e => String(e).toLowerCase().trim());
+    return emails.includes(email.toLowerCase().trim());
+  } catch(e) {
+    // Sheets API 也失敗時，回傳 null 讓外層決定
+    return null;
+  }
+}
+
+// ── JWT 解析（支援 UTF-8 中文）──
+function parseJWT(token) {
+  const part = token.split('.')[1]
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const b64 = part.padEnd(Math.ceil(part.length / 4) * 4, '=');
+  // decodeURIComponent + escape 處理 UTF-8 多位元組字元
+  const json = decodeURIComponent(
+    atob(b64).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join('')
+  );
+  return JSON.parse(json);
+}
+
+// ── Google 登入回調 ──
+async function handleGoogleLogin(response) {
+  const spinner  = document.getElementById('loginSpinner');
+  const errorDiv = document.getElementById('loginError');
+  spinner.classList.add('show');
+  errorDiv.classList.remove('show');
+
+  try {
+    // 解析 JWT payload（取 email、name）
+    // JWT 解析（URL-safe base64 → UTF-8 處理中文）
+    const payload = parseJWT(response.credential);
+    const email   = (payload.email || '').trim();
+    const name    = payload.name   || '';
+
+    let allowed = false;
+
+    // Firestore 白名單驗證
+    let fbResult = null;
+    try { fbResult = await verifyWhitelist(email); } catch(e) { console.warn('Firestore 驗證失敗', e); }
+    console.log('[Login] email:', email, 'fbResult:', JSON.stringify(fbResult));
+    if (fbResult) {
+      allowed = fbResult.allowed === true;
+    } else {
+      const backendResult = await verifyWithBackend(response.credential);
+      if (backendResult !== null) {
+        allowed = backendResult.allowed === true;
+        if (allowed) fbResult = { memberName: backendResult.memberName || name, isAdmin: false };
       } else {
-        console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
+        spinner.classList.remove('show');
+        errorDiv.innerHTML = '⚠️ 無法連線至驗證伺服器<br>請確認網路連線後再試，或聯絡管理員。';
+        errorDiv.classList.add('show');
+        google.accounts.id.disableAutoSelect();
+        return;
       }
-    } catch(err) {
-      console.log(`❌ LINE 明日班表提醒失敗：${err.message}`);
     }
-
-    // ── ② 今日未簽退提醒 ──
-    if (notCheckedOut.length) {
-      const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
-      console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
-      try {
-        const lineMsg = [
-          '⚠️ 簽退提醒',
-          `${today} 以下成員尚未簽退：`,
-          '',
-          names.map(n => `• ${n}`).join('\n'),
-          '',
-          '請盡快登入系統完成簽退。',
-          siteUrl,
-          '',
-          '※ 本通知由系統自動發送，請勿回覆。',
-        ].join('\n');
-        await sendLineGroupMessage(lineMsg);
-        console.log('✅ LINE 簽退提醒已發送');
-      } catch(err) {
-        console.log(`❌ LINE 簽退提醒失敗：${err.message}`);
-      }
+    if (allowed) {
+      const memberName = (fbResult && fbResult.memberName) || name;
+      const isAdmin    = (fbResult && fbResult.isAdmin)    || false;
+      const isOfficer  = (fbResult && fbResult.isOfficer)  || false;
+      const role       = (fbResult && fbResult.role)       || 'member';
+      const unit       = (fbResult && fbResult.unit)       || '';
+      sessionStorage.setItem('rescue_user', JSON.stringify({
+        email, name, memberName, isAdmin, isOfficer, role, unit, loginAt: Date.now()
+      }));
+      // 寫入登入紀錄
+      fbAdd(COL_LOGINLOG, {
+        email, memberName, role, unit,
+        loginAt: new Date().toLocaleString('sv').replace('T', ' '),
+        ua: navigator.userAgent.substring(0, 120),
+      }).catch(() => {});
+      showApp(memberName, email, isAdmin, isOfficer, role);
     } else {
-      console.log('今日所有人都已簽退，不發送簽退提醒。');
+      spinner.classList.remove('show');
+      errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
+      errorDiv.classList.add('show');
+      google.accounts.id.disableAutoSelect();
     }
 
-    // ── ③ 今日協勤統計 ──
-    if (checkedOut.length) {
-      try {
-        const summaryLines = checkedOut.map(d =>
-          `• ${d.memberName}　時數：${d.hours ?? 0}h　次數：${d.count ?? 0}次　服務人次：${d.service ?? 0}人`
-        );
-        const summaryMsg = [
-          '📋 今日協勤統計',
-          `${today} 已完成簽退人員：`,
-          '',
-          ...summaryLines,
-          '',
-          '※ 本通知由系統自動發送，請勿回覆。',
-        ].join('\n');
-        await sendLineGroupMessage(summaryMsg);
-        console.log('✅ LINE 協勤統計通知已發送');
-      } catch(err) {
-        console.log(`❌ LINE 協勤統計通知失敗：${err.message}`);
-      }
-    } else {
-      console.log('今日尚無完成簽退人員，跳過統計通知。');
-    }
+  } catch(e) {
+    spinner.classList.remove('show');
+    errorDiv.innerHTML = '驗證過程發生錯誤：<br><code style="font-size:0.75rem;word-break:break-all;">' + e.message + '</code><br>請重新整理後再試，或聯絡管理員。';
+    errorDiv.classList.add('show');
+    console.error('[handleGoogleLogin] 錯誤：', e);
+  }
+}
 
+// ── 顯示主系統 ──
+function showApp(name, email, isAdmin, isOfficer, role) {
+  document.getElementById('loginScreen').style.display = 'none';
+  const card = document.getElementById('headerUserCard');
+  if (card) card.style.display = 'flex';
+  const userInfo = document.getElementById('headerUserInfo');
+  if (userInfo) userInfo.textContent = name || email;
+  const avatar = document.getElementById('headerAvatar');
+  if (avatar) avatar.textContent = (name||email||'?').charAt(0).toUpperCase();
+  const badge = document.getElementById('headerUserBadge');
+  if (badge) {
+    if (isAdmin)        { badge.textContent='系統管理員'; badge.style.cssText='display:inline;font-size:0.62rem;background:rgba(255,200,0,0.9);border:1px solid rgba(200,150,0,0.8);border-radius:10px;padding:1px 8px;color:#5a3a00;letter-spacing:0.05em;font-weight:700;'; }
+    else if (isOfficer) { badge.textContent='分隊承辦人'; badge.style.cssText='display:inline;font-size:0.62rem;background:rgba(100,180,255,0.9);border:1px solid rgba(50,130,220,0.8);border-radius:10px;padding:1px 8px;color:#0a2a5a;letter-spacing:0.05em;font-weight:700;'; }
+    else                { badge.style.display='none'; }
+  }
+  if (isAdmin || isOfficer) {
+    const adminNav = document.getElementById('nav-admin');
+    if (adminNav) adminNav.style.display = '';
+  }
+  // 一般成員隱藏報表匯出
+  if (!isAdmin && !isOfficer) {
+    const reportNav = document.getElementById('nav-report');
+    if (reportNav) reportNav.style.display = 'none';
+  }
+  // 分隊承辦人隱藏「簽到簽退登錄」和「協勤案件登錄」
+  if (isOfficer && !isAdmin) {
+    ['nav-attendance', 'nav-form', 'quick-attendance', 'quick-form'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.style.display = 'inline';
+  startIdleTimer();
+  setTimeout(checkCertExpiry, 1500);
+  setTimeout(checkPWAPrompts, 4000);
+  // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
+  setTimeout(async () => {
+    if (!allItems || allItems.length === 0) {
+      try { const docs = await fbList(COL_ITEMS); allItems = docs || []; } catch(e) {}
+    }
+    showPendingItemsAlert();
+  }, 3000);
+
+  // 簡易模式已內嵌於各頁面，無需全域按鈕
+  // 確保簡易模式關閉
+
+  // 登入後根據 hash 決定顯示哪個頁面
+  const hashPage   = location.hash.replace('#', '');
+  const targetPage = (hashPage && document.getElementById(hashPage))
+    ? hashPage : 'dashboardPage';
+
+  // 先把首頁推入歷史（作為基底），再切到目標頁
+  // 這樣按上一頁永遠有東西可以退
+  history.replaceState({ pageId: 'dashboardPage' }, '', '#dashboardPage');
+  if (targetPage !== 'dashboardPage') {
+    navTo(targetPage, false); // false = 會再 pushState
   } else {
-    console.log('⚠️ 未設定 LINE_CHANNEL_ACCESS_TOKEN，跳過 LINE 通知');
+    navTo('dashboardPage', true);
+  }
+}
+
+// ── 檢查既有 session（重新整理不需再登入）──
+function checkSession() {
+  const raw = sessionStorage.getItem('rescue_user');
+  if (!raw) return false;
+  try {
+    const user = JSON.parse(raw);
+    // session 有效期 8 小時
+    if (Date.now() - user.loginAt > 8 * 3600 * 1000) {
+      sessionStorage.removeItem('rescue_user');
+      return false;
+    }
+    showApp(user.memberName || user.name, user.email, user.isAdmin || false, user.isOfficer || false, user.role || 'member');
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── 登出 ──
+function logout() {
+  if (!confirm('確定要登出嗎？')) return;
+  sessionStorage.removeItem('rescue_user');
+  google.accounts.id.disableAutoSelect();
+  location.reload();
+}
+
+// ── 閒置自動鎖定（30 分鐘無操作自動登出）──
+let idleTimer = null;
+function startIdleTimer() {
+  const IDLE_MINUTES = 30;
+  const reset = () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      alert('閒置超過 ' + IDLE_MINUTES + ' 分鐘，系統已自動鎖定，請重新登入。');
+      sessionStorage.removeItem('rescue_user');
+      location.reload();
+    }, IDLE_MINUTES * 60 * 1000);
+  };
+  ['click','touchstart','keydown','scroll'].forEach(ev =>
+    document.addEventListener(ev, reset, { passive: true })
+  );
+  reset();
+}
+
+// ════════════════════════════════════════
+// URL 常數
+// ════════════════════════════════════════
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbz2P0rPwjf-deeMPCM6Hw6Te77WBqE8yOK1e8wd7ziiuiLlotv6ytG3U9Quez7XQyAU/exec';
+const RPT3_URL = 'https://script.google.com/macros/s/AKfycbycbBLIqGUVCNWZJ9NpGqQxOvLXc7MbKGxRmGgNVdLaDjGC1OjMJWaGpz_rv7oNCy1PUQ/exec';
+
+// ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
+function jsonpFetch(url, scriptId, timeout) {
+  timeout = timeout || 15000;
+  return new Promise(function(resolve, reject) {
+    var cbName = '_jsonp_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    var script = document.createElement('script');
+    var done   = false;
+
+    function cleanup() {
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data) {
+      if (done) return;
+      done = true;
+      cleanup();
+      resolve(data);
+    };
+
+    var sep    = url.indexOf('?') >= 0 ? '&' : '?';
+    script.src = url + sep + 'callback=' + cbName;
+
+    script.onerror = function() {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error('連線失敗'));
+    };
+
+    setTimeout(function() {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error('連線逾時'));
+    }, timeout);
+
+    document.head.appendChild(script);
+  });
+}
+
+
+// ════════════════════════════════════════
+// 共用：日期正規化（修復2）
+// ════════════════════════════════════════
+function normDate(v) {
+  if (!v) return '';
+  const s = String(v).trim();
+
+  // 1. ISO 帶 T（Sheets 存 UTC，需加 8 小時轉台灣時間再取日期）
+  //    例：2026-03-14T16:00:00.000Z → UTC+8 → 2026-03-15 00:00 → "2026-03-15"
+  //    例：2026-03-14T00:00:00.000Z → UTC+8 → 2026-03-14 08:00 → "2026-03-14"
+  if (s.includes('T')) {
+    const d = new Date(s);
+    if (!isNaN(d)) {
+      const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+      return tw.toISOString().substring(0, 10);
+    }
   }
 
-  // ── ④ 個別推播 + Email（僅針對尚未簽退的人）──
-  if (!notCheckedOut.length) {
-    console.log('\n提醒完成！');
+  // 2. 已是 yyyy-MM-dd（純日期字串，無時區問題，直接取）
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  // 3. Google Sheets 序列化格式：Date(timestamp) 或 new Date(timestamp)
+  const tsMatch = s.match(/Date\((\d+)\)/);
+  if (tsMatch) {
+    const d = new Date(parseInt(tsMatch[1]));
+    // 轉為台灣時間（UTC+8）
+    const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+    return tw.toISOString().substring(0, 10);
+  }
+
+  // 4. 斜線格式：yyyy/M/d 或 yyyy/MM/dd
+  const slashMatch = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if (slashMatch) {
+    return `${slashMatch[1]}-${String(slashMatch[2]).padStart(2,'0')}-${String(slashMatch[3]).padStart(2,'0')}`;
+  }
+
+  // 5. 中文格式：yyyy年M月d日
+  const cnMatch = s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (cnMatch) {
+    return `${cnMatch[1]}-${String(cnMatch[2]).padStart(2,'0')}-${String(cnMatch[3]).padStart(2,'0')}`;
+  }
+
+  // 6. 純數字（Excel 序列日期，1900-01-00 起算）
+  if (/^\d+$/.test(s)) {
+    const serial = parseInt(s);
+    if (serial > 40000 && serial < 60000) { // 合理範圍 ~2009~2064
+      const d = new Date((serial - 25569) * 86400 * 1000);
+      const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+      return tw.toISOString().substring(0, 10);
+    }
+  }
+
+  // 7. 其他嘗試 parse（最後手段）
+  try {
+    const d = new Date(s);
+    if (!isNaN(d)) {
+      // 強制以台灣時區解讀，避免時差造成偏一天
+      const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+      return tw.toISOString().substring(0, 10);
+    }
+  } catch(e) {}
+
+  return '';
+}
+
+// 共用：時間格式化（ISO → HH:MM，含+8h修正）
+function fmtTime(v) {
+  if (!v) return '';
+  v = String(v);
+  const isoMatch = v.match(/T(\d{2}):(\d{2})/);
+  if (isoMatch) {
+    let h = parseInt(isoMatch[1]) + 8;
+    const m = isoMatch[2];
+    if (h >= 24) h -= 24;
+    return `${String(h).padStart(2,'0')}:${m}`;
+  }
+  const hmMatch = v.match(/(\d{1,2}:\d{2})/);
+  if (hmMatch) return hmMatch[1];
+  return v;
+}
+
+// ════════════════════════════════════════
+// Site Footer
+// ════════════════════════════════════════
+function initFooters(version) {
+  const ver = version || 'v1.4.05';
+  const lines = [
+    `© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊　${ver}　版權所有，轉載必究`,
+    '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
+    '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
+    '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
+  ].join('　');
+  document.querySelectorAll('.site-footer-placeholder, .form-footer').forEach(el => {
+    el.className = 'form-footer';
+    el.style.marginTop = '28px';
+    el.textContent = lines;
+  });
+}
+
+async function initFootersWithVersion() {
+  initFooters(); // 先用預設版本顯示，避免空白
+  try {
+    const docs = await fbList(COL_CHANGELOG);
+    const latest = docs.find(d => d.isLatest) || docs.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1)[0];
+    if (latest && latest.version) initFooters(latest.version);
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════
+// 產生時間選項（00:00 ~ 23:45，每15分鐘）
+// ════════════════════════════════════════
+function buildTimeOptions(selId, selectedVal) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  sel.innerHTML = '';
+  // 簽到退時間限制 06:00 ~ 23:00
+  for (let h = 6; h <= 23; h++) {
+    for (let m of [0, 15, 30, 45]) {
+      if (h === 23 && m > 0) continue; // 23:00 為最後一個選項
+      const val = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      if (val === selectedVal) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+}
+
+// ════════════════════════════════════════
+// Navigation
+// ════════════════════════════════════════
+
+// 點擊頂部 header 回到頁面最上方（模仿 iOS 點狀態列行為）
+function scrollToPageTop(e) {
+  if (e.target.closest('button, a, input, select')) return;
+  const scroller = document.getElementById('appScroll');
+  if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 動態取得 header 高度，修正 appScroll padding 和所有 sticky 元素
+// ════════════════════════════════════════
+// Pull to Refresh（下拉重新整理）
+// ════════════════════════════════════════
+function initPullToRefresh() {
+  // 建立 spinner indicator（仿 iOS 原生風格）
+  const indicator = document.createElement('div');
+  indicator.id = 'pullRefreshIndicator';
+  indicator.style.cssText = [
+    'position:fixed;left:50%;z-index:999;pointer-events:none',
+    'transform:translateX(-50%) translateY(-60px)',
+    'width:36px;height:36px',
+    'background:white;border-radius:50%',
+    'box-shadow:0 2px 12px rgba(0,0,0,0.15)',
+    'display:flex;align-items:center;justify-content:center',
+    'transition:transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94)',
+    'top:12px',
+  ].join(';');
+  indicator.innerHTML = `<svg id="ptrSpinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b94a3a" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`;
+  document.body.appendChild(indicator);
+
+  // CSS for spinner animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes ptrSpin { to { transform: rotate(360deg); } }
+    #ptrSpinner.spinning { animation: ptrSpin 0.8s linear infinite; }
+  `;
+  document.head.appendChild(style);
+
+  const THRESHOLD = 80;
+  let startY = 0, pulling = false, triggered = false, refreshing = false;
+
+  function setupPTR(el, isLogin) {
+    if (!el) return;
+    el.addEventListener('touchstart', e => {
+      if (refreshing) return;
+      const scrollTop = isLogin ? 0 : el.scrollTop;
+      if (scrollTop === 0) {
+        startY = e.touches[0].clientY;
+        pulling = true;
+        triggered = false;
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (!pulling || refreshing) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { pulling = false; indicator.style.transform = 'translateX(-50%) translateY(-60px)'; return; }
+
+      const progress = Math.min(dy / THRESHOLD, 1);
+      const translateY = -60 + progress * 72;
+      indicator.style.transform = `translateX(-50%) translateY(${translateY}px)`;
+
+      // 旋轉角度跟著進度走
+      const rotation = progress * 270;
+      indicator.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
+      triggered = dy >= THRESHOLD;
+    }, { passive: true });
+
+    el.addEventListener('touchend', async () => {
+      if (!pulling || refreshing) return;
+      pulling = false;
+
+      if (!triggered) {
+        indicator.style.transform = 'translateX(-50%) translateY(-60px)';
+        return;
+      }
+
+      // 觸發：固定位置 + 開始旋轉
+      refreshing = true;
+      indicator.style.transform = 'translateX(-50%) translateY(12px)';
+      indicator.querySelector('svg').classList.add('spinning');
+      indicator.querySelector('svg').style.transform = '';
+
+      try {
+        if (isLogin) {
+          location.reload();
+        } else {
+          await refreshCurrentPage();
+        }
+      } catch(e) {}
+
+      setTimeout(() => {
+        indicator.style.transform = 'translateX(-50%) translateY(-60px)';
+        indicator.querySelector('svg').classList.remove('spinning');
+        refreshing = false;
+      }, 800);
+    });
+  }
+
+  // 主畫面 appScroll
+  setupPTR(document.getElementById('appScroll'), false);
+
+  // 登入頁面 loginScreen
+  setupPTR(document.getElementById('loginScreen'), true);
+}
+
+async function refreshCurrentPage() {
+  const pageId = window._currentPageId || '';
+  switch(pageId) {
+    case 'dashboardPage':   await loadDashboard(); break;
+    case 'formPage':        await initFormPage(); break;
+    case 'membersPage':     await initMembersPage(); break;
+    case 'queryPage':       await updateQueryMemberSelect(); break;
+    case 'attendancePage':  await initAttendancePage(); break;
+    case 'statsPage':       await initStatsPage(); break;
+    case 'reportPage':      await initReportPage(); break;
+    case 'attQueryPage':    await initAttQuery(); break;
+    case 'itemsPage':       await initItemsPage(); break;
+    case 'dutyPage':        await loadDutyData(); break;
+    case 'meetingPage':     await loadMeetingPage(); break;
+    case 'changelogPage':   await loadChangelog(); break;
+    case 'feedbackPage':    await initFeedbackPage(); break;
+    case 'profilePage':     await loadProfilePage(); break;
+    case 'adminPage':       await initAdminPage(); break;
+    default: break;
+  }
+}
+
+function syncHeaderHeight() {
+  requestAnimationFrame(() => {
+    const header    = document.querySelector('.header');
+    const scroller  = document.getElementById('appScroll');
+    const adminBar  = document.getElementById('adminTabBar');
+    if (!header) return;
+    const headerH = Math.round(header.getBoundingClientRect().height);
+    // adminPage 開啟時，paddingTop = header + tabbar 高度
+    const adminPage = document.getElementById('adminPage');
+    const adminActive = adminPage && adminPage.classList.contains('active');
+    if (adminActive && adminBar && adminBar.style.display !== 'none') {
+      adminBar.style.top = headerH + 'px';
+      // 需要再等一幀讓 bar 位置確定後量高度
+      requestAnimationFrame(() => {
+        const barH = Math.round(adminBar.getBoundingClientRect().height);
+        if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
+      });
+    } else {
+      if (adminBar) adminBar.style.top = headerH + 'px';
+      if (scroller) scroller.style.paddingTop = headerH + 'px';
+    }
+  });
+}
+
+function _positionAdminTabBar() {
+  const bar    = document.getElementById('adminTabBar');
+  const spacer = document.getElementById('adminTabBarSpacer');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  // 雙重 rAF：確保 bar display:flex 後已渲染出完整高度才量測
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const header  = document.querySelector('.header');
+      const scroller= document.getElementById('appScroll');
+      const headerH = header ? Math.round(header.getBoundingClientRect().height) : 56;
+      bar.style.top = headerH + 'px';
+      const barH    = Math.round(bar.getBoundingClientRect().height);
+      if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
+      if (spacer) {
+        spacer.style.display = 'block';
+        spacer.style.height  = barH + 'px';
+      }
+    });
+  });
+}
+
+function navTo(pageId, fromHistory) {
+  syncHeaderHeight();
+  window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.drawer nav button').forEach(btn => btn.classList.remove('active-nav'));
+
+  // 推入瀏覽器歷史（上一頁/下一頁用）
+  if (!fromHistory) {
+    const url = '#' + pageId;
+    if (location.hash !== url) {
+      history.pushState({ pageId }, '', url);
+    }
+  }
+
+  const titles = {
+    dashboardPage:  ['救護義消系統', 'Emergency Volunteer System', 'nav-dashboard'],
+    formPage:       ['協勤案件登錄', 'Outing Record', 'nav-form'],
+    profilePage:    ['個人基本資料', 'My Profile', 'nav-profile'],
+    membersPage:    ['成員管理', 'Member Management', 'nav-members'],
+    queryPage:      ['協勤紀錄查詢', 'Attendance Query', 'nav-query'],
+    attendancePage: ['簽到簽退登錄', 'Sign In / Sign Out', 'nav-attendance'],
+    statsPage:      ['協勤統計', 'Attendance Statistics', 'nav-stats'],
+    reportPage:     ['報表匯出', 'Reports', 'nav-report'],
+    attQueryPage:   ['簽到/退記錄查詢', 'Attendance Log', 'nav-attquery'],
+    itemsPage:      ['物品領用', 'Item Pickup', 'nav-items'],
+    dutyPage:       ['備勤排班', 'Duty Schedule', 'nav-duty'],
+  meetingPage:    ['定訓與公告', 'Training & Announcements', 'nav-meeting'],
+    changelogPage:  ['版本修改紀錄', 'Version History', 'nav-changelog'],
+    feedbackPage:   ['意見回饋', 'Feedback', 'nav-feedback'],
+    adminPage:      ['管理員後台', 'Admin Panel', 'nav-admin'],
+  };
+  const t = titles[pageId];
+  if (t) {
+    document.getElementById('pageTitle').textContent = t[0];
+    document.getElementById('pageSubEn').textContent = t[1];
+    document.getElementById(t[2]).classList.add('active-nav');
+  }
+
+  if (pageId === 'dashboardPage') loadDashboard();
+  else if (pageId === 'formPage') { initFormPage(); setTimeout(() => resizeCanvas(), 50); }
+  else if (pageId === 'membersPage') initMembersPage();
+  else if (pageId === 'queryPage') updateQueryMemberSelect();
+  else if (pageId === 'attendancePage') {
+    attCheckoutTarget = null;
+    document.getElementById('attMain').style.display = 'block';
+    document.getElementById('attCheckoutView').style.display = 'none';
+    initAttendancePage();
+  }
+  else if (pageId === 'statsPage') initStatsPage();
+  else if (pageId === 'reportPage') initReportPage();
+  else if (pageId === 'itemsPage')  initItemsPage();
+  else if (pageId === 'attQueryPage') initAttQuery();
+  else if (pageId === 'adminPage')    initAdminPage();
+  else if (pageId === 'feedbackPage') initFeedbackPage();
+  else if (pageId === 'profilePage')   loadProfilePage();
+  else if (pageId === 'meetingPage')   loadMeetingPage();
+  else if (pageId === 'changelogPage') loadChangelog();
+  else if (pageId === 'dutyPage')      initDutyPage();
+
+  // 進入後台時展開子導覽，離開時收起；tab bar 顯示/隱藏由 initAdminPage 控制
+  const adminSubNav = document.getElementById('adminSubNav');
+  if (adminSubNav) adminSubNav.style.display = pageId === 'adminPage' ? '' : 'none';
+  if (pageId !== 'adminPage') {
+    const bar = document.getElementById('adminTabBar');
+    const spacer = document.getElementById('adminTabBarSpacer');
+    if (bar)    { bar.style.display = 'none'; }
+    if (spacer) { spacer.style.display = 'none'; spacer.style.height = '0'; }
+    if (_adminTabObserver) { _adminTabObserver.disconnect(); _adminTabObserver = null; }
+    // 恢復 appScroll paddingTop 為只有 header 高度
+    syncHeaderHeight();
+  }
+
+  closeDrawer();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════
+// Drawer
+// ════════════════════════════════════════
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+  // 每次開側邊欄都從頂部開始
+  const nav = document.querySelector('.drawer nav');
+  if (nav) nav.scrollTop = 0;
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ════════════════════════════════════════
+// Dashboard（修復2：日期比對）
+// ════════════════════════════════════════
+async function loadDashboard() {
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('sv');
+  const monthStr = todayStr.substring(0, 7);
+
+  document.getElementById('dashDate').textContent =
+    today.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+
+  try {
+    const [attDocs, outDocs] = await Promise.all([
+      fbList(COL_ATTEND, 'date', 'asc'),
+      fbList(COL_OUTING, 'date', 'asc'),
+    ]);
+    const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
+    const monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
+    document.getElementById('dashTodayAtt').textContent  = todayOut.length;
+    document.getElementById('dashMonthAtt').textContent  = monthOut.length;
+
+    const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
+    const monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
+    const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
+    document.getElementById('dashTodayMembers').textContent = todaySigninSet.size;
+
+    const onlineSet = new Set(
+      attDocs.filter(r => r.checkinTime && !r.checkoutTime && (r.date||'') === todayStr)
+             .map(r => r.memberName||'').filter(Boolean)
+    );
+    document.getElementById('dashTodaySignin').textContent = onlineSet.size;
+
+    const totalHours = monthAtt.reduce((sum, r) => sum + (parseFloat(r.hours)||0), 0);
+    document.getElementById('dashMonthHours').textContent =
+      totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+  } catch(e) {
+    ['dashTodayAtt','dashTodayMembers','dashMonthAtt','dashTodaySignin','dashMonthHours'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+  }
+  updateItemsBadge();
+}
+
+// 計算尚未全部領取的物品數，更新角標
+async function updateItemsBadge() {
+  const badge=document.getElementById('itemsBadge');if(!badge)return;
+  const items=Array.isArray(allItems)?allItems:[];
+  const pending=items.filter(item=>Array.isArray(item.recipients)&&item.recipients.some(r=>!r.claimed)).length;
+  if(pending>0){badge.textContent=pending>99?'99+':pending;badge.style.display='inline-block';}
+  else{badge.style.display='none';}
+}
+
+// ════════════════════════════════════════
+// Members
+// ════════════════════════════════════════
+let members     = [];
+let allItems    = [];
+
+async function loadMembers() {
+  try {
+    // 從 whitelist 讀取（整合帳號與成員資料，unit 一定有）
+    const wlDocs = await fbList(COL_WHITELIST);
+    if (wlDocs.length > 0) {
+      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+      members = wlDocs.map(d=>({
+        id: d.id, name: d.memberName||'', title: d.title||'',
+        unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
+        role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
+      })).filter(m=>m.name).sort((a,b)=>{
+        if((a.unit||'')!==(b.unit||''))return(a.unit||'')>(b.unit||'')?1:-1;
+        const ai=TITLE_ORDER.indexOf(a.title),bi=TITLE_ORDER.indexOf(b.title);
+        if(ai!==bi)return(ai<0?99:ai)-(bi<0?99:bi);
+        return(a.name||'')>(b.name||'')?1:-1;
+      });
+    } else {
+      const docs = await fbList(COL_MEMBERS);
+      members = docs.map(d=>({name:d.name||'',title:d.title||'',unit:d.unit||'',cert:d.cert||'',certExp:d.certExp||''})).filter(m=>m.name);
+    }
+  } catch(e) {
+    console.error('loadMembers 失敗:', e);
+    members = [];
+  }
+  updateMemberSelect();
+  if (document.getElementById('memberList')) renderMemberList();
+}
+
+
+function renderMemberList() {
+  const list = document.getElementById('memberList');
+  const countEl = document.getElementById('memberCount');
+  if (countEl) {
+    const regularCount = members.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人').length;
+    const officerCount = members.filter(m => m.role === 'officer' || m.title === '分隊承辦人').length;
+    countEl.textContent = regularCount + ' 人' + (officerCount > 0 ? '（另有承辦人 ' + officerCount + ' 位）' : '');
+  }
+  if (members.length === 0) {
+    list.innerHTML = '<div class="member-empty"><span class="empty-icon">👥</span>尚未新增任何成員</div>';
+    return;
+  }
+  list.innerHTML = members.map((m, i) => `
+    <div class="member-item" draggable="true" data-index="${i}">
+      <div class="drag-handle" title="拖曳排序"><span></span><span></span><span></span></div>
+      <div class="member-avatar" style="${m.role==='officer'?'background:#8e44ad;':m.role==='admin'?'background:#2471a3;':''}">${m.name.charAt(0)}</div>
+      <div class="member-info">
+        <div class="member-name">${m.name}${m.role==='officer'?'<span style="margin-left:6px;font-size:0.65rem;background:#f0e6ff;color:#8e44ad;border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">承辦人</span>':m.role==='admin'?'<span style="margin-left:6px;font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">管理員</span>':''}</div>
+        ${m.title ? `<div class="member-title">${m.title}</div>` : ''}
+      </div>
+      <button class="btn-delete" onclick="deleteMember(${i})">刪除</button>
+    </div>
+  `).join('');
+
+  let dragSrc = null;
+  list.querySelectorAll('.member-item').forEach(item => {
+    item.addEventListener('dragstart', e => { dragSrc = item; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    item.addEventListener('dragend', () => { item.classList.remove('dragging'); list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over')); });
+    item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (item !== dragSrc) { list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over')); item.classList.add('drag-over'); } });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === item) return;
+      const fromIdx = parseInt(dragSrc.dataset.index);
+      const toIdx = parseInt(item.dataset.index);
+      const moved = members.splice(fromIdx, 1)[0];
+      members.splice(toIdx, 0, moved);
+      saveMembers(); updateMemberSelect(); renderMemberList();
+    });
+
+    const handle = item.querySelector('.drag-handle');
+    let touchClone = null, startY = 0;
+    handle.addEventListener('touchstart', e => {
+      const touch = e.touches[0]; startY = touch.clientY; dragSrc = item; item.classList.add('dragging');
+      touchClone = item.cloneNode(true);
+      touchClone.style.cssText = `position:fixed;left:${item.getBoundingClientRect().left}px;top:${item.getBoundingClientRect().top}px;width:${item.offsetWidth}px;opacity:0.85;pointer-events:none;z-index:999;background:white;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.15);`;
+      document.body.appendChild(touchClone);
+    }, { passive: true });
+    handle.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0]; const dy = touch.clientY - startY;
+      if (touchClone) touchClone.style.top = (item.getBoundingClientRect().top + dy) + 'px';
+      const els = [...list.querySelectorAll('.member-item:not(.dragging)')];
+      list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over'));
+      const target = els.find(el => { const r = el.getBoundingClientRect(); return touch.clientY >= r.top && touch.clientY <= r.bottom; });
+      if (target) target.classList.add('drag-over');
+    }, { passive: false });
+    handle.addEventListener('touchend', e => {
+      if (touchClone) { touchClone.remove(); touchClone = null; } item.classList.remove('dragging');
+      const touch = e.changedTouches[0];
+      const els = [...list.querySelectorAll('.member-item:not(.dragging)')];
+      list.querySelectorAll('.member-item').forEach(el => el.classList.remove('drag-over'));
+      const target = els.find(el => { const r = el.getBoundingClientRect(); return touch.clientY >= r.top && touch.clientY <= r.bottom; });
+      if (target && target !== dragSrc) {
+        const fromIdx = parseInt(dragSrc.dataset.index); const toIdx = parseInt(target.dataset.index);
+        const moved = members.splice(fromIdx, 1)[0]; members.splice(toIdx, 0, moved);
+        saveMembers(); updateMemberSelect(); renderMemberList();
+      }
+    });
+  });
+}
+
+
+function filterAttMembers() {
+  const unit = document.getElementById('attUnitSel')?.value || '';
+  const sel  = document.getElementById('attMemberSel');
+  if (!sel) return;
+  const filtered = unit ? members.filter(m => (m.unit||'') === unit) : [];
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
+    filtered.map(m=>`<option value="${m.name}">${m.name}${m.title?' ('+m.title+')':''}</option>`).join('');
+}
+
+function updateMemberSelect() {
+  ['qMember'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— 全部成員 —</option>';
+    members.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.name;
+      opt.textContent = m.name;
+      if (m.name === cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+  const formUnit = document.getElementById('formUnitSel')?.value || '';
+  if (!formUnit) {
+    const ms = document.getElementById('memberSelect');
+    if (ms) ms.innerHTML = '<option value="">— 請先選擇分隊 —</option>';
+  } else {
+    filterFormMembers();
+  }
+}
+
+async function addMember() {
+  const inp = document.getElementById('newMemberName');
+  const titleInp = document.getElementById('newMemberTitle');
+  const btn = document.querySelector('.btn-add');
+  const name = inp.value.trim();
+  const title = titleInp.value.trim();
+  if (!name) { inp.focus(); return; }
+  if (members.some(m => m.name === name)) { alert('此成員姓名已存在'); return; }
+  members.push({ name, title });
+  btn.textContent = '儲存中...'; btn.disabled = true;
+  await saveMembers();
+  btn.textContent = '新　增'; btn.disabled = false;
+  updateMemberSelect(); renderMemberList();
+  inp.value = ''; titleInp.value = ''; inp.focus();
+}
+
+async function deleteMember(i) {
+  if (!confirm(`確定要刪除「${members[i].name}」嗎？`)) return;
+  members.splice(i, 1);
+  await saveMembers();
+  updateMemberSelect(); renderMemberList();
+}
+
+document.getElementById('newMemberName')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addMember(); }
+});
+
+// ════════════════════════════════════════
+// 協勤記錄表單
+// ════════════════════════════════════════
+document.getElementById('date')?.setAttribute('value', new Date().toLocaleDateString('sv'));
+setDuty('協勤');
+
+document.querySelectorAll('.cb-item input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => cb.closest('.cb-item').classList.toggle('checked', cb.checked));
+});
+
+let canvas, ctx;
+let drawing = false, hasSig = false;
+
+function resizeCanvas() {
+  if (!canvas) return;
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * ratio;
+  canvas.height = rect.height * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+}
+
+function initSigCanvas() {
+  canvas = document.getElementById('sigCanvas');
+  if (!canvas) return;
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  canvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; });
+  canvas.addEventListener('mouseup', () => drawing = false);
+  canvas.addEventListener('mouseleave', () => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; }, { passive: false });
+  canvas.addEventListener('touchend', () => drawing = false);
+}
+window.addEventListener('resize', () => { if (canvas) { clearSig(); resizeCanvas(); } });
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+
+function setDuty(type) {
+  // 協勤案件登錄已移除類別選項，此函式保留以防呼叫但不執行任何操作
+  var el = document.getElementById('dutyType');
+  if (el) el.value = type;
+}
+
+function setAttDuty(type) {
+  document.getElementById('attDutyOut').classList.toggle('active', type === '協勤');
+  document.getElementById('attDutyPub').classList.toggle('active', type === '公差');
+  document.getElementById('attDutyType').value = type;
+}
+function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
+
+// ── 後台/查詢頁編輯簽名板共用工具 ──
+const _aeCtxMap = {};
+function aeInitCanvas(canvasId) {
+  const cv = document.getElementById(canvasId); if (!cv) return;
+  const ratio = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  cv.width = rect.width * ratio; cv.height = rect.height * ratio;
+  const ctx = cv.getContext('2d');
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.lineJoin='round';
+  const state = { ctx, drawing:false, hasSig:false };
+  _aeCtxMap[canvasId] = state;
+  function getP(e){ const r=cv.getBoundingClientRect(),s=e.touches?e.touches[0]:e; return{x:s.clientX-r.left,y:s.clientY-r.top}; }
+  cv.addEventListener('mousedown',  e=>{ state.drawing=true; const p=getP(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+  cv.addEventListener('mousemove',  e=>{ if(!state.drawing)return; const p=getP(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasSig=true; });
+  cv.addEventListener('mouseup',    ()=>state.drawing=false);
+  cv.addEventListener('mouseleave', ()=>state.drawing=false);
+  cv.addEventListener('touchstart', e=>{ e.preventDefault(); state.drawing=true; const p=getP(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); },{passive:false});
+  cv.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!state.drawing)return; const p=getP(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasSig=true; },{passive:false});
+  cv.addEventListener('touchend',   ()=>state.drawing=false);
+}
+function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return document.getElementById(id).toDataURL('image/png'); }
+function aeCanvasClear(id){ const s=_aeCtxMap[id]; if(!s)return; const cv=document.getElementById(id); if(!cv)return; s.ctx.clearRect(0,0,cv.width,cv.height); s.hasSig=false; }
+
+function submitOutingForm() {
+  // 最優先：其他案由必填檢查（靠 hidden input 判斷，不靠動態 id）
+  if (document.getElementById('isOtherCaseType')?.value === '1') {
+    const _otherInput = document.getElementById('caseTypeOther');
+    if (!_otherInput || !_otherInput.value.trim()) {
+      alert('選擇「其他」時必須填寫實際案由，否則無法送出');
+      if (_otherInput) _otherInput.focus();
+      return;
+    }
+  }
+
+  const checked = [...document.querySelectorAll('#serviceGrid input:checked')];
+  const selectedCaseType = document.querySelector('#caseTypeGrid input[type="radio"]:checked');
+  const caseTypeOtherVal = document.getElementById('caseTypeOther')?.value.trim() || '';
+  const isOther = selectedCaseType?.value === '__other__';
+  const caseTypeVal = selectedCaseType
+    ? (selectedCaseType.value === '__other__' ? caseTypeOtherVal : selectedCaseType.value)
+    : '';
+  const _date     = document.getElementById('date').value;
+  const _timeOut  = document.getElementById('timeOut').value;
+  const _timeBack = document.getElementById('timeBack').value;
+  const _district = document.getElementById('district').value;
+  const _address  = document.getElementById('address').value.trim();
+  const _unit     = document.getElementById('formUnitSel').value;
+  const _member   = document.getElementById('memberSelect').value;
+
+  if (!_date)     { alert('請選擇協勤日期'); return; }
+  if (!_timeOut)  { alert('請填入出動時間'); return; }
+  if (!_timeBack) { alert('請填入返隊時間'); return; }
+  if (!_district) { alert('請選擇行政區'); return; }
+  if (!_address)  { alert('請填入詳細地址'); return; }
+  if (!selectedCaseType) { alert('請選擇案由'); return; }
+  // 同步檢查（備用）
+  if (document.getElementById('isOtherCaseType')?.value === '1') {
+    const otherInput = document.getElementById('caseTypeOther');
+    if (!otherInput || !otherInput.value.trim()) {
+      alert('選擇「其他」時必須填寫實際案由，否則無法送出');
+      otherInput && otherInput.focus();
+      return;
+    }
+  }
+  if (checked.length === 0) { alert('請至少選擇一項服務內容'); return; }
+  if (!_unit)     { alert('請選擇分隊別'); return; }
+  if (!_member)   { alert('請選擇協勤義消姓名'); return; }
+  if (!hasSig)    { alert('請完成義消簽名'); return; }
+
+  const data = {
+    action:     'outing',
+    date:       document.getElementById('date').value,
+    caseType:   caseTypeVal,
+    timeOut:    document.getElementById('timeOut').value,
+    timeBack:   document.getElementById('timeBack').value,
+    district:   document.getElementById('district').value,
+    address:    document.getElementById('address').value,
+    services:   checked.map(cb => cb.value).join('、'),
+    note:       document.getElementById('note').value,
+    memberName: document.getElementById('memberSelect').value,
+    signature:  canvas.toDataURL('image/png')
+  };
+
+  const btn = document.querySelector('.btn-submit');
+  btn.textContent = '送出中，請稍候...'; btn.disabled = true;
+
+  fbAdd(COL_OUTING,{
+    date:data.date,caseType:data.caseType||'',timeOut:data.timeOut,timeBack:data.timeBack,
+    district:data.district,address:data.address,services:data.services,
+    note:data.note||'',memberName:data.memberName,signature:data.signature,
+  }).then(()=>{
+    document.getElementById('successMsg').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('recordForm').reset();
+    clearSig();
+    document.getElementById('date').value = new Date().toLocaleDateString('sv');
+    document.querySelectorAll('.cb-item').forEach(el => el.classList.remove('checked'));
+    updateMemberSelect();
+  })
+  .catch(() => alert('送出失敗，請檢查網路連線後再試。'))
+  .finally(() => { btn.textContent = '送　出　紀　錄'; btn.disabled = false; });
+}
+
+// 從協勤登錄跳到查詢頁並帶入今日條件
+function goToQuery() {
+  const today = new Date().toLocaleDateString('sv');
+  navTo('queryPage');
+  // 設定查詢條件為今天
+  setTimeout(() => {
+    const fromEl = document.getElementById('qDateFrom');
+    const toEl   = document.getElementById('qDateTo');
+    if (fromEl) fromEl.value = today;
+    if (toEl)   toEl.value   = today;
+    doQuery();
+  }, 300);
+}
+
+// 簽退後跳到簽到簽退查詢頁
+function goToAttQuery() {
+  const today = new Date().toLocaleDateString('sv');
+  navTo('attQueryPage');
+  setTimeout(() => {
+    const fromEl = document.getElementById('aqDateFrom');
+    const toEl   = document.getElementById('aqDateTo');
+    if (fromEl) fromEl.value = today;
+    if (toEl)   toEl.value   = today;
+    doAttQuery();
+  }, 300);
+}
+
+// ── 登入後檢查待領物品並提示（不需等到簽到）──
+function showPendingItemsAlert() {
+  if (!allItems || allItems.length === 0) return;
+
+  // 直接用 sessionStorage 的義消姓名（白名單 B 欄）
+  let myName = '';
+  try {
+    const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    myName = u.memberName || u.name || '';
+  } catch(e) {}
+
+  if (!myName) return;
+
+  const pending = allItems.filter(item => {
+    return item.recipients && item.recipients.some(r => r.name === myName && !r.claimed);
+  });
+  if (pending.length === 0) return;
+
+  const listEl = document.getElementById('pendingItemsList');
+  listEl.innerHTML = pending.map(item => {
+    const note = item.note ? `<span style="color:var(--text-light);font-size:0.78rem;">（${item.note}）</span>` : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+      <span style="color:#b94a3a;font-size:1rem;">•</span>
+      <span>${item.itemName}${note}</span>
+    </div>`;
+  }).join('');
+
+  const modal = document.getElementById('pendingItemsAlert');
+  modal.style.display = 'flex';
+}
+
+// ════════════════════════════════════════
+// 協勤查詢
+// ════════════════════════════════════════
+let allRecords = [];
+let filteredRecords = [];
+let _qSortAsc  = true;  // 協勤查詢排序方向（true=遞增, false=遞減）
+let _aqSortAsc = true;  // 簽到退查詢排序方向
+
+function _applyQuerySort() {
+  const btn = document.getElementById('qSortBtn');
+  filteredRecords.sort((a, b) => {
+    const da = (a.date||'') + (a.timeOut||'');
+    const db = (b.date||'') + (b.timeOut||'');
+    const cmp = da > db ? 1 : da < db ? -1 : 0;
+    return _qSortAsc ? cmp : -cmp;
+  });
+  if (btn) btn.textContent = '📅 日期 ' + (_qSortAsc ? '↑' : '↓');
+}
+
+function toggleQuerySort() {
+  _qSortAsc = !_qSortAsc;
+  _applyQuerySort();
+  renderQueryResults(filteredRecords);
+}
+
+function _applyAttQuerySort() {
+  const btn = document.getElementById('aqSortBtn');
+  aqFiltered.sort((a, b) => {
+    const da = (a.date||'') + (a.checkinTime||'');
+    const db = (b.date||'') + (b.checkinTime||'');
+    const cmp = da > db ? 1 : da < db ? -1 : 0;
+    return _aqSortAsc ? cmp : -cmp;
+  });
+  if (btn) btn.textContent = '📅 日期 ' + (_aqSortAsc ? '↑' : '↓');
+}
+
+function toggleAttQuerySort() {
+  _aqSortAsc = !_aqSortAsc;
+  _applyAttQuerySort();
+  renderAttQueryResults();
+}
+
+async function updateQueryMemberSelect() {
+  try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) {}
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin   = usr.isAdmin   || false;
+  const isOfficer = usr.isOfficer || false;
+  const userUnit  = usr.unit || '';
+
+  // 填分隊選單（管理員可選全部，承辦人/一般成員鎖定自己分隊）
+  const unitSel = document.getElementById('qUnit');
+  if (unitSel) {
+    if (isAdmin) {
+      unitSel.innerHTML = '<option value="">— 全部分隊 —</option>' +
+        _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+      unitSel.disabled = false;
+    } else {
+      unitSel.innerHTML = '<option value="' + userUnit + '">' + userUnit + '</option>';
+      unitSel.disabled = true;
+    }
+  }
+
+  filterQueryMembers();
+  populateCaseTypeSelect();
+}
+
+function filterQueryMembers() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin   = usr.isAdmin   || false;
+  const isOfficer = usr.isOfficer || false;
+  const userUnit  = usr.unit || '';
+
+  const unit = document.getElementById('qUnit')?.value || (!isAdmin ? userUnit : '');
+  const sel  = document.getElementById('qMember');
+  if (!sel) return;
+  const cur = sel.value;
+
+  // 一般成員只顯示自己分隊
+  const filtered = isAdmin
+    ? (unit ? members.filter(m => (m.unit || '') === unit) : members)
+    : members.filter(m => (m.unit || '') === userUnit);
+
+  sel.innerHTML = '<option value="">— 全部成員 —</option>';
+  filtered.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name; opt.textContent = m.name;
+    if (m.name === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function doQuery() {
+  const btn = document.querySelector('#queryPage .btn-search');
+  if (btn) { btn.textContent = '查詢中...'; btn.disabled = true; }
+  document.getElementById('queryInitMsg')?.style && (document.getElementById('queryInitMsg').style.display = 'none');
+  document.getElementById('statsRow')?.style && (document.getElementById('statsRow').style.display = 'none');
+  document.getElementById('resultCard')?.style && (document.getElementById('resultCard').style.display = 'none');
+
+  try {
+    try {
+      const docs=await fbList(COL_OUTING, 'date', 'asc');
+      allRecords=docs.map(d=>({
+        id:d.id||'',
+        date:d.date||'',timeOut:d.timeOut||'',timeBack:d.timeBack||'',
+        district:(d.district||'').replace(/^台中/,'臺中'),
+        address:d.address||'',caseType:d.caseType||'',services:d.services||'',
+        note:d.note||'',
+        memberName:d.memberName||'',
+        signature:d.signature||'',
+        dutyType:d.dutyType||'',
+        _t:d._t||null,
+      }));
+    } catch(e) {
+      allRecords = [];
+    }
+  } catch(e) {
+    alert('無法取得資料：' + e.message);
+    if (btn) { btn.textContent = '查　詢'; btn.disabled = false; }
     return;
   }
 
-  for (const rec of notCheckedOut) {
-    const name = rec.memberName || '';
-    console.log(`\n處理：${name}`);
+  const dateFrom = document.getElementById('qDateFrom')?.value || '';
+  const dateTo   = document.getElementById('qDateTo')?.value || '';
+  const qUnit    = document.getElementById('qUnit')?.value || '';
+  const qCaseType  = document.getElementById('qCaseType')?.value || '';
+  const member   = document.getElementById('qMember')?.value || '';
+  const district = document.getElementById('qDistrict')?.value || '';
+  const service  = document.getElementById('qService')?.value || '';
+  const duty     = document.getElementById('qDuty')?.value || '';
 
-    // 推播通知
-    const sub = subMap[name];
-    if (sub) {
-      const payload = JSON.stringify({
-        title: '🔔 提醒簽退',
-        body:  `${name}，您今日（${today}）尚未完成簽退，請記得登入系統完成紀錄。`,
-        url:   siteUrl,
-        tag:   'checkout-reminder',
-      });
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
-        );
-        console.log(`  ✅ 推播成功`);
-      } catch(err) {
-        console.log(`  ❌ 推播失敗：${err.message}`);
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          await db.collection('pushSubscriptions').where('memberName', '==', name).get()
-            .then(s => Promise.all(s.docs.map(d => d.ref.delete())));
-        }
+  // 取得登入者資訊
+  const _usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const _isAdmin   = _usr.isAdmin   || false;
+  const _isOfficer = _usr.isOfficer || false;
+  const _userUnit  = _usr.unit || '';
+
+  // 先取得自己分隊的成員名單（一般成員限制用）
+  const _unitMembers = members
+    .filter(m => (m.unit || '') === _userUnit)
+    .map(m => m.name);
+
+  filteredRecords = allRecords.filter(r => {
+    // 管理員以外只能看自己分隊的協勤紀錄
+    if (!_isAdmin) {
+      if (!_unitMembers.includes(r.memberName)) return false;
+    }
+    // 管理員/承辦人可依分隊篩選
+    if (qUnit) {
+      const unitMemberNames = members.filter(m => (m.unit||'') === qUnit).map(m => m.name);
+      if (!unitMemberNames.includes(r.memberName)) return false;
+    }
+    if (qCaseType && r.caseType !== qCaseType) return false;
+    if (dateFrom && r.date < dateFrom) return false;
+    if (dateTo   && r.date > dateTo)   return false;
+    if (member   && r.memberName !== member) return false;
+    if (district && r.district !== district) return false;
+    if (service  && !(r.services || '').includes(service)) return false;
+    if (duty     && r.dutyType !== duty) return false;
+    return true;
+  });
+
+  // 依日期和出發時間排序（預設遞增）
+  _qSortAsc = true;
+  _applyQuerySort();
+  renderQueryResults(filteredRecords);
+  if (btn) { btn.textContent = '查　詢'; btn.disabled = false; }
+}
+
+function renderQueryResults(records) {
+  const uniqueMembers = new Set(records.map(r => r.memberName)).size;
+  const uniqueDays    = new Set(records.map(r => r.date)).size;
+  document.getElementById('statTotal').textContent   = records.length;
+  document.getElementById('statMembers').textContent = uniqueMembers;
+  document.getElementById('statDays').textContent    = uniqueDays;
+  document.getElementById('statsRow').style.display  = 'grid';
+
+  // 在 map 外取得登入者資訊，避免 template literal 巢狀問題
+  const _usrQ = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdminQ = _usrQ.isAdmin||false, _isOfficerQ = _usrQ.isOfficer||false;
+  const _myNameQ = _usrQ.memberName||_usrQ.name||'';
+
+  const tbody = document.getElementById('resultBody');
+  if (records.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
+  } else {
+    tbody.innerHTML = records.map((r, i) => {
+      const seqNum = i + 1;
+      const tags = (r.services || '').split('、').filter(Boolean)
+        .map(s => '<span class="tag">'+s+'</span>').join('');
+      const timeStr = r.timeOut && r.timeBack ? r.timeOut+' — '+r.timeBack : (r.timeOut || '');
+      const sigCell = r.signature
+        ? '<img data-sig="'+i+'" style="height:40px;cursor:pointer;border:1px solid var(--border);border-radius:3px;" title="點擊放大">'
+        : '—';
+      const isOwnerQ = r.memberName === _myNameQ;
+      // 24小時判斷：以勤務日期(r.date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
+      const recTimeQ = r.date ? new Date(r.date+'T00:00').getTime() : 0;
+      const within24Q = recTimeQ && (Date.now()-recTimeQ < 86400000);
+      let actionCell = '';
+      if (_isAdminQ || _isOfficerQ) {
+        // 管理員/承辦人：直接編輯
+        const _idQ2 = r.id||'';
+        actionCell = '<button onclick="adminEditOut(&quot;'+_idQ2+'&quot;)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">✏️ 編輯</button>';
+      } else if (isOwnerQ && within24Q) {
+        actionCell = '<button onclick="openOutingEdit('+i+')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">✏️ 編輯</button>';
+      } else if (isOwnerQ) {
+        actionCell = '<button data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
       }
+      return '<tr>' +
+        '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+seqNum+'</td>' +
+        '<td style="white-space:nowrap;">'+(r.date||'')+'</td>' +
+        '<td style="white-space:nowrap;">'+timeStr+'</td>' +
+        '<td style="white-space:nowrap;">'+(r.district||'')+'</td>' +
+        '<td style="min-width:10em;">'+(r.address||'')+'</td>' +
+        '<td style="white-space:nowrap;">'+(r.caseType||'—')+'</td>' +
+        '<td>'+tags+'</td>' +
+        '<td style="white-space:nowrap;">'+(r.memberName||'')+'</td>' +
+        '<td>'+(r.note||'')+'</td>' +
+        '<td>'+sigCell+'</td>' +
+        '<td>'+actionCell+'</td>' +
+        '</tr>';
+    }).join('');
+
+    tbody.querySelectorAll('img[data-sig]').forEach(img => {
+      const idx = parseInt(img.getAttribute('data-sig'));
+      img.src = records[idx].signature;
+      img.addEventListener('click', () => {
+        document.getElementById('sigModalImg').src = records[idx].signature;
+        document.getElementById('sigModal').style.display = 'flex';
+      });
+    });
+  }
+  document.getElementById('resultCard').style.display = 'block';
+}
+
+function resetQuery() {
+  ['qDateFrom','qDateTo','qUnit','qCaseType','qMember','qDistrict','qService','qDuty'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('statsRow')?.style && (document.getElementById('statsRow').style.display = 'none');
+  document.getElementById('resultCard')?.style && (document.getElementById('resultCard').style.display = 'none');
+  const qi = document.getElementById('queryInitMsg'); if (qi) qi.style.display = 'block';
+  filteredRecords = [];
+}
+
+
+
+// ════════════════════════════════════════
+// 簽到簽退
+// ════════════════════════════════════════
+// attSessions：暫存簽到資料（rowIndex 由 Sheets 回傳）
+// 格式：{ memberName: { checkinTime, checkinSig, rowIndex, done, checkoutTime } }
+let attSessions      = {};
+let attCheckoutTarget = null;
+let attCheckinHasSig  = false;
+let attCheckoutHasSig = false;
+let attCheckinCtx, attCheckoutCtx;
+
+function roundTo15(date) {
+  const h   = date.getHours();
+  const m   = Math.round(date.getMinutes() / 15) * 15;
+  const adjM = m === 60 ? 0 : m;
+  const adjH = m === 60 ? (h + 1) % 24 : h;
+  return `${String(adjH).padStart(2,'0')}:${String(adjM).padStart(2,'0')}`;
+}
+
+async function initAttendancePage() {
+  if (!attCheckoutTarget) {
+    document.getElementById('attMain').style.display = 'block';
+    document.getElementById('attCheckoutView').style.display = 'none';
+  }
+  try {
+
+  const now = new Date();
+  document.getElementById('attDate').value = now.toLocaleDateString('sv');
+  buildTimeOptions('attCheckinTime', roundTo15(now));
+  buildTimeOptions('attCheckoutTime', roundTo15(now));
+
+  try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) { console.warn('loadMembers/Units:', e); }
+  // 填分隊選單
+  const unitSel = document.getElementById('attUnitSel');
+  if (unitSel) {
+    const _u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    const _isAdmin   = _u.isAdmin   || false;
+    const _isOfficer = _u.isOfficer || false;
+    const _userUnit  = _u.unit || '';
+
+    if (_isAdmin) {
+      // 管理員可選所有分隊
+      unitSel.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
+      unitSel.disabled = false;
     } else {
-      console.log(`  ⚠️ 無推播訂閱`);
+      // 承辦人和一般成員只能選自己分隊，且鎖定
+      unitSel.innerHTML = `<option value="${_userUnit}">${_userUnit}</option>`;
+      unitSel.disabled = true;
     }
 
-    // Email 通知
-    const email = emailMap[name];
-    if (email) {
-      try {
-        await transporter.sendMail({
-          from:    `"救護義消系統" <${process.env.GMAIL_USER}>`,
-          to:      email,
-          subject: `【救護義消系統】提醒您尚未完成今日簽退`,
-          html: `
-<div style="font-family:'Noto Sans TC',sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-  <div style="background:#b94a3a;border-radius:8px 8px 0 0;padding:20px 24px;">
-    <h2 style="color:white;margin:0;font-size:1.1rem;">🔔 簽退提醒</h2>
-  </div>
-  <div style="border:1px solid #e0d5c8;border-top:none;border-radius:0 0 8px 8px;padding:24px;">
-    <p style="color:#333;line-height:1.8;">${name} 您好，</p>
-    <p style="color:#333;line-height:1.8;">
-      系統偵測到您今日（<strong>${today}</strong>）有簽到紀錄，但尚未完成簽退。<br>
-      請盡快登入系統完成簽退，以確保出勤紀錄正確。
-    </p>
-    <div style="text-align:center;margin:24px 0;">
-      <a href="${siteUrl}" style="background:#b94a3a;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;">
-        前往簽退
-      </a>
-    </div>
-    <hr style="border:none;border-top:1px solid #e0d5c8;margin:20px 0;">
-    <p style="color:#999;font-size:0.82rem;line-height:1.6;margin:0;">
-      臺中市義勇消防總隊鳳凰救護大隊潭子分隊<br>
-      救護義消系統 自動通知，請勿回覆此郵件。
-    </p>
-  </div>
-</div>`,
-        });
-        console.log(`  ✅ Email 已寄至 ${email}`);
-      } catch(err) {
-        console.log(`  ❌ Email 失敗：${err.message}`);
+    const sel = document.getElementById('attMemberSel');
+    if (sel) sel.innerHTML = '<option value="">— 請先選擇分隊 —</option>';
+    if (_userUnit) { unitSel.value = _userUnit; filterAttMembers(); }
+  }
+
+  attCheckinHasSig = false;
+  document.getElementById('attSuccessMsg')?.classList.remove('show');
+  setTimeout(() => initAttCanvas('checkin'), 100);
+
+  // 從 Firestore 讀取今日在線名單，還原 attSessions
+  await loadTodayCheckins();
+  // 只在沒有進行簽退時才重置顯示（避免覆蓋使用者已點的簽退畫面）
+  if (!attCheckoutTarget) {
+    document.getElementById('attMain').style.display = 'block';
+    document.getElementById('attCheckoutView').style.display = 'none';
+  }
+  } catch(e) {
+    console.error('initAttendancePage 失敗:', e);
+  }
+}
+
+// ── 從 Sheets 讀取今日已簽到未簽退名單 ──
+async function loadTodayCheckins() {
+  try {
+    const docs = await fbList(COL_ATTEND, 'date', 'asc');
+    // 所有已簽到但尚未簽退（包含忘記簽退的跨日記錄），用 docId 為 key
+    docs.filter(r => r.checkinTime && !r.checkoutTime).forEach(r => {
+      const key = r.id;
+      if (!attSessions[key]) {
+        attSessions[key] = {
+          memberName:  r.memberName || '',
+          checkinTime: r.checkinTime,
+          checkinSig:  r.checkinSig || '',
+          fbDocId:     r.id,
+          rowIndex:    null,
+          date:        r.date,
+          dutyType:    r.dutyType || '協勤',
+          done:        false,
+        };
       }
+    });
+  } catch(e) {}
+  renderCheckinList();
+}
+
+function renderCheckinList() {
+  const list = document.getElementById('attCheckinList');
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin   = usr.isAdmin   || false;
+  const isOfficer = usr.isOfficer || false;
+  const userUnit  = usr.unit || '';
+  // 取自己分隊的成員名單
+  const unitMemberNames = members.filter(m => (m.unit||'') === userUnit).map(m => m.name);
+
+  // 一般成員只顯示自己分隊的人
+  const allSessions = Object.entries(attSessions);
+  const sessions = isAdmin
+    ? allSessions
+    : allSessions.filter(([k, s]) => unitMemberNames.includes(s.memberName));
+
+  if (sessions.length === 0) {
+    list.innerHTML = '<div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>';
+    return;
+  }
+  const todayStr = new Date().toLocaleDateString('sv');
+  const sorted = [...sessions].sort((a, b) => {
+    if (a[1].done !== b[1].done) return (a[1].done ? 1 : 0) - (b[1].done ? 1 : 0);
+    return (a[1].date||'') < (b[1].date||'') ? -1 : 1;
+  });
+
+  // 用 DocumentFragment 避免 innerHTML 的 onclick key 轉義問題
+  const frag = document.createDocumentFragment();
+  sorted.forEach(([key, s]) => {
+    const name = s.memberName || key;
+    const m    = members.find(x => x.name === name) || { name, title: '' };
+    const isYesterday = s.date && s.date !== todayStr;
+
+    const row = document.createElement('div');
+    row.className = 'member-item';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'member-avatar';
+    avatar.style.background = s.done ? '#95a5a6' : (isYesterday ? '#e67e22' : '#27ae60');
+    avatar.textContent = name.charAt(0);
+
+    const info = document.createElement('div');
+    info.className = 'member-info';
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'member-name';
+    nameDiv.textContent = name;
+    if (isYesterday) {
+      const tag = document.createElement('span');
+      tag.style.cssText = 'font-size:0.7rem;color:#e67e22;margin-left:4px;';
+      tag.textContent = '（' + s.date + ' 待補簽）';
+      nameDiv.appendChild(tag);
+    }
+    info.appendChild(nameDiv);
+
+    if (s.done) {
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'member-title';
+      timeDiv.textContent = s.checkinTime + ' → ' + s.checkoutTime;
+      info.appendChild(timeDiv);
+      const badge = document.createElement('span');
+      badge.className = 'att-status-badge done';
+      badge.textContent = '已完成';
+      row.appendChild(avatar); row.appendChild(info); row.appendChild(badge);
     } else {
-      console.log(`  ⚠️ 無 Email 紀錄`);
+      if (m.title) {
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'member-title';
+        titleDiv.textContent = m.title;
+        info.appendChild(titleDiv);
+      }
+      const badge = document.createElement('span');
+      badge.className = 'att-status-badge in';
+      badge.textContent = '簽到 ' + s.checkinTime;
+
+      const gap = document.createElement('div');
+      gap.style.width = '8px';
+
+      const btn = document.createElement('button');
+      btn.className = 'att-member-btn';
+      btn.style.cssText = 'border-color:var(--red);color:var(--red);';
+      btn.textContent = '簽退';
+      btn.addEventListener('click', () => openCheckout(key));
+
+      row.appendChild(avatar); row.appendChild(info); row.appendChild(badge);
+      row.appendChild(gap); row.appendChild(btn);
+    }
+    frag.appendChild(row);
+  });
+
+  list.innerHTML = '';
+  list.appendChild(frag);
+}
+
+function openCheckout(key) {
+  attCheckoutTarget = key;
+  const session = attSessions[key];
+  const memberName = session ? (session.memberName || key) : key;
+  const resolvedSession = session || Object.values(attSessions).find(s => s.memberName === key) || {};
+  document.getElementById('attCheckoutName').textContent   = memberName;
+  document.getElementById('attCheckinTimeRef').textContent = resolvedSession.checkinTime || '';
+  buildTimeOptions('attCheckoutTime', roundTo15(new Date()));
+  document.getElementById('attHours').value   = '';
+  document.getElementById('attCount').value   = '';
+  document.getElementById('attService').value = '';
+  document.getElementById('attSuccessMsg')?.classList.remove('show');
+  document.getElementById('attMain').style.display         = 'none';
+  document.getElementById('attCheckoutView').style.display = 'block';
+  attCheckoutHasSig = false;
+  autoCalcHours();
+  loadTodayCount(memberName);
+  requestAnimationFrame(() => requestAnimationFrame(() => initAttCanvas('checkout')));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function attBackToMain() {
+  attCheckoutTarget = null;
+  document.getElementById('attMain').style.display         = 'block';
+  document.getElementById('attCheckoutView').style.display = 'none';
+  document.getElementById('attSuccessMsg').classList.remove('show');
+  renderCheckinList();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function initAttCanvas(type) {
+  const id = type === 'checkin' ? 'attCheckinCanvas' : 'attCheckoutCanvas';
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+  const ctx = newCanvas.getContext('2d');
+  if (type === 'checkin') attCheckinCtx = ctx;
+  else attCheckoutCtx = ctx;
+  setTimeout(() => {
+    const ratio = window.devicePixelRatio || 1;
+    const rect  = newCanvas.getBoundingClientRect();
+    const w     = rect.width || (newCanvas.parentElement ? newCanvas.parentElement.getBoundingClientRect().width : 0) || 300;
+    newCanvas.width  = w * ratio;
+    newCanvas.height = 160 * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  }, 50);
+  function getPos(e) {
+    const r = newCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  let drawing = false;
+  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  newCanvas.addEventListener('mousemove', e => {
+    if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') attCheckinHasSig = true; else attCheckoutHasSig = true;
+  });
+  newCanvas.addEventListener('mouseup',    () => drawing = false);
+  newCanvas.addEventListener('mouseleave', () => drawing = false);
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchmove',  e => {
+    e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') attCheckinHasSig = true; else attCheckoutHasSig = true;
+  }, { passive: false });
+  newCanvas.addEventListener('touchend', () => drawing = false);
+}
+
+function clearAttCanvas(type) {
+  const ctx = type === 'checkin' ? attCheckinCtx : attCheckoutCtx;
+  if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  if (type === 'checkin') attCheckinHasSig = false; else attCheckoutHasSig = false;
+}
+
+// ── 簽到：立即寫入 Sheets ──
+async function doCheckin() {
+  const memberName = document.getElementById('attMemberSel').value;
+  const timeVal    = document.getElementById('attCheckinTime').value;
+  if (!memberName) { alert('請選擇義消成員'); return; }
+  if (!timeVal)    { alert('請填入簽到時間'); return; }
+  if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
+  if (attSessions[memberName] && !attSessions[memberName].done) {
+    if (!confirm(`${memberName} 已有簽到紀錄（${attSessions[memberName].checkinTime}），要重新簽到嗎？`)) return;
+  }
+
+  const memberObj  = members.find(m => m.name === memberName) || {};
+  const checkinSig = attCheckinCtx.canvas.toDataURL('image/png');
+  const date       = document.getElementById('attDate').value;
+
+  const btn = document.querySelector('.btn-checkin');
+  btn.textContent = '簽到中...'; btn.disabled = true;
+
+  try {
+    const dutyTypeVal = document.getElementById('attDutyType')?.value || '協勤';
+    // 先建立 tempKey session，讓 .then() 回呼能正確找到它
+    const tempKey = 'new_' + memberName + '_' + Date.now();
+    attSessions[tempKey] = {
+      memberName,
+      checkinTime: timeVal,
+      checkinSig,
+      fbDocId:     null,
+      rowIndex:    null,
+      date,
+      dutyType:    dutyTypeVal,
+      done:        false,
+    };
+
+    fbAdd(COL_ATTEND, {
+      date, dutyType: dutyTypeVal, title: memberObj.title || '', memberName,
+      checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0,
+    }).then(docId => {
+      // 將 tempKey 更新成真正的 Firestore docId
+      if (attSessions[tempKey]) {
+        attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId });
+        delete attSessions[tempKey];
+        renderCheckinList();
+      }
+    }).catch(() => {});
+
+
+
+    // 重置簽到表單
+    document.getElementById('attMemberSel').value = '';
+    setAttDuty('協勤');
+    attCheckinHasSig = false;
+    clearAttCanvas('checkin');
+    buildTimeOptions('attCheckinTime', roundTo15(new Date()));
+    renderCheckinList();
+    window.scrollTo({ top: document.getElementById('attCheckinList').offsetTop - 80, behavior: 'smooth' });
+
+  } catch(e) {
+    alert('簽到失敗，請確認網路連線後再試。');
+  } finally {
+    btn.textContent = '確認簽到'; btn.disabled = false;
+  }
+}
+
+function calcHours(inTime, outTime) {
+  if (!inTime || !outTime) return 0;
+  const [inH, inM]   = inTime.split(':').map(Number);
+  const [outH, outM] = outTime.split(':').map(Number);
+  let mins = (outH * 60 + outM) - (inH * 60 + inM);
+  if (mins < 30) return 0;
+  return Math.floor(mins / 30) * 0.5;
+}
+
+function autoCalcHours() {
+  const inTime  = (document.getElementById('attCheckinTimeRef').textContent || '').replace(/\s+/g, '').trim();
+  const outTime = document.getElementById('attCheckoutTime').value;
+  if (!inTime || !outTime) return;
+  document.getElementById('attHours').value = calcHours(inTime, outTime);
+  if (attCheckoutTarget) loadTodayCount(attCheckoutTarget);
+}
+
+function autoCalcEditHours() {
+  const inTime  = document.getElementById('aqEditCheckin').value;
+  const outTime = document.getElementById('aqEditCheckout').value;
+  if (!inTime || !outTime) return;
+  document.getElementById('aqEditHours').value = calcHours(inTime, outTime);
+}
+
+// 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
+async function loadTodayCount(memberName) {
+  // attCheckoutTarget 是 key（docId），不是 memberName
+  const session   = attSessions[attCheckoutTarget] || {};
+  const date      = session.date || document.getElementById('attDate').value;
+  const checkinT  = session.checkinTime || '';
+  const checkoutT = document.getElementById('attCheckoutTime').value || '';
+  document.getElementById('attCount').value = 0;
+  if (!checkinT || !checkoutT) return;
+
+  function toMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+  const inMins  = toMins(checkinT);
+  const outMins = toMins(checkoutT);
+
+  try {
+    const docs = await fbList(COL_OUTING, 'date', 'asc');
+    const count = docs.filter(r => {
+      if ((r.memberName||'') !== memberName) return false;
+      if ((r.date||'') !== date) return false;
+      const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
+      const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
+      if (recOutMins === null) return false;
+      return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
+    }).length;
+    document.getElementById('attCount').value = count;
+  } catch(e) {
+    document.getElementById('attCount').value = 0;
+  }
+}
+
+// ── 簽退：更新 Sheets 對應行 ──
+async function doCheckout() {
+  const checkoutTime = document.getElementById('attCheckoutTime').value;
+  if (!checkoutTime)      { alert('請填入簽退時間'); return; }
+  if (!attCheckoutHasSig) { alert('請完成簽退簽名'); return; }
+
+  const session    = attSessions[attCheckoutTarget];
+  const memberName = session.memberName || attCheckoutTarget;
+  const hours      = calcHours(session.checkinTime, checkoutTime);
+  const countVal   = parseInt(document.getElementById('attCount').value)   || 0;
+  const serviceVal = parseInt(document.getElementById('attService').value)  || 0;
+  // 補簽退：日期用 session 裡記錄的簽到日期，不一定是今天
+  const todayStr   = (attSessions[attCheckoutTarget] && attSessions[attCheckoutTarget].date) || document.getElementById('attDate').value;
+  const memberObj  = members.find(m => m.name === attCheckoutTarget) || {};
+
+  document.getElementById('attHours').value = hours;
+
+  const btn = document.querySelector('#attCheckoutView .btn-checkout');
+  btn.textContent = '送出中...'; btn.disabled = true;
+
+  // no-cors 無法讀取回應，直接送出後視為成功
+  const checkoutSig=attCheckoutCtx.canvas.toDataURL('image/png');
+  if(session.fbDocId){
+    fbUpdate(COL_ATTEND,session.fbDocId,{checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal}).catch(()=>{});
+  } else {
+    fbAdd(COL_ATTEND,{date:todayStr,dutyType:session.dutyType||'協勤',title:memberObj.title||'',
+      memberName:attCheckoutTarget,checkinSig:session.checkinSig||'',checkinTime:session.checkinTime,
+      checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal}).catch(()=>{});
+  } // 忽略網路錯誤，Sheets 通常仍會寫入
+
+  // 標記完成，顯示成功訊息
+  attSessions[attCheckoutTarget].done         = true;
+  attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
+
+  document.getElementById('attSuccessDetail').textContent =
+    `${memberName} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
+  document.getElementById('attSuccessMsg').classList.add('show');
+  btn.textContent = '確認簽退送出'; btn.disabled = false;
+  // 簽退完成後回到主畫面並更新名單
+  setTimeout(() => {
+    attSessions[attCheckoutTarget].done        = true;
+    attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
+    attBackToMain();
+  }, 1500);
+}
+
+
+// ════════════════════════════════════════
+// 簽到簽退查詢
+// ════════════════════════════════════════
+let aqAllRecords = [];
+let aqFiltered = [];
+
+async function initAttQuery() {
+  await Promise.all([loadMembers(), loadUnits()]);
+
+  // 填分隊選單
+  const unitSel = document.getElementById('aqUnit');
+  if (unitSel) {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    const _isAdmin  = usr.isAdmin  || false;
+    const _userUnit = usr.unit || '';
+    if (_isAdmin) {
+      // 只有管理員可選所有分隊
+      unitSel.innerHTML = '<option value="">— 全部分隊 —</option>' +
+        _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+      unitSel.disabled = false;
+      if (_userUnit) unitSel.value = _userUnit;
+    } else {
+      // 承辦人和一般成員鎖定自己分隊
+      unitSel.innerHTML = `<option value="${_userUnit}">${_userUnit}</option>`;
+      unitSel.disabled = true;
+    }
+  }
+  // 填成員選單（依預設分隊篩選）
+  filterAqMembers();
+  ['aqEditCheckin','aqEditCheckout'].forEach(id => buildTimeOptions(id, '08:00'));
+}
+
+function filterAqMembers() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin  = usr.isAdmin  || false;
+  const _userUnit = usr.unit || '';
+  const unit = document.getElementById('aqUnit')?.value || (_isAdmin ? '' : _userUnit);
+  const sel  = document.getElementById('aqMember');
+  if (!sel) return;
+  const cur = sel.value;
+  const filtered = _isAdmin
+    ? (unit ? members.filter(m => (m.unit||'') === unit) : members)
+    : members.filter(m => (m.unit||'') === _userUnit);
+  sel.innerHTML = '<option value="">— 全部成員 —</option>' +
+    filtered.map(m => {
+      const selected = m.name === cur ? ' selected' : '';
+      return `<option value="${m.name}"${selected}>${m.name}</option>`;
+    }).join('');
+}
+
+async function doAttQuery() {
+  const btn = document.querySelector('#attQueryPage .btn-search');
+  if (btn) { btn.textContent = '查詢中...'; btn.disabled = true; }
+  document.getElementById('aqInitMsg').style.display = 'none';
+  document.getElementById('aqResultCard').style.display = 'none';
+  try {
+    const docs = await fbList(COL_ATTEND, 'date', 'asc');
+    aqAllRecords = docs.map(d => ({
+      id:          d.id||'',
+      date:        d.date||'',
+      dutyType:    d.dutyType||'協勤',
+      title:       d.title||'',
+      memberName:  d.memberName||'',
+      checkinTime: d.checkinTime||'',
+      checkoutTime:d.checkoutTime||'',
+      hours:       d.hours||0,
+      count:       d.count||0,
+      service:     d.service||0,
+      checkinSig:  d.checkinSig||'',
+      checkoutSig: d.checkoutSig||'',
+      _t:          d._t||null,
+    }));
+  } catch(e) {
+    alert('無法取得資料：' + e.message);
+    btn.textContent = '查　詢'; btn.disabled = false;
+    return;
+  }
+  const dateFrom   = document.getElementById('aqDateFrom').value;
+  const aqDutyType = document.getElementById('aqDutyType')?.value || '';
+  const dateTo   = document.getElementById('aqDateTo').value;
+  const unit     = document.getElementById('aqUnit').value;
+  const member   = document.getElementById('aqMember').value;
+
+  const _usr2     = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin2 = _usr2.isAdmin || false;
+  const _userUnit2 = _usr2.unit || '';
+
+  // 管理員以外強制用自己分隊篩選
+  const effectiveUnit = _isAdmin2 ? unit : _userUnit2;
+  const unitMemberNames = effectiveUnit
+    ? new Set(members.filter(m => (m.unit||'') === effectiveUnit).map(m => m.name))
+    : null;
+
+  aqFiltered = aqAllRecords.filter((r, i) => {
+    if (aqDutyType && (r.dutyType || '協勤') !== aqDutyType) return false;
+    r._row = i;
+    const d = r.date || normDate(r['日期'] || '');
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo   && d > dateTo)   return false;
+    const nm = r.memberName || r['姓名'] || '';
+    if (unitMemberNames && !unitMemberNames.has(nm)) return false;
+    if (member && nm !== member) return false;
+    return true;
+  });
+  // 依日期和簽到時間排序（預設遞增）
+  _aqSortAsc = true;
+  _applyAttQuerySort();
+  renderAttQueryResults();
+  btn.textContent = '查　詢'; btn.disabled = false;
+}
+
+function fmtAqDate(v) {
+  if (!v) return '';
+  return normDate(v);
+}
+function fmtAqTime(v) {
+  if (!v) return '';
+  return fmtTime(String(v));
+}
+
+function renderAttQueryResults() {
+  const tbody = document.getElementById('aqResultBody');
+  if (aqFiltered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-light);padding:30px;">查無紀錄</td></tr>';
+  } else {
+    const _usrAq = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    const _isAdminAq = _usrAq.isAdmin||false, _isOfficerAq = _usrAq.isOfficer||false;
+    const _myNameAq = _usrAq.memberName||_usrAq.name||'';
+    tbody.innerHTML = aqFiltered.map((r, i) => {
+      const date  = r.date || fmtAqDate(r['日期'] || '');
+      const duty  = r.dutyType || r['類別'] || '';
+      const name  = r.memberName || r['姓名'] || '';
+      const title = r.title || r['職稱'] || '';
+      const cin   = r.checkinTime  || fmtAqTime(r['簽到時間'] || '');
+      const cout  = r.checkoutTime || fmtAqTime(r['簽退時間'] || '');
+      const hrs   = r.hours  !== undefined ? r.hours  : (r['協勤時數'] !== undefined ? r['協勤時數'] : 0);
+      const cnt   = r.count   !== undefined ? r.count   : (r['出勤次數'] !== undefined ? r['出勤次數'] : 0);
+      const svc   = r.service !== undefined ? r.service : (r['服務人次'] !== undefined ? r['服務人次'] : 0);
+      const cinSig  = r.checkinSig  || '';
+      const coutSig = r.checkoutSig || '';
+      const sigCell = (sig) => sig
+        ? `<img src="${sig}" style="height:44px;max-width:100px;display:block;margin:auto;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;">`
+        : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
+      // 操作按鈕
+      const isOwnerAq = name === _myNameAq;
+      // 24小時判斷：以勤務日期(date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
+      const recTimeAq = date ? new Date(date+'T00:00').getTime() : 0;
+      const within24Aq = recTimeAq && (Date.now()-recTimeAq < 86400000);
+      let aqActionBtn = '';
+      if (_isAdminAq || _isOfficerAq) {
+        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button>';
+      } else if (isOwnerAq && within24Aq) {
+        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button>';
+      } else if (isOwnerAq) {
+        aqActionBtn = '<button data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
+      }
+      return '<tr>' +
+        '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+(i+1)+'</td>' +
+        '<td style="white-space:nowrap;">'+date+'</td>' +
+        '<td style="white-space:nowrap;">'+duty+'</td>' +
+        '<td style="white-space:nowrap;">'+name+'</td>' +
+        '<td style="white-space:nowrap;">'+title+'</td>' +
+        '<td style="white-space:nowrap;">'+cin+'</td>' +
+        '<td style="white-space:nowrap;">'+cout+'</td>' +
+        '<td style="text-align:center;padding:4px;">'+sigCell(cinSig)+'</td>' +
+        '<td style="text-align:center;padding:4px;">'+sigCell(coutSig)+'</td>' +
+        '<td style="text-align:center;">'+hrs+'</td>' +
+        '<td style="text-align:center;">'+cnt+'</td>' +
+        '<td style="text-align:center;">'+svc+'</td>' +
+        '<td>'+aqActionBtn+'</td>' +
+        '</tr>';
+    }).join('');
+  }
+  document.getElementById('aqResultCard').style.display = 'block';
+}
+
+function openAttEdit(idx) {
+  const r = aqFiltered[idx];
+  document.getElementById('aqEditRow').value = idx;
+  document.getElementById('aqEditDate').value = r.date || fmtAqDate(r['日期'] || '');
+  document.getElementById('aqEditName').value = r.memberName || r['姓名'] || '';
+  // 協勤/公差
+  const duty = r.dutyType || '協勤';
+  const dutyAtt = document.getElementById('aqEditDutyAtt');
+  const dutyPub = document.getElementById('aqEditDutyPub');
+  if (dutyAtt) dutyAtt.checked = duty !== '公差';
+  if (dutyPub) dutyPub.checked = duty === '公差';
+  updateDutyStyle();
+  // 簽到/簽退時間：Firebase 格式直接用，空白就空白
+  document.getElementById('aqEditCheckin').value  = r.checkinTime  || fmtAqTime(r['簽到時間']  || '') || '';
+  document.getElementById('aqEditCheckout').value = r.checkoutTime || fmtAqTime(r['簽退時間'] || '') || '';
+  document.getElementById('aqEditHours').value   = r.hours   !== undefined ? r.hours   : ((r['協勤時數'] !== undefined && r['協勤時數'] !== '') ? r['協勤時數'] : 0);
+  document.getElementById('aqEditCount').value   = r.count   !== undefined ? r.count   : ((r['出勤次數'] !== undefined && r['出勤次數'] !== '') ? r['出勤次數'] : 0);
+  document.getElementById('aqEditService').value = r.service !== undefined ? r.service : ((r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0);
+  const cinPrev=document.getElementById('aqEditCheckinPrev'), cinImg=document.getElementById('aqEditCheckinPrevImg'), cinNote=document.getElementById('aqEditCheckinPrevNote');
+  const coutPrev=document.getElementById('aqEditCheckoutPrev'), coutImg=document.getElementById('aqEditCheckoutPrevImg'), coutNote=document.getElementById('aqEditCheckoutPrevNote');
+  if(r.checkinSig){cinImg.src=r.checkinSig;cinPrev.style.display='block';cinNote.style.display='block';}
+  else{cinPrev.style.display='none';cinNote.style.display='none';}
+  if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='block';}
+  else{coutPrev.style.display='none';coutNote.style.display='none';}
+  document.getElementById('aqEditModal').style.display = 'flex';
+  autoCalcEditHours();
+  setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
+}
+
+function closeAttEdit() {
+  document.getElementById('aqEditModal').style.display = 'none';
+}
+
+async function saveAttEdit() {
+  const idx = parseInt(document.getElementById('aqEditRow').value);
+  const r = aqFiltered[idx];
+  if (!r || !r.id) { alert('找不到紀錄 ID，無法儲存'); return; }
+  const cinNew=aeGetSig('aqEditCheckinCanvas'), coutNew=aeGetSig('aqEditCheckoutCanvas');
+  const btn = document.querySelector('#aqEditModal .btn-search');
+  btn.textContent = '儲存中...'; btn.disabled = true;
+  try {
+    await fbSet(COL_ATTEND, r.id, {
+      date:        document.getElementById('aqEditDate').value,
+      dutyType:    document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤',
+      memberName:  r.memberName || r['姓名'] || '',
+      checkinTime: document.getElementById('aqEditCheckin').value,
+      checkoutTime:document.getElementById('aqEditCheckout').value,
+      hours:       parseFloat(document.getElementById('aqEditHours').value)||0,
+      count:       parseInt(document.getElementById('aqEditCount').value)||0,
+      service:     parseInt(document.getElementById('aqEditService').value)||0,
+      checkinSig:  cinNew  || r.checkinSig  || '',
+      checkoutSig: coutNew || r.checkoutSig || '',
+    });
+    closeAttEdit();
+    await doAttQuery();
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  } finally {
+    btn.textContent = '儲存'; btn.disabled = false;
+  }
+}
+
+function resetAttQuery() {
+  ['aqDateFrom','aqDateTo','aqUnit','aqMember','aqDutyType'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  filterAqMembers(); // 重置成員選單為全部
+  document.getElementById('aqResultCard').style.display = 'none';
+  document.getElementById('aqInitMsg').style.display = 'block';
+}
+
+// ════════════════════════════════════════
+// 報表
+// ════════════════════════════════════════
+async function initReportPage() {
+  const t = new Date();
+  const curY = t.getFullYear() - 1911;
+  const curM = t.getMonth() + 1;
+  ['rpt1Year','rpt2Year','rpt3Year'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel.options.length) {
+      for (let y = curY + 1; y >= 100; y--) {
+        const opt = document.createElement('option');
+        opt.value = y; opt.textContent = y + ' 年';
+        sel.appendChild(opt);
+      }
+    }
+    sel.value = curY;
+  });
+  ['rpt1Month','rpt2Month','rpt3Month'].forEach(id => {
+    document.getElementById(id).value = curM;
+  });
+  // 載入分隊選單
+  try {
+    await loadUnits();
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    ['rpt1Unit','rpt2Unit','rpt3Unit'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
+      if (usr.unit) el.value = usr.unit;
+    });
+  } catch(e) {}
+}
+
+async function generateRpt1() {
+  const year = document.getElementById('rpt1Year').value;
+  const month = document.getElementById('rpt1Month').value;
+  const unit = document.getElementById('rpt1Unit').value;
+  const status = document.getElementById('rpt1Status');
+  const btn = document.getElementById('rpt1Btn');
+  if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
+  btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
+  try {
+    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt1Script');
+    downloadDocx(json);
+    status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
+  } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
+  finally { btn.disabled = false; }
+}
+
+async function generateRpt2() {
+  const year = document.getElementById('rpt2Year').value;
+  const month = document.getElementById('rpt2Month').value;
+  const status = document.getElementById('rpt2Status');
+  const btn = document.getElementById('rpt2Btn');
+  if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
+  btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
+  try {
+    const json = await jsonpRequest(BASE_URL + `?action=generateServiceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`, 'jsonpRpt2Script');
+    downloadDocx(json);
+    status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
+  } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
+  finally { btn.disabled = false; }
+}
+
+async function generateRpt3() {
+  const year = document.getElementById('rpt3Year').value;
+  const month = document.getElementById('rpt3Month').value;
+  const unit = document.getElementById('rpt3Unit').value;
+  const status = document.getElementById('rpt3Status');
+  const btn = document.getElementById('rpt3Btn');
+  if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
+  btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
+  try {
+    const json = await jsonpRequest(RPT3_URL + `?action=generateOutingReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt3Script');
+    downloadDocx(json);
+    status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
+  } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
+  finally { btn.disabled = false; }
+}
+
+function jsonpRequest(baseUrl, scriptId) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'jsonpCb_' + Date.now();
+    let done = false;
+    window[cbName] = function(j) {
+      done = true; delete window[cbName];
+      document.getElementById(scriptId)?.remove();
+      if (!j.success) reject(new Error(j.error || '後端產生失敗'));
+      else resolve(j);
+    };
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = baseUrl + '&callback=' + cbName;
+    document.head.appendChild(script);
+    setTimeout(() => {
+      if (!done) { delete window[cbName]; document.getElementById(scriptId)?.remove(); reject(new Error('請求逾時（120秒），請重試')); }
+    }, 120000);
+  });
+}
+
+function downloadDocx(json) {
+  const binary = atob(json.docxBase64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = json.fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ════════════════════════════════════════
+// 月統計
+// ════════════════════════════════════════
+
+function initStatsPage() {
+  const sel = document.getElementById('statsYear');
+  if (!sel.options.length) {
+    const curY = new Date().getFullYear() - 1911;
+    for (let y = curY + 1; y >= 100; y--) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y + ' 年';
+      sel.appendChild(opt);
+    }
+    sel.value = curY;
+    document.getElementById('statsMonth').value = new Date().getMonth() + 1;
+  }
+  // 載入分隊選單
+  loadUnits().then(() => {
+    const unitSel = document.getElementById('statsUnit');
+    if (unitSel) {
+      unitSel.innerHTML = '<option value="">— 全部分隊 —</option>' +
+        _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
+      const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+      if (usr.unit) unitSel.value = usr.unit;
+    }
+  }).catch(()=>{});
+  loadStats();
+}
+
+async function loadStats() {
+  const year  = document.getElementById('statsYear').value;
+  const month = document.getElementById('statsMonth').value;
+  const filterUnit = document.getElementById('statsUnit')?.value || '';
+  if (!year || !month) return;
+
+  document.getElementById('statsEmptyMsg').textContent = '⏳ 載入中...';
+  document.getElementById('statsEmptyMsg').style.display = 'block';
+  document.getElementById('statsTableCard').style.display = 'none';
+  document.getElementById('statsOverview').style.display = 'none';
+
+  const westernYear = parseInt(year) + 1911;
+  const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
+
+  try {
+    const [attDocs, outDocs] = await Promise.all([fbList(COL_ATTEND, 'date', 'asc'), fbList(COL_OUTING, 'date', 'asc'), loadMembers()]);
+    let monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
+    let monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
+
+    // 依分隊篩選（從 members 找成員分隊）
+    const memberUnitMap = {};
+    members.forEach(m => { memberUnitMap[m.name] = m.unit||''; });
+
+    if (filterUnit) {
+      monthAtt = monthAtt.filter(r => (memberUnitMap[r.memberName]||r.unit||'') === filterUnit);
+      monthOut = monthOut.filter(r => (memberUnitMap[r.memberName]||r.unit||'') === filterUnit);
+    }
+
+    if (!monthAtt.length && !monthOut.length) {
+      document.getElementById('statsEmptyMsg').textContent = `${year} 年 ${month} 月查無資料`;
+      document.getElementById('caseStatsSection').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('statsTotal').textContent = monthOut.length;
+    document.getElementById('statsOverview').style.display = 'grid';
+
+    // 統計每人協勤
+    const map = {};
+    monthAtt.forEach(r => {
+      const nm = r.memberName||'';
+      if (!nm) return;
+      if (!map[nm]) map[nm] = { name: nm, unit: memberUnitMap[nm]||r.unit||'', count:0, hours:0, service:0 };
+      map[nm].count   += 1;
+      map[nm].hours   += parseFloat(r.hours)||0;
+      map[nm].service += parseInt(r.service)||0;
+    });
+
+    const rows = Object.values(map).sort((a,b)=>b.hours!==a.hours?b.hours-a.hours:b.count-a.count);
+    const totalCount = rows.reduce((s,r)=>s+r.count,0);
+    document.getElementById('statsMemCount').textContent = rows.length;
+    const totalHours = rows.reduce((s,r)=>s+r.hours,0);
+    document.getElementById('statsTotalHours').textContent = totalHours%1===0?totalHours:totalHours.toFixed(1);
+
+    document.getElementById('statsTableTitle').textContent = `${year} 年 ${month} 月協勤排行榜${filterUnit?' — '+filterUnit:''}`;
+    const tbody = document.getElementById('statsTableBody');
+    tbody.innerHTML = rows.map((r,i) => {
+      const pct = totalHours > 0 ? Math.round(r.hours/totalHours*100) : 0;
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      return `<tr>
+        <td style="text-align:center;font-weight:600;">${medal||i+1}</td>
+        <td style="font-weight:500;">${r.name}</td>
+        <td style="color:var(--text-mid);font-size:0.82rem;">${r.unit||'—'}</td>
+        <td style="text-align:center;">${r.count}</td>
+        <td style="text-align:center;">${r.hours%1===0?r.hours:r.hours.toFixed(1)}</td>
+        <td style="text-align:center;">${r.service}</td>
+        <td><div style="background:var(--border);border-radius:4px;height:6px;"><div style="background:var(--red);border-radius:4px;height:6px;width:${pct}%;"></div></div><div style="font-size:0.72rem;text-align:center;">${pct}%</div></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('statsTableCard').style.display = 'block';
+    document.getElementById('statsEmptyMsg').style.display = 'none';
+
+    // 案由統計
+    renderCaseTypeStats(monthOut, filterUnit, memberUnitMap, year, month);
+  } catch(e) {
+    document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
+  }
+}
+
+
+async function initItemsPage() {
+  const container = document.getElementById('itemsList');
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const isAdmin    = usr.isAdmin || usr.role === 'admin';
+  const isOfficer  = usr.isOfficer || usr.role === 'officer';
+  const canManage  = isAdmin || isOfficer;
+  const userUnit   = usr.unit || '';
+
+  // 新增物品區塊：管理員/承辦人才顯示
+  const addSec = document.getElementById('itemAddSection');
+  if (addSec) addSec.style.display = canManage ? '' : 'none';
+
+  try {
+    await loadMembers();
+    await loadUnits();
+
+    // ── 新增物品用的分隊 select ──
+    const unitSel = document.getElementById('itemUnit');
+    if (unitSel) {
+      unitSel.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+      // 先設定預設提示，有分隊再呼叫 filterMembersByUnit 覆蓋
+      const recipients = document.getElementById('itemRecipients');
+      if (recipients) recipients.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">請先選擇分隊</div>';
+      if (userUnit) { unitSel.value = userUnit; filterMembersByUnit(); }
+    }
+
+    // ── 待領清單分隊篩選 select ──
+    const listUnitSel = document.getElementById('itemsListUnit');
+    if (listUnitSel) {
+      if (isAdmin) {
+        // 系統管理員：可選所有分隊，包含「全部分隊」
+        listUnitSel.innerHTML = '<option value="">請選擇分隊</option>' +
+          '<option value="__all__">📋 全部分隊</option>' +
+          _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+        listUnitSel.disabled = false;
+        if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>請選擇分隊以查看待領清單</div>';
+      } else {
+        // 承辦人／一般成員：鎖定自己的分隊，不可切換
+        listUnitSel.innerHTML = userUnit
+          ? `<option value="${userUnit}">${userUnit}</option>`
+          : '<option value="">（未設定分隊）</option>';
+        listUnitSel.disabled = true;
+        const hint = document.getElementById('itemsListUnitHint');
+        if (hint) hint.style.display = '';
+        if (userUnit) {
+          listUnitSel.value = userUnit;
+          await loadItems(userUnit);
+        } else {
+          if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>帳號未設定分隊，請聯絡管理員</div>';
+        }
+      }
+    }
+  } catch(e) {
+    if (container) container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>初始化失敗：${e.message}</div>`;
+  }
+}
+
+function renderItemRecipients() {
+  const grid = document.getElementById('itemRecipients');
+  if (!grid) return;
+  if (members.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text-light);font-size:0.82rem;">尚無成員，請先到「成員管理」新增</div>';
+    return;
+  }
+  grid.innerHTML = members.map(m => `
+    <label class="cb-item" style="font-size:0.82rem;">
+      <input type="checkbox" value="${m.name}" style="accent-color:var(--red);min-height:unset;">
+      ${m.name}
+    </label>
+  `).join('');
+  grid.querySelectorAll('.cb-item').forEach(el => {
+    el.querySelector('input').addEventListener('change', function() {
+      el.classList.toggle('checked', this.checked);
+    });
+  });
+}
+
+// 待領清單分隊篩選觸發（清單區的分隊 select onchange）
+async function reloadItemsList() {
+  const unit = document.getElementById('itemsListUnit')?.value || '';
+  const container = document.getElementById('itemsList');
+  if (!unit) {
+    if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>請先選擇分隊</div>';
+    return;
+  }
+  await loadItems(unit);
+}
+
+async function loadItems(filterUnit) {
+  const container = document.getElementById('itemsList');
+  if (!container) return;
+  container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>載入中...</div>';
+  try {
+    const docs = await fbList(COL_ITEMS);
+    allItems = docs.map(d=>({
+      itemId:d.id, itemName:d.itemName||'', note:d.note||'',
+      unit: d.unit||'',
+      createTime:d.createTime||'',
+      recipients:Array.isArray(d.recipients)?d.recipients:[],
+    })).sort((a,b)=>a.createTime>b.createTime?1:-1);
+  } catch(e) {
+    container.innerHTML='<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗</div>'; return;
+  }
+  renderItemsList(filterUnit);
+  updateItemsBadge();
+}
+
+
+function renderItemsList(filterUnit) {
+  const container = document.getElementById('itemsList');
+  const unit = filterUnit || document.getElementById('itemsListUnit')?.value || '';
+
+  if (!unit) {
+    container.innerHTML = '<div class="query-empty"><span class="empty-icon">📦</span>請先選擇分隊</div>';
+    return;
+  }
+
+  // '__all__' 表示全部分隊
+  const filtered = unit === '__all__' ? allItems : allItems.filter(item => (item.unit || '') === unit);
+  const label    = unit === '__all__' ? '全部分隊' : unit;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="query-empty"><span class="empty-icon">📦</span>${label} 目前沒有待領物品</div>`;
+    return;
+  }
+
+  const pending = filtered.filter(item => item.recipients.some(r => !r.claimed));
+  const done    = filtered.filter(item => item.recipients.every(r => r.claimed));
+
+  let html = '';
+  if (pending.length > 0) html += pending.map(item => renderItemCard(item, false)).join('');
+  if (done.length > 0) {
+    html += `<div style="font-size:0.78rem;color:var(--text-light);letter-spacing:0.06em;margin:20px 0 8px;font-family:inherit;">── 已全數領取 ──</div>`;
+    html += done.map(item => renderItemCard(item, true)).join('');
+  }
+  container.innerHTML = html;
+}
+
+function renderItemCard(item, allDone) {
+  const total    = item.recipients.length;
+  const claimed  = item.recipients.filter(r => r.claimed).length;
+  const pct      = total > 0 ? Math.round(claimed / total * 100) : 0;
+
+  const recipientsHtml = item.recipients.map(r => {
+    // 從 members 陣列查出該人的分隊
+    const memberUnit = (members.find(m => m.name === r.name) || {}).unit || '';
+    const unitBadge  = memberUnit
+      ? `<span style="font-size:0.68rem;color:var(--text-light);background:var(--warm);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:4px;white-space:nowrap;">${memberUnit}</span>`
+      : '';
+    if (r.claimed) {
+      return `<div class="member-item" style="padding:10px 16px;">
+        <div class="member-avatar" style="background:#27ae60;width:32px;height:32px;font-size:0.85rem;">${r.name.charAt(0)}</div>
+        <div class="member-info">
+          <div class="member-name" style="font-size:0.88rem;">${r.name}${unitBadge}</div>
+          <div class="member-title">已領取　${r.claimTime ? r.claimTime.substring(0,16) : ''}</div>
+        </div>
+        ${r.sig ? `<img src="${r.sig}" style="height:32px;border:1px solid var(--border);border-radius:3px;" title="領取簽名">` : '<span class="att-status-badge done">已領取</span>'}
+      </div>`;
+    }
+    return `<div class="member-item" style="padding:10px 16px;">
+      <div class="member-avatar" style="background:#e0d5c8;color:var(--text-mid);width:32px;height:32px;font-size:0.85rem;">${r.name.charAt(0)}</div>
+      <div class="member-info">
+        <div class="member-name" style="font-size:0.88rem;">${r.name}${unitBadge}</div>
+        <div class="member-title">尚未領取</div>
+      </div>
+      <button class="att-member-btn" style="border-color:#27ae60;color:#27ae60;"
+        onclick="openClaimModal('${item.itemId}','${r.name}','${item.itemName}','${item.note || ''}')">
+        領取
+      </button>
+    </div>`;
+  }).join('');
+
+  return `<div class="result-card" style="margin-bottom:14px;">
+    <div class="result-head" style="${allDone ? '' : 'background:var(--warm);'}">
+      <div>
+        <h3 style="font-family:inherit;font-size:0.92rem;font-weight:700;color:var(--text);">
+          ${item.itemName}
+          ${item.note ? `<span style="font-size:0.72rem;font-weight:400;color:var(--text-light);margin-left:6px;">${item.note}</span>` : ''}
+        </h3>
+        <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">
+          建立：${item.createTime ? (function(t){
+            // 用 Date 解析所有格式，再統一輸出 yyyy-MM-dd
+            try {
+              var d = new Date(t);
+              if (isNaN(d)) return String(t).substring(0,10);
+              var y  = d.getFullYear();
+              var mo = String(d.getMonth()+1).padStart(2,'0');
+              var dd = String(d.getDate()).padStart(2,'0');
+              return y+'-'+mo+'-'+dd;
+            } catch(e) { return String(t).substring(0,10); }
+          })(item.createTime) : ''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <div style="text-align:right;">
+          <div style="font-family:inherit;font-size:1.1rem;font-weight:700;color:${allDone ? '#27ae60' : 'var(--red)'};">${claimed}/${total}</div>
+          <div style="font-size:0.68rem;color:var(--text-light);">已領取</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="openEditItemModal('${item.itemId}','${item.itemName}')"
+            style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
+            編輯
+          </button>
+          <button onclick="deleteItem('${item.itemId}','${item.itemName}')"
+            style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
+            刪除
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- 進度條 -->
+    <div style="padding:0 16px 0;background:var(--warm);">
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${allDone ? '#27ae60' : 'var(--red)'};border-radius:2px;transition:width 0.4s;"></div>
+      </div>
+    </div>
+    <!-- 領取人清單 -->
+    <div style="border-top:1px solid var(--border);">
+      ${recipientsHtml}
+    </div>
+  </div>`;
+}
+
+async function addItem() {
+  const name = document.getElementById('itemName').value.trim();
+  const note = document.getElementById('itemNote').value.trim();
+  const unit = document.getElementById('itemUnit').value;
+  const checked = [...document.querySelectorAll('#itemRecipients input:checked')];
+  if (!name)          { alert('請填入物品名稱'); return; }
+  if (!unit)          { alert('請選擇分隊別'); return; }
+  if (!checked.length){ alert('請選擇至少一位領取人'); return; }
+  const btn = document.querySelector('#itemsPage .btn-submit');
+  if (btn) { btn.textContent = '新增中...'; btn.disabled = true; }
+  const recipients = checked.map(cb=>cb.value).map(n=>({name:n,claimed:false,claimTime:'',sig:''}));
+  const timeStr = new Date().toLocaleString('sv').replace('T',' ');
+  try {
+    await fbAdd(COL_ITEMS, { itemName:name, note, unit, recipients, createTime:timeStr });
+    document.getElementById('itemName').value = '';
+    document.getElementById('itemNote').value = '';
+    document.querySelectorAll('#itemRecipients input').forEach(cb=>{
+      cb.checked = false; cb.closest?.('.cb-item')?.classList.remove('checked');
+    });
+    // 新增後重新整理清單（同步分隊選單到新增用的分隊）
+    const listSel = document.getElementById('itemsListUnit');
+    if (listSel) listSel.value = unit;
+    setTimeout(() => { loadItems(unit); updateItemsBadge(); }, 500);
+  } catch(e) { alert('新增失敗：' + e.message); }
+  finally { if (btn) { btn.textContent = '新增物品'; btn.disabled = false; } }
+}
+
+
+async function deleteItem(itemId, itemName) {
+  if(!confirm(`確定要刪除「${itemName}」嗎？`))return;
+  try{await fbDelete(COL_ITEMS,itemId);const _du=document.getElementById('itemsListUnit')?.value||'';await loadItems(_du);updateItemsBadge();}
+  catch(e){alert('刪除失敗：'+e.message);}
+}
+
+
+// ── 領取 Modal ──
+function openClaimModal(itemId, memberName, itemName, note) {
+  claimTargetItem = itemId;
+  claimTargetName = memberName;
+  document.getElementById('claimModalTitle').textContent = itemName;
+  document.getElementById('claimModalSub').textContent   = note || '';
+  document.getElementById('claimModalName').textContent  = memberName;
+  claimHasSig = false;
+  document.getElementById('claimModal').style.display = 'flex';
+  // 初始化簽名畫布
+  setTimeout(() => initClaimCanvas(), 100);
+}
+
+var claimTargetItem = null;
+var claimTargetName = '';
+var claimHasSig = false;
+var claimSigCtx = null;
+
+function closeClaimModal() {
+  document.getElementById('claimModal').style.display = 'none';
+  claimTargetItem = null;
+  claimTargetName = '';
+  claimHasSig = false;
+}
+
+async function submitClaim() {
+  if (!claimHasSig) { alert('請先完成簽名'); return; }
+  if (!claimTargetItem || !claimTargetName) { alert('資料錯誤，請重新開啟'); return; }
+  const sig = document.getElementById('claimSigCanvas').toDataURL('image/png');
+  const btn = document.querySelector('#claimModal .btn-search');
+  if (btn) { btn.textContent = '送出中...'; btn.disabled = true; }
+  try {
+    const itemDoc = await fbGet(COL_ITEMS, claimTargetItem);
+    if (!itemDoc) throw new Error('找不到物品');
+    const claimTime = new Date().toLocaleString('sv').replace('T',' ');
+    const recipients = (itemDoc.recipients||[]).map(r =>
+      (r.name === claimTargetName && !r.claimed)
+        ? {...r, claimed:true, claimTime, sig}
+        : r
+    );
+    await fbUpdate(COL_ITEMS, claimTargetItem, {recipients});
+    closeClaimModal();
+    const unit = document.getElementById('itemUnit')?.value || '';
+    await loadItems(unit);
+    updateItemsBadge();
+  } catch(e) {
+    alert('領取失敗：' + e.message);
+  } finally {
+    if (btn) { btn.textContent = '確認領取'; btn.disabled = false; }
+  }
+}
+
+function initClaimCanvas() {
+  const canvas = document.getElementById('claimSigCanvas');
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+  claimSigCtx  = newCanvas.getContext('2d');
+  claimHasSig  = false;
+  const ratio  = window.devicePixelRatio || 1;
+  const rect   = newCanvas.getBoundingClientRect();
+  const w      = rect.width || 300;
+  newCanvas.width  = w * ratio;
+  newCanvas.height = 160 * ratio;
+  claimSigCtx.scale(ratio, ratio);
+  claimSigCtx.strokeStyle = '#1a1a1a';
+  claimSigCtx.lineWidth   = 2;
+  claimSigCtx.lineCap     = 'round';
+  claimSigCtx.lineJoin    = 'round';
+
+  function getPos(e) {
+    const r = newCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  let drawing = false;
+  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); });
+  newCanvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; });
+  newCanvas.addEventListener('mouseup',    () => drawing = false);
+  newCanvas.addEventListener('mouseleave', () => drawing = false);
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; }, { passive: false });
+  newCanvas.addEventListener('touchend',   () => drawing = false);
+}
+
+function clearClaimSig() {
+  if (claimSigCtx) claimSigCtx.clearRect(0, 0, claimSigCtx.canvas.width, claimSigCtx.canvas.height);
+  claimHasSig = false;
+}
+
+// ── 編輯領取人 Modal ──
+let editTargetItemId   = null;
+let editTargetItemName = '';
+
+function openEditItemModal(itemId, itemName) {
+  editTargetItemId   = itemId;
+  editTargetItemName = itemName;
+  document.getElementById('editItemModalTitle').textContent = itemName;
+
+  // 找到此物品目前的領取人
+  const item = allItems.find(i => i.itemId === itemId);
+  const currentNames = item ? item.recipients.map(r => r.name) : [];
+
+  // 渲染成員名單，已在名單的打勾
+  const grid = document.getElementById('editItemRecipients');
+  grid.innerHTML = members.map(m => {
+    const checked = currentNames.includes(m.name);
+    return `<label class="cb-item ${checked ? 'checked' : ''}" style="font-size:0.82rem;">
+      <input type="checkbox" value="${m.name}" ${checked ? 'checked' : ''} style="accent-color:var(--red);min-height:unset;">
+      ${m.name}
+    </label>`;
+  }).join('');
+
+  grid.querySelectorAll('.cb-item').forEach(el => {
+    el.querySelector('input').addEventListener('change', function() {
+      el.classList.toggle('checked', this.checked);
+    });
+  });
+
+  document.getElementById('editItemModal').style.display = 'flex';
+}
+
+function closeEditItemModal() {
+  document.getElementById('editItemModal').style.display = 'none';
+  editTargetItemId   = null;
+  editTargetItemName = '';
+}
+
+async function saveEditItem() {
+  const item=allItems.find(i=>i.itemId===editTargetItemId);if(!item)return;
+  const currentNames=item.recipients.map(r=>r.name);
+  const selected=[...document.querySelectorAll('#editItemRecipients input:checked')].map(cb=>cb.value);
+  const toAdd=selected.filter(n=>!currentNames.includes(n));
+  const toRemove=currentNames.filter(n=>!selected.includes(n)&&!item.recipients.find(r=>r.name===n&&r.claimed));
+  const alreadyClaimed=currentNames.filter(n=>!selected.includes(n)&&item.recipients.find(r=>r.name===n&&r.claimed));
+  if(alreadyClaimed.length>0){alert(`以下成員已領取，無法移除：${alreadyClaimed.join('、')}`);return;}
+  if(toAdd.length===0&&toRemove.length===0){closeEditItemModal();return;}
+  const btn=document.querySelector('#editItemModal .btn-search');
+  if(btn){btn.textContent='儲存中...';btn.disabled=true;}
+  try {
+    let recipients=[...item.recipients];
+    toAdd.forEach(n=>recipients.push({name:n,claimed:false,claimTime:'',sig:''}));
+    recipients=recipients.filter(r=>!toRemove.includes(r.name));
+    await fbUpdate(COL_ITEMS,editTargetItemId,{recipients});
+    closeEditItemModal(); const _eu=document.getElementById('itemsListUnit')?.value||''; await loadItems(_eu);
+  } catch(e){alert('儲存失敗：'+e.message);}
+  finally{if(btn){btn.textContent='儲存';btn.disabled=false;}}
+}
+
+
+// ════════════════════════════════════════
+// DOMContentLoaded
+// ════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // ── Pull to Refresh ──
+  initPullToRefresh();
+  initFootersWithVersion();
+  // header 高度同步（處理各裝置不同高度）
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight);
+  window.addEventListener('load', () => { syncHeaderHeight(); });
+
+  // ── 上一頁／下一頁監聽 ──
+  window.addEventListener('popstate', (e) => {
+    const pageId = (e.state && e.state.pageId)
+      || location.hash.replace('#', '')
+      || 'dashboardPage';
+    const el = document.getElementById(pageId);
+    navTo(el ? pageId : 'dashboardPage', true);
+  });
+
+  // ── 初始頁面處理 ──
+  const initPage = location.hash.replace('#', '');
+  const initEl   = document.getElementById(initPage);
+
+  if (checkSession()) {
+    // session 有效：先把首頁設為基底，再切到目標頁
+    history.replaceState({ pageId: 'dashboardPage' }, '', '#dashboardPage');
+    if (initEl && initPage !== 'dashboardPage') {
+      navTo(initPage, false);
+    } else {
+      navTo('dashboardPage', true);
+    }
+  }
+  // 若無 session，loginScreen 顯示，登入後 showApp 再處理
+
+  document.getElementById('sigModal').addEventListener('click', () => {
+    document.getElementById('sigModal').style.display = 'none';
+  });
+  ensureFirebase().catch(e => console.warn('Firebase 預載:', e));
+  loadMembers();
+  loadAnnouncement();
+  initSigCanvas();
+  loadDashboard();
+  // 預載物品資料供角標及簽到提示用，不渲染清單（清單需選分隊後才顯示）
+  fbList(COL_ITEMS).then(docs => {
+    allItems = docs.map(d=>({
+      itemId:d.id, itemName:d.itemName||'', note:d.note||'',
+      unit:d.unit||'', createTime:d.createTime||'',
+      recipients:Array.isArray(d.recipients)?d.recipients:[],
+    }));
+    updateItemsBadge();
+  }).catch(()=>{});
+});
+
+if ('serviceWorker' in navigator) {
+  const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response(''))));`;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+
+// ════════════════════════════════════════
+// 管理員後台
+// ════════════════════════════════════════
+let adminEditSave = () => {};
+
+function adminClearDate(fromId, toId) {
+  const f=document.getElementById(fromId), t=document.getElementById(toId);
+  if(f)f.value=''; if(t)t.value='';
+}
+
+async function loadAdminWhitelist(filterUnit) {
+  const el = document.getElementById('adminWlList'); if (!el) return;
+  // 未選分隊時顯示提示，不載入資料
+  if (!filterUnit) {
+    el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;font-size:0.85rem;">請先選擇分隊</div>';
+    return;
+  }
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    let docs = await fbList(COL_WHITELIST);
+    docs = docs.filter(d => (d.unit||'') === filterUnit);
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">' + (filterUnit ? '此分隊暫無成員' : '尚無資料') + '</div>'; return; }
+
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+    docs.sort(function(a,b){
+      var au=a.unit||'未分配', bu=b.unit||'未分配';
+      if(au!==bu) return au>bu?1:-1;
+      var ai=TITLE_ORDER.indexOf(a.title), bi=TITLE_ORDER.indexOf(b.title);
+      if(ai!==bi) return (ai<0?99:ai)-(bi<0?99:bi);
+      return (a.memberName||'')>(b.memberName||'')?1:-1;
+    });
+
+    var grouped={};
+    docs.forEach(function(d){ var u=d.unit||'未分配'; if(!grouped[u])grouped[u]=[]; grouped[u].push(d); });
+
+    var ROLE_CFG={
+      admin:   {label:'系統管理員',bg:'#fff3cd',color:'#856404',border:'#ffc107'},
+      officer: {label:'分隊承辦人',bg:'#cfe2ff',color:'#084298',border:'#9ec5fe'},
+      member:  {label:'一般成員',  bg:'#e9ecef',color:'#495057',border:'#ced4da'},
+    };
+
+    function buildMemberRow(d) {
+      var r  = d.role||(d.isAdmin?'admin':'member');
+      var rc = ROLE_CFG[r]||ROLE_CFG.member;
+      var av = (d.memberName||'?').charAt(0);
+      var esc = function(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,String.fromCharCode(39)); };
+
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--warm);';
+
+      var avatar = document.createElement('div');
+      avatar.style.cssText = 'width:36px;height:36px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;';
+      avatar.textContent = av;
+      row.appendChild(avatar);
+
+      var info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0;';
+
+      var nameRow = document.createElement('div');
+      nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+
+      var nameSpan = document.createElement('span');
+      nameSpan.style.cssText = 'font-weight:600;font-size:0.92rem;';
+      nameSpan.textContent = d.memberName||'—';
+      nameRow.appendChild(nameSpan);
+
+      if (d.title) {
+        var titleSpan = document.createElement('span');
+        titleSpan.style.cssText = 'font-size:0.78rem;color:var(--text-mid);';
+        titleSpan.textContent = d.title;
+        nameRow.appendChild(titleSpan);
+      }
+
+      var roleBadge = document.createElement('span');
+      roleBadge.style.cssText = 'font-size:0.65rem;background:'+rc.bg+';color:'+rc.color+';border:1px solid '+rc.border+';border-radius:10px;padding:1px 7px;';
+      roleBadge.textContent = rc.label;
+      nameRow.appendChild(roleBadge);
+
+      if (d.cert) {
+        var certBadge = document.createElement('span');
+        certBadge.style.cssText = 'font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 7px;';
+        certBadge.textContent = d.cert;
+        nameRow.appendChild(certBadge);
+      }
+      if (d.certExp) {
+        var expSpan = document.createElement('span');
+        expSpan.style.cssText = 'font-size:0.65rem;color:var(--text-light);';
+        expSpan.textContent = '效期 '+d.certExp;
+        nameRow.appendChild(expSpan);
+      }
+      info.appendChild(nameRow);
+
+      var emailDiv = document.createElement('div');
+      emailDiv.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      emailDiv.textContent = d.email||'';
+      info.appendChild(emailDiv);
+      if(d.extraEmails&&d.extraEmails.length){d.extraEmails.forEach(function(em){var x=document.createElement('div');x.style.cssText='font-size:0.72rem;color:var(--text-light);opacity:0.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';x.textContent='+ '+em;info.appendChild(x);});}
+      if (d.phone) {
+        var phoneDiv = document.createElement('div');
+        phoneDiv.style.cssText = 'font-size:0.75rem;color:var(--text-mid);margin-top:1px;';
+        phoneDiv.textContent = '📱 ' + d.phone;
+        info.appendChild(phoneDiv);
+      }
+      row.appendChild(info);
+
+      var editBtn = document.createElement('button');
+      editBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
+      editBtn.textContent = '✏️ 編輯';
+      editBtn.onclick = function(){
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'');
+      };
+      row.appendChild(editBtn);
+
+      var delBtn = document.createElement('button');
+      delBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:6px 10px;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
+      delBtn.textContent = '🗑️';
+      delBtn.onclick = function(){
+        adminDel(COL_WHITELIST, d.id, '帳號 '+(d.memberName||d.email), loadAdminWhitelist);
+      };
+      row.appendChild(delBtn);
+
+      return row;
+    }
+
+    el.innerHTML = '';
+    Object.keys(grouped).sort().forEach(function(unit) {
+      var mList = grouped[unit];
+
+      var unitWrap = document.createElement('div');
+      unitWrap.style.cssText = 'margin-bottom:20px;';
+
+      var unitHeader = document.createElement('div');
+      unitHeader.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(135deg,var(--red),#c0392b);border-radius:8px;margin-bottom:8px;';
+      unitHeader.innerHTML = '<span style="font-size:1rem;">🏢</span>'
+        + '<span style="font-weight:700;color:white;font-size:0.9rem;letter-spacing:0.05em;">'+unit+'</span>'
+        + '<span style="margin-left:auto;font-size:0.72rem;color:rgba(255,255,255,0.7);">'+mList.length+' 人</span>';
+      unitWrap.appendChild(unitHeader);
+
+      mList.forEach(function(d){ unitWrap.appendChild(buildMemberRow(d)); });
+      el.appendChild(unitWrap);
+    });
+  } catch(e){ el.innerHTML='載入失敗：'+e.message; }
+}
+
+
+async function adminAddWhitelist() {
+  const email = (document.getElementById('adminWlEmail').value||'').trim().toLowerCase();
+  const name  = (document.getElementById('adminWlName').value||'').trim();
+  const unit  = (document.getElementById('adminWlUnit').value||'').trim();
+  const title = document.getElementById('adminWlTitle')?.value || '';
+  const role  = document.getElementById('adminWlRole').value || 'member';
+  const isAdmin   = role === 'admin';
+  const isOfficer = role === 'officer';
+  if (!email || !name) { alert('請填入 Email 和義消姓名'); return; }
+  if (!unit) { alert('請選擇分隊別'); return; }
+  try {
+    const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (!snap.empty) { alert('此 Email 已在白名單'); return; }
+    await fbAdd(COL_WHITELIST, { email, memberName:name, title, role, isAdmin, isOfficer, unit });
+    // 重置新增表單
+    document.getElementById('adminWlEmail').value = '';
+    document.getElementById('adminWlName').value  = '';
+    const titleEl = document.getElementById('adminWlTitle');
+    if (titleEl) titleEl.value = '';
+    const roleEl = document.getElementById('adminWlRole');
+    if (roleEl) roleEl.value = 'member';
+    // 重新載入目前選擇的分隊
+    const curUnit = document.getElementById('adminWlFilterUnit')?.value || '';
+    await loadAdminWhitelist(curUnit);
+  } catch(e) { alert('新增失敗：' + e.message); }
+}
+
+async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone) {
+  if (!role || role==='member') role = isAdmin ? 'admin' : (role||'member');
+  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||'';
+  let extraEmails=[];
+  try{const d=await fbGet(COL_WHITELIST,id);if(d&&Array.isArray(d.extraEmails))extraEmails=d.extraEmails;}catch(e){}
+  var TITLES=['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+  var titleOpts='<option value="">請選擇</option>'+TITLES.map(t=>'<option value="'+t+'"'+(t===title?' selected':'')+'>'+t+'</option>').join('');
+  var roleOpts='<option value="member"'+(role==='member'?' selected':'')+'>一般成員</option><option value="officer"'+(role==='officer'?' selected':'')+'>分隊承辦人</option><option value="admin"'+(role==='admin'?' selected':'')+'>系統管理員</option>';
+  var certOpts='<option value=""'+(cert===''?' selected':'')+'>無</option><option value="EMT-1"'+(cert==='EMT-1'?' selected':'')+'>EMT-1</option><option value="EMT-2"'+(cert==='EMT-2'?' selected':'')+'>EMT-2</option><option value="EMT-P"'+(cert==='EMT-P'?' selected':'')+'>EMT-P（中級）</option>';
+  function buildExtraHtml(arr){
+    return arr.map((em,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="email" value="'+em+'" style="flex:1;background:white;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);box-sizing:border-box;" oninput="window.aeWlExtra['+i+']=this.value.trim().toLowerCase()"><button type="button" onclick="window.aeWlRemove('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:6px 10px;font-size:0.82rem;color:#b94a3a;cursor:pointer;">✕</button></div>').join('')
+    +'<button type="button" onclick="window.aeWlAdd()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:7px 14px;font-size:0.82rem;cursor:pointer;color:var(--text-mid);width:100%;margin-top:2px;">＋ 新增信箱</button>';
+  }
+  var s='background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;width:100%;';
+  document.getElementById('adminEditTitle').textContent='編輯帳號資料';
+  document.getElementById('adminEditFields').innerHTML=
+    '<div class="field"><label>主要 Email</label><input type="email" id="aeWlEmail" value="'+email+'" style="'+s+'"></div>'+
+    '<div class="field"><label>額外信箱 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（其他 Google 帳號）</span></label><div id="aeWlExtraList">'+buildExtraHtml(extraEmails)+'</div></div>'+
+    '<div class="field"><label>義消姓名</label><input type="text" id="aeWlName" value="'+memberName+'" style="'+s+'"></div>'+
+    '<div class="field"><label>分隊別</label><select id="aeWlUnit" style="width:100%;"><option value="">請選擇</option>'+getUnitsSelectOptions(unit)+'</select></div>'+
+    '<div class="field"><label>職稱</label><select id="aeWlTitle" style="width:100%;">'+titleOpts+'</select></div>'+
+    '<div class="field"><label>角色權限</label><select id="aeWlRole" style="width:100%;">'+roleOpts+'</select></div>'+
+    '<div class="field"><label>證照等級</label><select id="aeWlCert" style="width:100%;">'+certOpts+'</select></div>'+
+    '<div class="field"><label>證照效期</label><input type="date" id="aeWlCertExp" value="'+certExp+'" style="'+s+'"></div>'+
+    '<div class="field"><label>手機號碼</label><input type="tel" id="aeWlPhone" value="'+phone+'" placeholder="例：0912345678" style="'+s+'"></div>';
+  window.aeWlExtra=extraEmails.slice();
+  window.aeWlAdd=function(){window.aeWlExtra.push('');document.getElementById('aeWlExtraList').innerHTML=buildExtraHtml(window.aeWlExtra);};
+  window.aeWlRemove=function(i){window.aeWlExtra.splice(i,1);document.getElementById('aeWlExtraList').innerHTML=buildExtraHtml(window.aeWlExtra);};
+  adminEditSave=async function(){
+    var r=document.getElementById('aeWlRole').value||'member';
+    const main=document.getElementById('aeWlEmail').value.trim().toLowerCase();
+    const extras=window.aeWlExtra.map(e=>e.trim().toLowerCase()).filter(e=>e&&e!==main);
+    try{
+      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||''});
+      document.getElementById('adminEditModal').style.display='none';
+      const curUnit=document.getElementById('adminWlFilterUnit')?.value||'';
+      await loadAdminWhitelist(curUnit);await loadMembers();
+    }catch(e){alert('儲存失敗：'+e.message);}
+  };
+  document.getElementById('adminEditModal').style.display = 'flex';
+}
+
+
+async function loadAdminMembers() {
+  const el=document.getElementById('adminMemList'); if(!el)return;
+  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const docs=await fbList(COL_MEMBERS);
+    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);">尚無成員</div>';return;}
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+    docs.sort((a,b) => {
+      if ((a.unit||'') !== (b.unit||'')) return (a.unit||'') > (b.unit||'') ? 1 : -1;
+      const ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
+      if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
+      return (a.name||'') > (b.name||'') ? 1 : -1;
+    });
+    el.innerHTML=docs.map(d=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;">
+          <span style="font-weight:500;">${d.name}</span>
+          <span style="color:var(--text-light);font-size:0.82rem;margin-left:4px;">${d.title||''}</span>
+          ${d.unit?`<span style="font-size:0.72rem;color:white;background:var(--red);border-radius:10px;padding:1px 7px;margin-left:4px;">${d.unit}</span>`:''}
+          ${d.cert?`<span style="font-size:0.72rem;color:#1a6b9a;background:#e8f4fd;border:1px solid #c6def5;border-radius:10px;padding:1px 7px;margin-left:4px;">${d.cert}</span>`:''}
+        </div>
+        <button onclick="adminEditMem('${d.id}','${(d.name||'').replace(/'/g,String.fromCharCode(39))}','${(d.title||'').replace(/'/g,String.fromCharCode(39))}','${(d.unit||'').replace(/'/g,String.fromCharCode(39))}','${d.cert||''}','${d.certExp||''}')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:0.75rem;cursor:pointer;">編輯</button>
+        <button onclick="adminDel('${COL_MEMBERS}','${d.id}','成員 ${d.name}',loadAdminMembers)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;">刪除</button>
+      </div>`).join('');
+  } catch(e){el.innerHTML='載入失敗：'+e.message;}
+}
+
+async function adminAddMember() {
+  const name=(document.getElementById('adminMemName').value||'').trim();
+  const title=document.getElementById('adminMemTitle').value||'';
+  const unit=document.getElementById('adminMemUnit').value||'';
+  if(!name){alert('請填入姓名');return;}
+  try {
+    await fbAdd(COL_MEMBERS,{name,title,unit});
+    document.getElementById('adminMemName').value='';
+    document.getElementById('adminMemTitle').value='';
+    document.getElementById('adminMemUnit').value='';
+    await loadAdminMembers(); await loadMembers();
+  } catch(e){alert('新增失敗：'+e.message);}
+}
+
+function adminEditMem(id,name,title,unit,cert,certExp) {
+  document.getElementById('adminEditTitle').textContent='編輯成員';
+  document.getElementById('adminEditFields').innerHTML=`
+    <div class="field"><label>姓名</label><input type="text" id="aeMName" value="${name}" style="width:100%;"></div>
+    <div class="field"><label>職稱</label><select id="aeMTitle" style="width:100%;">
+      <option value="">請選擇</option>
+      ${['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'].map(t=>`<option value="\${t}" \${t===title?'selected':''}>\${t}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>分隊別</label><select id="aeMUnit" style="width:100%;"><option value="">請選擇</option>${getUnitsSelectOptions(unit)}</select></div>
+    <div class="field"><label>證照等級</label><select id="aeMCert" style="width:100%;">
+      <option value="" \${!cert?'selected':''}>無</option>
+      <option value="EMT-1" \${cert==='EMT-1'?'selected':''}>EMT-1</option>
+      <option value="EMT-2" \${cert==='EMT-2'?'selected':''}>EMT-2</option>
+      <option value="EMT-P" \${cert==='EMT-P'?'selected':''}>EMT-P（中級）</option>
+    </select></div>
+    <div class="field"><label>證照效期</label><input type="date" id="aeMCertExp" value="\${certExp||''}" style="width:100%;"></div>`;
+  adminEditSave=async()=>{
+    try {
+      await fbSet(COL_MEMBERS,id,{
+        name:document.getElementById('aeMName').value.trim(),
+        title:document.getElementById('aeMTitle').value.trim(),
+        unit:document.getElementById('aeMUnit').value.trim(),
+        cert:document.getElementById('aeMCert').value||'',
+        certExp:document.getElementById('aeMCertExp').value||'',
+      });
+      document.getElementById('adminEditModal').style.display='none';
+      await loadAdminMembers(); await loadMembers();
+    } catch(e){alert('儲存失敗：'+e.message);}
+  };
+  document.getElementById('adminEditModal').style.display='flex';
+}
+
+async function loadAdminAttendance() {
+  const el=document.getElementById('adminAttList');
+  const from=document.getElementById('adminAttFrom').value;
+  const to=document.getElementById('adminAttTo').value;
+  const unit=document.getElementById('adminAttUnit')?.value||'';
+  const member=document.getElementById('adminAttMember')?.value||'';
+  const usr=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin=usr.isAdmin||false;
+  const _userUnit=usr.unit||'';
+  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    let docs=await fbList(COL_ATTEND, 'date', 'asc');
+    if(from)docs=docs.filter(d=>(d.date||'')>=from);
+    if(to)  docs=docs.filter(d=>(d.date||'')<=to);
+    // 分隊篩選（承辦人強制自己分隊）
+    const effectiveUnit = _isAdmin ? unit : _userUnit;
+    if(effectiveUnit){
+      const unitNames=new Set(members.filter(m=>(m.unit||'')===effectiveUnit).map(m=>m.name));
+      docs=docs.filter(d=>unitNames.has(d.memberName||''));
+    }
+    if(member)docs=docs.filter(d=>(d.memberName||'')===member);
+    // 由舊到新：日期 + 簽到時間
+    docs.sort((a,b)=>{
+      const ka=(a.date||'')+(a.checkinTime||'');
+      const kb=(b.date||'')+(b.checkinTime||'');
+      return ka>kb?1:ka<kb?-1:0;
+    });
+    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">查無資料</div>';return;}
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:white;border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow-x:auto;';
+
+    const ths='padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
+    const tds='padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
+    const sigA=(sig)=>sig?`<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">`:`<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;min-width:780px;';
+    table.innerHTML = `<thead><tr>
+      <th style="${ths}">日期</th><th style="${ths}">類別</th><th style="${ths}">姓名</th>
+      <th style="${ths}">簽到</th><th style="${ths}">簽退</th><th style="${ths}">時數</th>
+      <th style="${ths}">次數</th><th style="${ths}">服務</th>
+      <th style="${ths}">簽到簽名</th><th style="${ths}">簽退簽名</th><th style="${ths}">操作</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    docs.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="${tds}white-space:nowrap;">${d.date||''}</td>
+        <td style="${tds}white-space:nowrap;">${d.dutyType||'協勤'}</td>
+        <td style="${tds}font-weight:500;white-space:nowrap;">${d.memberName||''}</td>
+        <td style="${tds}white-space:nowrap;">${d.checkinTime||''}</td>
+        <td style="${tds}white-space:nowrap;">${d.checkoutTime||''}</td>
+        <td style="${tds}text-align:center;">${d.hours||0}</td>
+        <td style="${tds}text-align:center;">${d.count||0}</td>
+        <td style="${tds}text-align:center;">${d.service||0}</td>
+        <td style="${tds}text-align:center;padding:6px 8px;">${sigA(d.checkinSig||'')}</td>
+        <td style="${tds}text-align:center;padding:6px 8px;">${sigA(d.checkoutSig||'')}</td>
+        <td style="${tds}white-space:nowrap;">
+          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}">✏️ 編輯</button>
+          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}" data-label="簽到 ${(d.memberName||'')} ${(d.date||'')}">🗑️</button>
+        </td>`;
+      tr.querySelector('[data-id]').addEventListener('click', () => adminEditAtt(d.id));
+      tr.querySelector('[data-del]').addEventListener('click', () => adminDel(COL_ATTEND, d.id, `簽到 ${d.memberName||''} ${d.date||''}`, loadAdminAttendance));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    el.innerHTML = '';
+    el.appendChild(wrap);
+    el.insertAdjacentHTML('beforeend', `<div style="font-size:0.75rem;color:var(--text-light);padding:8px 4px;">共 ${docs.length} 筆</div>`);
+  } catch(e){el.innerHTML='載入失敗：'+e.message;}
+}
+
+async function adminEditAtt(id) {
+  const doc=await fbGet(COL_ATTEND,id); if(!doc){alert('找不到資料');return;}
+  document.getElementById('adminEditTitle').textContent='編輯簽到簽退';
+  document.getElementById('adminEditFields').innerHTML=`
+    <div class="field"><label>日期</label><input type="date" id="aeADate" value="${doc.date||''}" style="width:100%;"></div>
+    <div class="field"><label>類別</label><select id="aeADuty" style="width:100%;"><option ${(doc.dutyType||'協勤')==='協勤'?'selected':''}>協勤</option><option ${doc.dutyType==='公差'?'selected':''}>公差</option></select></div>
+    <div class="field"><label>姓名</label><input type="text" id="aeAName" value="${doc.memberName||''}" style="width:100%;"></div>
+    <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
+    <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
+    <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      ${doc.checkinSig?`<div style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <div class="sig-wrap"><canvas id="aeACheckinCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽退簽名</span><button type="button" onclick="aeCanvasClear('aeACheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      ${doc.checkoutSig?`<div style="margin-bottom:4px;"><img src="${doc.checkoutSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <div class="sig-wrap"><canvas id="aeACheckoutCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>`;
+  setTimeout(()=>{ aeInitCanvas('aeACheckinCanvas'); aeInitCanvas('aeACheckoutCanvas');
+    // 強制 24hr（iOS 需在 input 插入 DOM 後再設定）
+    ['aeAIn','aeAOut'].forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('lang','en-GB');el.setAttribute('data-time-24','1');}});
+  },50);
+  adminEditSave=async()=>{
+    try {
+      const cinN=aeGetSig('aeACheckinCanvas'), coutN=aeGetSig('aeACheckoutCanvas');
+      await fbSet(COL_ATTEND,id,{
+        date:document.getElementById('aeADate').value,
+        dutyType:document.getElementById('aeADuty').value,
+        memberName:document.getElementById('aeAName').value.trim(),
+        checkinTime:document.getElementById('aeAIn').value.trim(),
+        checkoutTime:document.getElementById('aeAOut').value.trim(),
+        hours:parseFloat(document.getElementById('aeAHours').value)||0,
+        count:parseInt(document.getElementById('aeACount').value)||0,
+        service:parseInt(document.getElementById('aeASvc').value)||0,
+        checkinSig:  cinN  || doc.checkinSig  || '',
+        checkoutSig: coutN || doc.checkoutSig || '',
+      });
+      document.getElementById('adminEditModal').style.display='none';
+      if(document.getElementById('attQueryPage')?.classList.contains('active')) await doAttQuery();
+      else await loadAdminAttendance();
+    } catch(e){alert('儲存失敗：'+e.message);}
+  };
+  document.getElementById('adminEditModal').style.display='flex';
+}
+
+async function loadAdminOuting() {
+  const el=document.getElementById('adminOutList');
+  const from=document.getElementById('adminOutFrom').value;
+  const to=document.getElementById('adminOutTo').value;
+  const unit=document.getElementById('adminOutUnit')?.value||'';
+  const member=document.getElementById('adminOutMember')?.value||'';
+  const usr=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin=usr.isAdmin||false;
+  const _userUnit=usr.unit||'';
+  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    let docs=await fbList(COL_OUTING, 'date', 'asc');
+    if(from)docs=docs.filter(d=>(d.date||'')>=from);
+    if(to)  docs=docs.filter(d=>(d.date||'')<=to);
+    // 分隊篩選（承辦人強制自己分隊）
+    const effectiveUnit = _isAdmin ? unit : _userUnit;
+    if(effectiveUnit){
+      const unitNames=new Set(members.filter(m=>(m.unit||'')===effectiveUnit).map(m=>m.name));
+      docs=docs.filter(d=>unitNames.has(d.memberName||''));
+    }
+    if(member)docs=docs.filter(d=>(d.memberName||'')===member);
+    // 由舊到新：日期 + 出發時間
+    docs.sort((a,b)=>{
+      const ka=(a.date||'')+(a.timeOut||'');
+      const kb=(b.date||'')+(b.timeOut||'');
+      return ka>kb?1:ka<kb?-1:0;
+    });
+    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">查無資料</div>';return;}
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:white;border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04);overflow-x:auto;';
+
+    const ths2='padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
+    const tds2='padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
+    const sigB=(sig)=>sig?`<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">`:`<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;min-width:780px;';
+    table.innerHTML = `<thead><tr>
+      <th style="${ths2}">日期</th><th style="${ths2}">時間</th><th style="${ths2}">行政區</th>
+      <th style="${ths2}">地址</th><th style="${ths2}">姓名</th><th style="${ths2}">案由</th>
+      <th style="${ths2}">服務項目</th><th style="${ths2}">備註</th><th style="${ths2}">簽名</th><th style="${ths2}">操作</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    docs.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="${tds2}white-space:nowrap;">${d.date||''}</td>
+        <td style="${tds2}white-space:nowrap;">${(d.timeOut||'')}～${(d.timeBack||'')}</td>
+        <td style="${tds2}white-space:nowrap;">${d.district||''}</td>
+        <td style="${tds2}max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.address||''}">${d.address||''}</td>
+        <td style="${tds2}font-weight:500;white-space:nowrap;">${d.memberName||''}</td>
+        <td style="${tds2}white-space:nowrap;">${d.caseType||'—'}</td>
+        <td style="${tds2}max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.services||''}">${d.services||''}</td>
+        <td style="${tds2}max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.note||''}">${d.note||''}</td>
+        <td style="${tds2}text-align:center;padding:6px 8px;">${sigB(d.signature||'')}</td>
+        <td style="${tds2}white-space:nowrap;">
+          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}">✏️ 編輯</button>
+          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}">🗑️</button>
+        </td>`;
+      tr.querySelector('[data-id]').addEventListener('click', () => adminEditOut(d.id));
+      tr.querySelector('[data-del]').addEventListener('click', () => adminDel(COL_OUTING, d.id, `協勤 ${d.memberName||''} ${d.date||''}`, loadAdminOuting));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    el.innerHTML = '';
+    el.appendChild(wrap);
+    el.insertAdjacentHTML('beforeend', `<div style="font-size:0.75rem;color:var(--text-light);padding:8px 4px;">共 ${docs.length} 筆</div>`);
+  } catch(e){el.innerHTML='載入失敗：'+e.message;}
+}
+
+async function adminEditOut(id) {
+  const doc=await fbGet(COL_OUTING,id); if(!doc){alert('找不到資料');return;}
+  document.getElementById('adminEditTitle').textContent='編輯協勤紀錄';
+  document.getElementById('adminEditFields').innerHTML=`
+    <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
+    <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
+    <div class="field"><label>出動時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>返隊時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
+    <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
+    <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
+    <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
+    <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;"><span>義消簽名</span><button type="button" onclick="aeCanvasClear('aeOSigCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      ${doc.signature?`<div style="margin-bottom:4px;"><img src="${doc.signature}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <div class="sig-wrap"><canvas id="aeOSigCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>`;
+  setTimeout(()=>{ aeInitCanvas('aeOSigCanvas');
+    ['aeOOut','aeOBack'].forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('lang','en-GB');el.setAttribute('data-time-24','1');}});
+  },50);
+  adminEditSave=async()=>{
+    try {
+      const sigN=aeGetSig('aeOSigCanvas');
+      await fbSet(COL_OUTING,id,{
+        date:document.getElementById('aeODate').value,
+        caseType:document.getElementById('aeOCaseType').value.trim(),
+        timeOut:document.getElementById('aeOOut').value,
+        timeBack:document.getElementById('aeOBack').value,
+        district:document.getElementById('aeODist').value.trim(),
+        address:document.getElementById('aeOAddr').value.trim(),
+        services:document.getElementById('aeOSvc').value.trim(),
+        note:document.getElementById('aeONote').value.trim(),
+        memberName:document.getElementById('aeOName').value.trim(),
+        signature: sigN || doc.signature || '',
+      });
+      document.getElementById('adminEditModal').style.display='none';
+      if(document.getElementById('queryPage')?.classList.contains('active')) await doQuery();
+      else await loadAdminOuting();
+    } catch(e){alert('儲存失敗：'+e.message);}
+  };
+  document.getElementById('adminEditModal').style.display='flex';
+}
+
+async function loadAdminItems() {
+  const el=document.getElementById('adminItemList'); if(!el)return;
+  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const docs=await fbList(COL_ITEMS);
+    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">尚無物品</div>';return;}
+    el.innerHTML=docs.map(d=>{
+      const total=(d.recipients||[]).length;
+      const claimed=(d.recipients||[]).filter(r=>r.claimed).length;
+      const rows=(d.recipients||[]).map(r=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--warm);">
+          <span style="flex:1;font-size:0.83rem;">${r.name}</span>
+          <span style="font-size:0.75rem;color:${r.claimed?'#1a6b35':'var(--text-light)'};">${r.claimed?'✓ '+(r.claimTime||''):'未領取'}</span>
+          ${r.claimed?`<button onclick="adminUnclaim('${d.id}','${r.name.replace(/'/g,String.fromCharCode(39))}')" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 6px;font-size:0.7rem;color:#b94a3a;cursor:pointer;">取消</button>`:''}
+        </div>`).join('');
+      return `<div class="result-card" style="margin-bottom:12px;">
+        <div class="result-head">
+          <h3 style="font-size:0.9rem;">${d.itemName}${d.note?` <span style="font-weight:400;font-size:0.78rem;color:var(--text-light);">${d.note}</span>`:''} <span style="font-weight:400;font-size:0.78rem;color:${claimed===total?'#1a6b35':'var(--text-mid)'};">${claimed}/${total}</span></h3>
+          <button onclick="adminDel('${COL_ITEMS}','${d.id}','物品 ${d.itemName}',loadAdminItems)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;">刪除</button>
+        </div>
+        <div style="padding:8px 16px;">${rows}</div>
+      </div>`;
+    }).join('');
+  } catch(e){el.innerHTML='載入失敗：'+e.message;}
+}
+
+async function adminUnclaim(itemId, memberName) {
+  if(!confirm('確認取消 '+memberName+' 的領取？'))return;
+  try {
+    const doc=await fbGet(COL_ITEMS,itemId); if(!doc)return;
+    const recipients=(doc.recipients||[]).map(r=>r.name===memberName?{...r,claimed:false,claimTime:'',sig:''}:r);
+    await fbUpdate(COL_ITEMS,itemId,{recipients});
+    await loadAdminItems(); updateItemsBadge();
+  } catch(e){alert('操作失敗：'+e.message);}
+}
+
+
+async function adminDel(col,id,label,reloadFn) {
+  if(!confirm('確定刪除「'+label+'」？此操作無法復原。'))return;
+  try { await fbDelete(col,id); if(typeof reloadFn==='function')await reloadFn(); }
+  catch(e){alert('刪除失敗：'+e.message);}
+}
+
+function adminNavTo(sectionId) {
+  if (!document.getElementById('adminPage').classList.contains('active')) {
+    navTo('adminPage');
+    setTimeout(() => adminScrollTo(sectionId), 600);
+    return;
+  }
+  adminScrollTo(sectionId);
+  document.querySelectorAll('.admin-subnav-btn').forEach(b => b.classList.remove('active-subnav'));
+  const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import'];
+  const idx = secIds.indexOf(sectionId);
+  const btns = document.querySelectorAll('.admin-subnav-btn');
+  if (btns[idx]) btns[idx].classList.add('active-subnav');
+  closeDrawer();
+}
+
+function _positionAdminTabBar() {
+  const bar = document.getElementById('adminTabBar');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  syncHeaderHeight(); // 內部雙重 rAF，確保 tabbar 多行高度量測正確
+}
+
+function adminScrollTo(sectionId) {
+  const el = document.getElementById(sectionId);
+  if (!el) return;
+
+  const scroller = document.getElementById('appScroll');
+  const bar      = document.getElementById('adminTabBar');
+
+  if (scroller) {
+    // tab bar 的 bottom（相對於視窗）就是內容應該開始的地方
+    const barBottom   = bar ? bar.getBoundingClientRect().bottom : 100;
+    const elTop       = el.getBoundingClientRect().top;
+    // 目標捲動量 = 目前 scrollTop + (元素頂部 - tab bar 底部) - 16px 間距
+    const target = scroller.scrollTop + elTop - barBottom - 16;
+
+    window._adminScrolling = true;
+    scroller.scrollTo({ top: target, behavior: 'smooth' });
+    clearTimeout(window._adminScrollTimer);
+    window._adminScrollTimer = setTimeout(() => { window._adminScrolling = false; }, 1000);
+  }
+
+  // 立即高亮
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.classList.remove('active');
+    if ((t.getAttribute('onclick')||'').includes(sectionId)) t.classList.add('active');
+  });
+  document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+    b.classList.remove('active-subnav');
+    if ((b.getAttribute('onclick')||'').includes(sectionId)) b.classList.add('active-subnav');
+  });
+}
+
+var _adminTabObserver = null;
+async function initAdminPage() {
+  const u=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  if(!u.isAdmin && !u.isOfficer){alert('您沒有管理員權限');navTo('dashboardPage');return;}
+  const isAdminOnly = u.isAdmin || u.role === 'admin';
+
+  const now=new Date(), y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0');
+  const from=y+'-'+m+'-01';
+  const to=y+'-'+m+'-'+String(new Date(y,now.getMonth()+1,0).getDate()).padStart(2,'0');
+  ['adminAttFrom','adminAttTo','adminOutFrom','adminOutTo'].forEach((id,i)=>{
+    const el=document.getElementById(id); if(el)el.value=i%2===0?from:to;
+  });
+
+  // 管理員限定：登入紀錄、分隊管理、公告管理、版本紀錄
+  const adminOnlySecs = [
+    'adminSec-loginlog', 'adminTab-loginlog', 'adminSubNav-loginlog',  // 登入紀錄
+    'adminSec-units',                                                    // 分隊管理（section，tab/subnav 另處理）
+    'adminSec-announce', 'adminTab-announce', 'adminSubNav-announce',   // 公告管理
+    'adminSec-changelog',                                                // 版本紀錄（section，tab/subnav 另處理）
+  ];
+  adminOnlySecs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isAdminOnly ? '' : 'none';
+  });
+
+  // 承辦人也隱藏分隊管理和版本紀錄的 tab 和 subnav 按鈕
+  if (!isAdminOnly) {
+    // 找到並隱藏對應的 tab 按鈕（以 onclick 內容比對）
+    document.querySelectorAll('.admin-tab').forEach(btn => {
+      const oc = btn.getAttribute('onclick') || '';
+      if (oc.includes('adminSec-units') || oc.includes('adminSec-changelog')) {
+        btn.style.display = 'none';
+      }
+    });
+    document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
+      const oc = btn.getAttribute('onclick') || '';
+      if (oc.includes('adminSec-units') || oc.includes('adminSec-changelog')) {
+        btn.style.display = 'none';
+      }
+    });
+  } else {
+    // 管理員顯示全部
+    document.querySelectorAll('.admin-tab, .admin-subnav-btn').forEach(btn => {
+      if (!btn.id || !btn.id.includes('loginlog')) btn.style.display = '';
+    });
+  }
+  // 設定登入紀錄分隊篩選
+  if (isAdminOnly) {
+    const llUnit = document.getElementById('loginLogUnit');
+    if (llUnit) {
+      await loadUnits();
+      llUnit.innerHTML = '<option value="">— 全部分隊 —</option>' +
+        _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
     }
   }
 
-  console.log('\n提醒完成！');
+  await loadUnits();
+  populateUnitSelects();
+  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection()]);
+  seedChangelog_v1902(); // 自動插入 v1.9.02 版本紀錄（若尚未存在）
+
+  // 顯示並定位固定 tab bar
+  _positionAdminTabBar();
+
+  // 預設高亮第一個 tab
+  const firstTab = document.querySelector('.admin-tab');
+  if (firstTab) firstTab.classList.add('active');
+
+  // IntersectionObserver：滾動時自動高亮對應 tab
+  if (_adminTabObserver) _adminTabObserver.disconnect();
+  const secIds = isAdminOnly
+    ? ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import']
+    : ['adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-import'];
+  const tabs = document.querySelectorAll('.admin-tab');
+  const scroller = document.getElementById('appScroll');
+  _adminTabObserver = new IntersectionObserver(entries => {
+    if (window._adminScrolling) return; // 手動點擊捲動中，暫停 observer
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const sid = entry.target.id;
+        if (secIds.includes(sid)) {
+          tabs.forEach(t => {
+            t.classList.remove('active');
+            if ((t.getAttribute('onclick')||'').includes(sid)) t.classList.add('active');
+          });
+          document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+            b.classList.remove('active-subnav');
+            if ((b.getAttribute('onclick')||'').includes(sid)) b.classList.add('active-subnav');
+          });
+        }
+      }
+    });
+  }, {
+    root: scroller,
+    rootMargin: '-20% 0px -60% 0px'
+  });
+  secIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) _adminTabObserver.observe(el);
+  });
 }
 
-main().catch(err => {
-  console.error('執行失敗：', err);
-  process.exit(1);
+
+// ════════════════════════════════════════
+// 登入紀錄（管理員限定）
+// ════════════════════════════════════════
+async function loadLoginLog() {
+  const el = document.getElementById('adminLoginLogList');
+  if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
+  try {
+    const dateFrom = document.getElementById('loginLogFrom')?.value || '';
+    const dateTo   = document.getElementById('loginLogTo')?.value   || '';
+    const unit     = document.getElementById('loginLogUnit')?.value  || '';
+
+    let docs = await fbList(COL_LOGINLOG);
+    // 依登入時間倒序
+    docs.sort((a,b) => (b.loginAt||'') > (a.loginAt||'') ? 1 : -1);
+
+    if (dateFrom) docs = docs.filter(d => (d.loginAt||'').substring(0,10) >= dateFrom);
+    if (dateTo)   docs = docs.filter(d => (d.loginAt||'').substring(0,10) <= dateTo);
+    if (unit)     docs = docs.filter(d => (d.unit||'') === unit);
+
+    if (!docs.length) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>查無紀錄</div>'; return; }
+
+    const ROLE_LABEL = { admin:'系統管理員', officer:'分隊承辦人', member:'一般成員' };
+    const ROLE_COLOR = { admin:'#856404', officer:'#084298', member:'#495057' };
+    const ROLE_BG    = { admin:'#fff3cd', officer:'#cfe2ff', member:'#e9ecef' };
+
+    el.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
+          <thead>
+            <tr>
+              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">#</th>
+              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">登入時間</th>
+              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">姓名</th>
+              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">分隊</th>
+              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">角色</th>
+              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);">Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${docs.map((d,i) => {
+              const role = d.role || 'member';
+              const roleBg = ROLE_BG[role] || '#e9ecef';
+              const roleColor = ROLE_COLOR[role] || '#495057';
+              const roleLabel = ROLE_LABEL[role] || role;
+              return `<tr>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-light);font-size:0.78rem;">${i+1}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.loginAt||''}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-weight:500;">${d.memberName||''}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.unit||''}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--border);">
+                  <span style="font-size:0.68rem;background:${roleBg};color:${roleColor};border-radius:10px;padding:2px 8px;font-weight:600;white-space:nowrap;">${roleLabel}</span>
+                </td>
+                <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.78rem;color:var(--text-light);">${d.email||''}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-light);padding:8px 4px;">共 ${docs.length} 筆登入紀錄</div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
+  }
+}
+
+function resetLoginLog() {
+  ['loginLogFrom','loginLogTo'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const u = document.getElementById('loginLogUnit'); if (u) u.value = '';
+  const el = document.getElementById('adminLoginLogList');
+  if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>';
+}
+
+// ── 登入頁意見回饋 ──
+function showLoginFeedback() {
+  document.getElementById('loginFeedbackForm').style.display = '';
+  document.getElementById('lfContent').focus();
+}
+function hideLoginFeedback() {
+  document.getElementById('loginFeedbackForm').style.display = 'none';
+  document.getElementById('lfName').value = '';
+  document.getElementById('lfContent').value = '';
+  document.getElementById('lfStatus').style.display = 'none';
+}
+async function submitLoginFeedback() {
+  const name    = (document.getElementById('lfName').value||'').trim() || '匿名';
+  const content = (document.getElementById('lfContent').value||'').trim();
+  const status  = document.getElementById('lfStatus');
+  if (!content) { status.style.cssText='display:block;color:var(--red);'; status.textContent='請填寫意見內容'; return; }
+  try {
+    await ensureFirebase();
+    await fbAdd(COL_FEEDBACK, {
+      name, unit: '（未登入）', sender: 'anon',
+      category: '問題回報',
+      content,
+      time: new Date().toLocaleString('sv').replace('T', ' '),
+    });
+    status.style.cssText='display:block;color:#1a6b35;';
+    status.textContent='✓ 已送出，感謝您的回饋！';
+    document.getElementById('lfContent').value = '';
+    document.getElementById('lfName').value = '';
+  } catch(e) {
+    status.style.cssText='display:block;color:var(--red);';
+    status.textContent='送出失敗：' + e.message;
+  }
+}
+
+async function loadAdminUnits() {
+  const el = document.getElementById('adminUnitList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    await loadUnits();
+    if (!_unitsList.length) { el.innerHTML = '<div style="color:var(--text-light);">尚無分隊</div>'; return; }
+    el.innerHTML = _unitsList.map(u => `
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;font-weight:500;">${u}</div>
+        <button onclick="adminDelUnit('${u.replace(/'/g,String.fromCharCode(39))}')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;">刪除</button>
+      </div>`).join('');
+    // 同步更新所有分隊選單
+    populateUnitSelects();
+  } catch(e) { el.innerHTML = '載入失敗：' + e.message; }
+}
+
+async function adminAddUnit() {
+  const name = (document.getElementById('adminUnitName').value||'').trim();
+  if (!name) { alert('請填入分隊名稱'); return; }
+  try {
+    const docs = await fbList(COL_UNITS);
+    if (docs.find(d => d.name === name)) { alert('此分隊已存在'); return; }
+    await fbAdd(COL_UNITS, { name });
+    document.getElementById('adminUnitName').value = '';
+    // 重新載入分隊快取並更新所有選單
+    await loadUnits();
+    populateUnitSelects();
+    await loadAdminUnits(); // 同時更新後台列表
+  } catch(e) { alert('新增失敗：' + e.message); }
+}
+
+async function adminDelUnit(name) {
+  if (!confirm('確定刪除分隊「' + name + '」？')) return;
+  try {
+    const docs = await fbList(COL_UNITS);
+    const doc = docs.find(d => d.name === name);
+    if (doc) await fbDelete(COL_UNITS, doc.id);
+    await loadUnits();
+    populateUnitSelects();
+    await loadAdminUnits();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+// 把 _unitsList 填入所有分隊 <select>
+function adminAttUnitChange() {
+  const unit = document.getElementById('adminAttUnit')?.value || '';
+  const sel  = document.getElementById('adminAttMember');
+  if (!sel) return;
+  const cur = sel.value;
+  const filtered = unit ? members.filter(m => (m.unit||'') === unit) : members;
+  sel.innerHTML = '<option value="">— 全部成員 —</option>' +
+    filtered.map(m => `<option value="${m.name}"${m.name===cur?' selected':''}>${m.name}</option>`).join('');
+}
+
+function adminOutUnitChange() {
+  const unit = document.getElementById('adminOutUnit')?.value || '';
+  const sel  = document.getElementById('adminOutMember');
+  if (!sel) return;
+  const cur = sel.value;
+  const filtered = unit ? members.filter(m => (m.unit||'') === unit) : members;
+  sel.innerHTML = '<option value="">— 全部成員 —</option>' +
+    filtered.map(m => `<option value="${m.name}"${m.name===cur?' selected':''}>${m.name}</option>`).join('');
+}
+
+function populateUnitSelects() {
+  const opts = '<option value="">請選擇分隊</option>' + _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+  ['adminWlUnit','adminWlFilterUnit','adminMemUnit','itemUnit','rpt1Unit','rpt2Unit','rpt3Unit'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = opts;
+    if (cur) el.value = cur;
+  });
+  // adminWlFilterUnit：預設帶入登入者分隊並載入
+  const filterSel = document.getElementById('adminWlFilterUnit');
+  if (filterSel) {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    if (usr.unit) {
+      filterSel.value = usr.unit;
+      loadAdminWhitelist(usr.unit);
+    }
+  }
+
+  // 後台簽到退/協勤的分隊選單（管理員可選全部，承辦人鎖定）
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin = usr.isAdmin || false;
+  const _userUnit = usr.unit || '';
+  ['adminAttUnit','adminOutUnit'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    if (_isAdmin) {
+      sel.innerHTML = '<option value="">— 全部分隊 —</option>' +
+        _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+      sel.disabled = false;
+    } else {
+      sel.innerHTML = `<option value="${_userUnit}">${_userUnit}</option>`;
+      sel.disabled = true;
+      sel.value = _userUnit;
+    }
+  });
+  // 初始化成員選單
+  adminAttUnitChange();
+  adminOutUnitChange();
+}
+
+// 待領物品：依分隊篩選成員
+function filterMembersByUnit() {
+  const unit = document.getElementById('itemUnit')?.value || '';
+  const container = document.getElementById('itemRecipients');
+  if (!container) return;
+  if (!unit) {
+    container.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">請先選擇分隊</div>';
+    return;
+  }
+  const filtered = members.filter(m => (m.unit||'') === unit);
+  if (!filtered.length) {
+    container.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">此分隊暫無成員</div>';
+    return;
+  }
+  container.innerHTML = filtered.map(m => `
+    <label class="cb-item">
+      <input type="checkbox" value="${m.name}" style="accent-color:var(--red);min-height:unset;">
+      ${m.name}
+    </label>`).join('');
+  container.querySelectorAll('.cb-item').forEach(el => {
+    el.querySelector('input').addEventListener('change', function() {
+      el.classList.toggle('checked', this.checked);
+    });
+  });
+  // 同步載入該分隊的待領清單
+  const _itemUnit = document.getElementById('itemUnit')?.value || '';
+  if (_itemUnit) loadItems(_itemUnit);
+}
+
+
+// ════════════════════════════════════════
+// 公告管理
+// ════════════════════════════════════════
+const COL_ANNOUNCE = 'announcements';
+
+// ── 首頁：載入並顯示目前有效的公告 ──
+async function loadAnnouncement() {
+  try {
+    const today = new Date().toLocaleDateString('sv');
+    const docs  = await fbList(COL_ANNOUNCE);
+    // 篩選日期範圍內且啟用的公告，置頂優先
+    const active = docs
+      .filter(d => d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today)
+      .sort((a,b) => { const p=(b.pinned?1:0)-(a.pinned?1:0); return p!==0?p:((b.startDate||'')>(a.startDate||'')?1:-1); });
+
+    const bar = document.getElementById('announcementBar');
+    if (!active.length) { if(bar) bar.style.display='none'; return; }
+
+    // 顯示橫幅公告
+    const banners = active.filter(d => !d.urgent);
+    if (banners.length && bar) {
+      bar.style.display = '';
+      bar.innerHTML = banners.map(d => `
+        <div style="background:linear-gradient(135deg,#b94a3a,#d4604f);color:white;border-radius:8px;padding:10px 16px;margin-bottom:6px;font-size:0.85rem;line-height:1.6;">
+          <div style="font-weight:700;margin-bottom:4px;">
+            ${d.pinned ? '<span style="font-size:0.72rem;background:rgba(255,255,255,0.25);border-radius:4px;padding:1px 6px;margin-right:6px;">📌 置頂</span>' : ''}
+            📢 公告
+          </div>
+          <div style="white-space:pre-wrap;font-size:0.85rem;">${d.text||''}</div>
+          <div style="font-size:0.7rem;opacity:0.7;margin-top:6px;">有效期限：${d.startDate||''} ～ ${d.endDate||''}</div>
+        </div>`).join('');
+    }
+
+    // 緊急公告彈窗（只顯示第一則未讀的）
+    const urgents = active.filter(d => d.urgent);
+    for (const u of urgents) {
+      if (!sessionStorage.getItem('urgentSeen_' + u.id)) {
+        document.getElementById('urgentText').textContent = u.text || '';
+        document.getElementById('urgentModal').style.display = 'flex';
+        document.getElementById('urgentModal').dataset.id = u.id;
+        break;
+      }
+    }
+  } catch(e) {}
+}
+
+function confirmUrgent() {
+  const modal = document.getElementById('urgentModal');
+  const id = modal.dataset.id;
+  if (id) sessionStorage.setItem('urgentSeen_' + id, '1');
+  modal.style.display = 'none';
+}
+
+// ── 後台：表單開關 ──
+function showAnnounceForm(doc) {
+  const today = new Date().toLocaleDateString('sv');
+  const nextWeek = new Date(Date.now() + 7*24*3600*1000).toLocaleDateString('sv');
+  document.getElementById('anFormId').value      = doc ? (doc.id||'') : '';
+  document.getElementById('anFormText').value    = doc ? (doc.text||'') : '';
+  document.getElementById('anFormStart').value   = doc ? (doc.startDate||today) : today;
+  document.getElementById('anFormEnd').value     = doc ? (doc.endDate||nextWeek) : nextWeek;
+  document.getElementById('anFormUrgent').checked = doc ? !!doc.urgent : false;
+  document.getElementById('anFormPinned').checked = doc ? !!doc.pinned : false;
+  document.getElementById('anFormStatus').textContent = '';
+  document.getElementById('announceForm').style.display = '';
+  document.getElementById('announceForm').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function hideAnnounceForm() {
+  document.getElementById('announceForm').style.display = 'none';
+}
+
+async function saveAnnounceForm() {
+  const id      = document.getElementById('anFormId').value;
+  const text    = document.getElementById('anFormText').value.trim();
+  const start   = document.getElementById('anFormStart').value;
+  const end     = document.getElementById('anFormEnd').value;
+  const urgent  = document.getElementById('anFormUrgent').checked;
+  const pinned  = document.getElementById('anFormPinned').checked;
+  const status  = document.getElementById('anFormStatus');
+  if (!text)  { status.style.color='var(--red)'; status.textContent='請填入公告內容'; return; }
+  if (!start || !end) { status.style.color='var(--red)'; status.textContent='請填入日期範圍'; return; }
+  if (start > end) { status.style.color='var(--red)'; status.textContent='結束日期不能早於開始日期'; return; }
+  const btn = document.querySelector('#announceForm .btn-search');
+  if (btn) { btn.textContent='發布中...'; btn.disabled=true; }
+  try {
+    // 若勾選置頂，先把其他公告的置頂取消（只能一則置頂）
+    if (pinned) {
+      const allDocs = await fbList(COL_ANNOUNCE);
+      await Promise.all(allDocs.filter(d => d.pinned && d.id !== id)
+        .map(d => fbUpdate(COL_ANNOUNCE, d.id, { pinned: false })));
+    }
+    const data = { text, startDate:start, endDate:end, urgent, pinned, active:true,
+                   updatedAt: new Date().toLocaleString('sv').replace('T',' ') };
+    if (id) { await fbSet(COL_ANNOUNCE, id, data); }
+    else    { await fbAdd(COL_ANNOUNCE, data); }
+    hideAnnounceForm();
+    await loadAdminAnnouncements();
+    loadAnnouncement();
+  } catch(e) {
+    status.style.color='var(--red)'; status.textContent='失敗：'+e.message;
+  } finally {
+    if (btn) { btn.textContent='發布公告'; btn.disabled=false; }
+  }
+}
+
+async function toggleAnnounce(id, currentActive) {
+  try {
+    await fbUpdate(COL_ANNOUNCE, id, { active: !currentActive });
+    await loadAdminAnnouncements();
+    loadAnnouncement();
+  } catch(e) { alert('操作失敗：'+e.message); }
+}
+
+async function deleteAnnounce(id, text) {
+  if (!confirm(`確定刪除公告「${text.substring(0,20)}...」？`)) return;
+  try {
+    await fbDelete(COL_ANNOUNCE, id);
+    await loadAdminAnnouncements();
+    loadAnnouncement();
+  } catch(e) { alert('刪除失敗：'+e.message); }
+}
+
+async function loadAdminAnnouncements() {
+  const el = document.getElementById('adminAnnounceList');
+  if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>';
+  try {
+    const today = new Date().toLocaleDateString('sv');
+    const docs  = await fbList(COL_ANNOUNCE);
+    docs.sort((a,b) => { const p=(b.pinned?1:0)-(a.pinned?1:0); return p!==0?p:((b.startDate||'')>(a.startDate||'')?1:-1); });
+    if (!docs.length) { el.innerHTML='<div class="query-empty"><span class="empty-icon">📢</span>尚無公告</div>'; return; }
+    el.innerHTML = '';
+    docs.forEach(d => {
+      const isActive  = d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today;
+      const isExpired = (d.endDate||'9999') < today;
+      const card = document.createElement('div');
+      card.style.cssText = `border:1px solid ${isActive ? '#a9dfbf' : 'var(--border)'};border-radius:8px;margin-bottom:10px;overflow:hidden;opacity:${isExpired?0.5:1};`;
+
+      // 頂部狀態列
+      const head = document.createElement('div');
+      head.style.cssText = `background:${isActive ? '#eafaf1' : 'var(--warm)'};padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;`;
+
+      const statusBadge = document.createElement('span');
+      statusBadge.style.cssText = `font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;background:${isActive?'#27ae60':isExpired?'#95a5a6':'#e0d5c8'};color:white;`;
+      statusBadge.textContent = isActive ? '✓ 進行中' : isExpired ? '已過期' : '未啟用';
+
+      const typeBadges = document.createElement('div');
+      typeBadges.style.cssText = 'display:flex;gap:4px;';
+      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='🚨 緊急'; typeBadges.appendChild(b); }
+      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='📌 置頂'; typeBadges.appendChild(b); }
+
+      const dateSpan = document.createElement('span');
+      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;';
+      dateSpan.textContent = `${d.startDate||''} ～ ${d.endDate||''}`;
+
+      head.appendChild(statusBadge); head.appendChild(typeBadges); head.appendChild(dateSpan);
+
+      // 內容
+      const body = document.createElement('div');
+      body.style.cssText = 'padding:10px 14px;font-size:0.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap;border-bottom:1px solid var(--border);';
+      body.textContent = d.text||'';
+
+      // 操作列
+      const foot = document.createElement('div');
+      foot.style.cssText = 'padding:8px 14px;display:flex;gap:6px;background:var(--cream);';
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '✏️ 編輯';
+      editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;min-height:unset;';
+      editBtn.addEventListener('click', () => showAnnounceForm(d));
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.textContent = d.active !== false ? '⏸ 停用' : '▶ 啟用';
+      toggleBtn.style.cssText = `background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;min-height:unset;color:${d.active!==false?'#856404':'#1a6b35'};`;
+      toggleBtn.addEventListener('click', () => toggleAnnounce(d.id, d.active !== false));
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '🗑 刪除';
+      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 12px;font-size:0.75rem;color:#b94a3a;cursor:pointer;min-height:unset;';
+      delBtn.addEventListener('click', () => deleteAnnounce(d.id, d.text||''));
+
+      foot.appendChild(editBtn); foot.appendChild(toggleBtn); foot.appendChild(delBtn);
+      card.appendChild(head); card.appendChild(body); card.appendChild(foot);
+      el.appendChild(card);
+    });
+  } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：'+e.message+'</div>'; }
+}
+
+
+// ════════════════════════════════════════
+// 成員管理頁（公開瀏覽）
+// ════════════════════════════════════════
+async function initMembersPage() {
+  const container = document.getElementById('memberListContainer');
+  const sel = document.getElementById('memberFilterUnit');
+  if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>載入中...</div>';
+
+  try {
+    await Promise.all([fbList(COL_WHITELIST).then(docs => {
+      members = docs.map(d => ({
+        id: d.id, name: d.memberName||'', title: d.title||'',
+        unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'',
+        role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
+      })).filter(m => m.name);
+    }), loadUnits()]);
+  } catch(e) {
+    if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>Firebase 連線失敗：' + e.message + '</div>';
+    return;
+  }
+
+  if (sel) {
+    sel.innerHTML = '<option value="">請選擇分隊</option>' +
+      _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    if (usr.unit) { sel.value = usr.unit; filterMemberList(); return; }
+  }
+  if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
+}
+
+function filterMemberList() {
+  const unit = (document.getElementById('memberFilterUnit')?.value || '').trim();
+  const container = document.getElementById('memberListContainer');
+  if (!container) return;
+  if (!unit) {
+    container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
+    return;
+  }
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+  const filtered = members.filter(m => (m.unit||'').trim() === unit.trim());
+  if (!filtered.length) {
+    container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>此分隊暫無成員</div>';
+    return;
+  }
+  filtered.sort(function(a, b) {
+    // 承辦人排最下面
+    const aIsOfficer = a.role === 'officer' || a.title === '分隊承辦人';
+    const bIsOfficer = b.role === 'officer' || b.title === '分隊承辦人';
+    if (aIsOfficer !== bIsOfficer) return aIsOfficer ? 1 : -1;
+    var ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
+    if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
+    return (a.name||'') > (b.name||'') ? 1 : -1;
+  });
+
+  // 一般成員（排除承辦人，管理員仍算在人數內）
+  const regularMembers  = filtered.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人');
+  const officerMembers  = filtered.filter(m => m.role === 'officer' || m.title === '分隊承辦人');
+
+  var rows = '';
+  var idx = 1;
+  filtered.forEach(function(m) {
+    const isOfficer = m.role === 'officer' || m.title === '分隊承辦人';
+    const isAdmin   = m.role === 'admin';
+    var cert = m.cert
+      ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 8px;">' + m.cert + '</span>'
+      : '<span style="font-size:0.68rem;color:var(--text-light);">—</span>';
+    var bg = isOfficer ? '#fdf0ff' : (idx % 2 === 0 ? 'white' : 'var(--warm)');
+    var nameCell = (m.name||'—');
+    if (isOfficer) nameCell += ' <span style="font-size:0.65rem;background:#f0e6ff;color:#8e44ad;border-radius:4px;padding:1px 5px;font-weight:600;">承辦人</span>';
+    if (isAdmin)   nameCell += ' <span style="font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:4px;padding:1px 5px;font-weight:600;">管理員</span>';
+    var numCell = isOfficer ? '<span style="color:var(--text-light);">—</span>' : idx++;
+    rows += '<tr style="background:' + bg + ';">'
+      + '<td style="padding:11px 8px;text-align:center;font-size:0.78rem;color:var(--text-light);font-weight:500;">' + numCell + '</td>'
+      + '<td style="padding:11px 14px;font-weight:600;font-size:0.88rem;">' + nameCell + '</td>'
+      + '<td style="padding:11px 14px;font-size:0.83rem;color:var(--text-mid);">' + (m.title||'—') + '</td>'
+      + '<td style="padding:11px 14px;">' + cert + '</td>'
+      + '</tr>';
+  });
+
+  const countStr = '共 ' + regularMembers.length + ' 人'
+    + (officerMembers.length ? '（另有承辦人 ' + officerMembers.length + ' 位）' : '');
+
+  container.innerHTML =
+    '<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);">'
+    + '<div style="padding:8px 14px;font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);border-bottom:1px solid var(--border);">' + countStr + '</div>'
+    + '<table style="width:100%;border-collapse:collapse;">'
+    + '<thead><tr style="background:var(--red);color:white;">'
+    + '<th style="padding:10px 8px;text-align:center;font-size:0.78rem;font-weight:600;width:36px;">#</th>'
+    + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">姓名</th>'
+    + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">職稱</th>'
+    + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">證照</th>'
+    + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table>'
+    + '</div>';
+}
+
+// ════════════════════════════════════════
+// 意見回饋（改版）
+// ════════════════════════════════════════
+async function initFeedbackPage() {
+  await Promise.all([loadMembers(), loadUnits()]);
+  const sel = document.getElementById('fbUnit');
+  if (sel) {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const _isAdmin  = usr.isAdmin  || false;
+    const _userUnit = usr.unit || '';
+    if (_isAdmin) {
+      sel.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
+      sel.disabled = false;
+    } else {
+      sel.innerHTML = `<option value="${_userUnit}">${_userUnit}</option>`;
+      sel.disabled = true;
+      // 自動帶入成員選單
+      if (_userUnit) {
+        sel.value = _userUnit;
+        onFbUnitChange();
+      }
+    }
+  }
+}
+
+async function onFbUnitChange() {
+  const unit = document.getElementById('fbUnit')?.value || '';
+  const nameSel = document.getElementById('fbName');
+  if (!nameSel) return;
+  if (!unit) { nameSel.innerHTML = '<option value="">請先選分隊</option>'; return; }
+  const filtered = members.filter(m => m.unit === unit);
+  nameSel.innerHTML = '<option value="">請選擇成員</option>' +
+    filtered.map(m=>`<option value="${m.name}">${m.name}（${m.title||''}）</option>`).join('');
+}
+
+function selectFbSender(val) {
+  document.getElementById(val === 'anon' ? 'fbAnon' : 'fbNamed').checked = true;
+  const named = val === 'named';
+  const f = document.getElementById('fbNameField');
+  if (f) f.style.display = named ? '' : 'none';
+  // 卡片樣式
+  const anonL  = document.getElementById('fbAnonLabel');
+  const namedL = document.getElementById('fbNamedLabel');
+  if (anonL) {
+    anonL.style.border  = !named ? '2px solid var(--red)' : '2px solid var(--border)';
+    anonL.style.background = !named ? 'var(--red-faint)' : 'white';
+    anonL.querySelector('span:nth-child(2)').style.color = !named ? 'var(--red)' : 'var(--text-mid)';
+  }
+  if (namedL) {
+    namedL.style.border  = named ? '2px solid #2980b9' : '2px solid var(--border)';
+    namedL.style.background = named ? '#eaf4fb' : 'white';
+    namedL.querySelector('span:nth-child(2)').style.color = named ? '#1a5a8a' : 'var(--text-mid)';
+  }
+}
+
+function toggleFbSender() { selectFbSender(document.getElementById('fbNamed').checked ? 'named' : 'anon'); }
+
+function selectFbCat(el) {
+  document.querySelectorAll('.fb-cat-btn').forEach(b => {
+    b.style.border = '1.5px solid var(--border)';
+    b.style.background = 'white';
+    b.style.color = 'var(--text-mid)';
+    b.style.fontWeight = '500';
+  });
+  el.style.border = '1.5px solid var(--red)';
+  el.style.background = 'var(--red-faint)';
+  el.style.color = 'var(--red)';
+  el.style.fontWeight = '600';
+  el.querySelector('input').checked = true;
+}
+
+async function submitFeedback() {
+  const unit = document.getElementById('fbUnit')?.value || '';
+  const body = (document.getElementById('fbContent').value||'').trim();
+  if (!unit) { alert('請選擇分隊別'); return; }
+  if (!body) { alert('請填寫意見內容'); return; }
+  const isAnon   = document.getElementById('fbAnon').checked;
+  const category = document.getElementById('fbCategory').value;
+  const name     = isAnon ? '匿名' : (document.getElementById('fbName')?.value||'匿名');
+  const timeStr  = new Date().toLocaleString('sv').replace('T',' ');
+  const btn    = document.querySelector('#feedbackPage .btn-submit');
+  const status = document.getElementById('fbStatus');
+  if (btn) { btn.textContent='送出中...'; btn.disabled=true; }
+  try {
+    await fbAdd(COL_FEEDBACK, { name, unit, category, content: body, time: timeStr, isAnon });
+    document.getElementById('fbContent').value='';
+    document.getElementById('fbAnon').checked=true;
+    toggleFbSender();
+    if (status) {
+      status.style.cssText='display:block;color:#1a6b35;background:#f0faf4;border-radius:6px;padding:10px;';
+      status.textContent='✓ 感謝您的意見，已成功送出！';
+      setTimeout(()=>{status.style.display='none';},3000);
+    }
+  } catch(e) {
+    if (status) { status.style.cssText='display:block;color:var(--red);background:#fff5f5;border-radius:6px;padding:10px;'; status.textContent='送出失敗：'+e.message; }
+  } finally {
+    if (btn) { btn.textContent='送出意見'; btn.disabled=false; }
+  }
+}
+
+// ════════════════════════════════════════
+// 管理員後台意見回饋（依角色篩選）
+// ════════════════════════════════════════
+async function loadAdminFeedback() {
+  const el=document.getElementById('adminFeedbackList'); if(!el)return;
+  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    let docs=await fbList(COL_FEEDBACK);
+    // 分隊承辦人只能看自己分隊
+    const u=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    if (!u.isAdmin) {
+      docs = docs.filter(d => d.unit === u.unit);
+    }
+    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">尚無意見</div>';return;}
+    docs.sort((a,b)=>(b.time||'')>(a.time||'')?1:-1);
+    el.innerHTML=docs.map(d=>`
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span style="font-size:0.78rem;background:var(--warm);border-radius:10px;padding:2px 10px;color:var(--text-mid);">${d.category||'其他'}</span>
+          ${d.unit?`<span style="font-size:0.72rem;color:#1a6b9a;">${d.unit}</span>`:''}
+          <span style="font-weight:500;font-size:0.88rem;">${d.name||'匿名'}</span>
+          <span style="font-size:0.75rem;color:var(--text-light);margin-left:auto;">${(d.time||'').substring(0,16)}</span>
+          <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 8px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">刪</button>
+        </div>
+        <div style="font-size:0.85rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">${d.content||''}</div>
+      </div>`).join('');
+  } catch(e){el.innerHTML='載入失敗：'+e.message;}
+}
+
+
+// ════════════════════════════════════════
+// 版本修改紀錄（前台動態載入）
+// ════════════════════════════════════════
+async function loadChangelog() {
+  const el = document.getElementById('changelogList');
+  if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📝</span>載入中...</div>';
+  try {
+    let docs = await fbList(COL_CHANGELOG);
+    // 跟後台一樣：先依 order 排，order 相同再依日期倒序
+    docs.sort(function(a,b){
+      // isLatest 永遠排第一，其餘依日期倒序
+      if (a.isLatest && !b.isLatest) return -1;
+      if (!a.isLatest && b.isLatest) return 1;
+      return (b.date||'') > (a.date||'') ? 1 : (b.date||'') < (a.date||'') ? -1 : 0;
+    });
+    if (!docs.length) {
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📝</span>尚無版本紀錄</div>';
+      return;
+    }
+    var html = '';
+    docs.forEach(function(d, idx) {
+      var isLatest = !!d.isLatest;
+      var itemsHtml = (d.items||[]).map(function(it) {
+        var detail = (it.detail||'').replace(/\n/g, '<br>');
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--warm);">'
+          + '<div style="margin-bottom:5px;">'
+          + '<span style="font-size:0.68rem;background:' + (isLatest?'var(--red)':'#6c757d') + ';color:white;border-radius:10px;padding:2px 9px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">'
+          + (it.subtitle||'')
+          + '</span>'
+          + '</div>'
+          + '<div style="font-size:0.83rem;color:var(--text);line-height:1.7;">' + detail + '</div>'
+          + '</div>';
+      }).join('');
+
+      // 版本 emoji
+      var verEmoji = isLatest ? '🆕 ' : '📋 ';
+
+      html += '<div class="result-card" style="margin-bottom:16px;' + (isLatest ? 'border:2px solid var(--red);box-shadow:0 4px 16px rgba(185,74,58,0.12);' : '') + '">'
+        // 版本標頭
+        + '<div style="background:' + (isLatest ? 'linear-gradient(135deg,var(--red),#c0392b)' : 'var(--warm)') + ';padding:14px 16px;border-radius:6px 6px 0 0;">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">'
+        + '<div>'
+        + '<div style="display:flex;align-items:center;gap:8px;">'
+        + '<span style="font-size:1.1rem;font-weight:800;color:' + (isLatest?'white':'var(--text)') + ';font-family:monospace;">' + verEmoji + (d.version||'') + '</span>'
+        + (isLatest ? '<span style="font-size:0.65rem;background:white;color:var(--red);border-radius:10px;padding:2px 8px;font-weight:700;">LATEST</span>' : '')
+        + '</div>'
+        + '<div style="font-size:0.78rem;color:' + (isLatest?'rgba(255,255,255,0.8)':'var(--text-light)') + ';margin-top:3px;">📅 ' + (d.date||'') + '</div>'
+        + '</div>'
+        + '<div style="font-size:0.85rem;font-weight:600;color:' + (isLatest?'rgba(255,255,255,0.9)':'var(--text-mid)') + ';text-align:right;">' + (d.title||'') + '</div>'
+        + '</div>'
+        + '</div>'
+        // 內容
+        + '<div style="padding:4px 16px 12px;">'
+        + (itemsHtml || '<div style="color:var(--text-light);font-size:0.83rem;padding:12px 0;">（無內容）</div>')
+        + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
+  }
+}
+
+// ── 後台版本紀錄管理 ──
+var _clItems = [];
+var _clEditingId = null;  // 目前展開編輯的版本 id（null = 新增）
+
+// 把表單狀態填入目標容器（新增用頂部容器、編輯用各卡片內嵌容器）
+function _fillChangelogForm(container, doc) {
+  var today = new Date().toLocaleDateString('sv');
+  container.innerHTML = '';
+  container.style.display = '';
+
+  var formId      = doc ? (doc.id||'') : '';
+  var formVersion = doc ? (doc.version||'') : '';
+  var formDate    = doc ? (doc.date||today) : today;
+  var formTitle   = doc ? (doc.title||'') : '';
+  var formLatest  = doc ? !!doc.isLatest : false;
+  _clItems        = doc ? JSON.parse(JSON.stringify(doc.items||[])) : [];
+
+  // 版本 / 日期 row
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;';
+  var fVer = _mkField('版本號 *', 'text',  formVersion, '例：v1.6.0', 'cl-ver-'+formId);
+  var fDat = _mkField('日期 *',   'date',  formDate,    '',           'cl-dat-'+formId);
+  grid.appendChild(fVer); grid.appendChild(fDat);
+  container.appendChild(grid);
+
+  // 標題
+  var fTit = _mkField('標題 *', 'text', formTitle, '例：Firebase 全面整合', 'cl-tit-'+formId);
+  fTit.style.marginBottom = '10px';
+  container.appendChild(fTit);
+
+  // 項目區
+  var itemsLabel = document.createElement('div');
+  itemsLabel.style.cssText = 'font-size:0.78rem;color:var(--text-mid);margin-bottom:6px;font-weight:600;';
+  itemsLabel.textContent = '內容項目';
+  container.appendChild(itemsLabel);
+
+  var itemsContainer = document.createElement('div');
+  itemsContainer.id = 'clItems-' + (formId||'new');
+  itemsContainer.style.marginBottom = '8px';
+  container.appendChild(itemsContainer);
+
+  var addItemBtn = document.createElement('button');
+  addItemBtn.textContent = '＋ 新增項目';
+  addItemBtn.style.cssText = 'background:none;border:1px dashed var(--border);border-radius:6px;padding:6px;font-size:0.78rem;cursor:pointer;width:100%;color:var(--text-mid);font-family:"Noto Sans TC",sans-serif;min-height:unset;';
+  addItemBtn.addEventListener('click', function() {
+    _clItems.push({ subtitle:'', detail:'' });
+    _renderClItems(itemsContainer);
+  });
+  container.appendChild(addItemBtn);
+
+  // 最新版本 checkbox + 儲存/取消
+  var footer = document.createElement('div');
+  footer.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:12px;';
+
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = '儲存';
+  saveBtn.className = 'btn-search';
+  saveBtn.style.cssText = 'flex:1;min-height:unset;';
+  saveBtn.addEventListener('click', function() {
+    var version = container.querySelector('[data-cl="ver"]').value.trim();
+    var date    = container.querySelector('[data-cl="dat"]').value;
+    var title   = container.querySelector('[data-cl="tit"]').value.trim();
+    var latest  = container.querySelector('[data-cl="lat"]').checked;
+    _saveChangelogInline(formId, version, date, title, latest, saveBtn, container, !!doc);
+  });
+
+  var cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '取消';
+  cancelBtn.className = 'btn-reset';
+  cancelBtn.style.cssText = 'min-height:unset;';
+  cancelBtn.addEventListener('click', function() {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    if (doc) {
+      // 編輯：恢復 infoRow（包含 actions）
+      var card = container.parentElement;
+      var infoEl = card.querySelector('.cl-info');
+      if (infoEl) infoEl.style.display = 'flex';
+    }
+    _clItems = [];
+  });
+
+  var latestLabel = document.createElement('label');
+  latestLabel.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:0.8rem;cursor:pointer;font-weight:400;white-space:nowrap;color:var(--red);';
+  var latestCb = document.createElement('input');
+  latestCb.type = 'checkbox';
+  latestCb.setAttribute('data-cl','lat');
+  latestCb.style.accentColor = 'var(--red)';
+  latestCb.checked = formLatest;
+  latestLabel.appendChild(latestCb);
+  latestLabel.appendChild(document.createTextNode('標為最新版本'));
+
+  footer.appendChild(saveBtn);
+  footer.appendChild(cancelBtn);
+  footer.appendChild(latestLabel);
+  container.appendChild(footer);
+
+  _renderClItems(itemsContainer);
+}
+
+// helper: 建立一個 label+input 的 field div
+function _mkField(labelText, type, value, placeholder, id) {
+  var wrap = document.createElement('div');
+  wrap.className = 'field';
+  wrap.style.margin = '0';
+  var lbl = document.createElement('label');
+  lbl.style.fontSize = '0.78rem';
+  lbl.textContent = labelText;
+  var inp = document.createElement('input');
+  inp.type = type;
+  inp.value = value;
+  inp.placeholder = placeholder;
+  inp.style.width = '100%';
+  // data 屬性方便之後讀取
+  if (labelText.includes('版本')) inp.setAttribute('data-cl','ver');
+  if (labelText.includes('日期')) inp.setAttribute('data-cl','dat');
+  if (labelText.includes('標題')) inp.setAttribute('data-cl','tit');
+  wrap.appendChild(lbl);
+  wrap.appendChild(inp);
+  return wrap;
+}
+
+// 渲染項目列表到指定容器
+function _renderClItems(container) {
+  container.innerHTML = '';
+  if (!_clItems.length) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--text-light);font-size:0.82rem;text-align:center;padding:8px 0;';
+    empty.textContent = '尚無項目，點下方按鈕新增';
+    container.appendChild(empty);
+    return;
+  }
+  _clItems.forEach(function(it, i) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;';
+
+    var col = document.createElement('div');
+    col.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:6px;';
+
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = '小標題（例：Firebase 整合）';
+    inp.value = it.subtitle || '';
+    inp.style.cssText = 'width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:"Noto Sans TC",sans-serif;';
+    inp.addEventListener('input', function() { _clItems[i].subtitle = this.value; });
+
+    var ta = document.createElement('textarea');
+    ta.placeholder = '詳細說明（可換行）...';
+    ta.rows = 2;
+    ta.value = it.detail || '';
+    ta.style.cssText = 'width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;resize:vertical;font-family:"Noto Sans TC",sans-serif;';
+    ta.addEventListener('input', function() { _clItems[i].detail = this.value; });
+
+    var delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:5px 9px;color:#b94a3a;cursor:pointer;font-size:0.8rem;min-height:unset;flex-shrink:0;margin-top:2px;';
+    delBtn.addEventListener('click', function() { _clItems.splice(i,1); _renderClItems(container); });
+
+    col.appendChild(inp); col.appendChild(ta);
+    row.appendChild(col); row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
+async function _saveChangelogInline(id, version, date, title, isLatest, btn, formEl, isEdit) {
+  if (!version || !date || !title) { alert('請填入版本號、日期、標題'); return; }
+  btn.textContent = '儲存中...'; btn.disabled = true;
+  try {
+    if (isLatest) {
+      var all = await fbList(COL_CHANGELOG);
+      await Promise.all(all.filter(function(d){ return d.id !== id && d.isLatest; })
+        .map(function(d){ return fbUpdate(COL_CHANGELOG, d.id, { isLatest:false }); }));
+    }
+    var data = { version:version, date:date, title:title, items:_clItems, isLatest:isLatest };
+    if (id) { await fbSet(COL_CHANGELOG, id, data); }
+    else    { var newId = await fbAdd(COL_CHANGELOG, data); }
+    _clItems = [];
+    formEl.style.display = 'none';
+    await loadAdminChangelog();
+    loadChangelog();
+    initFootersWithVersion(); // 同步更新底部版本號
+  } catch(e) { alert('儲存失敗：'+e.message); }
+  finally { btn.textContent = '儲存'; btn.disabled = false; }
+}
+
+// 上下移排序（交換 order 欄位）
+var _clDocs = [];
+async function _moveChangelog(idx, dir) {
+  var swapIdx = idx + dir;
+  if (swapIdx < 0 || swapIdx >= _clDocs.length) return;
+  var a = _clDocs[idx], b = _clDocs[swapIdx];
+  var aOrder = a.order !== undefined ? a.order : idx;
+  var bOrder = b.order !== undefined ? b.order : swapIdx;
+  try {
+    await Promise.all([
+      fbUpdate(COL_CHANGELOG, a.id, { order: bOrder }),
+      fbUpdate(COL_CHANGELOG, b.id, { order: aOrder }),
+    ]);
+    await loadAdminChangelog();
+    loadChangelog();
+  } catch(e) { alert('排序失敗：'+e.message); }
+}
+
+// 自動插入 v1.9.02 版本紀錄（若尚未存在）
+async function seedChangelog_v1902() {
+  try {
+    const docs = await fbList(COL_CHANGELOG);
+    if (docs.some(d => d.version === 'v1.9.02')) return; // 已存在，跳過
+
+    // 先把其他 isLatest 清除
+    await Promise.all(docs.filter(d => d.isLatest)
+      .map(d => fbUpdate(COL_CHANGELOG, d.id, { isLatest: false })));
+
+    await fbAdd(COL_CHANGELOG, {
+      version: 'v1.9.02',
+      date: '2026-04-24',
+      title: '備勤排班全新上線',
+      isLatest: true,
+      items: [
+        { subtitle: '📅 全新備勤排班頁面', detail: '新增「備勤排班」分頁（側邊欄 / 首頁快速入口），支援月視圖與班表明細兩種瀏覽模式' },
+        { subtitle: '📋 班表明細', detail: '每日時段以 4 欄格子呈現（06:00–22:00），顯示值班人姓名、剩餘名額、顏色區分（額滿紅 / 部分橙 / 雙人綠 / 一般藍），支援每日快速新增、編輯、刪除' },
+        { subtitle: '📅 月視圖', detail: '月曆格子顯示「剩餘/總時段」，額滿紅框提醒，定訓日顯示主題紫標，假日底色標示，點擊直接跳轉班表明細' },
+        { subtitle: '🚫 定訓時段封鎖', detail: '自動從後台「定訓行事曆」讀取定訓日期，當日 18:00–22:00 封鎖無法排班，格子顯示主題名稱' },
+        { subtitle: '📆 次月開放規則', detail: '每月 20 日起開放填寫次月班表；本月班表全月開放；超出範圍日期標示「未開放」' },
+        { subtitle: '👥 成員過濾', detail: '備勤排班只顯示潭子分隊成員' },
+        { subtitle: '⏰ 容量規則', detail: '一般時段限 1 人；每日 15:00–20:00 及假日 08:00–20:00 可排 2 人；定訓時段容量為 0' },
+        { subtitle: '🔧 後台定訓行事曆', detail: '新增定訓排程後支援編輯與刪除，彈出視窗風格與其他後台一致' },
+        { subtitle: '🔧 Header 捲動修正', detail: '點擊頂部 Header 可回到頁面最上方（模仿 iOS 點狀態列行為）；Tab 列正確緊貼 Header 下方' },
+        { subtitle: '🔧 各分頁補全標題', detail: '意見回饋、成員管理、定訓與公告等頁面補上圈圈＋標題樣式，風格統一' },
+      ]
+    });
+
+    await loadAdminChangelog();
+    initFootersWithVersion();
+  } catch(e) {
+    console.warn('seedChangelog_v1902 失敗：', e.message);
+  }
+}
+
+// ════════════════════════════════════════
+// LINE 瀏覽器偵測
+// ════════════════════════════════════════
+(function() {
+  if (/Line\//i.test(navigator.userAgent || '')) {
+    const el = document.getElementById('lineWarning');
+    if (el) el.style.display = '';
+  }
+})();
+
+// ════════════════════════════════════════
+// 臨時密碼登入
+// ════════════════════════════════════════
+const COL_TEMP_PASS = 'tempPasswords';
+
+async function loginWithTempPass() {
+  const code    = (document.getElementById('tempPassInput')?.value || '').trim();
+  const errEl   = document.getElementById('tempPassError');
+  const spinner = document.getElementById('loginSpinner');
+  if (!code) { showTempPassErr('請輸入臨時密碼'); return; }
+  errEl.style.display = 'none';
+  spinner.style.display = '';
+  spinner.textContent = '⏳ 驗證中...';
+  try {
+    await ensureFirebase();
+    const now  = Date.now();
+    const snap = await _fbDB.collection(COL_TEMP_PASS)
+      .where('code', '==', code).where('active', '==', true).get();
+    if (snap.empty) { spinner.style.display='none'; showTempPassErr('密碼不正確或已失效'); return; }
+    const doc  = snap.docs[0];
+    const data = doc.data();
+    if (data.expiresAt && data.expiresAt.toMillis() < now) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已過期'); return;
+    }
+    if (data.maxUses > 0 && data.usedCount >= data.maxUses) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已達使用上限'); return;
+    }
+    const memberSnap = await _fbDB.collection('whitelist').where('memberName','==',data.memberName).get();
+    if (memberSnap.empty) { spinner.style.display='none'; showTempPassErr('找不到對應成員資料'); return; }
+    const member = memberSnap.docs[0].data();
+    await doc.ref.update({
+      usedCount: (data.usedCount || 0) + 1,
+      lastUsedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      active: data.maxUses > 0 && (data.usedCount + 1) >= data.maxUses ? false : true,
+    });
+    const sessionUser = {
+      email: member.email || '', name: member.memberName, memberName: member.memberName,
+      isAdmin: member.isAdmin || false, isOfficer: member.isOfficer || false,
+      role: member.role || 'member', unit: member.unit || '',
+      loginAt: Date.now(), loginMethod: 'tempPass',
+    };
+    sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
+    spinner.style.display = 'none';
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
+  } catch(e) {
+    spinner.style.display = 'none';
+    showTempPassErr('驗證失敗：' + e.message);
+  }
+}
+
+function showTempPassErr(msg) {
+  const el = document.getElementById('tempPassError');
+  if (el) { el.textContent = msg; el.style.display = ''; }
+}
+
+
+// ════════════════════════════════════════
+// 臨時密碼管理（後台）
+// ════════════════════════════════════════
+function tpGenerate() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('tpCode').value = code;
+}
+
+async function initTempPassSection() {
+  // 分隊別選單
+  const unitSel = document.getElementById('tpUnit');
+  if (unitSel) {
+    unitSel.innerHTML = '<option value="">請選擇分隊別</option>' +
+      _unitsList.map(u => '<option value="'+u+'">'+u+'</option>').join('');
+  }
+  document.getElementById('tpMember').innerHTML = '<option value="">— 請先選擇分隊別 —</option>';
+  await loadTempPassList();
+}
+
+function filterTpMembers() {
+  const unit = document.getElementById('tpUnit')?.value || '';
+  const sel  = document.getElementById('tpMember');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊別 —</option>'; return; }
+  const filtered = members.filter(m => (m.unit||'') === unit);
+  sel.innerHTML = '<option value="">請選擇成員</option>' +
+    filtered.map(m => '<option value="'+m.name+'">'+m.name+(m.title?'（'+m.title+'）':'')+'</option>').join('');
+}
+
+async function addTempPass() {
+  const memberName = document.getElementById('tpMember').value;
+  const code       = document.getElementById('tpCode').value.trim().toUpperCase();
+  const expiryHrs  = parseInt(document.getElementById('tpExpiry').value);
+  const maxUses    = parseInt(document.getElementById('tpUses').value);
+  const note       = document.getElementById('tpNote').value.trim();
+  if (!memberName) { alert('請選擇綁定成員'); return; }
+  if (!code || code.length < 4) { alert('密碼至少需要 4 個字元'); return; }
+  const existing = await _fbDB.collection(COL_TEMP_PASS).where('code','==',code).where('active','==',true).get();
+  if (!existing.empty) { alert('此密碼已被使用中，請換一組'); return; }
+  const expiresAt = new Date(Date.now() + expiryHrs*3600*1000);
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  try {
+    await fbAdd(COL_TEMP_PASS, {
+      code, memberName, maxUses, note,
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      usedCount: 0, active: true,
+      createdBy: usr.memberName||'',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.getElementById('tpCode').value   = '';
+    document.getElementById('tpNote').value   = '';
+    document.getElementById('tpMember').value = '';
+    await loadTempPassList();
+    alert('✅ 臨時密碼「'+code+'」建立成功\n有效期：'+expiryHrs+' 小時\n可使用：'+(maxUses===0?'無限制':maxUses+'次'));
+  } catch(e) { alert('建立失敗：'+e.message); }
+}
+
+async function loadTempPassList() {
+  const el = document.getElementById('tempPassList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
+  try {
+    const docs = await fbList(COL_TEMP_PASS, 'createdAt', 'desc');
+    const now  = Date.now();
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無臨時密碼</div>'; return; }
+    el.innerHTML = '';
+    docs.slice(0,30).forEach(d => {
+      const expired  = d.expiresAt?.toMillis() < now;
+      const maxed    = d.maxUses > 0 && d.usedCount >= d.maxUses;
+      const inactive = !d.active || expired || maxed;
+      const expStr   = d.expiresAt?.toDate ? d.expiresAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);opacity:'+(inactive?'0.5':'1')+';';
+      row.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">'
+        +'<div style="display:flex;align-items:center;gap:8px;">'
+        +'<code style="background:'+(inactive?'#f0f0f0':'#fff3cd')+';border:1px solid '+(inactive?'#ddd':'#ffc107')+';border-radius:6px;padding:3px 10px;font-size:1rem;font-weight:700;letter-spacing:2px;color:'+(inactive?'#999':'#856404')+';">'+d.code+'</code>'
+        +'<span style="font-size:0.82rem;font-weight:600;color:var(--text);">'+d.memberName+'</span></div>'
+        +'<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:'+(inactive?'#f0f0f0':'#eafaf1')+';color:'+(inactive?'#999':'#1a6b35')+';"> '+(inactive?'已失效':'使用中')+'</span></div>'
+        +'<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
+        +'<span>⏰ '+expStr+'</span>'
+        +'<span>📊 '+d.usedCount+'/'+(d.maxUses===0?'∞':d.maxUses)+'</span>'
+        +(d.note?'<span>📝 '+d.note+'</span>':'')+'</div>'
+        +(!inactive?'<div style="margin-top:6px;"><button onclick="revokeTempPass(&quot;'+d.id+'&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">撤銷</button></div>':'');
+      el.appendChild(row);
+    });
+  } catch(e) { el.innerHTML = '<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：'+e.message+'</div>'; }
+}
+
+async function revokeTempPass(id) {
+  if (!confirm('確定撤銷這組臨時密碼？')) return;
+  try {
+    await fbUpdate(COL_TEMP_PASS, id, { active: false });
+    await loadTempPassList();
+  } catch(e) { alert('撤銷失敗：'+e.message); }
+}
+
+async function loadAdminChangelog() {
+  var el = document.getElementById('adminChangelogList');
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    // 先取全部，再依 order（若無則日期倒序）排列
+    var docs = await fbList(COL_CHANGELOG);
+    docs.sort(function(a,b){
+      // isLatest 永遠排第一，其餘依日期倒序
+      if (a.isLatest && !b.isLatest) return -1;
+      if (!a.isLatest && b.isLatest) return 1;
+      return (b.date||'') > (a.date||'') ? 1 : (b.date||'') < (a.date||'') ? -1 : 0;
+    });
+    _clDocs = docs;
+
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">尚無版本紀錄</div>'; return; }
+    el.innerHTML = '';
+
+    docs.forEach(function(d, idx) {
+      var card = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;';
+
+      // ── 資訊列（正常顯示狀態）──
+      var infoRow = document.createElement('div');
+      infoRow.className = 'cl-info';
+      infoRow.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--warm);';
+
+      // 上下（左右）箭頭
+      var arrows = document.createElement('div');
+      arrows.style.cssText = 'display:flex;flex-direction:row;gap:4px;flex-shrink:0;';
+      var upBtn = document.createElement('button');
+      upBtn.textContent = '▲';
+      upBtn.title = '上移';
+      upBtn.style.cssText = 'background:var(--warm);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.85rem;color:var(--text-mid);padding:5px 10px;min-height:unset;line-height:1;transition:all 0.15s;';
+      upBtn.disabled = idx === 0;
+      if (idx === 0) upBtn.style.opacity = '0.25';
+      upBtn.addEventListener('mouseover', function(){ if(!this.disabled) this.style.background='var(--red-faint)'; });
+      upBtn.addEventListener('mouseout',  function(){ this.style.background='var(--warm)'; });
+      upBtn.addEventListener('click', (function(i){ return function(){ _moveChangelog(i, -1); }; })(idx));
+
+      var dnBtn = document.createElement('button');
+      dnBtn.textContent = '▼';
+      dnBtn.title = '下移';
+      dnBtn.style.cssText = 'background:var(--warm);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.85rem;color:var(--text-mid);padding:5px 10px;min-height:unset;line-height:1;transition:all 0.15s;';
+      dnBtn.disabled = idx === docs.length - 1;
+      if (idx === docs.length - 1) dnBtn.style.opacity = '0.25';
+      dnBtn.addEventListener('mouseover', function(){ if(!this.disabled) this.style.background='var(--red-faint)'; });
+      dnBtn.addEventListener('mouseout',  function(){ this.style.background='var(--warm)'; });
+      dnBtn.addEventListener('click', (function(i){ return function(){ _moveChangelog(i, 1); }; })(idx));
+
+      arrows.appendChild(upBtn); arrows.appendChild(dnBtn);
+
+      // 版本資訊文字
+      var info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0;';
+      var vRow = document.createElement('div');
+      vRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+      var vSpan = document.createElement('span');
+      vSpan.style.cssText = 'font-weight:700;font-size:0.92rem;';
+      vSpan.textContent = d.version||'';
+      vRow.appendChild(vSpan);
+      if (d.isLatest) {
+        var badge = document.createElement('span');
+        badge.style.cssText = 'font-size:0.65rem;background:var(--red);color:white;border-radius:3px;padding:0 5px;';
+        badge.textContent = '最新';
+        vRow.appendChild(badge);
+      }
+      var dSpan = document.createElement('span');
+      dSpan.style.cssText = 'font-size:0.8rem;color:var(--text-light);';
+      dSpan.textContent = d.date||'';
+      vRow.appendChild(dSpan);
+      var titleDiv = document.createElement('div');
+      titleDiv.style.cssText = 'font-size:0.82rem;color:var(--text-mid);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      titleDiv.textContent = (d.title||'') + '　(' + (d.items||[]).length + ' 項)';
+      info.appendChild(vRow); info.appendChild(titleDiv);
+
+      // 編輯 / 刪除按鈕
+      var actions = document.createElement('div');
+      actions.className = 'cl-actions';
+      actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+      var editBtn = document.createElement('button');
+      editBtn.textContent = '✏️ 編輯';
+      editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:0.75rem;cursor:pointer;white-space:nowrap;min-height:unset;';
+      var delBtn = document.createElement('button');
+      delBtn.textContent = '刪除';
+      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:5px 12px;font-size:0.75rem;color:#b94a3a;cursor:pointer;white-space:nowrap;min-height:unset;';
+      delBtn.addEventListener('click', (function(doc){ return function(){ adminDel(COL_CHANGELOG, doc.id, '版本 '+doc.version, loadAdminChangelog); }; })(d));
+      actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+      infoRow.appendChild(arrows); infoRow.appendChild(info); infoRow.appendChild(actions);
+
+      // ── 內嵌編輯表單（預設隱藏）──
+      var formEl = document.createElement('div');
+      formEl.style.cssText = 'display:none;padding:16px;background:var(--cream);border-top:1px solid var(--border);';
+
+      // 點編輯按鈕：填入表單並展開
+      editBtn.addEventListener('click', (function(doc, formEl, infoRow){
+        return function() {
+          _clItems = [];
+          _fillChangelogForm(formEl, doc);
+          infoRow.style.display = 'none';
+          formEl.style.display = '';
+          formEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        };
+      })(d, formEl, infoRow));
+
+      card.appendChild(infoRow);
+      card.appendChild(formEl);
+      el.appendChild(card);
+    });
+  } catch(e) { el.innerHTML = '載入失敗：'+e.message; }
+}
+
+// 舊的 showChangelogForm / hideChangelogForm / saveChangelog / renderClFormItems / addChangelogItem 保留供「新增版本」按鈕用
+function showChangelogForm(doc) {
+  if (doc) return; // 編輯走內嵌，只有 null（新增）走這裡
+  var container = document.getElementById('changelogForm');
+  _fillChangelogForm(container, null);
+  container.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function hideChangelogForm() {
+  var container = document.getElementById('changelogForm');
+  container.style.display = 'none';
+  container.innerHTML = '';
+  _clItems = [];
+}
+// 以下舊函式不再使用，保留空函式避免其他地方呼叫出錯
+
+
+// ════════════════════════════════════════
+// 協勤案件登錄：分隊篩選成員
+// ════════════════════════════════════════
+async function initFormPage() {
+  await Promise.all([loadMembers(), loadUnits(), loadCaseTypes()]);
+  renderCaseTypeGrid();
+  const unitSel = document.getElementById('formUnitSel');
+  if (unitSel) {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const _isAdmin  = usr.isAdmin  || false;
+    const _userUnit = usr.unit || '';
+    if (_isAdmin) {
+      unitSel.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+      unitSel.disabled = false;
+    } else {
+      unitSel.innerHTML = '<option value="' + _userUnit + '">' + _userUnit + '</option>';
+      unitSel.disabled = true;
+    }
+    if (_userUnit) { unitSel.value = _userUnit; filterFormMembers(); }
+  }
+}
+
+function filterFormMembers() {
+  const unit = document.getElementById('formUnitSel')?.value || '';
+  const sel  = document.getElementById('memberSelect');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊 —</option>'; return; }
+  const filtered = members.filter(m => (m.unit || '') === unit);
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
+    filtered.map(m => '<option value="' + m.name + '">' + m.name + (m.title ? '（' + m.title + '）' : '') + '</option>').join('');
+}
+
+
+function updateDutyStyle() {
+  const isAtt = document.getElementById('aqEditDutyAtt')?.checked;
+  const attL  = document.getElementById('aqEditDutyAttLabel');
+  const pubL  = document.getElementById('aqEditDutyPubLabel');
+  if (!attL || !pubL) return;
+  if (isAtt) {
+    attL.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--red);border-radius:10px;cursor:pointer;background:var(--red-faint);font-weight:600;font-size:0.95rem;color:var(--red);transition:all 0.15s;';
+    pubL.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-weight:500;font-size:0.95rem;color:var(--text-light);transition:all 0.15s;';
+  } else {
+    attL.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-weight:500;font-size:0.95rem;color:var(--text-light);transition:all 0.15s;';
+    pubL.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid #2980b9;border-radius:10px;cursor:pointer;background:#eaf4fb;font-weight:600;font-size:0.95rem;color:#1a5a8a;transition:all 0.15s;';
+  }
+}
+
+
+// ════════════════════════════════════════
+// 開發者快速登入（僅 localhost）
+// ════════════════════════════════════════
+(function() {
+  var isLocalDev = location.hostname === 'localhost'
+    || location.hostname === '127.0.0.1'
+    || location.protocol === 'file:';
+  if (isLocalDev) {
+    var area = document.getElementById('devLoginArea');
+    if (area) area.style.display = '';
+    // 先用預設分隊，非同步載入不影響顯示
+    try { devLoadUnits(); } catch(e) {}
+  }
+})();
+
+function devLoginAs(role) {
+  var selUnit = (document.getElementById('devUnitSel') || {}).value || '潭子分隊';
+  var devName = (document.getElementById('devNameInput')?.value || '').trim();
+  var profiles = {
+    admin:   { email: 'paul25042505@gmail.com', name: '林伯霖（測試）', role: 'admin',   isAdmin: true,  isOfficer: false, unit: '潭子分隊' },
+    officer: { email: 'officer@dev.test',       name: devName || '承辦人（測試）', role: 'officer', isAdmin: false, isOfficer: true,  unit: selUnit },
+    member:  { email: 'member@dev.test',         name: devName || '隊員（測試）',  role: 'member',  isAdmin: false, isOfficer: false, unit: selUnit },
+  };
+  var p = profiles[role] || profiles.member;
+  sessionStorage.setItem('rescue_user', JSON.stringify({
+    email: p.email, memberName: p.name, name: p.name,
+    role: p.role, isAdmin: p.isAdmin, isOfficer: p.isOfficer, unit: p.unit,
+  }));
+  showApp(p.name, p.email, p.isAdmin, p.isOfficer, p.role);
+  navTo('dashboardPage');
+}
+
+// 開發者登入：載入分隊清單到切換選單
+async function devLoadUnits() {
+  const sel = document.getElementById('devUnitSel');
+  if (!sel) return;
+  try {
+    await loadUnits();
+    if (_unitsList && _unitsList.length > 0) {
+      sel.innerHTML = _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+    }
+  } catch(e) {}
+}
+
+
+// ════════════════════════════════════════
+// 簡易模式（in-page，內嵌於各頁面最上方）
+// ════════════════════════════════════════
+let _easyCheckinCtx = null;
+let _easyCheckoutCtx = null;
+let _easyCheckinHasSig = false;
+let _easyCheckoutHasSig = false;
+let _easyCheckoutTarget = null;
+
+// ── 簽到退頁面的簡易模式切換 ──
+function toggleAttEasyMode() {
+  const sec = document.getElementById('attEasySection');
+  const main = document.getElementById('attMain');
+  const btn = document.getElementById('attEasyBtn');
+  const isOpen = sec.style.display !== 'none';
+  if (isOpen) {
+    sec.style.display = 'none';
+    main.style.display = 'block';
+    btn.textContent = '👴 簡易模式';
+  } else {
+    sec.style.display = 'block';
+    main.style.display = 'none';
+    btn.textContent = '← 一般模式';
+    _easyFillGreeting('attEasyGreetName', 'attEasyGreetDate');
+    easyBack();
+    easyInitUnits();
+  }
+}
+
+// ── 協勤頁面的簡易模式切換 ──
+function toggleFormEasyMode() {
+  const sec = document.getElementById('formEasySection');
+  const form = document.getElementById('recordForm');
+  const btn = document.getElementById('formEasyBtn');
+  const isOpen = sec.style.display !== 'none';
+  if (isOpen) {
+    sec.style.display = 'none';
+    form.style.display = 'block';
+    btn.textContent = '👴 簡易模式';
+  } else {
+    sec.style.display = 'block';
+    form.style.display = 'none';
+    btn.textContent = '← 一般模式';
+    _easyFillGreeting('formEasyGreetName', 'formEasyGreetDate');
+    easyShowOuting();
+  }
+}
+
+// 填入問候語和日期
+function _easyFillGreeting(nameId, dateId) {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const name = usr.memberName || usr.name || '';
+  const el = document.getElementById(nameId);
+  if (el) el.textContent = name ? name + '，您好！' : '您好！';
+  const dateEl = document.getElementById(dateId);
+  if (dateEl) {
+    const now = new Date();
+    const wd = ['日','一','二','三','四','五','六'][now.getDay()];
+    dateEl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月 ' + now.getDate() + ' 日（週' + wd + '）';
+  }
+}
+
+async function easyInitUnits() {
+  try {
+    await Promise.all([loadMembers(), loadUnits()]);
+    const sel = document.getElementById('easyUnitSel');
+    if (sel) {
+      sel.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+      const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+      if (usr.unit) { sel.value = usr.unit; easyFilterMembers(); }
+    }
+  } catch(e) {}
+}
+
+function easyFilterMembers() {
+  const unit = document.getElementById('easyUnitSel')?.value || '';
+  const sel  = document.getElementById('easyMemberSel');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊 —</option>'; return; }
+  const filtered = members.filter(m => (m.unit || '') === unit);
+  // 預選登入者
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
+    filtered.map(m => '<option value="' + m.name + '"' + (m.name === (usr.memberName||usr.name) ? ' selected' : '') + '>' + m.name + (m.title ? '（' + m.title + '）' : '') + '</option>').join('');
+}
+
+function easyShowCheckin() {
+  document.getElementById('easyMainBtns').style.display = 'none';
+  document.getElementById('easyCheckinCard').style.display = 'block';
+  document.getElementById('easyCheckoutList').style.display = 'none';
+  document.getElementById('easyCheckoutCard').style.display = 'none';
+  buildTimeOptions('easyCheckinTime', roundTo15(new Date()));
+  _easyCheckinHasSig = false;
+  setTimeout(() => easyInitCanvas('checkin'), 100);
+}
+
+function easyShowCheckout() {
+  document.getElementById('easyMainBtns').style.display = 'none';
+  document.getElementById('easyCheckinCard').style.display = 'none';
+  document.getElementById('easyCheckoutCard').style.display = 'none';
+  // 顯示已簽到名單
+  const el = document.getElementById('easyCheckoutItems');
+  const sessions = Object.entries(attSessions).filter(([k,s]) => !s.done);
+  if (sessions.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-mid);font-size:1rem;">目前沒有已簽到的成員</div>';
+  } else {
+    el.innerHTML = '';
+    sessions.forEach(([key, s]) => {
+      const div = document.createElement('div');
+      div.className = 'easy-checkout-item';
+      div.innerHTML = '<div><div class="eco-name">' + (s.memberName||key) + '</div><div class="eco-time">簽到：' + (s.checkinTime||'') + '</div></div><div class="eco-arrow">›</div>';
+      div.onclick = () => easyOpenCheckout(key);
+      el.appendChild(div);
+    });
+  }
+  document.getElementById('easyCheckoutList').style.display = 'block';
+}
+
+function easyOpenCheckout(key) {
+  _easyCheckoutTarget = key;
+  const s = attSessions[key];
+  document.getElementById('easyCheckoutName').textContent = s.memberName || key;
+  document.getElementById('easyCheckinRef').textContent = '簽到時間：' + (s.checkinTime || '');
+  buildTimeOptions('easyCheckoutTime', roundTo15(new Date()));
+  const svcEl = document.getElementById('easyServiceCount'); if (svcEl) svcEl.value = '0';
+  const hdEl = document.getElementById('easyHoursDisplay'); if (hdEl) hdEl.textContent = '—';
+  easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
+  document.getElementById('easyCheckoutList').style.display = 'none';
+  document.getElementById('easyCheckoutCard').style.display = 'block';
+  _easyCheckoutHasSig = false;
+  setTimeout(() => easyInitCanvas('checkout'), 100);
+}
+
+function easyBack() {
+  document.getElementById('easyMainBtns').style.display = 'flex';
+  document.getElementById('easyCheckinCard').style.display = 'none';
+  document.getElementById('easyCheckoutList').style.display = 'none';
+  document.getElementById('easyCheckoutCard').style.display = 'none';
+  var oc = document.getElementById('easyOutingCard');
+  if (oc) oc.classList.remove('show');
+  _easyCheckoutTarget = null;
+  // 重新載入已簽到名單（刷新狀態）
+  loadTodayCheckins();
+}
+
+function easyBackToCheckoutList() {
+  document.getElementById('easyCheckoutCard').classList.remove('show');
+  easyShowCheckout();
+}
+
+function easyAutoCalcHours() {
+  const session = attSessions[_easyCheckoutTarget];
+  if (!session) return;
+  const checkoutTime = document.getElementById('easyCheckoutTime')?.value;
+  if (!checkoutTime) return;
+  const h = calcHours(session.checkinTime, checkoutTime);
+  const display = document.getElementById('easyHoursDisplay');
+  if (display) display.textContent = h > 0 ? h + ' 小時' : '—';
+}
+
+function easyInitCanvas(type) {
+  const id = type === 'checkin' ? 'easyCheckinCanvas' : 'easyCheckoutCanvas';
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+  const ctx = newCanvas.getContext('2d');
+  if (type === 'checkin') _easyCheckinCtx = ctx;
+  else _easyCheckoutCtx = ctx;
+  setTimeout(() => {
+    const ratio = window.devicePixelRatio || 1;
+    const rect  = newCanvas.getBoundingClientRect();
+    const w     = rect.width || 300;
+    newCanvas.width  = w * ratio;
+    newCanvas.height = 160 * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  }, 50);
+  function getPos(e) {
+    const r = newCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  let drawing = false;
+  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  newCanvas.addEventListener('mousemove', e => {
+    if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') _easyCheckinHasSig = true; else _easyCheckoutHasSig = true;
+  });
+  newCanvas.addEventListener('mouseup', () => drawing = false);
+  newCanvas.addEventListener('mouseleave', () => drawing = false);
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchmove', e => {
+    e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (type === 'checkin') _easyCheckinHasSig = true; else _easyCheckoutHasSig = true;
+  }, { passive: false });
+  newCanvas.addEventListener('touchend', () => drawing = false);
+}
+
+function easyClearCanvas() {
+  if (_easyCheckinCtx) _easyCheckinCtx.clearRect(0, 0, _easyCheckinCtx.canvas.width, _easyCheckinCtx.canvas.height);
+  _easyCheckinHasSig = false;
+}
+function easyClearCheckoutCanvas() {
+  if (_easyCheckoutCtx) _easyCheckoutCtx.clearRect(0, 0, _easyCheckoutCtx.canvas.width, _easyCheckoutCtx.canvas.height);
+  _easyCheckoutHasSig = false;
+}
+
+async function easyDoCheckin() {
+  const memberName = document.getElementById('easyMemberSel').value;
+  const timeVal    = document.getElementById('easyCheckinTime').value;
+  if (!memberName) { alert('請選擇義消成員'); return; }
+  if (!timeVal)    { alert('請選擇簽到時間'); return; }
+  if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
+
+  const memberObj  = members.find(m => m.name === memberName) || {};
+  const checkinSig = _easyCheckinCtx.canvas.toDataURL('image/png');
+  const date       = new Date().toLocaleDateString('sv');
+  const btn        = document.querySelector('.easy-submit-btn.do-checkin');
+  btn.textContent  = '簽到中...'; btn.disabled = true;
+
+  try {
+    const tempKey = 'new_' + memberName + '_' + Date.now();
+    attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType: '協勤', done: false };
+    fbAdd(COL_ATTEND, { date, dutyType: '協勤', title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0 })
+      .then(docId => { if (attSessions[tempKey]) { attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId }); delete attSessions[tempKey]; } }).catch(() => {});
+
+    alert('✅ ' + memberName + ' 簽到成功！');
+    easyBack();
+  } catch(e) {
+    alert('簽到失敗，請確認網路連線後再試。');
+  } finally {
+    btn.textContent = '確認簽到'; btn.disabled = false;
+  }
+}
+
+async function easyDoCheckout() {
+  const checkoutTime = document.getElementById('easyCheckoutTime').value;
+  if (!checkoutTime)        { alert('請選擇簽退時間'); return; }
+  if (!_easyCheckoutHasSig) { alert('請完成簽退簽名'); return; }
+
+  const session    = attSessions[_easyCheckoutTarget];
+  const memberName = session.memberName || _easyCheckoutTarget;
+  const hours      = calcHours(session.checkinTime, checkoutTime);
+  const service    = parseInt(document.getElementById('easyServiceCount')?.value) || 0;
+  const date       = session.date || new Date().toLocaleDateString('sv');
+  const memberObj  = members.find(m => m.name === memberName) || {};
+  const checkoutSig = _easyCheckoutCtx.canvas.toDataURL('image/png');
+
+  const btn = document.querySelector('.easy-submit-btn.do-checkout');
+  btn.textContent = '送出中...'; btn.disabled = true;
+
+  try {
+    if (session.fbDocId) {
+      // count 固定 1（本次出勤即為 1 次協勤），service 由成員填寫
+      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
+    } else {
+      fbAdd(COL_ATTEND, { date, dutyType: session.dutyType||'協勤', title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
+    }
+
+    attSessions[_easyCheckoutTarget].done        = true;
+    attSessions[_easyCheckoutTarget].checkoutTime = checkoutTime;
+    alert('🏠 ' + memberName + ' 簽退成功！\n出勤 ' + hours + ' 小時');
+    easyBack();
+  } catch(e) {
+    alert('簽退失敗，請確認網路連線後再試。');
+  } finally {
+    btn.textContent = '確認簽退'; btn.disabled = false;
+  }
+}
+
+
+// ── 簡易協勤登錄 ──
+let _easyOutingCtx = null;
+let _easyOutingHasSig = false;
+const _easyServices = [
+  '保暖','心理支持','生命徵象量測','CPR','協助操作AED',
+  '協助給氧','協助抽吸','協助使用LUCAS','協助使用心電圖',
+  '協助使用支氣管擴張劑','協助使用NTG','靜脈注射（IV）',
+  '測量血糖','協助止血','包紮傷口','使用止血帶',
+  '骨折固定','頸圈固定','拒絕送醫','空跑'
+];
+
+function _easyBuildCaseTypeGrid() {
+  const ctGrid = document.getElementById('easyCaseTypeGrid');
+  if (!ctGrid) return;
+  ctGrid.innerHTML = '';
+  const oField = document.getElementById('easyCaseTypeOtherField');
+  if (oField) oField.style.display = 'none';
+  const ctSource = _caseTypesList.length ? _caseTypesList : ['路倒','急病','外傷','心臟病','呼吸困難','意識不清','車禍','燙傷'];
+  ctSource.filter(ct => ct !== '其他').forEach(ct => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'easy-service-btn';
+    btn.textContent = ct;
+    btn.onclick = () => {
+      ctGrid.querySelectorAll('.easy-service-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      if (oField) oField.style.display = 'none';
+    };
+    ctGrid.appendChild(btn);
+  });
+  // 「其他」按鈕
+  const otherBtn = document.createElement('button');
+  otherBtn.type = 'button';
+  otherBtn.className = 'easy-service-btn';
+  otherBtn.textContent = '其他';
+  otherBtn.onclick = () => {
+    ctGrid.querySelectorAll('.easy-service-btn').forEach(b => b.classList.remove('selected'));
+    otherBtn.classList.add('selected');
+    if (oField) { oField.style.display = ''; document.getElementById('easyCaseTypeOther')?.focus(); }
+  };
+  ctGrid.appendChild(otherBtn);
+}
+
+function easyShowOuting() {
+  // formPage 簡易模式：直接顯示協勤卡片（不需操作 attEasySection 的元素）
+  document.getElementById('easyOutingCard').style.display = 'block';
+
+  // 填今日日期和時間
+  const now = new Date();
+  document.getElementById('easyOutingDate').value = now.toLocaleDateString('sv');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('easyOutingTimeOut').value = hh + ':' + mm;
+  document.getElementById('easyOutingTimeBack').value = hh + ':' + mm;
+
+  // 建立服務項目大按鈕
+  const grid = document.getElementById('easyServiceGrid');
+  grid.innerHTML = '';
+  _easyServices.forEach(s => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'easy-service-btn';
+    btn.textContent = s;
+    btn.dataset.value = s;
+    btn.onclick = () => btn.classList.toggle('selected');
+    grid.appendChild(btn);
+  });
+
+  // 建立案由格子（從 _caseTypesList 動態載入，與主表單一致）
+  _easyBuildCaseTypeGrid();
+
+  // 分隊選單
+  easyOutingInitUnits();
+  // 確保案由已載入（若還沒載入就先載）
+  if (!_caseTypesList.length) {
+    loadCaseTypes().then(() => {
+      if (document.getElementById('easyOutingCard').style.display !== 'none') {
+        _easyBuildCaseTypeGrid();
+      }
+    });
+  }
+  _easyOutingHasSig = false;
+  setTimeout(() => easyInitOutingCanvas(), 100);
+}
+
+async function easyOutingInitUnits() {
+  try {
+    await Promise.all([loadMembers(), loadUnits()]);
+    const sel = document.getElementById('easyOutingUnitSel');
+    if (sel) {
+      sel.innerHTML = '<option value="">請選擇分隊</option>' +
+        _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+      const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+      if (usr.unit) { sel.value = usr.unit; easyOutingFilterMembers(); }
+    }
+  } catch(e) {}
+}
+
+function easyOutingFilterMembers() {
+  const unit = document.getElementById('easyOutingUnitSel')?.value || '';
+  const sel  = document.getElementById('easyOutingMemberSel');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊 —</option>'; return; }
+  const filtered = members.filter(m => (m.unit || '') === unit);
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
+    filtered.map(m => '<option value="' + m.name + '"' + (m.name === (usr.memberName||usr.name) ? ' selected' : '') + '>' + m.name + (m.title ? '（' + m.title + '）' : '') + '</option>').join('');
+}
+
+function easyInitOutingCanvas() {
+  const canvas = document.getElementById('easyOutingCanvas');
+  if (!canvas) return;
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+  const ctx = newCanvas.getContext('2d');
+  _easyOutingCtx = ctx;
+  setTimeout(() => {
+    const ratio = window.devicePixelRatio || 1;
+    const w = newCanvas.getBoundingClientRect().width || 300;
+    newCanvas.width  = w * ratio;
+    newCanvas.height = 160 * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  }, 50);
+  function getPos(e) {
+    const r = newCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  let drawing = false;
+  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  newCanvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); _easyOutingHasSig = true; });
+  newCanvas.addEventListener('mouseup', () => drawing = false);
+  newCanvas.addEventListener('mouseleave', () => drawing = false);
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); _easyOutingHasSig = true; }, { passive: false });
+  newCanvas.addEventListener('touchend', () => drawing = false);
+}
+
+function easyClearOutingCanvas() {
+  if (_easyOutingCtx) _easyOutingCtx.clearRect(0, 0, _easyOutingCtx.canvas.width, _easyOutingCtx.canvas.height);
+  _easyOutingHasSig = false;
+}
+
+async function easyDoOuting() {
+  const date       = document.getElementById('easyOutingDate').value;
+  const timeOut    = document.getElementById('easyOutingTimeOut').value;
+  const timeBack   = document.getElementById('easyOutingTimeBack').value;
+  const district   = document.getElementById('easyOutingDistrict').value;
+  const address    = document.getElementById('easyOutingAddress').value;
+  const memberName = document.getElementById('easyOutingMemberSel').value;
+  const selected   = [...document.querySelectorAll('#easyServiceGrid .easy-service-btn.selected')];
+
+  const easyCTSelected = document.querySelector('#easyCaseTypeGrid .easy-service-btn.selected');
+  const easyCTOtherVal = document.getElementById('easyCaseTypeOther')?.value.trim() || '';
+  const easyCTVal = easyCTSelected
+    ? (easyCTSelected.textContent.trim() === '其他' ? easyCTOtherVal : easyCTSelected.textContent.trim())
+    : '';
+
+  if (!date)        { alert('請選擇協勤日期'); return; }
+  if (!timeOut)     { alert('請填入出發時間'); return; }
+  if (!timeBack)    { alert('請填入返隊時間'); return; }
+  if (!district)    { alert('請選擇行政區'); return; }
+  if (!address)     { alert('請填入詳細地址'); return; }
+  if (!easyCTSelected) { alert('請選擇案由'); return; }
+  if (easyCTSelected.textContent.trim() === '其他') {
+    if (!easyCTOtherVal) {
+      alert('選擇「其他」時必須填寫實際案由，否則無法送出');
+      document.getElementById('easyCaseTypeOther')?.focus();
+      return;
+    }
+  }
+  if (selected.length === 0) { alert('請至少選擇一項服務項目'); return; }
+  if (!memberName)  { alert('請選擇義消成員'); return; }
+  if (!_easyOutingHasSig) { alert('請完成義消簽名'); return; }
+
+  const services  = selected.map(b => b.dataset.value).join('、');
+  const signature = _easyOutingCtx.canvas.toDataURL('image/png');
+
+  const btn = document.querySelector('.easy-submit-btn[onclick="easyDoOuting()"]');
+  if (btn) { btn.textContent = '送出中...'; btn.disabled = true; }
+
+  try {
+    await fbAdd(COL_OUTING, { date, caseType: easyCTVal, timeOut, timeBack: timeBack||timeOut, district, address, services, note: '', memberName, signature });
+    alert('✅ 協勤紀錄送出成功！');
+    easyBack();
+  } catch(e) {
+    alert('送出失敗，請確認網路連線後再試。');
+  } finally {
+    if (btn) { btn.textContent = '送出協勤紀錄'; btn.disabled = false; }
+  }
+}
+
+
+// ════════════════════════════════════════
+// 定訓記錄
+// ════════════════════════════════════════
+let _meetingEditId = null;
+
+async function loadMeetingPage() {
+  const usr     = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin   = usr.isAdmin || false;
+  const isOfficer = usr.isOfficer || false;
+  const userUnit  = usr.unit || '';
+
+  // 顯示新增按鈕（承辦人/管理員）
+  const addWrap = document.getElementById('meetingAddWrap');
+  if (addWrap) addWrap.style.display = '';
+
+  // 填分隊選單
+  try { await loadUnits(); } catch(e) {}
+  const unitSel = document.getElementById('meetingUnit');
+  if (unitSel) {
+    unitSel.innerHTML = '<option value="">請選擇分隊</option>' +
+      _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+    if (isOfficer && !isAdmin && userUnit) unitSel.value = userUnit;
+  }
+
+  // 載入記錄
+  meetingHideForm();
+  await renderMeetingList();
+}
+
+async function renderMeetingList() {
+  const el  = document.getElementById('meetingList');
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin   = usr.isAdmin || false;
+  const isOfficer = usr.isOfficer || false;
+  const userUnit  = usr.unit || '';
+
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📒</span>載入中...</div>';
+  try {
+    let docs = await fbList(COL_MEETING, 'date', 'desc');
+
+    // 權限篩選：一般成員 & 承辦人只看自己分隊
+    if (!isAdmin) {
+      docs = docs.filter(d => (d.unit || '') === userUnit);
+    }
+
+    if (docs.length === 0) {
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📒</span>目前沒有定訓與公告</div>';
+      return;
+    }
+
+    el.innerHTML = '';
+    docs.forEach(doc => {
+      const canEdit = isAdmin || (isOfficer && doc.unit === userUnit);
+      const card = document.createElement('div');
+      card.style.cssText = 'background:white;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05);';
+
+      // 標題列
+      const head = document.createElement('div');
+      head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--red-faint);border-bottom:1px solid var(--border);cursor:pointer;gap:10px;';
+      const headInfo = document.createElement('div');
+      headInfo.style.cssText = 'flex:1;min-width:0;';
+      const headTitle = document.createElement('div');
+      headTitle.style.cssText = 'font-family:"Noto Serif TC",serif;font-size:0.95rem;font-weight:700;color:var(--text);letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      headTitle.textContent = doc.title || '（無標題）';
+      const headMeta = document.createElement('div');
+      headMeta.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-top:3px;';
+      headMeta.textContent = (doc.date || '') + (doc.unit ? '　' + doc.unit : '');
+      headInfo.appendChild(headTitle);
+      headInfo.appendChild(headMeta);
+      const headArrow = document.createElement('span');
+      headArrow.style.cssText = 'font-size:0.8rem;color:var(--text-light);flex-shrink:0;';
+      headArrow.textContent = '▼';
+      head.appendChild(headInfo);
+      head.appendChild(headArrow);
+
+      // 內文（預設折疊）
+      const body = document.createElement('div');
+      body.style.cssText = 'display:none;padding:18px;white-space:pre-wrap;font-size:0.9rem;line-height:1.9;color:var(--text);';
+      body.textContent = doc.content || '';
+
+      // 展開/收合
+      head.onclick = () => {
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'block';
+        headArrow.textContent = isOpen ? '▼' : '▲';
+      };
+
+      card.appendChild(head);
+
+      // 編輯/刪除按鈕
+      if (canEdit) {
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);background:#fafaf8;';
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '✏️ 編輯';
+        editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:5px;padding:5px 14px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
+        editBtn.onclick = (e) => { e.stopPropagation(); meetingShowForm(doc); };
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '🗑 刪除';
+        delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:5px;padding:5px 14px;font-size:0.78rem;color:#b94a3a;cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
+        delBtn.onclick = (e) => { e.stopPropagation(); meetingDelete(doc.id, doc.title); };
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        card.appendChild(actions);
+      }
+
+      card.appendChild(body);
+      el.appendChild(card);
+    });
+  } catch(e) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
+  }
+}
+
+function meetingShowForm(doc) {
+  _meetingEditId = doc ? doc.id : null;
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+
+  document.getElementById('meetingFormTitle').textContent = doc ? '編輯定訓與公告' : '新增定訓與公告';
+  document.getElementById('meetingTitle').value      = doc ? (doc.title     || '') : '';
+  document.getElementById('meetingDate').value       = doc ? (doc.date      || new Date().toLocaleDateString('sv')) : new Date().toLocaleDateString('sv');
+  document.getElementById('meetingContent').value   = doc ? (doc.content   || '') : '';
+
+  // 分隊：承辦人鎖定自己分隊
+  const unitSel = document.getElementById('meetingUnit');
+  if (unitSel) {
+    unitSel.value = doc ? (doc.unit || '') : (usr.unit || '');
+    if (usr.isOfficer && !usr.isAdmin) {
+      unitSel.disabled = true;
+      unitSel.value = usr.unit || '';
+    } else {
+      unitSel.disabled = false;
+    }
+  }
+
+  const form = document.getElementById('meetingForm');
+  form.style.display = '';
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function meetingHideForm() {
+  document.getElementById('meetingForm').style.display = 'none';
+  _meetingEditId = null;
+}
+
+async function meetingSave() {
+  const title     = document.getElementById('meetingTitle').value.trim();
+  const date      = document.getElementById('meetingDate').value;
+  const unit      = document.getElementById('meetingUnit').value;
+  const content   = document.getElementById('meetingContent').value.trim();
+
+  if (!title)   { alert('請填入標題'); return; }
+  if (!date)    { alert('請選擇發布日期'); return; }
+  if (!unit)    { alert('請選擇分隊'); return; }
+  if (!content) { alert('請填入會議內容'); return; }
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const data = { title, date, unit, content, updatedBy: usr.memberName || usr.name || '' };
+
+  const saveBtn = document.querySelector('#meetingForm button');
+  saveBtn.textContent = '儲存中...'; saveBtn.disabled = true;
+
+  try {
+    if (_meetingEditId) {
+      await fbUpdate(COL_MEETING, _meetingEditId, data);
+    } else {
+      await fbAdd(COL_MEETING, data);
+    }
+    meetingHideForm();
+    await renderMeetingList();
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  } finally {
+    saveBtn.textContent = '儲存'; saveBtn.disabled = false;
+  }
+}
+
+async function meetingDelete(id, title) {
+  if (!confirm('確定要刪除「' + title + '」？')) return;
+  try {
+    await fbDelete(COL_MEETING, id);
+    await renderMeetingList();
+  } catch(e) {
+    alert('刪除失敗：' + e.message);
+  }
+}
+
+
+// ════════════════════════════════════════
+// 案由
+// ════════════════════════════════════════
+const DEFAULT_CASE_TYPES = ['路倒','急病','外傷','心臟病','呼吸困難','意識不清','車禍','燙傷'];
+let _caseTypesList = [];
+
+let _caseTypeDocs = []; // 儲存完整 doc 含 id
+async function loadCaseTypes() {
+  try {
+    const docs = await fbList(COL_CASETYPES);
+    if (docs.length) {
+      _caseTypeDocs = docs.sort((a,b)=>(a.order||0)-(b.order||0));
+      _caseTypesList = _caseTypeDocs.map(d=>d.name).filter(Boolean);
+    } else {
+      _caseTypeDocs = [];
+      _caseTypesList = [...DEFAULT_CASE_TYPES];
+    }
+  } catch(e) {
+    _caseTypeDocs = [];
+    _caseTypesList = [...DEFAULT_CASE_TYPES];
+  }
+}
+
+function renderCaseTypeGrid() {
+  const grid = document.getElementById('caseTypeGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  // 過濾掉「其他」，永遠用獨立的 __other__ 按鈕處理
+  const types = _caseTypesList.filter(ct => ct !== '其他');
+
+  types.forEach(ct => {
+    const lbl = document.createElement('label');
+    lbl.className = 'cb-item';
+    lbl.style.cssText = 'cursor:pointer;';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'caseType';
+    radio.value = ct;
+    radio.style.cssText = 'accent-color:var(--red);flex-shrink:0;width:auto;border:none;padding:0;background:none;min-height:unset;';
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('#caseTypeGrid label').forEach(l => l.classList.remove('checked'));
+      lbl.classList.add('checked');
+      document.getElementById('caseTypeOtherField').style.display = 'none';
+      document.getElementById('caseTypeOther').value = '';
+      document.getElementById('isOtherCaseType').value = '0';
+    });
+    lbl.appendChild(radio);
+    lbl.appendChild(document.createTextNode(' ' + ct));
+    grid.appendChild(lbl);
+  });
+
+  // 「其他」永遠用 __other__
+  const otherLbl = document.createElement('label');
+  otherLbl.className = 'cb-item';
+  otherLbl.style.cssText = 'cursor:pointer;';
+  const otherRadio = document.createElement('input');
+  otherRadio.type = 'radio';
+  otherRadio.name = 'caseType';
+  otherRadio.value = '__other__';
+  otherRadio.id = 'caseTypeOtherRadio';
+  otherRadio.style.cssText = 'accent-color:var(--red);flex-shrink:0;width:auto;border:none;padding:0;background:none;min-height:unset;';
+  otherRadio.addEventListener('change', () => {
+    document.querySelectorAll('#caseTypeGrid label').forEach(l => l.classList.remove('checked'));
+    otherLbl.classList.add('checked');
+    document.getElementById('caseTypeOtherField').style.display = '';
+    document.getElementById('isOtherCaseType').value = '1';
+    document.getElementById('caseTypeOther').focus();
+  });
+  otherLbl.appendChild(otherRadio);
+  otherLbl.appendChild(document.createTextNode(' 其他'));
+  grid.appendChild(otherLbl);
+}
+
+// 查詢頁面的案由下拉
+function populateCaseTypeSelect() {
+  const sel = document.getElementById('qCaseType');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— 全部類型 —</option>' +
+    _caseTypesList.map(ct => `<option value="${ct}">${ct}</option>`).join('');
+}
+
+// ── 後台案由管理 ──
+async function loadAdminCaseTypes() {
+  await loadCaseTypes();
+  const el = document.getElementById('adminCaseTypeList');
+  if (!el) return;
+  if (_caseTypesList.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">尚無自訂類型，使用預設值</div>';
+    return;
+  }
+  el.innerHTML = '';
+  _caseTypesList.forEach((ct, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);';
+    const name = document.createElement('span');
+    name.style.cssText = 'flex:1;font-size:0.88rem;color:var(--text);';
+    name.textContent = ct;
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '刪除';
+    delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
+    delBtn.onclick = () => deleteCaseType(ct);
+    row.appendChild(name);
+    row.appendChild(delBtn);
+    el.appendChild(row);
+  });
+}
+
+async function addCaseType() {
+  const inp = document.getElementById('newCaseTypeInput');
+  const name = (inp?.value || '').trim();
+  if (!name) { alert('請輸入案由名稱'); return; }
+  if (_caseTypesList.includes(name)) { alert('已有相同的案由'); return; }
+  try {
+    await fbAdd(COL_CASETYPES, { name, order: _caseTypesList.length });
+    inp.value = '';
+    await loadAdminCaseTypes();
+  } catch(e) { alert('新增失敗：' + e.message); }
+}
+
+async function deleteCaseType(name) {
+  if (!confirm('確定刪除「' + name + '」？')) return;
+  try {
+    // 先找現有 doc
+    let doc = _caseTypeDocs.find(d => d.name === name);
+    if (!doc) {
+      // 預設值尚未存入 Firestore，先把所有預設值寫入，再刪除指定的
+      const all = await fbList(COL_CASETYPES);
+      if (all.length === 0) {
+        // 寫入全部預設值（排除要刪的那個）
+        const toAdd = DEFAULT_CASE_TYPES.filter(n => n !== name);
+        await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
+        await loadAdminCaseTypes();
+        return;
+      }
+      // 有 doc 但快取過期，重新載入
+      await loadCaseTypes();
+      doc = _caseTypeDocs.find(d => d.name === name);
+    }
+    if (doc) await fbDelete(COL_CASETYPES, doc.id);
+    await loadAdminCaseTypes();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+
+// ════════════════════════════════════════
+// 案由統計圖表
+// ════════════════════════════════════════
+let _pieChart = null, _barChart = null, _unitChart = null;
+
+const CHART_COLORS = [
+  '#c0392b','#e74c3c','#e67e22','#f39c12','#27ae60',
+  '#16a085','#2980b9','#8e44ad','#7f8c8d','#2c3e50',
+  '#d35400','#1abc9c','#3498db','#9b59b6','#34495e'
+];
+
+function renderCaseTypeStats(outDocs, filterUnit, memberUnitMap, year, month) {
+  const section = document.getElementById('caseStatsSection');
+  if (!section) return;
+
+  // 所有協勤紀錄都納入，沒有 caseType 的歸為「未分類」
+  let docs = [...outDocs];
+  if (filterUnit) {
+    docs = docs.filter(d => (memberUnitMap[d.memberName]||'') === filterUnit);
+  }
+
+  if (!docs.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  // ── 統計案由數量 ──
+  const typeCount = {};
+  docs.forEach(d => {
+    const t = (d.caseType || '').trim() || '未分類';
+    typeCount[t] = (typeCount[t]||0) + 1;
+  });
+  const total = docs.length;
+  const sorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
+  const labels = sorted.map(e=>e[0]);
+  const counts = sorted.map(e=>e[1]);
+  const colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+  // ── 數字摘要 ──
+  const topType = sorted[0];
+  const uniqueTypes = sorted.length;
+  const overview = document.getElementById('caseStatsOverview');
+  overview.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">案件總數</div></div>
+    <div class="stat-card"><div class="stat-num">${uniqueTypes}</div><div class="stat-label">案由數</div></div>
+    <div class="stat-card"><div class="stat-num" style="font-size:1.1rem;">${topType[0]}</div><div class="stat-label">最多案由</div></div>
+    <div class="stat-card"><div class="stat-num">${topType[1]}</div><div class="stat-label">${topType[0]} 件數</div></div>
+  `;
+
+  // ── 圓餅圖 & 長條圖（用 setTimeout 確保 canvas 已渲染完成）──
+  if (_pieChart) { _pieChart.destroy(); _pieChart = null; }
+  if (_barChart) { _barChart.destroy(); _barChart = null; }
+
+  // 圓餅圖圖例（先渲染文字，不需要等 canvas）
+  const legend = document.getElementById('caseTypeLegend');
+  if (legend) {
+    legend.innerHTML = labels.map((l,i) =>
+      `<span style="display:flex;align-items:center;gap:4px;white-space:nowrap;">
+        <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>${l}
+      </span>`
+    ).join('');
+  }
+
+  // ── 圓餅圖（SVG）──
+  (function() {
+    const el = document.getElementById('caseTypePieChart');
+    if (!el) return;
+    const size = 200, cx = size/2, cy = size/2, r = 80, ir = 48;
+    let startAngle = -Math.PI/2;
+    let slices = '';
+    counts.forEach((cnt, i) => {
+      const angle = (cnt/total) * Math.PI * 2;
+      const endAngle = startAngle + angle;
+      const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle),   y2 = cy + r * Math.sin(endAngle);
+      const ix1 = cx + ir * Math.cos(startAngle), iy1 = cy + ir * Math.sin(startAngle);
+      const ix2 = cx + ir * Math.cos(endAngle),   iy2 = cy + ir * Math.sin(endAngle);
+      const large = angle > Math.PI ? 1 : 0;
+      const pct = Math.round(cnt/total*100);
+      slices += `<path d="M${ix1},${iy1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${ix2},${iy2} A${ir},${ir} 0 ${large},0 ${ix1},${iy1} Z"
+        fill="${colors[i]}" stroke="#fff" stroke-width="2">
+        <title>${labels[i]}：${cnt} 件（${pct}%）</title></path>`;
+      startAngle = endAngle;
+    });
+    el.innerHTML = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:200px;display:block;margin:0 auto;">
+      ${slices}
+      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#1e1a17">${total}</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9" fill="#9c8c80">件</text>
+    </svg>`;
+  })();
+
+  // ── 長條圖（SVG）──
+  (function() {
+    const el = document.getElementById('caseTypeBarChart');
+    if (!el) return;
+    const W = 280, barH = 28, gap = 8, padL = 70, padR = 50, padT = 8, padB = 8;
+    const H = padT + (barH + gap) * counts.length + padB;
+    const maxVal = Math.max(...counts, 1);
+    let bars = '';
+    counts.forEach((cnt, i) => {
+      const y = padT + i * (barH + gap);
+      const bw = Math.max(4, (cnt / maxVal) * (W - padL - padR));
+      const label = labels[i].length > 6 ? labels[i].slice(0,6)+'…' : labels[i];
+      bars += `<rect x="${padL}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${colors[i]}"/>
+        <text x="${padL - 6}" y="${y + barH/2}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#5a4f46">${label}</text>
+        <text x="${padL + bw + 5}" y="${y + barH/2}" dominant-baseline="middle" font-size="11" font-weight="600" fill="${colors[i]}">${cnt}</text>`;
+    });
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;">${bars}</svg>`;
+  })();
+
+  // ── 分隊比較（僅全部分隊時顯示）──
+  const compareCard = document.getElementById('caseUnitCompareCard');
+  if (!filterUnit && Object.keys(memberUnitMap).length > 0) {
+    // 取所有分隊
+    const allUnits = [...new Set(Object.values(memberUnitMap).filter(Boolean))].sort();
+    // 取 Top 6 類型
+    const topTypes = labels.slice(0, 6);
+    const unitDatasets = topTypes.map((type, i) => ({
+      label: type,
+      data: allUnits.map(u => {
+        const uDocs = outDocs.filter(d =>
+          d.caseType === type && (memberUnitMap[d.memberName]||'') === u
+        );
+        return uDocs.length;
+      }),
+      backgroundColor: colors[i],
+      borderRadius: 3,
+    }));
+
+    setTimeout(() => {
+    const unitCanvas = document.getElementById('caseUnitChart');
+    if (_unitChart) { _unitChart.destroy(); _unitChart = null; }
+    if (unitCanvas && allUnits.length > 1) {
+      unitCanvas.width  = unitCanvas.parentElement.clientWidth || 560;
+      unitCanvas.height = 280;
+      _unitChart = new Chart(unitCanvas, {
+        type: 'bar',
+        data: { labels: allUnits, datasets: unitDatasets },
+        options: {
+          responsive: false,
+          width: unitCanvas.width,
+          height: unitCanvas.height,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } },
+          scales: {
+            x: { stacked: false, grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }
+          }
+        }
+      });
+        compareCard.style.display = '';
+      } else {
+        compareCard.style.display = 'none';
+      }
+    }, 100);
+  } else {
+    compareCard.style.display = 'none';
+  }
+
+  // ── 明細表格 ──
+  const tbody = document.getElementById('caseTypeTableBody');
+  if (tbody) {
+    tbody.innerHTML = sorted.map(([type, cnt]) => {
+      const pct = Math.round(cnt/total*100);
+      return `<tr>
+        <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.85rem;font-weight:500;">${type}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;font-size:0.88rem;font-weight:600;color:var(--red);">${cnt}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;font-size:0.85rem;">${pct}%</td>
+        <td style="padding:10px 12px;border-bottom:1px solid var(--border);">
+          <div style="background:var(--border);border-radius:4px;height:8px;min-width:80px;">
+            <div style="background:var(--red);border-radius:4px;height:8px;width:${pct}%;transition:width 0.4s;"></div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+
+// ════════════════════════════════════════
+// 個人基本資料
+// ════════════════════════════════════════
+async function loadProfilePage() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const email     = usr.email || '';
+  const memberName = usr.memberName || usr.name || '';
+
+  // 從 whitelist 讀取完整資料（含 phone、cert、certExp）
+  let profile = {};
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email.toLowerCase().trim()).get();
+    if (!snap.empty) profile = snap.docs[0].data();
+  } catch(e) {}
+
+  // 從 members 讀取分隊/職稱
+  try { await loadMembers(); } catch(e) {}
+  const member = members.find(m => m.name === memberName) || {};
+
+  // 填入基本資訊
+  document.getElementById('profileName').textContent  = memberName || '—';
+  document.getElementById('profileUnit').textContent  = member.unit  || profile.unit  || usr.unit || '—';
+  document.getElementById('profileTitle').textContent = member.title || profile.title || '—';
+  document.getElementById('profileEmail').textContent = email || '—';
+  document.getElementById('profilePhone').value       = profile.phone || '';
+
+  // 證照
+  const cert    = member.cert    || profile.cert    || '';
+  const certExp = member.certExp || profile.certExp || '';
+  document.getElementById('profileCert').textContent = cert || '（未設定）';
+
+  const certExpEl    = document.getElementById('profileCertExpDisplay');
+  const certStatusEl = document.getElementById('profileCertStatus');
+  const certAlertEl  = document.getElementById('profileCertAlert');
+  const certAlertMsg = document.getElementById('profileCertAlertMsg');
+
+  if (certExp) {
+    certExpEl.textContent = certExp;
+    const today    = new Date();
+    const expDate  = new Date(certExp);
+    const diffDays = Math.floor((expDate - today) / 86400000);
+    const diffMon  = diffDays / 30;
+
+    if (diffDays < 0) {
+      certStatusEl.textContent = '已過期';
+      certStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fde8e8;color:#b94a3a;';
+      certAlertEl.style.display = '';
+      certAlertMsg.textContent = `您的 ${cert} 證照已於 ${certExp} 過期，請盡速更新。`;
+    } else if (diffMon < 6) {
+      certStatusEl.textContent = `還有 ${diffDays} 天`;
+      certStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fff3cd;color:#856404;';
+      certAlertEl.style.display = '';
+      certAlertMsg.textContent = `您的 ${cert} 證照將於 ${certExp} 到期（剩餘 ${diffDays} 天），請提前安排展延。`;
+    } else {
+      certStatusEl.textContent = `有效（剩 ${Math.floor(diffMon)} 個月）`;
+      certStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#d4edda;color:#1a6b35;';
+      certAlertEl.style.display = 'none';
+    }
+  } else {
+    certExpEl.textContent = '（未設定）';
+    certStatusEl.textContent = '';
+    certAlertEl.style.display = 'none';
+  }
+
+  // 初始化推播通知 toggle 狀態
+  initNotifToggle();
+  // 初始化推播時間設定
+  loadNotifyHoursSettings();
+
+  // 帶入現有值到編輯欄位
+  const certSel = document.getElementById('profileCertSel');
+  const certExpInput = document.getElementById('profileCertExpInput');
+  if (certSel) certSel.value = cert || '';
+  if (certExpInput) certExpInput.value = certExp || '';
+
+  // 開關：從 Firestore settings 讀取 certEditOpen，開放時才顯示編輯按鈕
+  try {
+    await ensureFirebase();
+    const settingSnap = await _fbDB.collection('settings').doc('certEdit').get();
+    const certEditOpen = settingSnap.exists && settingSnap.data().open === true;
+    const editBtnWrap = document.getElementById('profileCertEditBtnWrap');
+    if (editBtnWrap) editBtnWrap.style.display = certEditOpen ? '' : 'none';
+  } catch(e) {}
+}
+
+
+function profileShowCertEdit() {
+  document.getElementById('profileCertView').style.display = 'none';
+  document.getElementById('profileCertEdit').style.display = '';
+}
+
+function profileHideCertEdit() {
+  document.getElementById('profileCertEdit').style.display = 'none';
+  document.getElementById('profileCertView').style.display = '';
+  document.getElementById('profileCertSaveStatus').style.display = 'none';
+}
+
+async function saveProfileCert() {
+  const cert    = document.getElementById('profileCertSel').value;
+  const certExp = document.getElementById('profileCertExpInput').value;
+  if (!cert)    { alert('請選擇證照等級'); return; }
+  if (!certExp) { alert('請填入效期'); return; }
+
+  const usr   = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const email = (usr.email || '').toLowerCase().trim();
+  const memberName = usr.memberName || usr.name || '';
+  const status = document.getElementById('profileCertSaveStatus');
+
+  try {
+    await ensureFirebase();
+    // 更新 whitelist
+    const wlSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (!wlSnap.empty) await wlSnap.docs[0].ref.update({ cert, certExp });
+
+    // 更新 members
+    const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
+    if (!mSnap.empty) await mSnap.docs[0].ref.update({ cert, certExp });
+
+    // 更新顯示
+    document.getElementById('profileCert').textContent = cert;
+    document.getElementById('profileCertExpDisplay').textContent = certExp;
+    const diffDays = Math.floor((new Date(certExp) - new Date()) / 86400000);
+    const certStatusEl = document.getElementById('profileCertStatus');
+    if (diffDays < 0) {
+      certStatusEl.textContent = '已過期';
+      certStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fde8e8;color:#b94a3a;';
+    } else if (diffDays < 180) {
+      certStatusEl.textContent = `還有 ${diffDays} 天`;
+      certStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fff3cd;color:#856404;';
+    } else {
+      certStatusEl.textContent = `有效（剩 ${Math.floor(diffDays/30)} 個月）`;
+      certStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#d4edda;color:#1a6b35;';
+    }
+
+    status.style.display = '';
+    setTimeout(() => profileHideCertEdit(), 1500);
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+async function saveProfilePhone() {
+  const usr   = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const email = (usr.email || '').toLowerCase().trim();
+  const phone = document.getElementById('profilePhone').value.trim();
+  const status = document.getElementById('profilePhoneStatus');
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (!snap.empty) {
+      await snap.docs[0].ref.update({ phone });
+      status.style.display = '';
+      setTimeout(() => { status.style.display = 'none'; }, 2500);
+    }
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+// ── 登入後檢查證照效期（不足6個月時顯示提醒）──
+async function checkCertExpiry() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const email = (usr.email || '').toLowerCase().trim();
+  if (!email) return;
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (snap.empty) return;
+    const data = snap.docs[0].data();
+    await loadMembers();
+    const member = members.find(m => m.name === (usr.memberName||usr.name||'')) || {};
+    const certExp = member.certExp || data.certExp || '';
+    const cert    = member.cert    || data.cert    || '';
+    if (!certExp) return;
+    const diffDays = Math.floor((new Date(certExp) - new Date()) / 86400000);
+    if (diffDays < 180) {
+      // 顯示在儀表板頂部的 banner
+      let banner = document.getElementById('certExpiryBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'certExpiryBanner';
+        banner.style.cssText = 'background:#fff3cd;border-bottom:1px solid #ffc107;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:0.82rem;color:#856404;cursor:pointer;';
+        banner.onclick = () => navTo('profilePage');
+        const page = document.getElementById('dashboardPage');
+        if (page) page.prepend(banner);
+      }
+      const msg = diffDays < 0
+        ? `🔔 您的 ${cert} 證照已過期（${certExp}），點此查看`
+        : `🔔 您的 ${cert} 證照將於 ${certExp} 到期（剩 ${diffDays} 天），點此查看`;
+      banner.textContent = msg;
+      banner.style.display = 'flex';
+    }
+  } catch(e) {}
+}
+
+
+// ════════════════════════════════════════
+// 定訓行事曆（後台）
+// ════════════════════════════════════════
+const COL_SCHEDULE = 'trainingSchedule';
+var COL_DUTY = 'dutySchedule';
+
+async function initScheduleSection() {
+  // 填分隊選單
+  await loadUnits();
+  const sel = document.getElementById('scheduleUnit');
+  if (sel && _unitsList.length) {
+    sel.innerHTML = '<option value="">請選擇分隊</option>' +
+      _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+    // 承辦人鎖定自己分隊
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    if (!usr.isAdmin && usr.unit) {
+      sel.value = usr.unit;
+      sel.disabled = true;
+    }
+  }
+  await loadAdminSchedule();
+}
+
+async function loadAdminSchedule() {
+  const el = document.getElementById('adminScheduleList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    let docs = await fbList(COL_SCHEDULE, 'date', 'asc');
+    if (!usr.isAdmin) docs = docs.filter(d => d.unit === usr.unit);
+
+    if (!docs.length) {
+      el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">尚無定訓排程</div>';
+      return;
+    }
+
+    const today = new Date().toLocaleDateString('sv');
+    el.innerHTML = '';
+    docs.forEach(d => {
+      const isPast = d.date < today;
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);opacity:${isPast?'0.5':'1'};`;
+
+      const dateEl = document.createElement('div');
+      dateEl.style.cssText = 'font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;min-width:90px;';
+      dateEl.textContent = d.date;
+
+      const unitEl = document.createElement('div');
+      unitEl.style.cssText = 'font-size:0.78rem;color:var(--text-light);white-space:nowrap;';
+      unitEl.textContent = d.unit || '';
+
+      const topicEl = document.createElement('div');
+      topicEl.style.cssText = 'flex:1;font-size:0.85rem;color:var(--text-mid);';
+      topicEl.textContent = d.topic || '（未填主題）';
+
+      // 編輯按鈕
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '編輯';
+      editBtn.style.cssText = 'background:#eaf2ff;border:none;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#1a3a6b;cursor:pointer;font-family:"Noto Sans TC",sans-serif;white-space:nowrap;';
+      editBtn.onclick = () => openScheduleEdit(d);
+
+      // 刪除按鈕
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '刪除';
+      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:"Noto Sans TC",sans-serif;white-space:nowrap;';
+      delBtn.onclick = () => deleteSchedule(d.id, d.date);
+
+      row.appendChild(dateEl);
+      row.appendChild(unitEl);
+      row.appendChild(topicEl);
+      row.appendChild(editBtn);
+      row.appendChild(delBtn);
+      el.appendChild(row);
+    });
+  } catch(e) {
+    el.innerHTML = '<div style="color:#b94a3a;padding:8px 0;">載入失敗：' + e.message + '</div>';
+  }
+}
+
+function openScheduleEdit(doc) {
+  document.getElementById('schedEditId').value    = doc.id;
+  document.getElementById('schedEditDate').value  = doc.date || '';
+  document.getElementById('schedEditTopic').value = doc.topic || '';
+
+  // 填分隊選單
+  const sel = document.getElementById('schedEditUnit');
+  sel.innerHTML = _unitsList.map(u => `<option value="${u}" ${u===doc.unit?'selected':''}>${u}</option>`).join('');
+  if (!_unitsList.includes(doc.unit) && doc.unit) {
+    sel.innerHTML = `<option value="${doc.unit}" selected>${doc.unit}</option>` + sel.innerHTML;
+  }
+
+  document.getElementById('scheduleEditModal').style.display = 'flex';
+}
+
+function closeScheduleEdit() {
+  document.getElementById('scheduleEditModal').style.display = 'none';
+}
+
+async function saveScheduleEdit() {
+  const id    = document.getElementById('schedEditId').value;
+  const date  = document.getElementById('schedEditDate').value;
+  const unit  = document.getElementById('schedEditUnit').value;
+  const topic = document.getElementById('schedEditTopic').value.trim();
+
+  if (!date) { alert('請選擇定訓日期'); return; }
+  if (!unit) { alert('請選擇分隊'); return; }
+
+  try {
+    await fbUpdate(COL_SCHEDULE, id, { date, unit, topic });
+    closeScheduleEdit();
+    await loadAdminSchedule();
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+async function addSchedule() {
+  const date       = document.getElementById('scheduleDate').value;
+  const unit       = document.getElementById('scheduleUnit').value;
+  const topic      = document.getElementById('scheduleTopic').value.trim();
+
+  if (!date) { alert('請選擇定訓日期'); return; }
+  if (!unit) { alert('請選擇分隊'); return; }
+
+  try {
+    await fbAdd(COL_SCHEDULE, { date, unit, topic });
+    document.getElementById('scheduleDate').value  = '';
+    document.getElementById('scheduleTopic').value = '';
+    await loadAdminSchedule();
+  } catch(e) { alert('新增失敗：' + e.message); }
+}
+
+async function deleteSchedule(id, date) {
+  if (!confirm(`確定刪除 ${date} 的定訓排程？`)) return;
+  try {
+    await fbDelete(COL_SCHEDULE, id);
+    await loadAdminSchedule();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+
+// ════════════════════════════════════════
+// 修正申請
+// ════════════════════════════════════════
+
+// ── 暫存原始值（用來比較修改差異）
+var _corrOriginals = {};
+
+// 自動補冒號：輸入4碼數字時自動格式化為 HH:MM（24小時制）
+function fmtCorrTime(el) {
+  let v = el.value.replace(/[^0-9]/g,'');
+  if (v.length >= 3) v = v.slice(0,2) + ':' + v.slice(2,4);
+  el.value = v;
+}
+
+function corrModalFromBtn(btn) {
+  const type = btn.getAttribute('data-type');
+  const idx  = parseInt(btn.getAttribute('data-idx'));
+  const record = type === 'outing' ? filteredRecords[idx] : aqFiltered[idx];
+  openCorrectionModal(type, record);
+}
+
+function openCorrectionModal(type, record) {
+  document.getElementById('corrType').value  = type;
+  document.getElementById('corrDocId').value = record.id || '';
+  document.getElementById('corrReason').value = '';
+
+  // 重置 reason tags
+  document.querySelectorAll('.corr-tag').forEach(t => t.classList.remove('active'));
+  const firstTag = document.querySelector('.corr-tag');
+  if (firstTag) firstTag.classList.add('active');
+
+  // 原始紀錄 grid
+  const grid = document.getElementById('corrOrigGrid');
+  grid.innerHTML = '';
+  function origItem(label, val) {
+    if (val === undefined || val === null || val === '') return;
+    const d = document.createElement('div');
+    d.innerHTML = '<div style="font-size:0.7rem;color:var(--text-light);">'+label+'</div><div style="font-size:0.84rem;font-weight:600;color:var(--text);">'+(val||'—')+'</div>';
+    grid.appendChild(d);
+  }
+
+  // 隱藏兩組欄位，待下方依 type 顯示
+  document.getElementById('corrFieldsAttendance').style.display = 'none';
+  document.getElementById('corrFieldsOuting').style.display = 'none';
+
+  if (type === 'attendance') {
+    const cin  = record.checkinTime  || record['簽到時間'] || '';
+    const cout = record.checkoutTime || record['簽退時間'] || '';
+    const hrs  = record.hours  !== undefined ? record.hours  : (record['協勤時數'] !== undefined ? record['協勤時數'] : '');
+    const cnt  = record.count  !== undefined ? record.count  : (record['出勤次數'] !== undefined ? record['出勤次數'] : '');
+    const svc  = record.service !== undefined ? record.service : (record['服務人次'] !== undefined ? record['服務人次'] : '');
+
+    origItem('日期',     record.date || '');
+    origItem('義消',     record.memberName || record['姓名'] || '');
+    origItem('簽到',     cin);
+    origItem('簽退',     cout);
+    origItem('協勤時數', hrs !== '' ? hrs + ' 小時' : '');
+    origItem('出勤次數', cnt !== '' ? cnt + ' 次' : '');
+    origItem('服務人次', svc !== '' ? svc + ' 人' : '');
+
+    _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
+
+    document.getElementById('corrCheckin').value  = cin;
+    document.getElementById('corrCheckout').value = cout;
+    document.getElementById('corrCount').value    = cnt;
+    document.getElementById('corrService').value  = svc;
+    ['corrCheckin','corrCheckout','corrCount','corrService'].forEach(id => {
+      document.getElementById(id).classList.remove('corr-changed');
+    });
+    document.getElementById('corrDiffArea').style.display = 'none';
+    document.getElementById('corrFieldsAttendance').style.display = 'block';
+    clearCorrSig('corrSigIn','corrSigInHint');
+    clearCorrSig('corrSigOut','corrSigOutHint');
+    initCorrCanvas('corrSigIn','corrSigInHint');
+    initCorrCanvas('corrSigOut','corrSigOutHint');
+
+  } else {
+    origItem('日期',     record.date || '');
+    origItem('義消',     record.memberName || '');
+    origItem('出勤',     record.timeOut || '');
+    origItem('返勤',     record.timeBack || '');
+    origItem('行政區',   record.district || '');
+    origItem('地址',     record.address || '');
+    origItem('案件類別', record.caseType || '');
+
+    _corrOriginals = {
+      corrTimeOut:  record.timeOut  || '',
+      corrTimeBack: record.timeBack || '',
+      corrAddress:  record.address  || '',
+      corrCaseType: record.caseType || '',
+      corrServices: record.services || '',
+    };
+
+    document.getElementById('corrTimeOut').value   = record.timeOut  || '';
+    document.getElementById('corrTimeBack').value  = record.timeBack || '';
+    document.getElementById('corrAddress').value   = record.address  || '';
+    document.getElementById('corrCaseType').value  = record.caseType || '';
+    document.getElementById('corrServices').value  = record.services || '';
+    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'].forEach(id => {
+      document.getElementById(id).classList.remove('corr-changed');
+    });
+    document.getElementById('corrDiffAreaOuting').style.display = 'none';
+    document.getElementById('corrFieldsOuting').style.display = 'block';
+    clearCorrSig('corrSigOuting','corrSigOutingHint');
+    initCorrCanvas('corrSigOuting','corrSigOutingHint');
+  }
+
+  document.getElementById('correctionModal').style.display = 'flex';
+}
+
+function toggleCorrTag(el) {
+  el.classList.toggle('active');
+}
+
+function markCorrChanged(el, id) {
+  const orig = _corrOriginals[id] !== undefined ? String(_corrOriginals[id]) : '';
+  el.classList.toggle('corr-changed', el.value !== orig);
+  updateCorrDiff();
+}
+
+function updateCorrDiff() {
+  const type = document.getElementById('corrType').value;
+  if (type === 'attendance') {
+    const ids = ['corrCheckin','corrCheckout','corrCount','corrService'];
+    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'出勤次數', corrService:'服務人次' };
+    const diffs = ids.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
+    });
+    const area = document.getElementById('corrDiffArea');
+    const list = document.getElementById('corrDiffList');
+    if (!diffs.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+    list.innerHTML = diffs.map(id => {
+      const el = document.getElementById(id);
+      return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
+    }).join('');
+  } else {
+    const ids = ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'];
+    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返隊時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目' };
+    const diffs = ids.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
+    });
+    const area = document.getElementById('corrDiffAreaOuting');
+    const list = document.getElementById('corrDiffListOuting');
+    if (!diffs.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+    list.innerHTML = diffs.map(id => {
+      const el = document.getElementById(id);
+      return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
+    }).join('');
+  }
+}
+
+var _corrCanvasInited = {};
+function initCorrCanvas(canvasId, hintId) {
+  if (_corrCanvasInited[canvasId]) return;
+  _corrCanvasInited[canvasId] = true;
+  const canvas = document.getElementById(canvasId);
+  const hint   = document.getElementById(hintId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let hasSig = false;
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const sx = canvas.width / canvas.offsetWidth;
+    const sy = canvas.height / canvas.offsetHeight;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+  }
+  ctx.strokeStyle = '#1e1a17'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  canvas.addEventListener('mousedown', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (!hasSig) { hasSig = true; if (hint) hint.style.opacity = '0'; } });
+  canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+  canvas.addEventListener('mouseup',   () => drawing = false);
+  canvas.addEventListener('mouseleave',() => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); if (!hasSig) { hasSig = true; if (hint) hint.style.opacity = '0'; } }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, { passive: false });
+  canvas.addEventListener('touchend',   () => drawing = false);
+}
+
+function clearCorrSig(canvasId, hintId) {
+  _corrCanvasInited[canvasId] = false;
+  const canvas = document.getElementById(canvasId);
+  const hint   = document.getElementById(hintId);
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  if (hint) hint.style.opacity = '1';
+}
+
+function getCorrSigData(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return '';
+  const ctx = canvas.getContext('2d');
+  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const hasContent = Array.from(px).some((v, i) => i % 4 === 3 && v > 0);
+  return hasContent ? canvas.toDataURL('image/png') : '';
+}
+
+async function submitCorrection() {
+  const type  = document.getElementById('corrType').value;
+  const docId = document.getElementById('corrDocId').value;
+  const reason = document.getElementById('corrReason').value.trim();
+  const reasonTags = Array.from(document.querySelectorAll('.corr-tag.active')).map(t => t.textContent).join('、');
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+
+  // 收集修改後的欄位（只送有異動的）
+  let correctedFields = {};
+  let hasDiff = false;
+
+  if (type === 'attendance') {
+    const ids = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service' };
+    for (const [elId, field] of Object.entries(ids)) {
+      const el = document.getElementById(elId);
+      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
+        correctedFields[field] = el.value;
+        hasDiff = true;
+      }
+    }
+    const sigIn  = getCorrSigData('corrSigIn');
+    const sigOut = getCorrSigData('corrSigOut');
+    if (sigIn)  { correctedFields.checkinSig  = sigIn;  hasDiff = true; }
+    if (sigOut) { correctedFields.checkoutSig = sigOut; hasDiff = true; }
+  } else {
+    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services' };
+    for (const [elId, field] of Object.entries(ids)) {
+      const el = document.getElementById(elId);
+      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
+        correctedFields[field] = el.value;
+        hasDiff = true;
+      }
+    }
+    const sigOuting = getCorrSigData('corrSigOuting');
+    if (sigOuting) { correctedFields.signature = sigOuting; hasDiff = true; }
+  }
+
+  if (!hasDiff && !reason && !reasonTags) {
+    alert('請至少修改一個欄位或簽名後再送出'); return;
+  }
+
+  try {
+    await fbAdd(COL_CORRECTION, {
+      type,
+      docId,
+      reasonTags,
+      reason,
+      correctedFields,
+      originals: _corrOriginals,
+      status:      'pending',
+      submittedBy: usr.memberName || usr.name || '',
+      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.getElementById('correctionModal').style.display = 'none';
+    alert('✅ 申請已送出，承辦人審核後會修改資料。');
+  } catch(e) { alert('送出失敗：' + e.message); }
+}
+
+// ── 協勤紀錄直接編輯（24小時內）──
+function openOutingEdit(i) {
+  const r = filteredRecords[i];
+  if (!r) return;
+  // 直接跳到後台協勤編輯 modal
+  adminEditOut(r.id);
+}
+
+// ── 後台修正申請管理 ──
+async function loadAdminCorrections() {
+  const el = document.getElementById('adminCorrectionList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    let docs = await fbList(COL_CORRECTION);
+    // 承辦人只看自己分隊
+    if (!usr.isAdmin) {
+      const unitNames = members.filter(m => m.unit === usr.unit).map(m => m.name);
+      docs = docs.filter(d => unitNames.includes(d.memberName));
+    }
+    // 未處理的排前面
+    docs.sort((a,b) => {
+      if (a.status==='pending' && b.status!=='pending') return -1;
+      if (b.status==='pending' && a.status!=='pending') return 1;
+      return 0;
+    });
+
+    if (!docs.length) {
+      el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">目前沒有修正申請</div>';
+      return;
+    }
+
+    el.innerHTML = '';
+    docs.forEach(d => {
+      const card = document.createElement('div');
+      const isPending = d.status === 'pending';
+      card.style.cssText = 'background:white;border:1px solid '+(isPending?'#9ec5fe':'var(--border)')+';border-radius:8px;padding:14px;margin-bottom:10px;';
+
+      const statusBadge = {
+        pending:  '<span style="background:#cfe2ff;color:#084298;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">待審核</span>',
+        approved: '<span style="background:#d4edda;color:#1a6b35;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">已核准</span>',
+        rejected: '<span style="background:#fde8e8;color:#b94a3a;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">已拒絕</span>',
+      }[d.status] || '';
+
+      const typeLabel = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
+
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="font-size:0.78rem;background:var(--warm);border-radius:4px;padding:2px 8px;">${typeLabel}</span>
+          ${statusBadge}
+          <span style="font-size:0.78rem;color:var(--text-light);">${d.date||''}</span>
+          <span style="font-size:0.82rem;font-weight:600;">${d.memberName||''}</span>
+        </div>
+        <div style="font-size:0.82rem;margin-bottom:4px;"><span style="color:var(--text-light);">修正項目：</span>${d.field||''}</div>
+        <div style="font-size:0.82rem;margin-bottom:4px;"><span style="color:var(--text-light);">正確內容：</span><span style="color:var(--red);font-weight:500;">${d.correct||''}</span></div>
+        ${d.reason ? `<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">原因：${d.reason}</div>` : ''}
+        ${isPending ? `
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
+            style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            ✅ 核准並前往修改
+          </button>
+          <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','rejected')"
+            style="flex:1;background:white;color:#b94a3a;border:1px solid #f5c6c6;border-radius:6px;padding:8px;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            ❌ 拒絕
+          </button>
+        </div>` : ''}
+      `;
+      el.appendChild(card);
+    });
+  } catch(e) {
+    el.innerHTML = '<div style="color:#b94a3a;padding:8px 0;">載入失敗：' + e.message + '</div>';
+  }
+}
+
+async function handleCorrection(corrId, docId, type, action) {
+  try {
+    await fbUpdate(COL_CORRECTION, corrId, {
+      status: action,
+      handledAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    if (action === 'approved' && docId) {
+      // 跳到對應編輯介面
+      if (type === 'outing') {
+        adminEditOut(docId);
+      } else {
+        adminEditAtt(docId);
+      }
+    }
+    await loadAdminCorrections();
+  } catch(e) { alert('操作失敗：' + e.message); }
+}
+
+
+
+// ── 測試推播（直接從瀏覽器呼叫 Anthropic API 不可行，改用直接推播訂閱）
+async function sendTestPush() {
+  const statusEl = document.getElementById('testPushStatus');
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const myName = usr.memberName || usr.name || '';
+  if (!myName) { alert('請先登入'); return; }
+
+  statusEl.style.display = '';
+  statusEl.style.color = 'var(--text-mid)';
+  statusEl.textContent = '發送中...';
+
+  try {
+    await ensureFirebase();
+    // 找自己的訂閱
+    const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
+    if (snap.empty) {
+      statusEl.style.color = '#856404';
+      statusEl.textContent = '⚠️ 找不到推播訂閱，請先在「個人資料 → 裝置設定」開啟通知';
+      return;
+    }
+
+    // 用 Web Push API 直接推播（需要 VAPID，前端直接推）
+    const reg = await navigator.serviceWorker.ready;
+    if (!reg) {
+      statusEl.style.color = '#b94a3a';
+      statusEl.textContent = '❌ Service Worker 未就緒';
+      return;
+    }
+
+    // 顯示本地通知（不需要伺服器）
+    await reg.showNotification('🔔 測試通知', {
+      body: '推播功能正常運作！您將會在定訓前一天收到提醒。',
+      icon: '/Emergency-Volunteer-System/icon-192.png',
+      tag:  'test-notification',
+    });
+
+    statusEl.style.color = '#1a6b35';
+    statusEl.textContent = '✅ 測試通知已發送！請查看手機通知。';
+  } catch(e) {
+    statusEl.style.color = '#b94a3a';
+    statusEl.textContent = '❌ 失敗：' + e.message;
+  }
+}
+
+
+
+// ════════════════════════════════════════
+// 推播時間自訂
+// ════════════════════════════════════════
+
+const NOTIFY_HOUR_OPTIONS = [
+  { value: 8,  label: '前一天 08:00' },
+  { value: 9,  label: '前一天 09:00' },
+  { value: 10, label: '前一天 10:00' },
+  { value: 11, label: '前一天 11:00' },
+  { value: 12, label: '前一天 12:00' },
+  { value: 13, label: '前一天 13:00' },
+  { value: 14, label: '前一天 14:00' },
+  { value: 15, label: '前一天 15:00' },
+  { value: 16, label: '前一天 16:00' },
+  { value: 17, label: '前一天 17:00' },
+  { value: 18, label: '前一天 18:00' },
+  { value: 19, label: '前一天 19:00' },
+  { value: 20, label: '前一天 20:00' },
+  { value: 21, label: '前一天 21:00' },
+  { value: 22, label: '前一天 22:00' },
+  { value: 23, label: '前一天 23:00' },
+  { value: 0,  label: '當天 00:00' },
+  { value: 1,  label: '當天 01:00' },
+  { value: 2,  label: '當天 02:00' },
+  { value: 3,  label: '當天 03:00' },
+  { value: 4,  label: '當天 04:00' },
+  { value: 5,  label: '當天 05:00' },
+  { value: 6,  label: '當天 06:00' },
+  { value: 7,  label: '當天 07:00' },
+  { value: 24, label: '當天 08:00' },
+  { value: 25, label: '當天 09:00' },
+  { value: 26, label: '當天 10:00' },
+  { value: 27, label: '當天 11:00' },
+  { value: 28, label: '當天 12:00' },
+  { value: 29, label: '當天 13:00' },
+  { value: 30, label: '當天 14:00' },
+  { value: 31, label: '當天 15:00' },
+  { value: 32, label: '當天 16:00' },
+  { value: 33, label: '當天 17:00' },
+];
+
+function renderNotifyHourRows(hours) {
+  const wrap = document.getElementById('notifyHoursWrap');
+  const addBtn = document.getElementById('addNotifyHourBtn');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const arr = hours && hours.length ? hours : [20];
+  arr.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    const sel = document.createElement('select');
+    sel.style.cssText = 'flex:1;';
+    sel.dataset.idx = i;
+    NOTIFY_HOUR_OPTIONS.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      if (opt.value === h) o.selected = true;
+      sel.appendChild(o);
+    });
+    row.appendChild(sel);
+    if (arr.length > 1) {
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.style.cssText = 'background:none;border:none;color:var(--text-light);font-size:1rem;cursor:pointer;padding:4px 8px;flex-shrink:0;';
+      del.onclick = () => {
+        const cur = getNotifyHourValues();
+        cur.splice(i, 1);
+        renderNotifyHourRows(cur);
+      };
+      row.appendChild(del);
+    }
+    wrap.appendChild(row);
+  });
+  // 最多 3 個
+  if (addBtn) addBtn.style.display = arr.length >= 3 ? 'none' : '';
+}
+
+function getNotifyHourValues() {
+  const sels = document.querySelectorAll('#notifyHoursWrap select');
+  return [...sels].map(s => parseInt(s.value));
+}
+
+function addNotifyHourRow() {
+  const cur = getNotifyHourValues();
+  if (cur.length >= 3) return;
+  cur.push(20);
+  renderNotifyHourRows(cur);
+}
+
+async function saveNotifyHours() {
+  const hours = [...new Set(getNotifyHourValues())].sort((a,b)=>a-b);
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const myName = usr.memberName || usr.name || '';
+  if (!myName) return;
+  const statusEl = document.getElementById('notifyHoursStatus');
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
+    if (snap.empty) {
+      if (statusEl) { statusEl.style.display=''; statusEl.style.color='#856404'; statusEl.textContent='⚠️ 請先開啟推播通知再設定時間'; }
+      return;
+    }
+    await Promise.all(snap.docs.map(d => d.ref.update({ notifyHours: hours })));
+    if (statusEl) { statusEl.style.display=''; statusEl.style.color='#1a6b35'; statusEl.textContent='✓ 已儲存'; }
+    setTimeout(() => { if(statusEl) statusEl.style.display='none'; }, 2000);
+  } catch(e) {
+    if (statusEl) { statusEl.style.display=''; statusEl.style.color='#b94a3a'; statusEl.textContent='儲存失敗：'+e.message; }
+  }
+}
+
+// 載入個人資料頁時初始化推播時間設定
+async function loadNotifyHoursSettings() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const myName = usr.memberName || usr.name || '';
+  if (!myName) { renderNotifyHourRows([20]); return; }
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      renderNotifyHourRows(data.notifyHours || [20]);
+    } else {
+      renderNotifyHourRows([20]);
+    }
+  } catch(e) {
+    renderNotifyHourRows([20]);
+  }
+}
+
+
+
+// ── 推播通知 Toggle ──
+function onNotifToggleChange(checked) {
+  if (checked) {
+    subscribePush();
+  } else {
+    unsubscribePush();
+  }
+}
+
+async function unsubscribePush() {
+  const toggle   = document.getElementById('notifToggle');
+  const statusEl = document.getElementById('notifStatusMsg');
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    localStorage.removeItem('pushSubscribed');
+    // 從 Firestore 移除訂閱
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    const myName = usr.memberName || usr.name || '';
+    if (myName) {
+      await ensureFirebase();
+      const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
+      await Promise.all(snap.docs.map(d => d.ref.delete()));
+    }
+    if (statusEl) { statusEl.textContent = '已關閉推播通知'; }
+  } catch(e) {
+    if (toggle) toggle.checked = true; // 失敗還原
+    if (statusEl) { statusEl.textContent = '關閉失敗：' + e.message; }
+  }
+}
+
+// 初始化 toggle 狀態
+function initNotifToggle() {
+  const toggle = document.getElementById('notifToggle');
+  if (!toggle) return;
+  const isSubscribed = !!localStorage.getItem('pushSubscribed');
+  toggle.checked = isSubscribed;
+  const statusEl = document.getElementById('notifStatusMsg');
+  if (statusEl) {
+    statusEl.textContent = isSubscribed ? '✅ 已開啟推播通知' : '';
+  }
+}
+
+
+
+// ════════════════════════════════════════
+// 備勤排班：假日與時段容量規則
+// ════════════════════════════════════════
+
+// 台灣國定假日（固定日期）
+const TW_FIXED_HOLIDAYS = ['01-01','02-28','04-04','04-05','05-01','06-10','09-03','10-10'];
+
+// 農曆假日（2025~2026）
+const TW_LUNAR_HOLIDAYS = [
+  '2025-01-27','2025-01-28','2025-01-29','2025-01-30','2025-01-31','2025-02-01','2025-02-02',
+  '2025-04-03','2025-04-04','2025-05-30','2025-05-31','2025-06-01','2025-09-06','2025-09-07',
+  '2026-02-14','2026-02-15','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20',
+  '2026-04-03','2026-04-04','2026-06-19','2026-06-20','2026-06-21','2026-09-24','2026-09-25',
+];
+
+function isDutyHoliday(dateStr) {
+  const d = new Date(dateStr);
+  const dow = d.getDay();
+  if (dow === 0 || dow === 6) return true;
+  if (TW_FIXED_HOLIDAYS.includes(dateStr.slice(5))) return true;
+  if (TW_LUNAR_HOLIDAYS.includes(dateStr)) return true;
+  return false;
+}
+
+// 每月定訓日（每月第幾週第幾天 → 暫以固定日期方式：每月20日為定訓，18:00-22:00封鎖）
+// 判斷是否為定訓時段：每月20日 18:00-22:00
+// 定訓資料快取（從後台 trainingSchedule 載入）
+// 格式：{ '2026-05-20': '急救複訓', '2026-06-15': '消防訓練', ... }
+let _trainingDates = {};
+
+async function loadTrainingDates() {
+  try {
+    const docs = await fbList(COL_SCHEDULE, 'date', 'asc');
+    _trainingDates = {};
+    docs.forEach(d => {
+      if (d.date) _trainingDates[d.date] = d.topic || '定訓';
+    });
+  } catch(e) {
+    console.warn('loadTrainingDates 失敗：', e.message);
+  }
+}
+
+// 判斷是否為定訓封鎖時段（從後台設定的日期，封鎖 18:00-22:00）
+function isDutyTrainingBlock(dateStr, slotHour) {
+  return (dateStr in _trainingDates) && slotHour >= 18 && slotHour < 22;
+}
+
+// 取得定訓備註（顯示後台設定的主題）
+function getDutyTrainingNote(dateStr) {
+  return _trainingDates[dateStr] || '';
+}
+
+// 判斷日期是否在可填寫範圍：
+// 本月1日~當月最後一日 22:00：可填本月
+// 每月20日 00:00 起：額外開放次月班表
+// 若今日 < 當月20日：僅本月可填
+function isDutyDateAllowed(dateStr) {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target= new Date(dateStr + 'T00:00:00');
+  const curY  = now.getFullYear();
+  const curM  = now.getMonth();
+
+  // 本月範圍：本月1日 ~ 本月最後一日
+  const thisMonthStart = new Date(curY, curM, 1);
+  const thisMonthEnd   = new Date(curY, curM+1, 0); // 本月最後一日
+
+  // 次月範圍（20日後才開放）：次月1日 ~ 次月最後一日
+  const nextMonthStart = new Date(curY, curM+1, 1);
+  const nextMonthEnd   = new Date(curY, curM+2, 0);
+  const openNextMonth  = today.getDate() >= 20; // 每月20日起開放
+
+  if (target >= thisMonthStart && target <= thisMonthEnd) return true;
+  if (openNextMonth && target >= nextMonthStart && target <= nextMonthEnd) return true;
+  return false;
+}
+
+// 某時段最大容量：假日 08~20 或每日 15~20 可排 2 人，其餘 1 人
+// 定訓時段（每月20日 18-22）容量為 0（封鎖）
+function getDutySlotCapacity(dateStr, slotHour) {
+  if (isDutyTrainingBlock(dateStr, slotHour)) return 0; // 定訓封鎖
+  if (isDutyHoliday(dateStr) && slotHour >= 8 && slotHour < 20) return 2;
+  if (slotHour >= 15 && slotHour < 20) return 2;
+  return 1;
+}
+
+// 某時段已排人數
+function getDutySlotCount(dateStr, slotHour) {
+  return _dutyDocs.filter(doc => {
+    if (doc.date !== dateStr) return false;
+    const s = parseInt((doc.start||'0').split(':')[0]);
+    const e = parseInt((doc.end||'0').split(':')[0]);
+    return slotHour >= s && slotHour < e;
+  }).length;
+}
+
+// ════════════════════════════════════════
+// 備勤排班
+// ════════════════════════════════════════
+
+let _dutyYear  = new Date().getFullYear();
+let _dutyMonth = new Date().getMonth();
+let _dutyView  = 'month';
+let _dutyDocs  = [];
+
+async function initDutyPage() {
+  syncHeaderHeight();
+  const startSel = document.getElementById('dutyStart');
+  const endSel   = document.getElementById('dutyEnd');
+  if (startSel && !startSel.options.length) {
+    for (let h = 6; h <= 22; h++) {
+      const hStr = String(h).padStart(2,'0') + ':00';
+      startSel.add(new Option(hStr, hStr));
+    }
+    for (let h = 7; h <= 22; h++) {
+      const hStr = String(h).padStart(2,'0') + ':00';
+      endSel.add(new Option(hStr, hStr));
+    }
+    startSel.value = '08:00';
+    endSel.value   = '20:00';
+  }
+
+  const today = new Date().toLocaleDateString('sv');
+  const dateSel = document.getElementById('dutyDate');
+  if (dateSel && !dateSel.value) dateSel.value = today;
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin  = usr.isAdmin || false;
+  const _userUnit = usr.unit || '';
+  await Promise.all([loadMembers(), loadUnits(), loadTrainingDates()]);
+  const unitSel = document.getElementById('dutyUnitFilter');
+  if (unitSel) {
+    if (_isAdmin) {
+      unitSel.innerHTML = '<option value="">請選擇分隊別</option>' +
+        _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+      unitSel.disabled = false;
+    } else {
+      unitSel.innerHTML = '<option value="' + _userUnit + '">' + _userUnit + '</option>';
+      unitSel.disabled = true;
+    }
+    const memberSel = document.getElementById('dutyMember');
+    if (memberSel) memberSel.innerHTML = '<option value="">— 請先選擇分隊別 —</option>';
+    if (_userUnit) { unitSel.value = _userUnit; filterDutyMembers(); }
+  }
+
+  // 預設顯示當月（不自動跳到次月）
+  const now = new Date();
+  _dutyYear  = now.getFullYear();
+  _dutyMonth = now.getMonth();
+  await loadDutyData();
+  onDutyTimeChange();
+}
+function onDutyDateChange() { onDutyTimeChange(); }
+
+function onDutyTimeChange() {
+  const dateStr = document.getElementById('dutyDate')?.value || '';
+  const start   = document.getElementById('dutyStart')?.value || '';
+  const end     = document.getElementById('dutyEnd')?.value || '';
+  const hint    = document.getElementById('dutyCapacityHint');
+  if (!hint) return;
+  if (!dateStr || !start || !end || start >= end) { hint.style.display='none'; return; }
+
+  const startHH    = parseInt(start.split(':')[0]);
+  const endHH      = parseInt(end.split(':')[0]);
+  const isHoliday  = isDutyHoliday(dateStr);
+
+  const slots = [];
+  for (let h = startHH; h < endHH; h++) {
+    const cap   = getDutySlotCapacity(dateStr, h);
+    const count = getDutySlotCount(dateStr, h);
+    slots.push({ h, cap, count, full: count >= cap });
+  }
+
+  const fullSlots = slots.filter(s => s.full);
+  const maxCap    = Math.max(...slots.map(s => s.cap));
+
+  let msg, color, bg;
+  if (fullSlots.length === slots.length) {
+    msg = '⚠️ 此時段所有小時格均已額滿，無法新增';
+    color = '#7b2d00'; bg = '#fff3e0';
+  } else if (fullSlots.length > 0) {
+    const hrs = fullSlots.map(s => String(s.h).padStart(2,'0')+':00').join('、');
+    msg = '⚠️ 注意：' + hrs + ' 已額滿（其餘時段可新增）';
+    color = '#7b2d00'; bg = '#fff3e0';
+  } else {
+    msg = '✅ 可新增' + (isHoliday?' （假日）':'') + '，最多可排 ' + maxCap + ' 人／時段';
+    color = '#1a6b35'; bg = '#eafaf1';
+  }
+  hint.style.cssText = 'display:block;margin-top:10px;padding:10px 14px;border-radius:6px;font-size:0.82rem;color:' + color + ';background:' + bg + ';';
+  hint.textContent = msg;
+}
+
+function filterDutyMembers() {
+  const unit = document.getElementById('dutyUnitFilter')?.value || '';
+  const sel  = document.getElementById('dutyMember');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊別 —</option>'; return; }
+  // 需求2：只顯示潭子分隊的義消成員
+  const DUTY_TARGET_UNIT = '潭子分隊';
+  const filtered = members.filter(m => (m.unit||'') === unit && (m.unit||'') === DUTY_TARGET_UNIT);
+  if (filtered.length === 0) {
+    sel.innerHTML = '<option value="">此分隊無可排班成員</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
+    filtered.map(m => '<option value="' + m.name + '">' + m.name + (m.title?'（'+m.title+'）':'') + '</option>').join('');
+}
+
+async function loadDutyData() {
+  try {
+    await loadTrainingDates(); // 每次載入時同步最新定訓日期
+    const docs = await fbList(COL_DUTY);
+    _dutyDocs = docs;
+    renderDutyView();
+  } catch(e) { console.warn('loadDutyData 失敗：', e.message); }
+}
+
+function dutyMonthNav(delta) {
+  _dutyMonth += delta;
+  if (_dutyMonth > 11) { _dutyMonth = 0;  _dutyYear++; }
+  if (_dutyMonth < 0)  { _dutyMonth = 11; _dutyYear--; }
+  renderDutyView();
+}
+
+function toggleDutyForm() {
+  const body  = document.getElementById('dutyFormBody');
+  const arrow = document.getElementById('dutyFormArrow');
+  if (!body) return;
+  const open = body.style.display === 'none' || body.style.display === '';
+  body.style.display = open ? 'block' : 'none';
+  if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function dutyView(v) {
+  _dutyView = v;
+  ['month','list'].forEach(t => {
+    const btn = document.getElementById('dutyTab-'+t);
+    if (!btn) return;
+    if (v===t) btn.classList.add('duty-view-tab-active');
+    else        btn.classList.remove('duty-view-tab-active');
+  });
+  renderDutyView();
+}
+
+function renderDutyView() {
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('dutyMonthLabel').textContent = _dutyYear + ' 年 ' + monthNames[_dutyMonth];
+  document.getElementById('dutyMonthView').style.display = _dutyView==='month' ? '' : 'none';
+  document.getElementById('dutyListView').style.display  = _dutyView==='list'  ? '' : 'none';
+  if (_dutyView==='month') renderDutyCalendar();
+  else if (_dutyView==='list') renderDutyList();
+}
+
+function renderDutyCalendar() {
+  const grid = document.getElementById('dutyCalGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const today       = new Date().toLocaleDateString('sv');
+  const firstDay    = new Date(_dutyYear, _dutyMonth, 1).getDay();
+  const daysInMonth = new Date(_dutyYear, _dutyMonth+1, 0).getDate();
+  const HOURS       = Array.from({length:16}, (_,i) => i+6);
+
+  for (let i = 0; i < firstDay; i++)
+    grid.appendChild(Object.assign(document.createElement('div'), {style:'min-height:60px;'}));
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr    = _dutyYear + '-' + String(_dutyMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const isToday    = dateStr === today;
+    const isHoliday  = isDutyHoliday(dateStr);
+    const isAllowed  = isDutyDateAllowed(dateStr);
+    const isTraining = HOURS.some(h => isDutyTrainingBlock(dateStr, h));
+
+    let totalCap = 0, totalFilled = 0;
+    HOURS.forEach(h => { totalCap += getDutySlotCapacity(dateStr,h); totalFilled += getDutySlotCount(dateStr,h); });
+    const totalLeft = totalCap - totalFilled;
+    const isFull = totalLeft <= 0;
+    const pct    = totalCap > 0 ? totalFilled/totalCap : 0;
+
+    const tagBg = isFull ? '#7f8c8d' : pct > 0 ? '#e67e22' : '#27ae60';
+    const borderColor = isToday ? 'var(--red)' : isFull ? '#7f8c8d' : 'var(--border)';
+    const cellBg = !isAllowed ? '#f5f5f5' : isToday ? 'var(--red-faint)' : isHoliday ? '#fef9f0' : 'white';
+
+    const cell = document.createElement('div');
+    cell.style.cssText = 'min-height:64px;border:1.5px solid ' + borderColor + ';border-radius:6px;padding:4px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
+    if (isAllowed) cell.onclick = () => { dutyView('list'); setTimeout(()=>scrollToDutyDate(dateStr),100); };
+
+    const num = document.createElement('div');
+    num.style.cssText = 'font-size:0.78rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:2px;';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    if (isAllowed) {
+      const tag = document.createElement('div');
+      tag.style.cssText = 'font-size:0.58rem;background:' + tagBg + ';color:white;border-radius:3px;padding:1px 3px;font-weight:600;';
+      tag.textContent = totalLeft + '/' + totalCap;
+      cell.appendChild(tag);
+    }
+
+    // 定訓標示（顯示後台設定的主題）
+    if (isTraining) {
+      const topic = getDutyTrainingNote(dateStr);
+      const tr = document.createElement('div');
+      tr.style.cssText = 'font-size:0.5rem;background:#8e44ad;color:white;border-radius:3px;padding:1px 3px;margin-top:1px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      tr.textContent = topic || '定訓';
+      tr.title = topic || '定訓';
+      cell.appendChild(tr);
+    }
+
+    if (isHoliday && !isToday) {
+      const dot = document.createElement('div');
+      dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:#c0392b;margin-top:2px;';
+      cell.appendChild(dot);
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+function renderDutyList() {
+  const el = document.getElementById('dutyListContent');
+  if (!el) return;
+  const daysInMonth = new Date(_dutyYear, _dutyMonth+1, 0).getDate();
+  const today       = new Date().toLocaleDateString('sv');
+  const HOURS       = Array.from({length:16}, (_,i) => i+6);
+  let html = '';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr   = _dutyYear + '-' + String(_dutyMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const dayDocs   = _dutyDocs.filter(doc => doc.date===dateStr).sort((a,b)=>(a.start||'')>(b.start||'')?1:-1);
+    const isToday   = dateStr === today;
+    const isHoliday = isDutyHoliday(dateStr);
+    const dow       = new Date(dateStr).getDay();
+    const weekDay   = ['日','一','二','三','四','五','六'][dow];
+    const numColor  = isToday ? 'var(--red)' : isHoliday ? '#c0392b' : (dow===0?'#c0392b':dow===6?'#2980b9':'var(--text)');
+    const weekColor = isToday ? 'var(--red)' : isHoliday ? '#e74c3c' : 'var(--text-light)';
+
+    html += '<div class="duty-day-card" id="duty-day-' + dateStr + '">';
+
+    // 左側日期
+    html += '<div class="duty-day-num" style="' + (isToday?'background:var(--red-faint);':'') + '">';
+    html += '<div class="d-num" style="color:' + numColor + ';">' + d + '</div>';
+    html += '<div class="d-week" style="color:' + weekColor + ';">' + weekDay + '</div>';
+    if (isToday) html += '<div style="width:5px;height:5px;border-radius:50%;background:var(--red);margin-top:4px;"></div>';
+    html += '</div>';
+
+    // 右側內容
+    html += '<div class="duty-day-body">';
+
+    // 日期標題 + 新增按鈕
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    html += '<div style="font-size:0.75rem;color:var(--text-light);">' + dateStr;
+    if (isHoliday) html += ' <span style="background:#fdebd0;color:#c0392b;border-radius:4px;padding:1px 6px;font-size:0.68rem;font-weight:600;">假日</span>';
+    html += '</div>';
+    html += !isDutyDateAllowed(dateStr) ? '<span style="font-size:0.7rem;color:#aaa;padding:3px 8px;">未開放</span>' : '<button onclick="openQuickAdd(&quot;' + dateStr + '&quot;)" style="background:var(--red);color:white;border:none;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:600;cursor:pointer;">＋ 新增</button>';
+    html += '</div>';
+
+    // 人員卡
+    if (dayDocs.length === 0) {
+      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0 8px;">— 尚無備勤 —</div>';
+    } else {
+      dayDocs.forEach(doc => {
+        const usr     = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+        const myName  = usr.memberName || usr.name || '';
+        const canEdit = doc.memberName===myName || usr.isAdmin || usr.isOfficer;
+        html += '<div class="duty-person-card">';
+        html += '<div class="duty-person-avatar">' + (doc.memberName||'?').slice(0,1) + '</div>';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-size:0.88rem;font-weight:700;color:var(--text);">' + (doc.memberName||'') + '</div>';
+        html += '<div style="font-size:0.75rem;color:var(--text-mid);margin-top:2px;">勤務時段：' + (doc.start||'') + ' - ' + (doc.end||'') + '</div>';
+        html += '</div>';
+        if (canEdit) {
+          html += '<div style="display:flex;gap:4px;flex-shrink:0;">';
+          html += '<button onclick="openDutyEdit(&quot;' + doc.id + '&quot;,&quot;' + dateStr + '&quot;,&quot;' + (doc.memberName||'') + '&quot;,&quot;' + (doc.start||'') + '&quot;,&quot;' + (doc.end||'') + '&quot;)" style="background:#eaf2ff;border:none;border-radius:6px;padding:5px 8px;font-size:0.72rem;color:#1a3a6b;cursor:pointer;">✏️</button>';
+          html += '<button onclick="deleteDuty(&quot;' + doc.id + '&quot;)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 8px;font-size:0.72rem;color:#c0392b;cursor:pointer;">✕</button>';
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+    }
+
+    // 說明列（每日只在第一次渲染時顯示，放在格子上方）
+    html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;font-size:0.64rem;color:var(--text-light);margin-bottom:5px;">';
+    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#fadbd8;border:1px solid #f5b7b1;display:inline-block;"></span>額滿</span>';
+    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#fdebd0;border:1px solid #fad7a0;display:inline-block;"></span>部分已排</span>';
+    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#d5f5e3;border:1px solid #a9dfbf;display:inline-block;"></span>雙人時段</span>';
+    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#eaf2ff;border:1px solid #aad4f5;display:inline-block;"></span>一般時段</span>';
+    html += '</div>';
+
+    // 時段 cells：4欄 grid
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px;">';
+    HOURS.forEach(h => {
+      const cap   = getDutySlotCapacity(dateStr, h);
+      const count = getDutySlotCount(dateStr, h);
+      const left  = cap - count;
+      const full  = left <= 0;
+      const names = _dutyDocs.filter(doc => {
+        if (doc.date !== dateStr) return false;
+        const s = parseInt((doc.start||'0').split(':')[0]);
+        const e = parseInt((doc.end||'0').split(':')[0]);
+        return h >= s && h < e;
+      }).map(doc => doc.memberName||'');
+
+      let cellBg, cellColor, nameBg;
+      const isTrainingSlot = isDutyTrainingBlock(dateStr, h);
+      if (isTrainingSlot)   { cellBg='#f3e5f5'; cellColor='#6a1b9a'; nameBg='#8e44ad'; }
+      else if (full)        { cellBg='#fadbd8'; cellColor='#922b21'; nameBg='#c0392b'; }
+      else if (count>0)     { cellBg='#fdebd0'; cellColor='#784212'; nameBg='#e67e22'; }
+      else if (cap===2)     { cellBg='#d5f5e3'; cellColor='#1a6b35'; nameBg='#27ae60'; }
+      else                  { cellBg='#eaf2ff'; cellColor='#1a3a6b'; nameBg='#2980b9'; }
+
+      html += '<div style="background:' + cellBg + ';color:' + cellColor + ';border-radius:8px;padding:6px 4px;text-align:center;line-height:1.5;min-height:60px;">';
+      html += '<div style="font-weight:700;font-size:0.75rem;">' + String(h).padStart(2,'0') + ':00</div>';
+      if (isTrainingSlot) {
+        const topic = getDutyTrainingNote(dateStr);
+        html += '<div style="font-size:0.58rem;background:#8e44ad;color:white;border-radius:4px;padding:1px 4px;margin-top:2px;">' + (topic||'定訓') + '</div>';
+        html += '<div style="font-size:0.55rem;margin-top:2px;opacity:0.7;">封鎖</div>';
+      } else {
+        if (names.length > 0) {
+          names.forEach(n => {
+            html += '<div style="display:inline-block;background:' + nameBg + ';color:white;border-radius:4px;padding:1px 4px;font-size:0.58rem;margin-top:2px;word-break:break-all;line-height:1.4;max-width:100%;">' + n + '</div>';
+          });
+        }
+        html += '<div style="font-size:0.58rem;margin-top:3px;opacity:0.75;">' + (full?'額滿':'餘'+left) + '</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div></div>'; // duty-day-body + duty-day-card
+  }
+  el.innerHTML = html;
+}
+
+function scrollToDutyDate(dateStr) {
+  const el = document.getElementById('duty-day-' + dateStr);
+  if (!el) return;
+  const scroller = document.getElementById('appScroll');
+  if (!scroller) { el.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
+  // 補償 header + tabBar + 月份導覽 的高度
+  const header = document.querySelector('.header');
+  const tabBar = document.getElementById('dutyTabBar');
+  const monthNav = tabBar ? tabBar.nextElementSibling : null;
+  const offset = (header ? header.getBoundingClientRect().height : 56)
+               + (tabBar ? tabBar.getBoundingClientRect().height : 44)
+               + (monthNav ? monthNav.getBoundingClientRect().height : 56)
+               + 8;
+  const elTop = el.getBoundingClientRect().top;
+  const scrollerTop = scroller.getBoundingClientRect().top;
+  scroller.scrollBy({ top: elTop - scrollerTop - offset, behavior: 'smooth' });
+}
+
+async function addDutySchedule() {
+  const date   = document.getElementById('dutyDate').value;
+  const member = document.getElementById('dutyMember').value;
+  const start  = document.getElementById('dutyStart').value;
+  const end    = document.getElementById('dutyEnd').value;
+
+  if (!date)   { alert('請選擇日期'); return; }
+  if (!isDutyDateAllowed(date)) { alert('⚠️ 此日期不在可填寫範圍內。\n本月班表全月開放；次月班表於當月20日起開放。'); return; }
+  if (!member) { alert('請選擇義消姓名'); return; }
+  if (!start || !end) { alert('請選擇時間'); return; }
+  if (start >= end)   { alert('結束時間必須晚於開始時間'); return; }
+
+  const startHH = parseInt(start.split(':')[0]);
+  const endHH   = parseInt(end.split(':')[0]);
+
+  // 定訓時段檢查
+  const trainingSlots = [];
+  for (let h = startHH; h < endHH; h++) {
+    if (isDutyTrainingBlock(date, h)) trainingSlots.push(String(h).padStart(2,'0') + ':00');
+  }
+  if (trainingSlots.length > 0) {
+    alert('⚠️ 以下時段為定訓時段，無法排班：\n' + trainingSlots.join('、'));
+    return;
+  }
+
+  const fullSlots = [];
+  for (let h = startHH; h < endHH; h++) {
+    if (getDutySlotCount(date, h) >= getDutySlotCapacity(date, h))
+      fullSlots.push(String(h).padStart(2,'00') + ':00');
+  }
+  if (fullSlots.length > 0) {
+    alert('⚠️ 以下時段已額滿，無法新增：\n' + fullSlots.join('、'));
+    return;
+  }
+
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    await fbAdd(COL_DUTY, {
+      date, memberName: member, start, end,
+      unit: usr.unit || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    await loadDutyData();
+    onDutyTimeChange();
+    alert('✅ 備勤時段已新增');
+  } catch(e) { alert('新增失敗：' + e.message); }
+}
+
+async function deleteDuty(id) {
+  if (!confirm('確定刪除這筆備勤？')) return;
+  try {
+    await fbDelete(COL_DUTY, id);
+    await loadDutyData();
+    onDutyTimeChange();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+// ── 每日快速新增 ──
+let _qaDate = '';
+
+function _buildTimeOptions(selId, from, to, def) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  sel.innerHTML = '';
+  for (let h = from; h <= to; h++) {
+    const v = String(h).padStart(2,'0') + ':00';
+    sel.add(new Option(v, v));
+  }
+  sel.value = def;
+}
+
+function openQuickAdd(dateStr) {
+  _qaDate = dateStr;
+  document.getElementById('dutyQuickAddDate').textContent = dateStr + '　' + ['日','一','二','三','四','五','六'][new Date(dateStr).getDay()] + (isDutyHoliday(dateStr)?' （假日）':'');
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdmin = usr.isAdmin || false;
+  const _userUnit = usr.unit || '';
+
+  // 分隊別
+  const unitSel = document.getElementById('qaUnit');
+  if (_isAdmin) {
+    unitSel.innerHTML = '<option value="">請選擇分隊別</option>' +
+      _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+    unitSel.disabled = false;
+  } else {
+    unitSel.innerHTML = '<option value="' + _userUnit + '">' + _userUnit + '</option>';
+    unitSel.disabled = true;
+  }
+  if (_userUnit) { unitSel.value = _userUnit; filterQAMembers(); }
+  else { document.getElementById('qaMember').innerHTML = '<option value="">— 請先選擇分隊別 —</option>'; }
+
+  _buildTimeOptions('qaStart', 6, 22, '08:00');
+  _buildTimeOptions('qaEnd',   7, 22, '20:00');
+  document.getElementById('qaCapHint').style.display = 'none';
+
+  const modal = document.getElementById('dutyQuickAddModal');
+  modal.style.display = 'flex';
+  setTimeout(() => modal.querySelector('div').style.transform = 'translateY(0)', 10);
+}
+
+function closeQuickAdd() {
+  document.getElementById('dutyQuickAddModal').style.display = 'none';
+}
+
+function filterQAMembers() {
+  const unit = document.getElementById('qaUnit')?.value || '';
+  const sel  = document.getElementById('qaMember');
+  if (!sel) return;
+  if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊別 —</option>'; return; }
+  const DUTY_TARGET_UNIT = '潭子分隊';
+  const filtered = members.filter(m => (m.unit||'') === unit && (m.unit||'') === DUTY_TARGET_UNIT);
+  if (filtered.length === 0) {
+    sel.innerHTML = '<option value="">此分隊無可排班成員</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
+    filtered.map(m => '<option value="' + m.name + '">' + m.name + (m.title?'（'+m.title+'）':'') + '</option>').join('');
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const myName = usr.memberName || usr.name || '';
+  if (myName) sel.value = myName;
+}
+
+async function submitQuickAdd() {
+  const member = document.getElementById('qaMember').value;
+  const start  = document.getElementById('qaStart').value;
+  const end    = document.getElementById('qaEnd').value;
+  if (!member) { alert('請選擇義消姓名'); return; }
+  if (!start || !end || start >= end) { alert('請確認時間'); return; }
+  const startHH = parseInt(start.split(':')[0]);
+  const endHH   = parseInt(end.split(':')[0]);
+  const trainingSlots = [];
+  for (let h = startHH; h < endHH; h++) {
+    if (isDutyTrainingBlock(_qaDate, h)) trainingSlots.push(String(h).padStart(2,'0') + ':00');
+  }
+  if (trainingSlots.length > 0) { alert('⚠️ 以下時段為定訓，無法排班：\n' + trainingSlots.join('、')); return; }
+  const fullSlots = [];
+  for (let h = startHH; h < endHH; h++) {
+    if (getDutySlotCount(_qaDate, h) >= getDutySlotCapacity(_qaDate, h))
+      fullSlots.push(String(h).padStart(2,'0') + ':00');
+  }
+  if (fullSlots.length > 0) { alert('⚠️ 以下時段已額滿：\n' + fullSlots.join('、')); return; }
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    await fbAdd(COL_DUTY, {
+      date: _qaDate, memberName: member, start, end,
+      unit: usr.unit || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    closeQuickAdd();
+    await loadDutyData();
+    alert('✅ 備勤時段已新增');
+  } catch(e) { alert('新增失敗：' + e.message); }
+}
+
+// ── 編輯備勤 ──
+let _editDocDate = '';
+
+function openDutyEdit(id, dateStr, memberName, start, end) {
+  _editDocDate = dateStr;
+  document.getElementById('editDutyId').value = id;
+  document.getElementById('editDutyInfo').textContent = dateStr + '　' + memberName;
+  _buildTimeOptions('editDutyStart', 6, 22, start);
+  _buildTimeOptions('editDutyEnd',   7, 22, end);
+  document.getElementById('editCapHint').style.display = 'none';
+  document.getElementById('dutyEditModal').style.display = 'flex';
+}
+
+function closeDutyEdit() {
+  document.getElementById('dutyEditModal').style.display = 'none';
+}
+
+async function submitDutyEdit() {
+  const id    = document.getElementById('editDutyId').value;
+  const start = document.getElementById('editDutyStart').value;
+  const end   = document.getElementById('editDutyEnd').value;
+  if (!start || !end || start >= end) { alert('請確認時間'); return; }
+  const startHH = parseInt(start.split(':')[0]);
+  const endHH   = parseInt(end.split(':')[0]);
+  // 容量檢查（排除自己）
+  const selfDoc = _dutyDocs.find(d => d.id === id);
+  const fullSlots = [];
+  for (let h = startHH; h < endHH; h++) {
+    const countExcludeSelf = _dutyDocs.filter(doc => {
+      if (doc.id === id || doc.date !== _editDocDate) return false;
+      const s = parseInt((doc.start||'0').split(':')[0]);
+      const e = parseInt((doc.end||'0').split(':')[0]);
+      return h >= s && h < e;
+    }).length;
+    if (countExcludeSelf >= getDutySlotCapacity(_editDocDate, h))
+      fullSlots.push(String(h).padStart(2,'0') + ':00');
+  }
+  if (fullSlots.length > 0) { alert('⚠️ 以下時段已額滿：\n' + fullSlots.join('、')); return; }
+  try {
+    await fbUpdate(COL_DUTY, id, { start, end });
+    closeDutyEdit();
+    await loadDutyData();
+    alert('✅ 已更新');
+  } catch(e) { alert('更新失敗：' + e.message); }
+}
+
+async function deleteDutyFromEdit() {
+  const id = document.getElementById('editDutyId').value;
+  if (!confirm('確定刪除這筆備勤？')) return;
+  try {
+    await fbDelete(COL_DUTY, id);
+    closeDutyEdit();
+    await loadDutyData();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+function filterAdminWlByUnit() {
+  const unit = document.getElementById('adminWlFilterUnit')?.value || '';
+  const el = document.getElementById('adminWlList');
+  if (!el) return;
+  // 重新呼叫 loadAdminWhitelist 時傳入篩選條件
+  loadAdminWhitelist(unit);
+}
+
+
+async function reloadMembersUnit() {
+  const sel = document.getElementById('memberFilterUnit');
+  const container = document.getElementById('memberListContainer');
+  if (sel) sel.innerHTML = '<option value="">載入中...</option>';
+  if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>載入中...</div>';
+
+  try {
+    // 強制重新讀 whitelist
+    const docs = await fbList('whitelist');
+    const units = [...new Set(docs.map(d => (d.unit||'').trim()).filter(Boolean))].sort();
+    members = docs.map(d => ({
+      id: d.id, name: d.memberName||'', title: d.title||'',
+      unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
+      role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
+    })).filter(m => m.name);
+
+    if (sel) {
+      if (units.length === 0) {
+        sel.innerHTML = '<option value="">whitelist 無 unit 資料（共 ' + docs.length + ' 筆）</option>';
+        if (container) container.innerHTML = '<div style="padding:16px;font-size:0.83rem;color:var(--text-mid);">whitelist 共 ' + docs.length + ' 筆，但沒有 unit 欄位。<br>請到後台「成員帳號管理」編輯成員並設定分隊別。</div>';
+      } else {
+        sel.innerHTML = '<option value="">請選擇分隊</option>' +
+          units.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+        if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
+      }
+    }
+  } catch(e) {
+    if (sel) sel.innerHTML = '<option value="">錯誤：' + e.message + '</option>';
+  }
+}
+
+</script>
+</div><!-- /appScroll -->
+<!-- ══════ PWA 安裝引導 ══════ -->
+<div id="pwaPrompt" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;padding:12px 16px;background:white;box-shadow:0 -4px 20px rgba(0,0,0,0.15);border-top:1px solid var(--border);">
+  <div style="max-width:480px;margin:0 auto;">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+      <span style="font-size:1.8rem;flex-shrink:0;">📲</span>
+      <div>
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px;">加入主畫面，接收定訓提醒</div>
+        <div style="font-size:0.78rem;color:var(--text-light);line-height:1.5;">安裝後即可在有定訓的前一天收到通知提醒</div>
+      </div>
+      <button onclick="document.getElementById('pwaPrompt').style.display='none';localStorage.setItem('pwaDismissed','1');"
+        style="margin-left:auto;background:none;border:none;font-size:1.2rem;color:var(--text-light);cursor:pointer;flex-shrink:0;padding:4px;">✕</button>
+    </div>
+    <!-- Android：直接安裝 -->
+    <button id="pwaInstallBtn" style="display:none;width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:12px;font-size:0.92rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:8px;">
+      📥 加入主畫面
+    </button>
+    <!-- iOS：教學步驟 -->
+    <div id="pwaIOSGuide" style="display:none;background:var(--warm);border-radius:8px;padding:12px;">
+      <div style="font-size:0.8rem;font-weight:600;color:var(--text);margin-bottom:8px;">iOS 安裝步驟：</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--text-mid);">
+        <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">1</span>點擊 Safari 底部的 <strong>分享按鈕</strong> 📤</div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">2</span>選擇「<strong>加入主畫面</strong>」</div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">3</span>點擊右上角「<strong>新增</strong>」</div>
+      </div>
+      <button onclick="document.getElementById('pwaPrompt').style.display='none';localStorage.setItem('pwaDismissed','1');"
+        style="width:100%;margin-top:10px;background:var(--red);color:white;border:none;border-radius:6px;padding:10px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+        好，我知道了
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 通知訂閱提示 -->
+<div id="notifPrompt" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:499;padding:12px 16px;background:white;box-shadow:0 -4px 20px rgba(0,0,0,0.15);border-top:1px solid var(--border);">
+  <div style="max-width:480px;margin:0 auto;">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+      <span style="font-size:1.8rem;flex-shrink:0;">🔔</span>
+      <div>
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px;">開啟定訓提醒通知</div>
+        <div style="font-size:0.78rem;color:var(--text-light);line-height:1.5;">定訓前一天晚上會自動通知你</div>
+      </div>
+      <button onclick="document.getElementById('notifPrompt').style.display='none';localStorage.setItem('notifDismissed','1');"
+        style="margin-left:auto;background:none;border:none;font-size:1.2rem;color:var(--text-light);cursor:pointer;flex-shrink:0;padding:4px;">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="subscribePush()" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">開啟通知</button>
+      <button onclick="document.getElementById('notifPrompt').style.display='none';localStorage.setItem('notifDismissed','1');"
+        style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.9rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">稍後再說</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// PWA & Push Notification
+// ══════════════════════════════════════════
+const VAPID_PUBLIC_KEY = 'BLt-Ma7FVRAYTqD9G8nAoE76gpu0fuYO9tSP_u9qgBzYteCx5tXYbwWna0cGZJJgqXx2sUTRXmLpi4z5spU4vRE';
+
+// urlBase64 轉 Uint8Array（VAPID 用）
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+// 註冊 Service Worker
+// ════════════════════════════════════════
+// LINE 瀏覽器偵測
+// ════════════════════════════════════════
+(function() {
+  const ua = navigator.userAgent || '';
+  if (/Line\//i.test(ua)) {
+    const el = document.getElementById('lineWarning');
+    if (el) el.style.display = '';
+  }
+})();
+
+// ════════════════════════════════════════
+// 臨時密碼登入
+// ════════════════════════════════════════
+
+async function loginWithTempPass() {
+  const code    = (document.getElementById('tempPassInput')?.value || '').trim();
+  const errEl   = document.getElementById('tempPassError');
+  const spinner = document.getElementById('loginSpinner');
+  if (!code) { showTempPassErr('請輸入臨時密碼'); return; }
+  errEl.style.display = 'none';
+  spinner.style.display = '';
+  spinner.textContent = '⏳ 驗證中...';
+  try {
+    await ensureFirebase();
+    const now  = Date.now();
+    const snap = await _fbDB.collection(COL_TEMP_PASS)
+      .where('code', '==', code).where('active', '==', true).get();
+    if (snap.empty) { spinner.style.display='none'; showTempPassErr('密碼不正確或已失效'); return; }
+    const doc  = snap.docs[0];
+    const data = doc.data();
+    if (data.expiresAt && data.expiresAt.toMillis() < now) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已過期'); return;
+    }
+    if (data.maxUses > 0 && data.usedCount >= data.maxUses) {
+      await doc.ref.update({ active: false });
+      spinner.style.display='none'; showTempPassErr('此密碼已達使用上限'); return;
+    }
+    const memberSnap = await _fbDB.collection('whitelist').where('memberName', '==', data.memberName).get();
+    if (memberSnap.empty) { spinner.style.display='none'; showTempPassErr('找不到對應成員資料'); return; }
+    const member = memberSnap.docs[0].data();
+    await doc.ref.update({
+      usedCount: (data.usedCount || 0) + 1,
+      lastUsedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      active: data.maxUses > 0 && (data.usedCount + 1) >= data.maxUses ? false : true,
+    });
+    const sessionUser = {
+      email: member.email || '', name: member.memberName, memberName: member.memberName,
+      isAdmin: member.isAdmin || false, isOfficer: member.isOfficer || false,
+      role: member.role || 'member', unit: member.unit || '',
+      loginAt: Date.now(), loginMethod: 'tempPass',
+    };
+    sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
+    spinner.style.display = 'none';
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
+  } catch(e) {
+    spinner.style.display = 'none';
+    showTempPassErr('驗證失敗：' + e.message);
+  }
+}
+
+function showTempPassErr(msg) {
+  const el = document.getElementById('tempPassError');
+  if (el) { el.textContent = msg; el.style.display = ''; }
+}
+
+// ════════════════════════════════════════
+// 後台：臨時密碼管理
+// ════════════════════════════════════════
+// 自動插入 v1.9.02 版本紀錄（若尚未存在）
+
+
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) return null;
+  // 只在 GitHub Pages 上註冊，避免開發環境報錯
+  if (!location.hostname.includes('github.io')) return null;
+  try {
+    const reg = await navigator.serviceWorker.register(
+      '/Emergency-Volunteer-System/service-worker.js',
+      { scope: '/Emergency-Volunteer-System/' }
+    );
+    return reg;
+  } catch(e) {
+    console.warn('SW 註冊失敗：', e);
+    return null;
+  }
+}
+
+// 訂閱推播
+async function subscribePush() {
+  document.getElementById('notifPrompt').style.display = 'none';
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('請允許通知權限才能接收定訓提醒');
+      return;
+    }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    // 儲存訂閱到 Firestore
+    await savePushSubscription(sub);
+    localStorage.setItem('pushSubscribed', '1');
+    const toggle = document.getElementById('notifToggle');
+    if (toggle) toggle.checked = true;
+    const statusEl = document.getElementById('notifStatusMsg');
+    if (statusEl) { statusEl.textContent = '✅ 已開啟推播通知'; }
+    alert('✅ 已開啟定訓提醒！');
+  } catch(e) {
+    console.warn('訂閱失敗：', e);
+    const toggle = document.getElementById('notifToggle');
+    if (toggle) toggle.checked = false;
+    alert('訂閱失敗，請確認已安裝到主畫面並允許通知');
+  }
+}
+
+// 儲存訂閱到 Firestore
+async function savePushSubscription(sub) {
+  await ensureFirebase();
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const subJson = sub.toJSON();
+  await _fbDB.collection('pushSubscriptions').add({
+    endpoint:    subJson.endpoint,
+    p256dh:      subJson.keys.p256dh,
+    auth:        subJson.keys.auth,
+    memberName:  usr.memberName || usr.name || '',
+    unit:        usr.unit || '',
+    createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+// 安裝引導邏輯
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
 });
+
+document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('pwaPrompt').style.display = 'none';
+  if (outcome === 'accepted') localStorage.setItem('pwaInstalled', '1');
+});
+
+// 登入後顯示 PWA 安裝提示
+function resetAndShowPWA() {
+  // 清除之前的「不再顯示」記錄，強制重新顯示引導
+  localStorage.removeItem('pwaDismissed');
+  localStorage.removeItem('pwaInstalled');
+  const prompt   = document.getElementById('pwaPrompt');
+  const installBtn = document.getElementById('pwaInstallBtn');
+  const iosGuide   = document.getElementById('pwaIOSGuide');
+  const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  if (isStandalone) {
+    alert('✅ 已安裝到主畫面了！');
+    return;
+  }
+  if (isIOS) {
+    if (iosGuide)   iosGuide.style.display   = '';
+    if (installBtn) installBtn.style.display = 'none';
+  } else {
+    if (installBtn) installBtn.style.display = deferredPrompt ? '' : 'none';
+    if (iosGuide)   iosGuide.style.display   = 'none';
+    if (!deferredPrompt) {
+      alert('請使用手機瀏覽器開啟本網站，並點選「加入主畫面」');
+      return;
+    }
+  }
+  if (prompt) prompt.style.display = '';
+}
+
+function showNotifPrompt() {
+  const statusEl = document.getElementById('notifStatusMsg');
+  // 已訂閱
+  if (localStorage.getItem('pushSubscribed')) {
+    if (statusEl) { statusEl.style.color='#1a6b35'; statusEl.textContent='✅ 已開啟推播通知'; }
+    return;
+  }
+  // 未安裝 PWA
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (!isStandalone) {
+    if (statusEl) { statusEl.style.color='#856404'; statusEl.textContent='⚠️ 請先安裝到主畫面才能開啟通知'; }
+    return;
+  }
+  // 清除之前的拒絕記錄，重新顯示
+  localStorage.removeItem('notifDismissed');
+  const notifEl = document.getElementById('notifPrompt');
+  if (notifEl) notifEl.style.display = '';
+}
+
+function checkPWAPrompts() {
+  // 已經安裝就不顯示
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (isStandalone) {
+    // 已安裝 → 檢查是否需要訂閱通知
+    if (!localStorage.getItem('pushSubscribed') && !localStorage.getItem('notifDismissed')) {
+      setTimeout(() => {
+        document.getElementById('notifPrompt').style.display = '';
+      }, 2000);
+    }
+    return;
+  }
+
+  // 未安裝且未關閉過提示 → 顯示安裝引導
+  if (localStorage.getItem('pwaDismissed')) return;
+
+  const prompt = document.getElementById('pwaPrompt');
+  const installBtn = document.getElementById('pwaInstallBtn');
+  const iosGuide   = document.getElementById('pwaIOSGuide');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /Android/.test(navigator.userAgent);
+
+  if (isIOS) {
+    if (iosGuide) iosGuide.style.display = '';
+  } else if (isAndroid || deferredPrompt) {
+    if (installBtn) installBtn.style.display = '';
+  }
+
+  setTimeout(() => { if (prompt) prompt.style.display = ''; }, 3000);
+}
+
+// 初始化
+(async function initPWA() {
+  await registerSW();
+})();
+</script>
+
+</div>
+
+
+
+
+</body>
+</html>

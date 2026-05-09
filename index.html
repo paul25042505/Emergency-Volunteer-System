@@ -315,12 +315,7 @@ input[readonly], input.input-readonly {
 .result-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
 .result-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
 .result-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
-.btn-csv {
-  background: none; border: 1px solid var(--border-dark); border-radius: 4px;
-  padding: 5px 14px; font-size: 0.75rem; cursor: pointer; color: var(--text-mid);
-  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; min-height: unset;
-}
-.btn-csv:hover { border-color: #27ae60; color: #27ae60; background: #eafaf1; }
+
 
 .result-table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
@@ -970,7 +965,7 @@ function _dlCSV(content, filename) {
           <input type="date" id="easyOutingDate">
         </div>
         <div class="field">
-          <label>出發時間 ～ 返隊時間</label>
+          <label>出動時間 ～ 返隊時間</label>
           <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
             <input type="time" id="easyOutingTimeOut">
             <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
@@ -1040,7 +1035,7 @@ function _dlCSV(content, filename) {
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label>協勤時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
+            <label>出動時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
             <div class="time-row">
               <input type="time" id="timeOut" required>
               <div class="time-dash">—</div>
@@ -1300,7 +1295,7 @@ function _dlCSV(content, filename) {
     <div class="result-card" id="resultCard" style="display:none;">
       <div class="result-head">
         <h3>查詢結果</h3>
-        <button class="btn-csv" onclick="exportCSV()">匯出 CSV</button>
+        <button id="qSortBtn" onclick="toggleQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
       </div>
       <div class="result-table-wrap">
         <table id="resultTable">
@@ -1308,7 +1303,7 @@ function _dlCSV(content, filename) {
             <tr>
               <th>#</th>
               <th>日期</th>
-              <th>協勤時間</th>
+              <th>出動時間</th>
               <th>行政區</th>
               <th>地址</th>
               <th>案由</th>
@@ -1416,7 +1411,7 @@ function _dlCSV(content, filename) {
             <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
           </div>
           <div class="field" style="margin-bottom:0;">
-            <label>協勤次數</label>
+            <label>出勤次數</label>
             <div style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
           <div class="field" style="margin-bottom:0;">
@@ -1551,7 +1546,7 @@ function _dlCSV(content, filename) {
             <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;" readonly>
           </div>
           <div class="field">
-            <label>協勤次數</label>
+            <label>出勤次數</label>
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field">
@@ -1611,6 +1606,14 @@ function _dlCSV(content, filename) {
               <option value="">— 全部成員 —</option>
             </select>
           </div>
+          <div class="field">
+            <label for="aqDutyType">類別</label>
+            <select id="aqDutyType">
+              <option value="">— 全部類別 —</option>
+              <option value="協勤">協勤</option>
+              <option value="公差">公差</option>
+            </select>
+          </div>
         </div>
         <div class="filter-actions">
           <button class="btn-search" onclick="doAttQuery()">查　詢</button>
@@ -1622,7 +1625,7 @@ function _dlCSV(content, filename) {
     <div class="result-card" id="aqResultCard" style="display:none;">
       <div class="result-head">
         <h3>查詢結果</h3>
-        <button class="btn-csv" onclick="exportAttCSV()">匯出 CSV</button>
+        <button id="aqSortBtn" onclick="toggleAttQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
       </div>
       <div class="result-table-wrap">
         <table>
@@ -1630,7 +1633,7 @@ function _dlCSV(content, filename) {
             <tr>
               <th>#</th><th>日期</th><th>類別</th><th>姓名</th><th>職稱</th>
               <th>簽到</th><th>簽退</th><th>簽到簽名</th><th>簽退簽名</th><th>協勤時數</th>
-              <th>協勤次數</th><th>服務人次</th><th>操作</th>
+              <th>出勤次數</th><th>服務人次</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="aqResultBody"></tbody>
@@ -1670,7 +1673,7 @@ function _dlCSV(content, filename) {
       <div class="field"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
     </div>
     <div class="field"><label>協勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
-    <div class="field"><label>協勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
+    <div class="field"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
     <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
     <div class="field">
       <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
@@ -1837,7 +1840,7 @@ function _dlCSV(content, filename) {
         <div class="result-head"><h3 id="statsTableTitle">協勤排行榜</h3></div>
         <div class="result-table-wrap">
           <table class="stats-table">
-            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>協勤次數</th><th>協勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
+            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>出勤次數</th><th>協勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
             <tbody id="statsTableBody"></tbody>
           </table>
         </div>
@@ -2986,7 +2989,7 @@ function _dlCSV(content, filename) {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div class="field" style="margin-bottom:0;">
-          <label>協勤次數</label>
+          <label>出勤次數</label>
           <input type="number" id="corrCount" min="0" oninput="markCorrChanged(this,'corrCount')">
         </div>
         <div class="field" style="margin-bottom:0;">
@@ -3033,12 +3036,12 @@ function _dlCSV(content, filename) {
       <!-- 時間欄位：單欄排列，手機版面較舒適 -->
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
         <div class="field" style="margin-bottom:0;">
-          <label>出勤時間</label>
+          <label>出動時間</label>
           <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：07:00 -->
           <input type="text" id="corrTimeOut" placeholder="例：07:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeOut')">
         </div>
         <div class="field" style="margin-bottom:0;">
-          <label>返勤時間</label>
+          <label>返隊時間</label>
           <!-- 24小時制：用text避免iOS顯示AM/PM，格式HH:MM，例：12:00 -->
           <input type="text" id="corrTimeBack" placeholder="例：12:00" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" inputmode="numeric" oninput="fmtCorrTime(this);markCorrChanged(this,'corrTimeBack')">
         </div>
@@ -3048,7 +3051,7 @@ function _dlCSV(content, filename) {
         <input type="text" id="corrAddress" placeholder="出勤地址" oninput="markCorrChanged(this,'corrAddress')">
       </div>
       <div class="field">
-        <label>案件類別</label>
+        <label>案由</label>
         <input type="text" id="corrCaseType" placeholder="案件類別" oninput="markCorrChanged(this,'corrCaseType')">
       </div>
       <div class="field">
@@ -4217,8 +4220,8 @@ function submitOutingForm() {
   const _member   = document.getElementById('memberSelect').value;
 
   if (!_date)     { alert('請選擇協勤日期'); return; }
-  if (!_timeOut)  { alert('請填入出發時間'); return; }
-  if (!_timeBack) { alert('請填入返勤時間'); return; }
+  if (!_timeOut)  { alert('請填入出動時間'); return; }
+  if (!_timeBack) { alert('請填入返隊時間'); return; }
   if (!_district) { alert('請選擇行政區'); return; }
   if (!_address)  { alert('請填入詳細地址'); return; }
   if (!selectedCaseType) { alert('請選擇案由'); return; }
@@ -4333,6 +4336,42 @@ function showPendingItemsAlert() {
 // ════════════════════════════════════════
 let allRecords = [];
 let filteredRecords = [];
+let _qSortAsc  = true;  // 協勤查詢排序方向（true=遞增, false=遞減）
+let _aqSortAsc = true;  // 簽到退查詢排序方向
+
+function _applyQuerySort() {
+  const btn = document.getElementById('qSortBtn');
+  filteredRecords.sort((a, b) => {
+    const da = (a.date||'') + (a.timeOut||'');
+    const db = (b.date||'') + (b.timeOut||'');
+    const cmp = da > db ? 1 : da < db ? -1 : 0;
+    return _qSortAsc ? cmp : -cmp;
+  });
+  if (btn) btn.textContent = '📅 日期 ' + (_qSortAsc ? '↑' : '↓');
+}
+
+function toggleQuerySort() {
+  _qSortAsc = !_qSortAsc;
+  _applyQuerySort();
+  renderQueryResults(filteredRecords);
+}
+
+function _applyAttQuerySort() {
+  const btn = document.getElementById('aqSortBtn');
+  aqFiltered.sort((a, b) => {
+    const da = (a.date||'') + (a.checkinTime||'');
+    const db = (b.date||'') + (b.checkinTime||'');
+    const cmp = da > db ? 1 : da < db ? -1 : 0;
+    return _aqSortAsc ? cmp : -cmp;
+  });
+  if (btn) btn.textContent = '📅 日期 ' + (_aqSortAsc ? '↑' : '↓');
+}
+
+function toggleAttQuerySort() {
+  _aqSortAsc = !_aqSortAsc;
+  _applyAttQuerySort();
+  renderAttQueryResults();
+}
 
 async function updateQueryMemberSelect() {
   try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) {}
@@ -4417,7 +4456,7 @@ async function doQuery() {
   const dateFrom = document.getElementById('qDateFrom')?.value || '';
   const dateTo   = document.getElementById('qDateTo')?.value || '';
   const qUnit    = document.getElementById('qUnit')?.value || '';
-  const qCaseType = document.getElementById('qCaseType')?.value || '';
+  const qCaseType  = document.getElementById('qCaseType')?.value || '';
   const member   = document.getElementById('qMember')?.value || '';
   const district = document.getElementById('qDistrict')?.value || '';
   const service  = document.getElementById('qService')?.value || '';
@@ -4454,12 +4493,9 @@ async function doQuery() {
     return true;
   });
 
-  // 依日期和出發時間排序（最新在上）
-  filteredRecords.sort((a,b) => {
-    const da = (a.date||'') + (a.timeOut||'');
-    const db = (b.date||'') + (b.timeOut||'');
-    return da > db ? 1 : da < db ? -1 : 0;
-  });
+  // 依日期和出動時間排序（預設遞增）
+  _qSortAsc = true;
+  _applyQuerySort();
   renderQueryResults(filteredRecords);
   if (btn) { btn.textContent = '查　詢'; btn.disabled = false; }
 }
@@ -4541,19 +4577,6 @@ function resetQuery() {
 }
 
 
-function exportCSV() {
-  if (!filteredRecords.length) return;
-  const headers = ['日期','協勤類別','協勤時間','返勤時間','行政區','地址','服務項目','義消姓名','備註'];
-  const rows = filteredRecords.map(r =>
-    [r.date, r.dutyType, r.timeOut, r.timeBack, r.district, r.address, r.services, r.memberName, r.note]
-    .map(v => `"${(String(v||'')).replace(/"/g,'""')}"`));
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `協勤紀錄_${new Date().toLocaleDateString('sv')}.csv`;
-  a.click();
-}
 
 // ════════════════════════════════════════
 // 簽到簽退
@@ -4909,7 +4932,7 @@ function autoCalcEditHours() {
   document.getElementById('aqEditHours').value = calcHours(inTime, outTime);
 }
 
-// 查當班時段協勤次數（簽到時間 ~ 簽退時間內）
+// 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
 async function loadTodayCount(memberName) {
   // attCheckoutTarget 是 key（docId），不是 memberName
   const session   = attSessions[attCheckoutTarget] || {};
@@ -5063,7 +5086,8 @@ async function doAttQuery() {
     btn.textContent = '查　詢'; btn.disabled = false;
     return;
   }
-  const dateFrom = document.getElementById('aqDateFrom').value;
+  const dateFrom   = document.getElementById('aqDateFrom').value;
+  const aqDutyType = document.getElementById('aqDutyType')?.value || '';
   const dateTo   = document.getElementById('aqDateTo').value;
   const unit     = document.getElementById('aqUnit').value;
   const member   = document.getElementById('aqMember').value;
@@ -5079,6 +5103,7 @@ async function doAttQuery() {
     : null;
 
   aqFiltered = aqAllRecords.filter((r, i) => {
+    if (aqDutyType && (r.dutyType || '協勤') !== aqDutyType) return false;
     r._row = i;
     const d = r.date || normDate(r['日期'] || '');
     if (dateFrom && d < dateFrom) return false;
@@ -5088,12 +5113,9 @@ async function doAttQuery() {
     if (member && nm !== member) return false;
     return true;
   });
-  // 依日期和簽到時間由舊到新排序
-  aqFiltered.sort((a,b) => {
-    const da = (a.date||'') + (a.checkinTime||'');
-    const db = (b.date||'') + (b.checkinTime||'');
-    return da > db ? 1 : da < db ? -1 : 0;
-  });
+  // 依日期和簽到時間排序（預設遞增）
+  _aqSortAsc = true;
+  _applyAttQuerySort();
   renderAttQueryResults();
   btn.textContent = '查　詢'; btn.disabled = false;
 }
@@ -5123,7 +5145,7 @@ function renderAttQueryResults() {
       const cin   = r.checkinTime  || fmtAqTime(r['簽到時間'] || '');
       const cout  = r.checkoutTime || fmtAqTime(r['簽退時間'] || '');
       const hrs   = r.hours  !== undefined ? r.hours  : (r['協勤時數'] !== undefined ? r['協勤時數'] : 0);
-      const cnt   = r.count   !== undefined ? r.count   : (r['協勤次數'] !== undefined ? r['協勤次數'] : 0);
+      const cnt   = r.count   !== undefined ? r.count   : (r['出勤次數'] !== undefined ? r['出勤次數'] : 0);
       const svc   = r.service !== undefined ? r.service : (r['服務人次'] !== undefined ? r['服務人次'] : 0);
       const cinSig  = r.checkinSig  || '';
       const coutSig = r.checkoutSig || '';
@@ -5179,7 +5201,7 @@ function openAttEdit(idx) {
   document.getElementById('aqEditCheckin').value  = r.checkinTime  || fmtAqTime(r['簽到時間']  || '') || '';
   document.getElementById('aqEditCheckout').value = r.checkoutTime || fmtAqTime(r['簽退時間'] || '') || '';
   document.getElementById('aqEditHours').value   = r.hours   !== undefined ? r.hours   : ((r['協勤時數'] !== undefined && r['協勤時數'] !== '') ? r['協勤時數'] : 0);
-  document.getElementById('aqEditCount').value   = r.count   !== undefined ? r.count   : ((r['協勤次數'] !== undefined && r['協勤次數'] !== '') ? r['協勤次數'] : 0);
+  document.getElementById('aqEditCount').value   = r.count   !== undefined ? r.count   : ((r['出勤次數'] !== undefined && r['出勤次數'] !== '') ? r['出勤次數'] : 0);
   document.getElementById('aqEditService').value = r.service !== undefined ? r.service : ((r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0);
   const cinPrev=document.getElementById('aqEditCheckinPrev'), cinImg=document.getElementById('aqEditCheckinPrevImg'), cinNote=document.getElementById('aqEditCheckinPrevNote');
   const coutPrev=document.getElementById('aqEditCheckoutPrev'), coutImg=document.getElementById('aqEditCheckoutPrevImg'), coutNote=document.getElementById('aqEditCheckoutPrevNote');
@@ -5226,25 +5248,13 @@ async function saveAttEdit() {
 }
 
 function resetAttQuery() {
-  ['aqDateFrom','aqDateTo','aqUnit','aqMember'].forEach(id => {
+  ['aqDateFrom','aqDateTo','aqUnit','aqMember','aqDutyType'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   filterAqMembers(); // 重置成員選單為全部
   document.getElementById('aqResultCard').style.display = 'none';
   document.getElementById('aqInitMsg').style.display = 'block';
-}
-
-function exportAttCSV() {
-  if (!aqFiltered.length) return;
-  const headers = ['日期','姓名','職稱','簽到時間','簽退時間','協勤時數','協勤次數','服務人次'];
-  const rows = aqFiltered.map(r => headers.map(h => `"${String(r[h]||'').replace(/"/g,'""')}"`));
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `簽到紀錄_${new Date().toLocaleDateString('sv')}.csv`;
-  a.click();
 }
 
 // ════════════════════════════════════════
@@ -6311,7 +6321,7 @@ async function adminEditAtt(id) {
     <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
-    <div class="field"><label>協勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
+    <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
     <div class="field">
       <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
@@ -6373,7 +6383,7 @@ async function loadAdminOuting() {
       docs=docs.filter(d=>unitNames.has(d.memberName||''));
     }
     if(member)docs=docs.filter(d=>(d.memberName||'')===member);
-    // 由舊到新：日期 + 出發時間
+    // 由舊到新：日期 + 出動時間
     docs.sort((a,b)=>{
       const ka=(a.date||'')+(a.timeOut||'');
       const kb=(b.date||'')+(b.timeOut||'');
@@ -6430,8 +6440,8 @@ async function adminEditOut(id) {
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
-    <div class="field"><label>協勤時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" lang="en-GB" style="width:100%;"></div>
-    <div class="field"><label>返勤時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>出動時間</label><input type="time" id="aeOOut" value="${doc.timeOut||''}" lang="en-GB" style="width:100%;"></div>
+    <div class="field"><label>返隊時間</label><input type="time" id="aeOBack" value="${doc.timeBack||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
@@ -8457,7 +8467,7 @@ async function easyDoOuting() {
     : '';
 
   if (!date)        { alert('請選擇協勤日期'); return; }
-  if (!timeOut)     { alert('請填入出發時間'); return; }
+  if (!timeOut)     { alert('請填入出動時間'); return; }
   if (!timeBack)    { alert('請填入返隊時間'); return; }
   if (!district)    { alert('請選擇行政區'); return; }
   if (!address)     { alert('請填入詳細地址'); return; }
@@ -9385,7 +9395,7 @@ function openCorrectionModal(type, record) {
     const cin  = record.checkinTime  || record['簽到時間'] || '';
     const cout = record.checkoutTime || record['簽退時間'] || '';
     const hrs  = record.hours  !== undefined ? record.hours  : (record['協勤時數'] !== undefined ? record['協勤時數'] : '');
-    const cnt  = record.count  !== undefined ? record.count  : (record['協勤次數'] !== undefined ? record['協勤次數'] : '');
+    const cnt  = record.count  !== undefined ? record.count  : (record['出勤次數'] !== undefined ? record['出勤次數'] : '');
     const svc  = record.service !== undefined ? record.service : (record['服務人次'] !== undefined ? record['服務人次'] : '');
 
     origItem('日期',     record.date || '');
@@ -9393,7 +9403,7 @@ function openCorrectionModal(type, record) {
     origItem('簽到',     cin);
     origItem('簽退',     cout);
     origItem('協勤時數', hrs !== '' ? hrs + ' 小時' : '');
-    origItem('協勤次數', cnt !== '' ? cnt + ' 次' : '');
+    origItem('出勤次數', cnt !== '' ? cnt + ' 次' : '');
     origItem('服務人次', svc !== '' ? svc + ' 人' : '');
 
     _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
@@ -9460,7 +9470,7 @@ function updateCorrDiff() {
   const type = document.getElementById('corrType').value;
   if (type === 'attendance') {
     const ids = ['corrCheckin','corrCheckout','corrCount','corrService'];
-    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'協勤次數', corrService:'服務人次' };
+    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'出勤次數', corrService:'服務人次' };
     const diffs = ids.filter(id => {
       const el = document.getElementById(id);
       return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
@@ -9475,7 +9485,7 @@ function updateCorrDiff() {
     }).join('');
   } else {
     const ids = ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'];
-    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返勤時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目' };
+    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返隊時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目' };
     const diffs = ids.filter(id => {
       const el = document.getElementById(id);
       return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
