@@ -825,18 +825,75 @@ function _dlCSV(content, filename) {
     <!-- 公告區（多則）-->
     <div id="announcementBar" style="display:none;margin-bottom:12px;"></div>
 
-    <!-- 日期時間 + 天氣（左右兩卡片）-->
-    <div style="display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:14px;">
+    <!-- 日期時間 + 天氣（手機: 上下, 桌面: 左右）-->
+    <div id="dashInfoGrid" style="display:grid;grid-template-columns:2fr 3fr;gap:10px;margin-bottom:14px;">
+    <style>
+      @media(max-width:480px){
+        #dashInfoGrid { grid-template-columns:1fr !important; }
+        #dashInfoGrid > div:first-child {
+          min-height:unset !important;
+          padding:14px !important;
+          flex-direction:row !important;
+          align-items:center !important;
+          justify-content:space-between !important;
+        }
+        #dashDateTimeWrap {
+          flex-direction:row !important;
+          align-items:center !important;
+          justify-content:space-between !important;
+          width:100% !important;
+        }
+        #dashDateTimeWrap > div:first-child { flex:1 !important; }
+        #dashInfoTime {
+          font-size:1.8rem !important;
+          margin-top:0 !important;
+          flex-shrink:0 !important;
+          margin-left:12px !important;
+        }
+      }
+    </style>
       <!-- 左：日期時間 -->
-      <div style="background:white;border-radius:12px;padding:18px 16px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;min-height:100px;">
-        <div id="dashInfoDate" style="font-size:0.92rem;font-weight:600;color:var(--text-light);font-family:'Noto Serif TC',serif;letter-spacing:0.03em;"></div>
-        <div id="dashInfoTime" style="font-size:2.4rem;font-weight:700;color:var(--text);letter-spacing:0.04em;font-variant-numeric:tabular-nums;line-height:1;margin-top:8px;"></div>
+      <div style="background:white;border-radius:12px;padding:16px 14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:110px;">
+        <div id="dashDateTimeWrap" style="display:flex;flex-direction:column;width:100%;">
+          <div style="flex:1;">
+            <div id="dashInfoDate" style="font-size:0.82rem;font-weight:600;color:var(--text-light);font-family:'Noto Serif TC',serif;letter-spacing:0.02em;line-height:1.5;"></div>
+            <div id="dashInfoLunar" style="font-size:0.75rem;color:var(--text-light);margin-top:1px;font-family:'Noto Serif TC',serif;line-height:1.5;"></div>
+          </div>
+          <div id="dashInfoTime" style="font-size:2rem;font-weight:700;color:var(--text);letter-spacing:0.04em;font-variant-numeric:tabular-nums;line-height:1;margin-top:6px;"></div>
+        </div>
       </div>
-      <!-- 右：天氣 -->
-      <div id="dashInfoWeather" style="background:white;border-radius:12px;padding:16px 12px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
-        <span id="dashWeatherIcon" style="font-size:2rem;line-height:1;"></span>
-        <div id="dashWeatherTemp" style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.2;margin-top:2px;"></div>
-        <div id="dashWeatherDesc" style="font-size:0.72rem;color:var(--text-light);text-align:center;"></div>
+      <!-- 右：天氣（詳細）-->
+      <div id="dashInfoWeather" style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);">
+        <!-- 標題列 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span id="dashWeatherIcon" style="font-size:1.8rem;line-height:1;"></span>
+            <div>
+              <div id="dashWeatherTemp" style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.1;"></div>
+              <div id="dashWeatherDesc" style="font-size:0.7rem;color:var(--text-light);"></div>
+            </div>
+          </div>
+          <div style="font-size:0.68rem;color:var(--text-light);text-align:right;line-height:1.4;">📍 臺中市｜潭子區</div>
+        </div>
+        <!-- 詳細資料格子（4項：濕度、體感、降雨、紫外線）-->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">💧 濕度</div>
+            <div id="dashWeatherHumidity" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
+          </div>
+          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">🌡 體感</div>
+            <div id="dashWeatherFeels" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
+          </div>
+          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">🌂 降雨機率</div>
+            <div id="dashWeatherRain" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
+          </div>
+          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">☀️ 紫外線</div>
+            <div id="dashWeatherUV" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3930,58 +3987,218 @@ function closeDrawer() {
 // ════════════════════════════════════════
 // ── 首頁日期時間每秒更新 ──
 let _dashClockTimer = null;
+// ── 農曆計算 ──
+function getLunarDate(date) {
+  // 農曆天干地支
+  const tiangan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const dizhi   = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const shengxiao = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'];
+  const lunarMonths = ['正','二','三','四','五','六','七','八','九','十','冬','臘'];
+  const lunarDays   = ['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
+    '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
+    '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+
+  // 農曆基準：1900/1/31 = 農曆正月初一（庚子年）
+  const baseDate  = new Date(1900, 0, 31);
+  const baseLunar = { year: 1900, month: 1, day: 1 };
+
+  // 農曆每年資料（年份農曆月份天數資料表 1900-2100）
+  // 每個元素：高4位=閏月月份(0無閏),接著每月bit=1表大月(30天)否則小月(29天)
+  const lunarInfo = [
+    0x04AE53,0x0A5748,0x5526BD,0x0D2650,0x0D9544,0x46AAB9,0x056A4D,0x09AD42,0x24AEB6,0x04AE4A,
+    0x6A4DBE,0x0A4D52,0x0D2546,0x5D52BA,0x0B544E,0x0D6A43,0x296D37,0x095B4B,0x749BC1,0x049754,
+    0x0A4B48,0x5B25BC,0x06A550,0x06D445,0x4ADAB8,0x02B64D,0x095742,0x2497B7,0x04974A,0x664B3E,
+    0x0D4A51,0x0EA546,0x56D4BA,0x05AD4E,0x02B644,0x393738,0x092E4B,0x7C96BF,0x0C9553,0x0D4A48,
+    0x6DA53B,0x0B554F,0x056A45,0x4AADB9,0x025D4D,0x092D42,0x2C95B6,0x0A954A,0x7B4ABD,0x06CA51,
+    0x0B5546,0x555ABB,0x04DA4E,0x0A5B43,0x352BB8,0x052B4C,0x8A953F,0x0E9552,0x06AA48,0x7AD53C,
+    0x0AB54F,0x04B645,0x4A5739,0x0A574D,0x052642,0x3E9335,0x0D9549,0x75AABE,0x056A51,0x096D46,
+    0x54AEBB,0x04AD4F,0x0A4D43,0x4D26B7,0x0D254B,0x8D52BF,0x0B5452,0x0B6A47,0x696D3C,0x095B50,
+    0x049B45,0x4A4BB9,0x0A4B4D,0x6B25C2,0x06A554,0x06D449,0x6ADA3D,0x0AB651,0x093746,0x5497BB,
+    0x04974F,0x064B44,0x36A537,0x0EA54A,0x56D43F,0x05AD53,0x02B648,0x3A9B3B,0x092B4F,0x0C9644,
+  ];
+
+  let offset = Math.floor((date - baseDate) / 86400000);
+  let lunarYear = 1900, lunarMonth = 1, lunarDay = 1;
+  let isLeap = false;
+
+  for (let y = 1900; y < 2000 && offset > 0; y++) {
+    const info = lunarInfo[y - 1900];
+    const leapMonth = (info >> 20) & 0xF;
+    let daysInYear = 0;
+    for (let m = 1; m <= 12; m++) {
+      daysInYear += ((info >> (16 - m)) & 1) ? 30 : 29;
+    }
+    if (leapMonth) daysInYear += ((info >> 16) & 1) ? 30 : 29;
+
+    if (offset < daysInYear) {
+      lunarYear = y;
+      let leap = false;
+      for (let m = 1; m <= 12 && offset >= 0; m++) {
+        if (leapMonth === m && !leap) {
+          const ld = ((info >> 16) & 1) ? 30 : 29;
+          if (offset < ld) { lunarMonth = m; lunarDay = offset + 1; isLeap = true; break; }
+          offset -= ld; leap = true;
+        }
+        const ld = ((info >> (16 - m)) & 1) ? 30 : 29;
+        if (offset < ld) { lunarMonth = m; lunarDay = offset + 1; break; }
+        offset -= ld;
+      }
+      break;
+    }
+    offset -= daysInYear;
+  }
+
+  const tgIdx = (lunarYear - 4) % 10;
+  const dzIdx = (lunarYear - 4) % 12;
+  const yearStr = tiangan[tgIdx] + dizhi[dzIdx] + shengxiao[dzIdx] + '年';
+  const monthStr = (isLeap ? '閏' : '') + lunarMonths[lunarMonth - 1] + '月';
+  const dayStr = lunarDays[lunarDay - 1];
+  return yearStr + ' ' + monthStr + dayStr;
+}
+
+// ── 24 節氣（天文演算法，永久有效）──
+// 原理：太陽黃經每隔 15° 為一個節氣，從春分(0°)開始
+function getSolarTermByAstro(date) {
+  const TERMS = [
+    '小寒','大寒','立春','雨水','驚蟄','春分',
+    '清明','穀雨','立夏','小滿','芒種','夏至',
+    '小暑','大暑','立秋','處暑','白露','秋分',
+    '寒露','霜降','立冬','小雪','大雪','冬至',
+  ];
+
+  // 計算儒略日
+  function toJD(y, m, d) {
+    if (m <= 2) { y--; m += 12; }
+    const A = Math.floor(y / 100);
+    const B = 2 - A + Math.floor(A / 4);
+    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5;
+  }
+
+  // 太陽黃經（度）
+  function sunLongitude(jd) {
+    const T  = (jd - 2451545.0) / 36525;
+    const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+    const M  = (357.52911 + 35999.05029 * T - 0.0001537 * T * T) * Math.PI / 180;
+    const C  = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M)
+             + (0.019993 - 0.000101 * T) * Math.sin(2 * M)
+             + 0.000289 * Math.sin(3 * M);
+    let lng = (L0 + C) % 360;
+    if (lng < 0) lng += 360;
+    return lng;
+  }
+
+  // 求某年某黃經角的精確儒略日（二分法）
+  function termJD(year, angle) {
+    // 粗略估算起始點
+    let jd = toJD(year, 1, 1) + (angle + 280) % 360 / 360 * 365.25;
+    for (let i = 0; i < 50; i++) {
+      let lng = sunLongitude(jd);
+      let diff = angle - lng;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+      if (Math.abs(diff) < 0.0001) break;
+      jd += diff / 360 * 365.25;
+    }
+    return jd;
+  }
+
+  // JD 轉台灣時間日期字串
+  function jdToTWDate(jd) {
+    const ms = (jd - 2440587.5) * 86400000 + 8 * 3600000; // UTC+8
+    const d  = new Date(ms);
+    return d.toLocaleDateString('sv');
+  }
+
+  // 今天日期字串
+  const todayStr = date.toLocaleDateString('sv');
+  const y = date.getFullYear();
+
+  // 檢查今年和明年初的所有節氣
+  for (let yr = y - 1; yr <= y + 1; yr++) {
+    for (let i = 0; i < 24; i++) {
+      const angle = (i * 15 + 285) % 360; // 小寒=285°起
+      const jd    = termJD(yr, angle);
+      const ds    = jdToTWDate(jd);
+      if (ds === todayStr) return TERMS[i];
+    }
+  }
+  return null;
+}
+
+function getSolarTerm(date) {
+  return getSolarTermByAstro(date);
+}
+
 function startDashClock() {
   function update() {
     const now = new Date();
-    const dateEl = document.getElementById('dashInfoDate');
-    const timeEl = document.getElementById('dashInfoTime');
+    const dateEl  = document.getElementById('dashInfoDate');
+    const timeEl  = document.getElementById('dashInfoTime');
+    const lunarEl = document.getElementById('dashInfoLunar');
     if (dateEl) dateEl.textContent = now.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
     if (timeEl) timeEl.textContent = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+    if (lunarEl) {
+      const lunar = getLunarDate(now);
+      const term  = getSolarTerm(now);
+      lunarEl.textContent = term ? lunar + '　【' + term + '】' : lunar;
+    }
   }
   update();
   clearInterval(_dashClockTimer);
   _dashClockTimer = setInterval(update, 1000);
 }
 
-// ── 抓台中市天氣（Open-Meteo 免費 API）──
+// ── 抓台中市潭子區天氣（Open-Meteo 免費 API，每 30 分鐘更新）──
+let _weatherTimer = null;
 async function loadDashWeather() {
   try {
-    // 台中市潭子區座標
-    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=24.21&longitude=120.70&current=temperature_2m,weathercode&timezone=Asia%2FTaipei');
+    const res = await fetch(
+      'https://api.open-meteo.com/v1/forecast' +
+      '?latitude=24.21&longitude=120.70' +
+      '&current=temperature_2m,apparent_temperature,weathercode,relative_humidity_2m,' +
+      'precipitation_probability,uv_index' +
+      '&timezone=Asia%2FTaipei'
+    );
     const data = await res.json();
-    const temp = Math.round(data.current.temperature_2m);
-    const code = data.current.weathercode;
-    // WMO weather code 對應
+    const c = data.current;
+
     const weatherMap = [
-      [0,  '☀️', '晴天'],
-      [1,  '🌤', '大致晴朗'],
-      [2,  '⛅', '部分多雲'],
-      [3,  '☁️', '陰天'],
-      [45, '🌫', '霧'],
-      [48, '🌫', '霧'],
-      [51, '🌦', '毛毛雨'],
-      [53, '🌦', '毛毛雨'],
-      [55, '🌦', '毛毛雨'],
-      [61, '🌧', '小雨'],
-      [63, '🌧', '中雨'],
-      [65, '🌧', '大雨'],
-      [71, '🌨', '小雪'],
-      [73, '🌨', '中雪'],
-      [75, '🌨', '大雪'],
-      [80, '🌦', '陣雨'],
-      [81, '🌧', '陣雨'],
-      [82, '⛈', '強陣雨'],
-      [95, '⛈', '雷陣雨'],
-      [96, '⛈', '雷陣雨'],
-      [99, '⛈', '雷陣雨'],
+      [0,  '☀️', '晴天'],      [1, '🌤', '大致晴朗'],
+      [2,  '⛅', '部分多雲'],  [3, '☁️', '陰天'],
+      [45, '🌫', '霧'],        [48, '🌫', '濃霧'],
+      [51, '🌦', '毛毛雨'],    [53, '🌦', '毛毛雨'],   [55, '🌦', '毛毛雨'],
+      [61, '🌧', '小雨'],      [63, '🌧', '中雨'],     [65, '🌧', '大雨'],
+      [71, '🌨', '小雪'],      [73, '🌨', '中雪'],     [75, '🌨', '大雪'],
+      [80, '🌦', '陣雨'],      [81, '🌧', '陣雨'],     [82, '⛈', '強陣雨'],
+      [95, '⛈', '雷陣雨'],    [96, '⛈', '雷陣雨'],   [99, '⛈', '雷陣雨'],
     ];
-    const match = weatherMap.slice().reverse().find(([c]) => code >= c) || ['', '🌡', ''];
-    document.getElementById('dashWeatherIcon').textContent = match[1];
-    document.getElementById('dashWeatherTemp').textContent = temp + '°C';
-    document.getElementById('dashWeatherDesc').textContent = match[2] || '潭子';
+    const code  = c.weathercode;
+    const match = weatherMap.slice().reverse().find(([v]) => code >= v) || [0, '🌡', '—'];
+
+    // UV 等級
+    const uv = c.uv_index ?? 0;
+    const uvLabel = uv <= 2 ? '低' : uv <= 5 ? '中' : uv <= 7 ? '高' : uv <= 10 ? '很高' : '極高';
+
+    // 能見度（m → km）
+    const vis = c.visibility != null ? (c.visibility / 1000).toFixed(1) + ' km' : '—';
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('dashWeatherIcon',     match[1]);
+    set('dashWeatherTemp',     Math.round(c.temperature_2m) + '°C');
+    set('dashWeatherDesc',     match[2]);
+    set('dashWeatherHumidity', (c.relative_humidity_2m ?? '—') + '%');
+    set('dashWeatherFeels',    Math.round(c.apparent_temperature ?? c.temperature_2m) + '°C');
+    set('dashWeatherRain',     (c.precipitation_probability ?? '—') + '%');
+    set('dashWeatherUV',       uv + ' ' + uvLabel);
+
+    document.getElementById('dashInfoWeather').style.display = '';
   } catch(e) {
-    document.getElementById('dashInfoWeather').style.display = 'none';
+    const el = document.getElementById('dashInfoWeather');
+    if (el) el.style.display = 'none';
   }
+  // 每 30 分鐘自動更新
+  clearTimeout(_weatherTimer);
+  _weatherTimer = setTimeout(loadDashWeather, 30 * 60 * 1000);
 }
 
 async function loadDashboard() {
