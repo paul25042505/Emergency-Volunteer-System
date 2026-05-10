@@ -2,6 +2,7 @@ name: 簽退提醒通知
 
 on:
   schedule:
+    # 每天台灣時間 22:00（UTC 14:00）
     - cron: '0 14 * * *'
   workflow_dispatch:
 
@@ -19,12 +20,10 @@ jobs:
           node-version: '24'
 
       - name: Install dependencies
-        run: npm install web-push firebase-admin nodemailer
+        run: npm install firebase-admin nodemailer
 
       - name: 執行簽退提醒腳本
         env:
-          VAPID_PUBLIC_KEY: "BGcqrd4ZF5ShqfaQuzdsMw2ZC3Bz3IR2Qpwr9n3ofPQSRgwxcr_NgdplWZx5oz-tTSW3KhNoEXGzWGw9MB3oIF0"
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}

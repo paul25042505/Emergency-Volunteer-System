@@ -1,13 +1,12 @@
 // ══════════════════════════════════════════
 // 簽退提醒腳本
 // 每天台灣時間 22:00 執行
-// ① 明日班表提醒
-// ② 今日未簽退提醒
-// ③ 今日協勤統計
-// ④ 個別推播 + Email（未簽退者）
+// ① 明日班表提醒（LINE）
+// ② 今日未簽退提醒（LINE）
+// ③ 今日協勤統計（LINE）
+// ④ 個別 Email（未簽退者）
 // ══════════════════════════════════════════
 
-const webpush    = require('web-push');
 const admin      = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const https      = require('https');
@@ -16,13 +15,6 @@ const https      = require('https');
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
-
-// ── 設定 VAPID ──
-webpush.setVapidDetails(
-  'mailto:paul25042505@gmail.com',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
 
 // ── 設定 Gmail SMTP ──
 const transporter = nodemailer.createTransport({
@@ -99,14 +91,6 @@ async function main() {
     if (data.memberName && data.email) emailMap[data.memberName] = data.email;
   });
 
-  // ── 讀取推播訂閱 ──
-  const subsSnap = await db.collection('pushSubscriptions').get();
-  const subMap = {};
-  subsSnap.docs.forEach(d => {
-    const data = d.data();
-    if (data.memberName) subMap[data.memberName] = data;
-  });
-
   const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
 
   if (LINE_ACCESS_TOKEN) {
@@ -118,7 +102,6 @@ async function main() {
         .get();
 
       if (!dutySnap.empty) {
-        // 依開始時間排序
         const slots = dutySnap.docs
           .map(d => d.data())
           .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
@@ -199,44 +182,17 @@ async function main() {
     console.log('⚠️ 未設定 LINE_CHANNEL_ACCESS_TOKEN，跳過 LINE 通知');
   }
 
-  // ── ④ 個別推播 + Email（僅針對尚未簽退的人）──
+  // ── ④ 個別 Email（僅針對尚未簽退的人）──
   if (!notCheckedOut.length) {
     console.log('\n提醒完成！');
     return;
   }
 
   for (const rec of notCheckedOut) {
-    const name = rec.memberName || '';
+    const name  = rec.memberName || '';
+    const email = emailMap[name];
     console.log(`\n處理：${name}`);
 
-    // 推播通知
-    const sub = subMap[name];
-    if (sub) {
-      const payload = JSON.stringify({
-        title: '🔔 提醒簽退',
-        body:  `${name}，您今日（${today}）尚未完成簽退，請記得登入系統完成紀錄。`,
-        url:   siteUrl,
-        tag:   'checkout-reminder',
-      });
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
-        );
-        console.log(`  ✅ 推播成功`);
-      } catch(err) {
-        console.log(`  ❌ 推播失敗：${err.message}`);
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          await db.collection('pushSubscriptions').where('memberName', '==', name).get()
-            .then(s => Promise.all(s.docs.map(d => d.ref.delete())));
-        }
-      }
-    } else {
-      console.log(`  ⚠️ 無推播訂閱`);
-    }
-
-    // Email 通知
-    const email = emailMap[name];
     if (email) {
       try {
         await transporter.sendMail({

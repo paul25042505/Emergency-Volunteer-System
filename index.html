@@ -1756,16 +1756,16 @@ function _dlCSV(content, filename) {
     <div class="field"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
     <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      <label><span>簽到簽名</span></label>
       <div id="aqEditCheckinPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
-      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽退簽名</span><button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
+      <label><span>簽退簽名</span></label>
       <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
-      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;">↓ 重新簽名將取代上方舊簽名</div>
+      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
@@ -2394,6 +2394,7 @@ function _dlCSV(content, filename) {
 
     <div class="section" id="adminSec-feedback">
       <div class="section-head"><div class="section-num">💬</div><div class="section-title">意見回饋</div><div class="section-line"></div>
+        <button onclick="batchDelChecked('fbChk',COL_FEEDBACK,loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">🗑️ 批次刪除</button>
         <button onclick="loadAdminFeedback()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
       <div id="adminFeedbackList"></div>
@@ -2404,6 +2405,7 @@ function _dlCSV(content, filename) {
         <div class="section-num">📝</div>
         <div class="section-title">修正申請</div>
         <div class="section-line"></div>
+        <button onclick="batchDelChecked('corrChk',COL_CORRECTION,loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">🗑️ 批次刪除</button>
         <button onclick="loadAdminCorrections()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
       <div id="adminCorrectionList" style="margin-top:4px;"></div>
@@ -2439,15 +2441,7 @@ function _dlCSV(content, filename) {
       </div>
       <div id="adminScheduleList" style="margin-top:4px;"></div>
 
-      <!-- 測試推播 -->
-      <div class="card" style="margin-top:16px;background:var(--warm);border:1px dashed var(--border);">
-        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;">🧪 測試推播</div>
-        <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;line-height:1.6;">
-          立即發送測試通知，確認推播功能是否正常。
-        </div>
-        <button onclick="sendTestPush()" class="btn-search" style="width:100%;">📲 發送測試通知給我</button>
-        <div id="testPushStatus" style="font-size:0.78rem;margin-top:8px;text-align:center;display:none;"></div>
-      </div>
+
     </div>
     <!-- ══════ SECTION：臨時密碼管理 ══════ -->
     <div class="section" id="adminSec-temppass">
@@ -2505,7 +2499,8 @@ function _dlCSV(content, filename) {
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 現有臨時密碼</div>
-          <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+          <button onclick="batchDelChecked('tpChk',COL_TEMP_PASS,loadTempPassList)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🗑️ 批次刪除</button>
+        <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
         </div>
         <div id="tempPassList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
       </div>
@@ -2565,6 +2560,7 @@ function _dlCSV(content, filename) {
         <div class="filter-actions" style="margin-top:12px;">
           <button class="btn-search" onclick="loadLoginLog()">查　詢</button>
           <button class="btn-reset" onclick="resetLoginLog()">清除</button>
+          <button onclick="batchDelChecked('llChk',COL_LOGINLOG,loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:6px 14px;font-size:0.82rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🗑️ 批次刪除</button>
         </div>
       </div>
       <div id="adminLoginLogList">
@@ -2768,56 +2764,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <!-- 裝置設定 -->
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">📱</div>
-        <div class="section-title">裝置設定</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="card">
-        <!-- 加入主畫面 -->
-        <div class="field">
-          <label>加入主畫面</label>
-          <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:10px;line-height:1.6;">安裝到手機桌面後可接收推播通知</div>
-          <button onclick="resetAndShowPWA()" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            📲 顯示安裝引導
-          </button>
-        </div>
-        <div class="card-divider"></div>
-        <!-- 推播通知開關 -->
-        <div class="field">
-          <div class="ios-toggle-wrap">
-            <div>
-              <div style="font-size:0.88rem;font-weight:500;color:var(--text);">推播通知</div>
-              <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px;line-height:1.5;">開啟後可接收定訓提醒、簽退提醒等通知</div>
-            </div>
-            <label class="ios-toggle" style="margin-left:16px;width:51px;min-width:51px;max-width:51px;height:31px;display:block;">
-              <input type="checkbox" id="notifToggle" onchange="onNotifToggleChange(this.checked)">
-              <span class="ios-toggle-slider"></span>
-            </label>
-          </div>
-          <div id="notifStatusMsg" style="font-size:0.75rem;margin-top:8px;color:var(--text-light);"></div>
-        </div>
-        <div class="card-divider"></div>
-        <!-- 自訂推播時間 -->
-        <div class="field">
-          <label>定訓提醒時間 <span style="font-size:0.72rem;color:var(--text-light);margin-left:4px;">（最多 3 個）</span></label>
-          <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;line-height:1.6;">定訓前一天，在您設定的時間點推播提醒</div>
-          <div id="notifyHoursWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
-            <!-- 動態產生 -->
-          </div>
-          <button onclick="addNotifyHourRow()" id="addNotifyHourBtn"
-            style="width:100%;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            ＋ 新增時間
-          </button>
-          <button onclick="saveNotifyHours()" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-top:8px;">
-            儲存提醒時間
-          </button>
-          <div id="notifyHoursStatus" style="font-size:0.75rem;color:#1a6b35;display:none;margin-top:6px;text-align:center;">✓ 已儲存</div>
-        </div>
-      </div>
-    </div>
+
 
     <div class="site-footer-placeholder"></div>
   </div>
@@ -3467,7 +3414,6 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   if (logoutBtn) logoutBtn.style.display = 'inline';
   startIdleTimer();
   setTimeout(checkCertExpiry, 1500);
-  setTimeout(checkPWAPrompts, 4000);
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
   setTimeout(async () => {
     if (!allItems || allItems.length === 0) {
@@ -3527,7 +3473,8 @@ function startIdleTimer() {
     idleTimer = setTimeout(() => {
       alert('閒置超過 ' + IDLE_MINUTES + ' 分鐘，系統已自動鎖定，請重新登入。');
       sessionStorage.removeItem('rescue_user');
-      location.reload();
+      // 清掉 hash，讓重新登入後預設回首頁
+      location.href = location.pathname;
     }, IDLE_MINUTES * 60 * 1000);
   };
   ['click','touchstart','keydown','scroll'].forEach(ev =>
@@ -4534,6 +4481,31 @@ function aeInitCanvas(canvasId) {
 }
 function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return document.getElementById(id).toDataURL('image/png'); }
 function aeCanvasClear(id){ const s=_aeCtxMap[id]; if(!s)return; const cv=document.getElementById(id); if(!cv)return; s.ctx.clearRect(0,0,cv.width,cv.height); s.hasSig=false; }
+
+// 管理員刪除簽名：隱藏舊簽名圖、標記 deleted=1，儲存時寫入空字串
+function aeDeleteSig(wrapId, deletedInputId) {
+  if (!confirm('確定刪除此簽名？刪除後儲存才會生效。')) return;
+  const wrap = document.getElementById(wrapId);
+  if (wrap) wrap.style.display = 'none';
+  const flag = document.getElementById(deletedInputId);
+  if (flag) flag.value = '1';
+}
+
+// 把 base64 簽名畫到 canvas，並標記 hasSig=true 讓 aeGetSig 能取得
+function drawSigToCanvas(canvasId, base64) {
+  if (!base64) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const img = new Image();
+  img.onload = () => {
+    const ratio = window.devicePixelRatio || 1;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width / ratio, canvas.height / ratio);
+    if (_aeCtxMap[canvasId]) _aeCtxMap[canvasId].hasSig = true;
+  };
+  img.src = base64;
+}
 
 function submitOutingForm() {
   // 最優先：其他案由必填檢查（靠 hidden input 判斷，不靠動態 id）
@@ -5545,9 +5517,9 @@ function openAttEdit(idx) {
   document.getElementById('aqEditService').value = r.service !== undefined ? r.service : ((r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0);
   const cinPrev=document.getElementById('aqEditCheckinPrev'), cinImg=document.getElementById('aqEditCheckinPrevImg'), cinNote=document.getElementById('aqEditCheckinPrevNote');
   const coutPrev=document.getElementById('aqEditCheckoutPrev'), coutImg=document.getElementById('aqEditCheckoutPrevImg'), coutNote=document.getElementById('aqEditCheckoutPrevNote');
-  if(r.checkinSig){cinImg.src=r.checkinSig;cinPrev.style.display='block';cinNote.style.display='block';}
+  if(r.checkinSig){cinImg.src=r.checkinSig;cinPrev.style.display='block';cinNote.style.display='flex';}
   else{cinPrev.style.display='none';cinNote.style.display='none';}
-  if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='block';}
+  if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='flex';}
   else{coutPrev.style.display='none';coutNote.style.display='none';}
   document.getElementById('aqEditModal').style.display = 'flex';
   autoCalcEditHours();
@@ -6283,11 +6255,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }).catch(()=>{});
 });
 
-if ('serviceWorker' in navigator) {
-  const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response(''))));`;
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
-}
 
 // ════════════════════════════════════════
 // 管理員後台
@@ -6664,14 +6631,14 @@ async function adminEditAtt(id) {
     <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽到簽名</span><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
-      ${doc.checkinSig?`<div style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <label><span>簽到簽名</span></label>
+      ${doc.checkinSig?`<div id="aeACheckinPrevWrap" style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeACheckinPrevWrap','aeACheckinDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeACheckinDeleted" value="0">`:''}
       <div class="sig-wrap"><canvas id="aeACheckinCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>簽退簽名</span><button type="button" onclick="aeCanvasClear('aeACheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
-      ${doc.checkoutSig?`<div style="margin-bottom:4px;"><img src="${doc.checkoutSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <label><span>簽退簽名</span></label>
+      ${doc.checkoutSig?`<div id="aeACheckoutPrevWrap" style="margin-bottom:4px;"><img src="${doc.checkoutSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeACheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeACheckoutPrevWrap','aeACheckoutDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeACheckoutDeleted" value="0">`:''}
       <div class="sig-wrap"><canvas id="aeACheckoutCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>`;
@@ -6682,6 +6649,8 @@ async function adminEditAtt(id) {
   adminEditSave=async()=>{
     try {
       const cinN=aeGetSig('aeACheckinCanvas'), coutN=aeGetSig('aeACheckoutCanvas');
+      const cinDel  = document.getElementById('aeACheckinDeleted')?.value  === '1';
+      const coutDel = document.getElementById('aeACheckoutDeleted')?.value === '1';
       await fbSet(COL_ATTEND,id,{
         date:document.getElementById('aeADate').value,
         dutyType:document.getElementById('aeADuty').value,
@@ -6691,8 +6660,8 @@ async function adminEditAtt(id) {
         hours:parseFloat(document.getElementById('aeAHours').value)||0,
         count:parseInt(document.getElementById('aeACount').value)||0,
         service:parseInt(document.getElementById('aeASvc').value)||0,
-        checkinSig:  cinN  || doc.checkinSig  || '',
-        checkoutSig: coutN || doc.checkoutSig || '',
+        checkinSig:  cinDel  ? '' : (cinN  || doc.checkinSig  || ''),
+        checkoutSig: coutDel ? '' : (coutN || doc.checkoutSig || ''),
       });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('attQueryPage')?.classList.contains('active')) await doAttQuery();
@@ -6788,8 +6757,8 @@ async function adminEditOut(id) {
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
     <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;"><span>義消簽名</span><button type="button" onclick="aeCanvasClear('aeOSigCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button></label>
-      ${doc.signature?`<div style="margin-bottom:4px;"><img src="${doc.signature}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;">↓ 重新簽名將取代上方舊簽名</div>`:''}
+      <label><span>義消簽名</span></label>
+      ${doc.signature?`<div id="aeOSigPrevWrap" style="margin-bottom:4px;"><img src="${doc.signature}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeOSigCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeOSigPrevWrap','aeOSigDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeOSigDeleted" value="0">`:''}
       <div class="sig-wrap"><canvas id="aeOSigCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>`;
@@ -6799,6 +6768,7 @@ async function adminEditOut(id) {
   adminEditSave=async()=>{
     try {
       const sigN=aeGetSig('aeOSigCanvas');
+      const sigDel = document.getElementById('aeOSigDeleted')?.value === '1';
       await fbSet(COL_OUTING,id,{
         date:document.getElementById('aeODate').value,
         caseType:document.getElementById('aeOCaseType').value.trim(),
@@ -6809,7 +6779,7 @@ async function adminEditOut(id) {
         services:document.getElementById('aeOSvc').value.trim(),
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
-        signature: sigN || doc.signature || '',
+        signature: sigDel ? '' : (sigN || doc.signature || ''),
       });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('queryPage')?.classList.contains('active')) await doQuery();
@@ -6855,6 +6825,31 @@ async function adminUnclaim(itemId, memberName) {
   } catch(e){alert('操作失敗：'+e.message);}
 }
 
+
+// ── 勾選批次刪除共用函式 ──
+function toggleAllCheck(className, checked) {
+  document.querySelectorAll('.' + className).forEach(cb => cb.checked = checked);
+}
+
+async function batchDelChecked(className, col, reloadFn) {
+  const ids = Array.from(document.querySelectorAll('.' + className + ':checked')).map(cb => cb.dataset.id).filter(Boolean);
+  if (!ids.length) { alert('請先勾選要刪除的項目'); return; }
+  if (!confirm('確定刪除選取的 ' + ids.length + ' 筆資料？此操作無法還原。')) return;
+  try {
+    await Promise.all(ids.map(id => fbDelete(col, id)));
+    if (reloadFn) await reloadFn();
+  } catch(e) { alert('批次刪除失敗：' + e.message); }
+}
+
+// ── 批次刪除共用函式 ──
+async function adminBatchDel(col, ids, reloadFn) {
+  if (!ids.length) { alert('請先勾選要刪除的項目'); return; }
+  if (!confirm(`確定刪除選取的 ${ids.length} 筆資料？此操作無法還原。`)) return;
+  try {
+    await Promise.all(ids.map(id => fbDelete(col, id)));
+    if (reloadFn) await reloadFn();
+  } catch(e) { alert('批次刪除失敗：' + e.message); }
+}
 
 async function adminDel(col,id,label,reloadFn) {
   if(!confirm('確定刪除「'+label+'」？此操作無法復原。'))return;
@@ -7045,16 +7040,20 @@ async function loadLoginLog() {
     const ROLE_BG    = { admin:'#fff3cd', officer:'#cfe2ff', member:'#e9ecef' };
 
     el.innerHTML = `
+      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">共 ${docs.length} 筆登入紀錄</div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
           <thead>
             <tr>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">#</th>
+              <th style="background:var(--warm);padding:8px;border-bottom:1px solid var(--border);width:32px;text-align:center;">
+                <input type="checkbox" id="llCheckAll" onchange="toggleAllCheck('llChk',this.checked)" title="全選">
+              </th>
               <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">登入時間</th>
               <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">姓名</th>
               <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">分隊</th>
               <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">角色</th>
               <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);">Email</th>
+              <th style="background:var(--warm);padding:10px 8px;border-bottom:1px solid var(--border);"></th>
             </tr>
           </thead>
           <tbody>
@@ -7064,7 +7063,7 @@ async function loadLoginLog() {
               const roleColor = ROLE_COLOR[role] || '#495057';
               const roleLabel = ROLE_LABEL[role] || role;
               return `<tr>
-                <td style="padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-light);font-size:0.78rem;">${i+1}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;"><input type="checkbox" class="llChk" data-id="${d.id}"></td>
                 <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.loginAt||''}</td>
                 <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-weight:500;">${d.memberName||''}</td>
                 <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.unit||''}</td>
@@ -7072,12 +7071,14 @@ async function loadLoginLog() {
                   <span style="font-size:0.68rem;background:${roleBg};color:${roleColor};border-radius:10px;padding:2px 8px;font-weight:600;white-space:nowrap;">${roleLabel}</span>
                 </td>
                 <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.78rem;color:var(--text-light);">${d.email||''}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">
+                  <button onclick="adminDel('${COL_LOGINLOG}','${d.id}','登入紀錄',loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button>
+                </td>
               </tr>`;
             }).join('')}
           </tbody>
         </table>
-      </div>
-      <div style="font-size:0.75rem;color:var(--text-light);padding:8px 4px;">共 ${docs.length} 筆登入紀錄</div>`;
+      </div>`;
   } catch(e) {
     el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
@@ -7665,17 +7666,19 @@ async function loadAdminFeedback() {
     }
     if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">尚無意見</div>';return;}
     docs.sort((a,b)=>(b.time||'')>(a.time||'')?1:-1);
-    el.innerHTML=docs.map(d=>`
-      <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
+    el.innerHTML = '';
+    el.insertAdjacentHTML('beforeend', docs.map(d=>`
+      <div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <input type="checkbox" class="fbChk" data-id="${d.id}" style="flex-shrink:0;">
           <span style="font-size:0.78rem;background:var(--warm);border-radius:10px;padding:2px 10px;color:var(--text-mid);">${d.category||'其他'}</span>
           ${d.unit?`<span style="font-size:0.72rem;color:#1a6b9a;">${d.unit}</span>`:''}
           <span style="font-weight:500;font-size:0.88rem;">${d.name||'匿名'}</span>
           <span style="font-size:0.75rem;color:var(--text-light);margin-left:auto;">${(d.time||'').substring(0,16)}</span>
-          <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 8px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">刪</button>
+          <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 8px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button>
         </div>
         <div style="font-size:0.85rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">${d.content||''}</div>
-      </div>`).join('');
+      </div>`).join(''));
   } catch(e){el.innerHTML='載入失敗：'+e.message;}
 }
 
@@ -8118,6 +8121,8 @@ async function loadTempPassList() {
     const docs = await fbList(COL_TEMP_PASS, 'createdAt', 'desc');
     const now  = Date.now();
     if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">尚無臨時密碼</div>'; return; }
+    const batchBar = document.createElement('div');
+    batchBar.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;';
     el.innerHTML = '';
     docs.slice(0,30).forEach(d => {
       const expired  = d.expiresAt?.toMillis() < now;
@@ -8128,9 +8133,13 @@ async function loadTempPassList() {
       row.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);opacity:'+(inactive?'0.5':'1')+';';
       row.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">'
         +'<div style="display:flex;align-items:center;gap:8px;">'
+        +'<input type="checkbox" class="tpChk" data-id="'+d.id+'" style="flex-shrink:0;">'
         +'<code style="background:'+(inactive?'#f0f0f0':'#fff3cd')+';border:1px solid '+(inactive?'#ddd':'#ffc107')+';border-radius:6px;padding:3px 10px;font-size:1rem;font-weight:700;letter-spacing:2px;color:'+(inactive?'#999':'#856404')+';">'+d.code+'</code>'
         +'<span style="font-size:0.82rem;font-weight:600;color:var(--text);">'+d.memberName+'</span></div>'
-        +'<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:'+(inactive?'#f0f0f0':'#eafaf1')+';color:'+(inactive?'#999':'#1a6b35')+';"> '+(inactive?'已失效':'使用中')+'</span></div>'
+        +'<div style="display:flex;align-items:center;gap:6px;">'
+        +'<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:'+(inactive?'#f0f0f0':'#eafaf1')+';color:'+(inactive?'#999':'#1a6b35')+';"> '+(inactive?'已失效':'使用中')+'</span>'
+        +'<button class="tpSingleDel" data-col="'+COL_TEMP_PASS+'" data-id="'+d.id+'" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button>'
+        +'</div></div>'
         +'<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
         +'<span>⏰ '+expStr+'</span>'
         +'<span>📊 '+d.usedCount+'/'+(d.maxUses===0?'∞':d.maxUses)+'</span>'
@@ -8139,6 +8148,15 @@ async function loadTempPassList() {
       el.appendChild(row);
     });
   } catch(e) { el.innerHTML = '<div style="color:#b94a3a;font-size:0.85rem;">載入失敗：'+e.message+'</div>'; }
+
+  // 單獨刪除：event delegation
+  el.querySelectorAll('.tpSingleDel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const col = btn.dataset.col;
+      const id  = btn.dataset.id;
+      adminDel(col, id, '臨時密碼', loadTempPassList);
+    });
+  });
 }
 
 async function revokeTempPass(id) {
@@ -9418,7 +9436,6 @@ async function loadProfilePage() {
   }
 
   // 初始化推播通知 toggle 狀態
-  initNotifToggle();
   // 初始化推播時間設定
   loadNotifyHoursSettings();
 
@@ -9961,12 +9978,10 @@ async function loadAdminCorrections() {
   try {
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
     let docs = await fbList(COL_CORRECTION);
-    // 承辦人只看自己分隊
     if (!usr.isAdmin) {
       const unitNames = members.filter(m => m.unit === usr.unit).map(m => m.name);
       docs = docs.filter(d => unitNames.includes(d.memberName));
     }
-    // 未處理的排前面
     docs.sort((a,b) => {
       if (a.status==='pending' && b.status!=='pending') return -1;
       if (b.status==='pending' && a.status!=='pending') return 1;
@@ -9978,11 +9993,22 @@ async function loadAdminCorrections() {
       return;
     }
 
+    // 欄位中文名稱對照
+    const fieldLabels = {
+      checkinTime: '簽到時間', checkoutTime: '簽退時間',
+      hours: '協勤時數', count: '協勤次數', service: '服務人次',
+      dutyType: '類別', memberName: '義消姓名',
+      timeOut: '出勤時間', timeBack: '返勤時間',
+      date: '日期', district: '行政區', address: '地址',
+      caseType: '案由', services: '服務項目', note: '備註',
+      checkinSig: '簽到簽名', checkoutSig: '簽退簽名', signature: '義消簽名',
+    };
+
     el.innerHTML = '';
     docs.forEach(d => {
       const card = document.createElement('div');
       const isPending = d.status === 'pending';
-      card.style.cssText = 'background:white;border:1px solid '+(isPending?'#9ec5fe':'var(--border)')+';border-radius:8px;padding:14px;margin-bottom:10px;';
+      card.style.cssText = `background:white;border:1px solid ${isPending ? '#9ec5fe' : 'var(--border)'};border-radius:10px;padding:16px;margin-bottom:12px;`;
 
       const statusBadge = {
         pending:  '<span style="background:#cfe2ff;color:#084298;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">待審核</span>',
@@ -9991,25 +10017,67 @@ async function loadAdminCorrections() {
       }[d.status] || '';
 
       const typeLabel = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
+      const cf = d.correctedFields || {};
+      const og = d.originals || {};
+
+      // 產生修正對比列表
+      const sigKeys = ['checkinSig','checkoutSig','signature'];
+      let diffRows = '';
+      const allKeys = new Set([...Object.keys(cf), ...Object.keys(og)]);
+      allKeys.forEach(key => {
+        if (!cf[key] && !og[key]) return;
+        const label = fieldLabels[key] || key;
+        if (sigKeys.includes(key)) {
+          // 簽名用圖片顯示
+          const oldSig = og[key] ? `<img src="${og[key]}" style="height:36px;border:1px solid #eee;border-radius:4px;background:#fafaf8;vertical-align:middle;">` : '<span style="color:var(--text-light);">未簽名</span>';
+          const newSig = cf[key] ? `<img src="${cf[key]}" style="height:36px;border:1px solid #9ec5fe;border-radius:4px;background:#f0f4ff;vertical-align:middle;">` : '';
+          if (!cf[key]) return; // 沒有新簽名就跳過
+          diffRows += `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+            <span style="width:72px;flex-shrink:0;font-size:0.75rem;color:var(--text-light);">${label}</span>
+            <span>${oldSig}</span>
+            <span style="color:var(--text-light);font-size:0.85rem;">→</span>
+            <span>${newSig}</span>
+          </div>`;
+        } else {
+          const oldVal = og[key] !== undefined ? String(og[key]) : '—';
+          const newVal = cf[key] !== undefined ? String(cf[key]) : '';
+          if (!newVal || oldVal === newVal) return;
+          diffRows += `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+            <span style="width:72px;flex-shrink:0;font-size:0.75rem;color:var(--text-light);">${label}</span>
+            <span style="font-size:0.82rem;text-decoration:line-through;color:var(--text-light);">${oldVal}</span>
+            <span style="color:var(--text-light);font-size:0.85rem;">→</span>
+            <span style="font-size:0.82rem;font-weight:600;color:#1a6b35;">${newVal}</span>
+          </div>`;
+        }
+      });
+      if (!diffRows) diffRows = '<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0;">（無欄位差異資料）</div>';
+
+      const reasonTags = d.reasonTags ? `<span style="font-size:0.75rem;background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;">${d.reasonTags}</span>` : '';
+      const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:var(--text-light);margin-top:6px;">補充：${d.reason}</div>` : '';
+      const submittedBy = d.submittedBy ? `<span style="font-size:0.75rem;color:var(--text-light);">由 ${d.submittedBy} 送出</span>` : '';
 
       card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+          <input type="checkbox" class="corrChk" data-id="${d.id}" style="flex-shrink:0;">
           <span style="font-size:0.78rem;background:var(--warm);border-radius:4px;padding:2px 8px;">${typeLabel}</span>
           ${statusBadge}
+          <span style="font-size:0.82rem;font-weight:700;">${d.memberName||''}</span>
           <span style="font-size:0.78rem;color:var(--text-light);">${d.date||''}</span>
-          <span style="font-size:0.82rem;font-weight:600;">${d.memberName||''}</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">${submittedBy}<button onclick="adminDel('${COL_CORRECTION}','${d.id}','修正申請',loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button></span>
         </div>
-        <div style="font-size:0.82rem;margin-bottom:4px;"><span style="color:var(--text-light);">修正項目：</span>${d.field||''}</div>
-        <div style="font-size:0.82rem;margin-bottom:4px;"><span style="color:var(--text-light);">正確內容：</span><span style="color:var(--red);font-weight:500;">${d.correct||''}</span></div>
-        ${d.reason ? `<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">原因：${d.reason}</div>` : ''}
+        ${reasonTags || reasonNote ? `<div style="margin-bottom:10px;">${reasonTags}${reasonNote}</div>` : ''}
+        <div style="background:var(--warm);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+          <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">修正對比</div>
+          ${diffRows}
+        </div>
         ${isPending ? `
-        <div style="display:flex;gap:8px;margin-top:10px;">
+        <div style="display:flex;gap:8px;margin-top:4px;">
           <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
-            style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:9px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
             ✅ 核准並前往修改
           </button>
           <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','rejected')"
-            style="flex:1;background:white;color:#b94a3a;border:1px solid #f5c6c6;border-radius:6px;padding:8px;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            style="flex:1;background:white;color:#b94a3a;border:1px solid #f5c6c6;border-radius:6px;padding:9px;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
             ❌ 拒絕
           </button>
         </div>` : ''}
@@ -10027,241 +10095,67 @@ async function handleCorrection(corrId, docId, type, action) {
       status: action,
       handledAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+
     if (action === 'approved' && docId) {
-      // 跳到對應編輯介面
+      // 用 fbGet 取申請單（比直接用 _fbDB 更安全）
+      const corrData = await fbGet(COL_CORRECTION, corrId);
+      const fields = (corrData && corrData.correctedFields) || {};
+
+      // 先開啟編輯 Modal
       if (type === 'outing') {
         adminEditOut(docId);
       } else {
         adminEditAtt(docId);
       }
+
+      // 等 500ms：adminEditAtt/Out 內部有 setTimeout(50ms) 初始化 canvas
+      // 500ms 足夠讓 DOM 渲染和 canvas 初始化都完成
+      setTimeout(() => {
+        try {
+          if (type === 'outing') {
+            const map = {
+              aeODate: fields.date, aeOCaseType: fields.caseType,
+              aeOOut: fields.timeOut, aeOBack: fields.timeBack,
+              aeODist: fields.district, aeOAddr: fields.address,
+              aeOSvc: fields.services, aeONote: fields.note,
+              aeOName: fields.memberName,
+            };
+            Object.entries(map).forEach(([id, val]) => {
+              if (val !== undefined && val !== '') {
+                const el = document.getElementById(id);
+                if (el) { el.value = val; console.log('filled', id, val); }
+                else console.warn('not found', id);
+              }
+            });
+            if (fields.signature) drawSigToCanvas('aeOSigCanvas', fields.signature);
+            document.getElementById('adminEditTitle').textContent = '✏️ 核准修正－協勤紀錄（請確認後儲存）';
+          } else {
+            const map = {
+              aeAIn: fields.checkinTime, aeAOut: fields.checkoutTime,
+              aeAHours: fields.hours,   aeACount: fields.count,
+              aeASvc: fields.service,   aeADuty: fields.dutyType,
+            };
+            Object.entries(map).forEach(([id, val]) => {
+              if (val !== undefined && val !== '') {
+                const el = document.getElementById(id);
+                if (el) { el.value = val; console.log('filled', id, val); }
+                else console.warn('not found', id);
+              }
+            });
+            if (fields.checkinSig)  drawSigToCanvas('aeACheckinCanvas',  fields.checkinSig);
+            if (fields.checkoutSig) drawSigToCanvas('aeACheckoutCanvas', fields.checkoutSig);
+            document.getElementById('adminEditTitle').textContent = '✏️ 核准修正－簽到退紀錄（請確認後儲存）';
+          }
+        } catch(fillErr) { console.error('fillFields error:', fillErr); }
+      }, 500);
     }
+
     await loadAdminCorrections();
   } catch(e) { alert('操作失敗：' + e.message); }
 }
 
 
 
-// ── 測試推播（直接從瀏覽器呼叫 Anthropic API 不可行，改用直接推播訂閱）
-async function sendTestPush() {
-  const statusEl = document.getElementById('testPushStatus');
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const myName = usr.memberName || usr.name || '';
-  if (!myName) { alert('請先登入'); return; }
-
-  statusEl.style.display = '';
-  statusEl.style.color = 'var(--text-mid)';
-  statusEl.textContent = '發送中...';
-
-  try {
-    await ensureFirebase();
-    // 找自己的訂閱
-    const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
-    if (snap.empty) {
-      statusEl.style.color = '#856404';
-      statusEl.textContent = '⚠️ 找不到推播訂閱，請先在「個人資料 → 裝置設定」開啟通知';
-      return;
-    }
-
-    // 用 Web Push API 直接推播（需要 VAPID，前端直接推）
-    const reg = await navigator.serviceWorker.ready;
-    if (!reg) {
-      statusEl.style.color = '#b94a3a';
-      statusEl.textContent = '❌ Service Worker 未就緒';
-      return;
-    }
-
-    // 顯示本地通知（不需要伺服器）
-    await reg.showNotification('🔔 測試通知', {
-      body: '推播功能正常運作！您將會在定訓前一天收到提醒。',
-      icon: '/Emergency-Volunteer-System/icon-192.png',
-      tag:  'test-notification',
-    });
-
-    statusEl.style.color = '#1a6b35';
-    statusEl.textContent = '✅ 測試通知已發送！請查看手機通知。';
-  } catch(e) {
-    statusEl.style.color = '#b94a3a';
-    statusEl.textContent = '❌ 失敗：' + e.message;
-  }
-}
-
-
-
-// ════════════════════════════════════════
-// 推播時間自訂
-// ════════════════════════════════════════
-
-const NOTIFY_HOUR_OPTIONS = [
-  { value: 8,  label: '前一天 08:00' },
-  { value: 9,  label: '前一天 09:00' },
-  { value: 10, label: '前一天 10:00' },
-  { value: 11, label: '前一天 11:00' },
-  { value: 12, label: '前一天 12:00' },
-  { value: 13, label: '前一天 13:00' },
-  { value: 14, label: '前一天 14:00' },
-  { value: 15, label: '前一天 15:00' },
-  { value: 16, label: '前一天 16:00' },
-  { value: 17, label: '前一天 17:00' },
-  { value: 18, label: '前一天 18:00' },
-  { value: 19, label: '前一天 19:00' },
-  { value: 20, label: '前一天 20:00' },
-  { value: 21, label: '前一天 21:00' },
-  { value: 22, label: '前一天 22:00' },
-  { value: 23, label: '前一天 23:00' },
-  { value: 0,  label: '當天 00:00' },
-  { value: 1,  label: '當天 01:00' },
-  { value: 2,  label: '當天 02:00' },
-  { value: 3,  label: '當天 03:00' },
-  { value: 4,  label: '當天 04:00' },
-  { value: 5,  label: '當天 05:00' },
-  { value: 6,  label: '當天 06:00' },
-  { value: 7,  label: '當天 07:00' },
-  { value: 24, label: '當天 08:00' },
-  { value: 25, label: '當天 09:00' },
-  { value: 26, label: '當天 10:00' },
-  { value: 27, label: '當天 11:00' },
-  { value: 28, label: '當天 12:00' },
-  { value: 29, label: '當天 13:00' },
-  { value: 30, label: '當天 14:00' },
-  { value: 31, label: '當天 15:00' },
-  { value: 32, label: '當天 16:00' },
-  { value: 33, label: '當天 17:00' },
-];
-
-function renderNotifyHourRows(hours) {
-  const wrap = document.getElementById('notifyHoursWrap');
-  const addBtn = document.getElementById('addNotifyHourBtn');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  const arr = hours && hours.length ? hours : [20];
-  arr.forEach((h, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
-    const sel = document.createElement('select');
-    sel.style.cssText = 'flex:1;';
-    sel.dataset.idx = i;
-    NOTIFY_HOUR_OPTIONS.forEach(opt => {
-      const o = document.createElement('option');
-      o.value = opt.value;
-      o.textContent = opt.label;
-      if (opt.value === h) o.selected = true;
-      sel.appendChild(o);
-    });
-    row.appendChild(sel);
-    if (arr.length > 1) {
-      const del = document.createElement('button');
-      del.textContent = '✕';
-      del.style.cssText = 'background:none;border:none;color:var(--text-light);font-size:1rem;cursor:pointer;padding:4px 8px;flex-shrink:0;';
-      del.onclick = () => {
-        const cur = getNotifyHourValues();
-        cur.splice(i, 1);
-        renderNotifyHourRows(cur);
-      };
-      row.appendChild(del);
-    }
-    wrap.appendChild(row);
-  });
-  // 最多 3 個
-  if (addBtn) addBtn.style.display = arr.length >= 3 ? 'none' : '';
-}
-
-function getNotifyHourValues() {
-  const sels = document.querySelectorAll('#notifyHoursWrap select');
-  return [...sels].map(s => parseInt(s.value));
-}
-
-function addNotifyHourRow() {
-  const cur = getNotifyHourValues();
-  if (cur.length >= 3) return;
-  cur.push(20);
-  renderNotifyHourRows(cur);
-}
-
-async function saveNotifyHours() {
-  const hours = [...new Set(getNotifyHourValues())].sort((a,b)=>a-b);
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const myName = usr.memberName || usr.name || '';
-  if (!myName) return;
-  const statusEl = document.getElementById('notifyHoursStatus');
-  try {
-    await ensureFirebase();
-    const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
-    if (snap.empty) {
-      if (statusEl) { statusEl.style.display=''; statusEl.style.color='#856404'; statusEl.textContent='⚠️ 請先開啟推播通知再設定時間'; }
-      return;
-    }
-    await Promise.all(snap.docs.map(d => d.ref.update({ notifyHours: hours })));
-    if (statusEl) { statusEl.style.display=''; statusEl.style.color='#1a6b35'; statusEl.textContent='✓ 已儲存'; }
-    setTimeout(() => { if(statusEl) statusEl.style.display='none'; }, 2000);
-  } catch(e) {
-    if (statusEl) { statusEl.style.display=''; statusEl.style.color='#b94a3a'; statusEl.textContent='儲存失敗：'+e.message; }
-  }
-}
-
-// 載入個人資料頁時初始化推播時間設定
-async function loadNotifyHoursSettings() {
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const myName = usr.memberName || usr.name || '';
-  if (!myName) { renderNotifyHourRows([20]); return; }
-  try {
-    await ensureFirebase();
-    const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
-    if (!snap.empty) {
-      const data = snap.docs[0].data();
-      renderNotifyHourRows(data.notifyHours || [20]);
-    } else {
-      renderNotifyHourRows([20]);
-    }
-  } catch(e) {
-    renderNotifyHourRows([20]);
-  }
-}
-
-
-
-// ── 推播通知 Toggle ──
-function onNotifToggleChange(checked) {
-  if (checked) {
-    subscribePush();
-  } else {
-    unsubscribePush();
-  }
-}
-
-async function unsubscribePush() {
-  const toggle   = document.getElementById('notifToggle');
-  const statusEl = document.getElementById('notifStatusMsg');
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (sub) await sub.unsubscribe();
-    localStorage.removeItem('pushSubscribed');
-    // 從 Firestore 移除訂閱
-    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-    const myName = usr.memberName || usr.name || '';
-    if (myName) {
-      await ensureFirebase();
-      const snap = await _fbDB.collection('pushSubscriptions').where('memberName','==',myName).get();
-      await Promise.all(snap.docs.map(d => d.ref.delete()));
-    }
-    if (statusEl) { statusEl.textContent = '已關閉推播通知'; }
-  } catch(e) {
-    if (toggle) toggle.checked = true; // 失敗還原
-    if (statusEl) { statusEl.textContent = '關閉失敗：' + e.message; }
-  }
-}
-
-// 初始化 toggle 狀態
-function initNotifToggle() {
-  const toggle = document.getElementById('notifToggle');
-  if (!toggle) return;
-  const isSubscribed = !!localStorage.getItem('pushSubscribed');
-  toggle.checked = isSubscribed;
-  const statusEl = document.getElementById('notifStatusMsg');
-  if (statusEl) {
-    statusEl.textContent = isSubscribed ? '✅ 已開啟推播通知' : '';
-  }
-}
 
 
 
@@ -10999,41 +10893,8 @@ async function reloadMembersUnit() {
   </div>
 </div>
 
-<!-- 通知訂閱提示 -->
-<div id="notifPrompt" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:499;padding:12px 16px;background:white;box-shadow:0 -4px 20px rgba(0,0,0,0.15);border-top:1px solid var(--border);">
-  <div style="max-width:480px;margin:0 auto;">
-    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
-      <span style="font-size:1.8rem;flex-shrink:0;">🔔</span>
-      <div>
-        <div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px;">開啟定訓提醒通知</div>
-        <div style="font-size:0.78rem;color:var(--text-light);line-height:1.5;">定訓前一天晚上會自動通知你</div>
-      </div>
-      <button onclick="document.getElementById('notifPrompt').style.display='none';localStorage.setItem('notifDismissed','1');"
-        style="margin-left:auto;background:none;border:none;font-size:1.2rem;color:var(--text-light);cursor:pointer;flex-shrink:0;padding:4px;">✕</button>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="subscribePush()" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">開啟通知</button>
-      <button onclick="document.getElementById('notifPrompt').style.display='none';localStorage.setItem('notifDismissed','1');"
-        style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.9rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">稍後再說</button>
-    </div>
-  </div>
-</div>
 
 <script>
-// ══════════════════════════════════════════
-// PWA & Push Notification
-// ══════════════════════════════════════════
-const VAPID_PUBLIC_KEY = 'BLt-Ma7FVRAYTqD9G8nAoE76gpu0fuYO9tSP_u9qgBzYteCx5tXYbwWna0cGZJJgqXx2sUTRXmLpi4z5spU4vRE';
-
-// urlBase64 轉 Uint8Array（VAPID 用）
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-}
-
-// 註冊 Service Worker
 // ════════════════════════════════════════
 // LINE 瀏覽器偵測
 // ════════════════════════════════════════
@@ -11107,167 +10968,6 @@ function showTempPassErr(msg) {
 // 自動插入 v1.9.02 版本紀錄（若尚未存在）
 
 
-async function registerSW() {
-  if (!('serviceWorker' in navigator)) return null;
-  // 只在 GitHub Pages 上註冊，避免開發環境報錯
-  if (!location.hostname.includes('github.io')) return null;
-  try {
-    const reg = await navigator.serviceWorker.register(
-      '/Emergency-Volunteer-System/service-worker.js',
-      { scope: '/Emergency-Volunteer-System/' }
-    );
-    return reg;
-  } catch(e) {
-    console.warn('SW 註冊失敗：', e);
-    return null;
-  }
-}
-
-// 訂閱推播
-async function subscribePush() {
-  document.getElementById('notifPrompt').style.display = 'none';
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      alert('請允許通知權限才能接收定訓提醒');
-      return;
-    }
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-    });
-    // 儲存訂閱到 Firestore
-    await savePushSubscription(sub);
-    localStorage.setItem('pushSubscribed', '1');
-    const toggle = document.getElementById('notifToggle');
-    if (toggle) toggle.checked = true;
-    const statusEl = document.getElementById('notifStatusMsg');
-    if (statusEl) { statusEl.textContent = '✅ 已開啟推播通知'; }
-    alert('✅ 已開啟定訓提醒！');
-  } catch(e) {
-    console.warn('訂閱失敗：', e);
-    const toggle = document.getElementById('notifToggle');
-    if (toggle) toggle.checked = false;
-    alert('訂閱失敗，請確認已安裝到主畫面並允許通知');
-  }
-}
-
-// 儲存訂閱到 Firestore
-async function savePushSubscription(sub) {
-  await ensureFirebase();
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const subJson = sub.toJSON();
-  await _fbDB.collection('pushSubscriptions').add({
-    endpoint:    subJson.endpoint,
-    p256dh:      subJson.keys.p256dh,
-    auth:        subJson.keys.auth,
-    memberName:  usr.memberName || usr.name || '',
-    unit:        usr.unit || '',
-    createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
-  });
-}
-
-// 安裝引導邏輯
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  document.getElementById('pwaPrompt').style.display = 'none';
-  if (outcome === 'accepted') localStorage.setItem('pwaInstalled', '1');
-});
-
-// 登入後顯示 PWA 安裝提示
-function resetAndShowPWA() {
-  // 清除之前的「不再顯示」記錄，強制重新顯示引導
-  localStorage.removeItem('pwaDismissed');
-  localStorage.removeItem('pwaInstalled');
-  const prompt   = document.getElementById('pwaPrompt');
-  const installBtn = document.getElementById('pwaInstallBtn');
-  const iosGuide   = document.getElementById('pwaIOSGuide');
-  const isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-  if (isStandalone) {
-    alert('✅ 已安裝到主畫面了！');
-    return;
-  }
-  if (isIOS) {
-    if (iosGuide)   iosGuide.style.display   = '';
-    if (installBtn) installBtn.style.display = 'none';
-  } else {
-    if (installBtn) installBtn.style.display = deferredPrompt ? '' : 'none';
-    if (iosGuide)   iosGuide.style.display   = 'none';
-    if (!deferredPrompt) {
-      alert('請使用手機瀏覽器開啟本網站，並點選「加入主畫面」');
-      return;
-    }
-  }
-  if (prompt) prompt.style.display = '';
-}
-
-function showNotifPrompt() {
-  const statusEl = document.getElementById('notifStatusMsg');
-  // 已訂閱
-  if (localStorage.getItem('pushSubscribed')) {
-    if (statusEl) { statusEl.style.color='#1a6b35'; statusEl.textContent='✅ 已開啟推播通知'; }
-    return;
-  }
-  // 未安裝 PWA
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (!isStandalone) {
-    if (statusEl) { statusEl.style.color='#856404'; statusEl.textContent='⚠️ 請先安裝到主畫面才能開啟通知'; }
-    return;
-  }
-  // 清除之前的拒絕記錄，重新顯示
-  localStorage.removeItem('notifDismissed');
-  const notifEl = document.getElementById('notifPrompt');
-  if (notifEl) notifEl.style.display = '';
-}
-
-function checkPWAPrompts() {
-  // 已經安裝就不顯示
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
-  if (isStandalone) {
-    // 已安裝 → 檢查是否需要訂閱通知
-    if (!localStorage.getItem('pushSubscribed') && !localStorage.getItem('notifDismissed')) {
-      setTimeout(() => {
-        document.getElementById('notifPrompt').style.display = '';
-      }, 2000);
-    }
-    return;
-  }
-
-  // 未安裝且未關閉過提示 → 顯示安裝引導
-  if (localStorage.getItem('pwaDismissed')) return;
-
-  const prompt = document.getElementById('pwaPrompt');
-  const installBtn = document.getElementById('pwaInstallBtn');
-  const iosGuide   = document.getElementById('pwaIOSGuide');
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isAndroid = /Android/.test(navigator.userAgent);
-
-  if (isIOS) {
-    if (iosGuide) iosGuide.style.display = '';
-  } else if (isAndroid || deferredPrompt) {
-    if (installBtn) installBtn.style.display = '';
-  }
-
-  setTimeout(() => { if (prompt) prompt.style.display = ''; }, 3000);
-}
-
-// 初始化
-(async function initPWA() {
-  await registerSW();
-})();
 </script>
 
 </div>
