@@ -583,13 +583,14 @@ async function importAttCSV() {
     const lines = parseImportCSV(await file.text());
     let ok=0, fail=0, failList=[];
     for (let i=0; i<lines.length; i++) {
-      const [date,dutyType,memberName,checkinTime,checkoutTime,hoursRaw,countRaw,serviceRaw] = lines[i].split(',').map(c=>c.trim());
+      const [date,dutyType,memberName,titleRaw,checkinTime,checkoutTime,hoursRaw,countRaw,serviceRaw] = lines[i].split(',').map(c=>c.trim());
       if (!date||!memberName){fail++;failList.push({row:i+1,reason:'缺少日期或姓名'});continue;}
       try {
         const [y,m,d2] = date.replace(/\//g,'-').split('-');
         const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
         const mem = members.find(m=>m.name===memberName)||{};
-        await fbAdd(COL_ATTEND,{date:dateFmt,dutyType:dutyType||'協勤',memberName,unit:mem.unit||'',title:mem.title||'',checkinTime:checkinTime||'',checkoutTime:checkoutTime||'',hours:parseFloat(hoursRaw)||0,count:parseInt(countRaw)||0,service:parseInt(serviceRaw)||0,checkinSig:'',checkoutSig:''});
+        const titleVal = titleRaw || mem.title || '';
+        await fbAdd(COL_ATTEND,{date:dateFmt,dutyType:dutyType||'協勤',memberName,unit:mem.unit||'',title:titleVal,checkinTime:checkinTime||'',checkoutTime:checkoutTime||'',hours:parseFloat(hoursRaw)||0,count:parseInt(countRaw)||0,service:parseInt(serviceRaw)||0,checkinSig:'',checkoutSig:''});
         ok++;
       } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
     }
@@ -621,7 +622,7 @@ async function importOutCSV() {
   } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
 }
 function downloadAttTemplate() {
-  _dlCSV(['date,dutyType,memberName,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2'].join('
+  _dlCSV(['date,dutyType,memberName,title,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,隊員,19:00,22:00,3,1,2','# title 可填：分隊長/副分隊長/幹事/助理幹事/小隊長/隊員/分隊承辦人（留空則自動從成員資料帶入）'].join('
 '), '簽到簽退匯入範本.csv');
 }
 function downloadOutTemplate() {
@@ -2731,8 +2732,8 @@ function _dlCSV(content, filename) {
               <div id="profileCertStatus" style="font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;"></div>
             </div>
           </div>
-          <!-- 編輯按鈕（開放期間才顯示）-->
-          <div id="profileCertEditBtnWrap" style="display:none;margin-top:10px;">
+          <!-- 編輯按鈕（成員隨時可自行更新）-->
+          <div style="margin-top:10px;">
             <button onclick="profileShowCertEdit()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 18px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;width:100%;">
               ✏️ 更新我的證照資訊
             </button>
@@ -9410,14 +9411,7 @@ async function loadProfilePage() {
   if (certSel) certSel.value = cert || '';
   if (certExpInput) certExpInput.value = certExp || '';
 
-  // 開關：從 Firestore settings 讀取 certEditOpen，開放時才顯示編輯按鈕
-  try {
-    await ensureFirebase();
-    const settingSnap = await _fbDB.collection('settings').doc('certEdit').get();
-    const certEditOpen = settingSnap.exists && settingSnap.data().open === true;
-    const editBtnWrap = document.getElementById('profileCertEditBtnWrap');
-    if (editBtnWrap) editBtnWrap.style.display = certEditOpen ? '' : 'none';
-  } catch(e) {}
+  // 編輯按鈕永遠開放，成員可隨時更新證照資訊
 }
 
 
