@@ -2,8 +2,9 @@ name: 簽退提醒通知
 
 on:
   schedule:
-    # 每天台灣時間 22:00（UTC 14:00）
-    - cron: '0 14 * * *'
+    # 台灣時間 21:00（UTC 13:00）執行
+    # 提前一小時避免 GitHub Actions 延遲導致跨日，影響明日班表判斷
+    - cron: '0 13 * * *'
   workflow_dispatch:
 
 jobs:
