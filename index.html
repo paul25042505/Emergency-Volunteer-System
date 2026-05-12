@@ -1215,11 +1215,6 @@ function _dlCSV(content, filename) {
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label for="serviceCount">本次案件服務人次 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（整數）</span></label>
-            <input type="number" id="serviceCount" min="0" step="1" value="1" placeholder="例如：1" style="width:100%;">
-          </div>
-          <div class="card-divider"></div>
-          <div class="field">
             <label for="note">備註說明</label>
             <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
           </div>
@@ -1643,8 +1638,8 @@ function _dlCSV(content, filename) {
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field">
-            <label>服務人次<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（依當班時段對應協勤案件自動加總）</span></label>
-            <input type="number" id="attService" min="0" step="1" placeholder="系統自動加總對應案件人次" style="width:100%;background:#f5f5f5;color:var(--text-mid);" readonly>
+            <label>服務人次 <span class="req">*</span></label>
+            <input type="number" id="attService" min="0" step="1" placeholder="0" style="width:100%;">
           </div>
           <div class="submit-section" style="margin-top:16px;">
             <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
@@ -1829,6 +1824,14 @@ function _dlCSV(content, filename) {
                 <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
                 <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
                 <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column:1/-1;">
+              <label>類別</label>
+              <select id="rpt1DutyType" style="width:100%;">
+                <option value="">全部</option>
+                <option value="協勤">協勤</option>
+                <option value="公差">公差</option>
               </select>
             </div>
           </div>
@@ -2582,8 +2585,7 @@ function _dlCSV(content, filename) {
         <div class="filter-grid">
           <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="loginLogFrom" style="width:100%;"></div>
           <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="loginLogTo" style="width:100%;"></div>
-          <div class="field" id="loginLogUnitField" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
-          <div class="field" id="loginLogEmailField" style="margin:0;grid-column:1/-1;display:none;"><label style="font-size:0.78rem;">Email（可部分）</label><input type="text" id="loginLogEmail" placeholder="輸入 Email 關鍵字" style="width:100%;"></div>
+          <div class="field" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
         </div>
         <div class="filter-actions" style="margin-top:12px;">
           <button class="btn-search" onclick="loadLoginLog()">查　詢</button>
@@ -3403,6 +3405,13 @@ async function handleGoogleLogin(response) {
       errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
       errorDiv.classList.add('show');
       google.accounts.id.disableAutoSelect();
+      // 寫入失貴登入紀錄
+      fbAdd(COL_LOGINLOG, {
+        email, memberName: name, role: '', unit: '',
+        loginAt: new Date().toLocaleString('sv').replace('T', ' '),
+        ua: navigator.userAgent.substring(0, 120),
+        success: false,
+      }).catch(() => {});
     }
 
   } catch(e) {
@@ -4617,6 +4626,7 @@ function submitOutingForm() {
     district:data.district,address:data.address,services:data.services,
     serviceCount:_serviceCount,
     note:data.note||'',memberName:data.memberName,signature:data.signature,
+    serviceCount: parseInt(document.getElementById('outingServiceCount').value) || 0,
   }).then(()=>{
     document.getElementById('successMsg').classList.add('show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5283,7 +5293,11 @@ function autoCalcHours() {
   const outTime = document.getElementById('attCheckoutTime').value;
   if (!inTime || !outTime) return;
   document.getElementById('attHours').value = calcHours(inTime, outTime);
-  if (attCheckoutTarget) loadTodayCount(attCheckoutTarget);
+  if (attCheckoutTarget) {
+    const _s = attSessions[attCheckoutTarget];
+    const _name = _s ? (_s.memberName || attCheckoutTarget) : attCheckoutTarget;
+    loadTodayCount(_name);
+  }
 }
 
 function autoCalcEditHours() {
@@ -5311,57 +5325,17 @@ async function loadTodayCount(memberName) {
 
   try {
     const docs = await fbList(COL_OUTING, 'date', 'asc');
-    const matched = docs.filter(r => {
+    const count = docs.filter(r => {
       if ((r.memberName||'') !== memberName) return false;
       if ((r.date||'') !== date) return false;
       const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
       const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
       if (recOutMins === null) return false;
       return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
-    });
-    const count = matched.length;
-    // 服務人次加總：把對應時段內各案件的 serviceCount 相加；若舊資料沒有此欄位，當 0 計
-    const serviceSum = matched.reduce((s,r) => s + (parseInt(r.serviceCount,10) || 0), 0);
-    document.getElementById('attCount').value   = count;
-    document.getElementById('attService').value = serviceSum;
+    }).length;
+    document.getElementById('attCount').value = count;
   } catch(e) {
-    document.getElementById('attCount').value   = 0;
-    document.getElementById('attService').value = 0;
-  }
-}
-
-// 簡易模式：同邏輯，更新 easyServiceCount 和 easyServiceDisplay
-async function easyLoadTodayService() {
-  const session = attSessions[_easyCheckoutTarget];
-  const display = document.getElementById('easyServiceDisplay');
-  const hidden  = document.getElementById('easyServiceCount');
-  if (!session) { if (display) display.textContent = '0'; if (hidden) hidden.value = '0'; return; }
-  const date      = session.date || new Date().toLocaleDateString('sv');
-  const checkinT  = session.checkinTime || '';
-  const checkoutT = document.getElementById('easyCheckoutTime')?.value || '';
-  if (!checkinT || !checkoutT) { if (display) display.textContent = '0'; if (hidden) hidden.value = '0'; return; }
-
-  function toMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
-  const inMins  = toMins(checkinT);
-  const outMins = toMins(checkoutT);
-  const memberName = session.memberName || _easyCheckoutTarget;
-
-  try {
-    const docs = await fbList(COL_OUTING, 'date', 'asc');
-    const matched = docs.filter(r => {
-      if ((r.memberName||'') !== memberName) return false;
-      if ((r.date||'') !== date) return false;
-      const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
-      const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
-      if (recOutMins === null) return false;
-      return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
-    });
-    const serviceSum = matched.reduce((s,r) => s + (parseInt(r.serviceCount,10) || 0), 0);
-    if (display) display.textContent = String(serviceSum);
-    if (hidden)  hidden.value        = String(serviceSum);
-  } catch(e) {
-    if (display) display.textContent = '0';
-    if (hidden)  hidden.value        = '0';
+    document.getElementById('attCount').value = 0;
   }
 }
 
@@ -5699,7 +5673,6 @@ async function generateRpt1() {
   const year = document.getElementById('rpt1Year').value;
   const month = document.getElementById('rpt1Month').value;
   const unit = document.getElementById('rpt1Unit').value;
-  const dutyType = document.getElementById('rpt1Category')?.value || '';
   const status = document.getElementById('rpt1Status');
   const btn = document.getElementById('rpt1Btn');
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
@@ -6870,7 +6843,6 @@ async function adminEditOut(id) {
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
-    <div class="field"><label>本次案件服務人次</label><input type="number" id="aeOSvcCount" min="0" step="1" value="${doc.serviceCount !== undefined ? doc.serviceCount : ''}" placeholder="整數，例如 1" style="width:100%;"></div>
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
     <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field">
@@ -6896,7 +6868,6 @@ async function adminEditOut(id) {
         district:document.getElementById('aeODist').value.trim(),
         address:document.getElementById('aeOAddr').value.trim(),
         services:document.getElementById('aeOSvc').value.trim(),
-        serviceCount: (_scRaw === '' || isNaN(_sc)) ? 0 : _sc,
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
         signature: sigDel ? '' : (sigN || doc.signature || ''),
@@ -10309,8 +10280,8 @@ async function handleCorrection(corrId, docId, type, action) {
               aeODate: fields.date, aeOCaseType: fields.caseType,
               aeOOut: fields.timeOut, aeOBack: fields.timeBack,
               aeODist: fields.district, aeOAddr: fields.address,
-              aeOSvc: fields.services, aeOSvcCount: fields.serviceCount,
-              aeONote: fields.note, aeOName: fields.memberName,
+              aeOSvc: fields.services, aeONote: fields.note,
+              aeOName: fields.memberName,
             };
             Object.entries(map).forEach(([id, val]) => {
               if (val !== undefined && val !== '') {
