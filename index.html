@@ -639,9 +639,9 @@ function _dlCSV(content, filename) {
 
 </script>
   <!-- Firebase SDK -->
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -3192,6 +3192,8 @@ function ensureFirebase() {
           });
         }
         _fbDB = firebase.firestore();
+        // 啟用離線快取：第一次慢，之後從本地讀取大幅加速
+        _fbDB.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         _fbReady = true;
         resolve();
       } catch(e) { console.warn('Firebase init failed:', e); resolve(); }
