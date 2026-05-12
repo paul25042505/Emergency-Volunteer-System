@@ -2569,7 +2569,14 @@ function _dlCSV(content, filename) {
         <div class="filter-grid">
           <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="loginLogFrom" style="width:100%;"></div>
           <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="loginLogTo" style="width:100%;"></div>
-          <div class="field" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
+          <div class="field" style="margin:0;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
+          <div class="field" style="margin:0;"><label style="font-size:0.78rem;">登入結果</label>
+            <select id="loginLogResult" style="width:100%;">
+              <option value="">全部</option>
+              <option value="success">✅ 成功</option>
+              <option value="fail">❌ 失貴</option>
+            </select>
+          </div>
         </div>
         <div class="filter-actions" style="margin-top:12px;">
           <button class="btn-search" onclick="loadLoginLog()">查　詢</button>
@@ -3385,6 +3392,13 @@ async function handleGoogleLogin(response) {
       errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
       errorDiv.classList.add('show');
       google.accounts.id.disableAutoSelect();
+      // 寫入失貴登入紀錄
+      fbAdd(COL_LOGINLOG, {
+        email, memberName: name, role: '', unit: '',
+        loginAt: new Date().toLocaleString('sv').replace('T', ' '),
+        ua: navigator.userAgent.substring(0, 120),
+        success: false,
+      }).catch(() => {});
     }
 
   } catch(e) {
@@ -3502,7 +3516,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbzH409yUgq_SQ9xTXhLpDojRg3a1gMSXdzMyIWaCNOvi03vvlSYDOWjqX66nl2cfsDQmw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbz2P0rPwjf-deeMPCM6Hw6Te77WBqE8yOK1e8wd7ziiuiLlotv6ytG3U9Quez7XQyAU/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbycbBLIqGUVCNWZJ9NpGqQxOvLXc7MbKGxRmGgNVdLaDjGC1OjMJWaGpz_rv7oNCy1PUQ/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
