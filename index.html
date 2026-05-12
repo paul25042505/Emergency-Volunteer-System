@@ -1210,6 +1210,11 @@ function _dlCSV(content, filename) {
           </div>
           <div class="card-divider"></div>
           <div class="field">
+            <label for="outingServiceCount">本次案件服務人次</label>
+            <input type="number" id="outingServiceCount" min="0" step="1" placeholder="0" style="width:100%;">
+          </div>
+          <div class="card-divider"></div>
+          <div class="field">
             <label for="note">備註說明</label>
             <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
           </div>
@@ -1631,8 +1636,8 @@ function _dlCSV(content, filename) {
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field">
-            <label>服務人次 <span class="req">*</span></label>
-            <input type="number" id="attService" min="0" step="1" placeholder="0" style="width:100%;">
+            <label>服務人次</label>
+            <input type="number" id="attService" min="0" step="1" placeholder="依協勤案件自動加總" style="width:100%;" readonly>
           </div>
           <div class="submit-section" style="margin-top:16px;">
             <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
@@ -1809,6 +1814,14 @@ function _dlCSV(content, filename) {
                 <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
                 <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
                 <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column:1/-1;">
+              <label>類別</label>
+              <select id="rpt1DutyType" style="width:100%;">
+                <option value="">全部</option>
+                <option value="協勤">協勤</option>
+                <option value="公差">公差</option>
               </select>
             </div>
           </div>
@@ -3489,7 +3502,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbz2P0rPwjf-deeMPCM6Hw6Te77WBqE8yOK1e8wd7ziiuiLlotv6ytG3U9Quez7XQyAU/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbzH409yUgq_SQ9xTXhLpDojRg3a1gMSXdzMyIWaCNOvi03vvlSYDOWjqX66nl2cfsDQmw/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbycbBLIqGUVCNWZJ9NpGqQxOvLXc7MbKGxRmGgNVdLaDjGC1OjMJWaGpz_rv7oNCy1PUQ/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -4577,6 +4590,7 @@ function submitOutingForm() {
     date:data.date,caseType:data.caseType||'',timeOut:data.timeOut,timeBack:data.timeBack,
     district:data.district,address:data.address,services:data.services,
     note:data.note||'',memberName:data.memberName,signature:data.signature,
+    serviceCount: parseInt(document.getElementById('outingServiceCount').value) || 0,
   }).then(()=>{
     document.getElementById('successMsg').classList.add('show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5237,7 +5251,11 @@ function autoCalcHours() {
   const outTime = document.getElementById('attCheckoutTime').value;
   if (!inTime || !outTime) return;
   document.getElementById('attHours').value = calcHours(inTime, outTime);
-  if (attCheckoutTarget) loadTodayCount(attCheckoutTarget);
+  if (attCheckoutTarget) {
+    const _s = attSessions[attCheckoutTarget];
+    const _name = _s ? (_s.memberName || attCheckoutTarget) : attCheckoutTarget;
+    loadTodayCount(_name);
+  }
 }
 
 function autoCalcEditHours() {
@@ -5263,17 +5281,23 @@ async function loadTodayCount(memberName) {
 
   try {
     const docs = await fbList(COL_OUTING, 'date', 'asc');
-    const count = docs.filter(r => {
-      if ((r.memberName||'') !== memberName) return false;
-      if ((r.date||'') !== date) return false;
+    let count = 0, totalService = 0;
+    docs.forEach(r => {
+      if ((r.memberName||'') !== memberName) return;
+      if ((r.date||'') !== date) return;
       const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
       const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
-      if (recOutMins === null) return false;
-      return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
-    }).length;
+      if (recOutMins === null) return;
+      if (recOutMins >= inMins && (recBackMins||recOutMins) <= outMins) {
+        count++;
+        totalService += parseInt(r.serviceCount) || 0;
+      }
+    });
     document.getElementById('attCount').value = count;
+    document.getElementById('attService').value = totalService;
   } catch(e) {
     document.getElementById('attCount').value = 0;
+    document.getElementById('attService').value = 0;
   }
 }
 
@@ -5611,12 +5635,13 @@ async function generateRpt1() {
   const year = document.getElementById('rpt1Year').value;
   const month = document.getElementById('rpt1Month').value;
   const unit = document.getElementById('rpt1Unit').value;
+  const dutyType = document.getElementById('rpt1DutyType').value;
   const status = document.getElementById('rpt1Status');
   const btn = document.getElementById('rpt1Btn');
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt1Script');
+    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}&dutyType=${encodeURIComponent(dutyType)}`, 'jsonpRpt1Script');
     downloadDocx(json);
     status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
@@ -6757,6 +6782,7 @@ async function adminEditOut(id) {
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
+    <div class="field"><label>服務人次</label><input type="number" id="aeOServiceCount" value="${doc.serviceCount||0}" min="0" step="1" style="width:100%;"></div>
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
     <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field">
@@ -6780,6 +6806,7 @@ async function adminEditOut(id) {
         district:document.getElementById('aeODist').value.trim(),
         address:document.getElementById('aeOAddr').value.trim(),
         services:document.getElementById('aeOSvc').value.trim(),
+        serviceCount: parseInt(document.getElementById('aeOServiceCount').value) || 0,
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
         signature: sigDel ? '' : (sigN || doc.signature || ''),
@@ -10079,7 +10106,7 @@ async function handleCorrection(corrId, docId, type, action) {
               aeOOut: fields.timeOut, aeOBack: fields.timeBack,
               aeODist: fields.district, aeOAddr: fields.address,
               aeOSvc: fields.services, aeONote: fields.note,
-              aeOName: fields.memberName,
+              aeOName: fields.memberName, aeOServiceCount: fields.serviceCount,
             };
             Object.entries(map).forEach(([id, val]) => {
               if (val !== undefined && val !== '') {
