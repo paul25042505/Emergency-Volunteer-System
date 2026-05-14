@@ -607,14 +607,13 @@ async function importOutCSV() {
     const lines = parseImportCSV(await file.text());
     let ok=0, fail=0, failList=[];
     for (let i=0; i<lines.length; i++) {
-      const [date,caseType,timeOut,timeBack,district,address,services,serviceCountRaw,note,memberName] = lines[i].split(',').map(c=>c.trim());
+      const [date,caseType,timeOut,timeBack,district,address,services,note,memberName] = lines[i].split(',').map(c=>c.trim());
       if (!date||!memberName){fail++;failList.push({row:i+1,reason:'缺少日期或姓名'});continue;}
       try {
         const [y,m,d2] = date.replace(/\//g,'-').split('-');
         const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
         const mem = members.find(m=>m.name===memberName)||{};
-        const sc = parseInt(serviceCountRaw,10);
-        await fbAdd(COL_OUTING,{date:dateFmt,caseType:caseType||'',timeOut:timeOut||'',timeBack:timeBack||'',district:district||'',address:address||'',services:services||'',serviceCount:isNaN(sc)?0:sc,note:note||'',memberName,unit:mem.unit||'',title:mem.title||'',signature:''});
+        await fbAdd(COL_OUTING,{date:dateFmt,caseType:caseType||'',timeOut:timeOut||'',timeBack:timeBack||'',district:district||'',address:address||'',services:services||'',note:note||'',memberName,unit:mem.unit||'',title:mem.title||'',signature:''});
         ok++;
       } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
     }
@@ -627,7 +626,7 @@ function downloadAttTemplate() {
 '), '簽到簽退匯入範本.csv');
 }
 function downloadOutTemplate() {
-  _dlCSV(['date,caseType,timeOut,timeBack,district,address,services,serviceCount,note,memberName','2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,1,,林伯霖'].join('
+  _dlCSV(['date,caseType,timeOut,timeBack,district,address,services,note,memberName','2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖'].join('
 '), '協勤案件匯入範本.csv');
 }
 function _dlCSV(content, filename) {
@@ -1082,10 +1081,6 @@ function _dlCSV(content, filename) {
           <div id="easyServiceGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
         </div>
         <div class="field">
-          <label>本次案件服務人次 <span class="req">*</span></label>
-          <input type="number" id="easyServiceCountInput" min="0" step="1" value="1" placeholder="例如：1" style="width:100%;">
-        </div>
-        <div class="field">
           <label>義消姓名</label>
           <select id="easyOutingUnitSel" onchange="easyOutingFilterMembers()" style="margin-bottom:10px;">
             <option value="">請選擇分隊</option>
@@ -1093,6 +1088,23 @@ function _dlCSV(content, filename) {
           <select id="easyOutingMemberSel">
             <option value="">— 請先選擇分隊 —</option>
           </select>
+        </div>
+        <div class="field">
+          <label>本次案件服務人次 <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="svc-btn" data-target="easyServiceCountInput" data-val="0"
+              onclick="setSvcBtn(this)"
+              style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:12px 0;font-size:1rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
+            <button type="button" class="svc-btn" data-target="easyServiceCountInput" data-val="1"
+              onclick="setSvcBtn(this)"
+              style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:12px 0;font-size:1rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
+            <button type="button" class="svc-btn" data-target="easyServiceCountInput" data-val="2"
+              onclick="setSvcBtn(this)"
+              style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:12px 0;font-size:1rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">2</button>
+            <input type="number" id="easyServiceCountInput" min="0" step="1" value="1" placeholder="其他"
+              oninput="clearSvcBtns('easyServiceCountInput')"
+              style="width:72px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:12px 4px;font-size:1rem;">
+          </div>
         </div>
         <div class="field">
           <label>義消簽名</label>
@@ -1215,8 +1227,15 @@ function _dlCSV(content, filename) {
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label for="serviceCount">本次案件服務人次 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（整數）</span></label>
-            <input type="number" id="serviceCount" min="0" step="1" value="1" placeholder="例如：1" style="width:100%;">
+            <label>本次案件服務人次 <span class="req">*</span></label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button type="button" class="svc-btn" data-target="serviceCount" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
+              <button type="button" class="svc-btn" data-target="serviceCount" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
+              <button type="button" class="svc-btn" data-target="serviceCount" data-val="2" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">2</button>
+              <input type="number" id="serviceCount" min="0" step="1" value="1" placeholder="其他"
+                oninput="clearSvcBtns('serviceCount')"
+                style="width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:8px 4px;font-size:0.9rem;">
+            </div>
           </div>
           <div class="card-divider"></div>
           <div class="field">
@@ -1399,7 +1418,6 @@ function _dlCSV(content, filename) {
               <th>地址</th>
               <th>案由</th>
               <th>服務項目</th>
-              <th>服務人次</th>
               <th>義消姓名</th>
               <th>備註</th>
               <th>簽名</th>
@@ -1497,7 +1515,7 @@ function _dlCSV(content, filename) {
           <label>簽退時間</label>
           <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field" style="margin-bottom:0;">
             <label>協勤時數</label>
             <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
@@ -1506,12 +1524,12 @@ function _dlCSV(content, filename) {
             <label>出勤次數</label>
             <div style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
-          <div class="field" style="margin-bottom:0;">
+        </div>
+        <div class="field" style="margin-bottom:0;">
             <label>服務人次</label>
             <div id="easyServiceDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">0</div>
             <input type="hidden" id="easyServiceCount" value="0">
           </div>
-        </div>
         <div class="field">
           <label>簽退簽名</label>
           <div class="sig-wrap">
@@ -1643,8 +1661,8 @@ function _dlCSV(content, filename) {
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field">
-            <label>服務人次<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（依當班時段對應協勤案件自動加總）</span></label>
-            <input type="number" id="attService" min="0" step="1" placeholder="系統自動加總對應案件人次" style="width:100%;background:#f5f5f5;color:var(--text-mid);" readonly>
+            <label>服務人次</label>
+            <input type="number" id="attService" min="0" step="1" value="0" placeholder="0" style="width:100%;background:#f5f5f5;color:var(--text-mid);" readonly>
           </div>
           <div class="submit-section" style="margin-top:16px;">
             <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
@@ -1809,14 +1827,6 @@ function _dlCSV(content, filename) {
             <div class="field" style="grid-column:1/-1;">
               <label>分隊別</label>
               <select id="rpt1Unit" style="width:100%;"><option value="">載入中...</option></select>
-            </div>
-            <div class="field" style="grid-column:1/-1;">
-              <label>類別</label>
-              <select id="rpt1Category" style="width:100%;">
-                <option value="">全部</option>
-                <option value="公差">公差</option>
-                <option value="協勤">協勤</option>
-              </select>
             </div>
             <div class="field">
               <label>民國年份</label>
@@ -2115,6 +2125,33 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
+<!-- ══════ 上月紀錄確認 Modal ══════ -->
+<!-- 上月紀錄確認提示（輕量版，只提示去個人資料頁）-->
+<div id="confirmRecordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:white;border-radius:12px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+    <div style="background:var(--red);padding:18px 20px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.4rem;">📋</span>
+      <div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;">上月紀錄待確認</div>
+        <div id="confirmModalMonthLabel" style="font-size:0.75rem;color:rgba(255,255,255,0.8);margin-top:2px;"></div>
+      </div>
+    </div>
+    <div style="padding:20px;">
+      <div style="font-size:0.88rem;color:var(--text-mid);line-height:1.7;margin-bottom:20px;">
+        請前往「個人基本資料」查看上個月的出勤紀錄，確認無誤後完成確認。
+      </div>
+      <button onclick="goToProfileConfirm()"
+        style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:13px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:10px;">
+        👤 前往個人資料頁查看
+      </button>
+      <button onclick="document.getElementById('confirmRecordModal').style.display='none';"
+        style="width:100%;background:white;color:var(--text-light);border:1px solid var(--border);border-radius:8px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+        稍後再說
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ PAGE：意見回饋 ══════ -->
 <div class="page" id="feedbackPage">
   <div class="query-wrap">
@@ -2225,6 +2262,7 @@ function _dlCSV(content, filename) {
       <button onclick="adminScrollTo('adminSec-changelog')"class="admin-tab">📝 版本</button>
       <button id="adminTab-loginlog" onclick="adminScrollTo('adminSec-loginlog')" class="admin-tab" style="display:none;">🔐 登入紀錄</button>
       <button onclick="adminScrollTo('adminSec-import')" class="admin-tab">📥 批次匯入</button>
+      <button onclick="adminScrollTo('adminSec-confirm')" class="admin-tab" id="adminTab-confirm">✅ 確認任務</button>
     </div>
     <!-- tab bar 佔位，避免內容被蓋住 -->
     <div id="adminTabBarSpacer" style="display:none;height:8px;"></div>
@@ -2572,23 +2610,16 @@ function _dlCSV(content, filename) {
         <div class="section-line"></div>
         <button onclick="loadLoginLog()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
-      <!-- Tab 切換：成功登入 / 登入失敗 -->
-      <div style="display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid var(--border);">
-        <button id="loginLogTabSuccess" onclick="switchLoginLogTab('success')" style="flex:1;background:var(--red-faint);border:none;border-bottom:2px solid var(--red);padding:10px;font-size:0.85rem;font-weight:600;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 成功登入</button>
-        <button id="loginLogTabFail" onclick="switchLoginLogTab('fail')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:10px;font-size:0.85rem;font-weight:600;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">❌ 登入失敗</button>
-      </div>
-      <input type="hidden" id="loginLogMode" value="success">
       <div class="filter-card" style="margin-bottom:12px;padding:14px 16px;">
         <div class="filter-grid">
           <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="loginLogFrom" style="width:100%;"></div>
           <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="loginLogTo" style="width:100%;"></div>
-          <div class="field" id="loginLogUnitField" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
-          <div class="field" id="loginLogEmailField" style="margin:0;grid-column:1/-1;display:none;"><label style="font-size:0.78rem;">Email（可部分）</label><input type="text" id="loginLogEmail" placeholder="輸入 Email 關鍵字" style="width:100%;"></div>
+          <div class="field" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
         </div>
         <div class="filter-actions" style="margin-top:12px;">
           <button class="btn-search" onclick="loadLoginLog()">查　詢</button>
           <button class="btn-reset" onclick="resetLoginLog()">清除</button>
-          <button id="loginLogBatchDelBtn" onclick="batchDelChecked('llChk',COL_LOGINLOG,loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:6px 14px;font-size:0.82rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🗑️ 批次刪除</button>
+          <button onclick="batchDelChecked('llChk',COL_LOGINLOG,loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:6px 14px;font-size:0.82rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🗑️ 批次刪除</button>
         </div>
       </div>
       <div id="adminLoginLogList">
@@ -2636,6 +2667,40 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
+    <!-- ══ SECTION：確認任務 ══ -->
+    <div class="section" id="adminSec-confirm">
+      <div class="section-head">
+        <div class="section-num">✅</div>
+        <div class="section-title">上月紀錄確認任務</div>
+        <div class="section-line"></div>
+        <button onclick="loadAdminConfirmTasks()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+      </div>
+      <!-- 發起確認 -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 發起新的確認任務</div>
+        <div class="row-2" style="margin-bottom:12px;">
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">確認月份 <span class="req">*</span></label>
+            <input type="month" id="confirmMonth" style="width:100%;min-height:42px;padding:10px 13px;border:1px solid var(--border);border-radius:4px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;">
+          </div>
+          <div class="field" style="margin:0;">
+            <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
+            <select id="confirmUnit" style="width:100%;"><option value="">請選擇分隊</option></select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label style="font-size:0.78rem;">通知說明（選填）</label>
+          <input type="text" id="confirmNote" placeholder="例：請於5/10前完成確認" style="width:100%;">
+        </div>
+        <button onclick="createConfirmTask()" class="btn-search" style="width:100%;">✅ 發起確認任務並通知成員</button>
+        <div id="confirmCreateStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
+      </div>
+      <!-- 任務列表 -->
+      <div id="adminConfirmTaskList">
+        <div class="query-empty"><span class="empty-icon">✅</span>載入中...</div>
+      </div>
+    </div>
+
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -2679,6 +2744,54 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE：個人基本資料 ══════ -->
 <div class="page" id="profilePage">
   <div class="form-wrap">
+
+    <!-- 上月紀錄確認區塊 -->
+    <div id="profileConfirmSection" style="display:none;margin-bottom:16px;">
+      <div style="background:linear-gradient(135deg,var(--red),#c0392b);border-radius:10px;padding:16px 18px;color:white;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:1.1rem;">📋</span>
+          <span style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;" id="profileConfirmTitle">上月紀錄待確認</span>
+        </div>
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.85);margin-bottom:14px;" id="profileConfirmDesc"></div>
+        <!-- 協勤紀錄 -->
+        <div style="margin-bottom:12px;">
+          <div style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            🚑 協勤案件
+            <span id="profileConfirmOutCount" style="font-weight:400;"></span>
+          </div>
+          <div id="profileConfirmOutList" style="background:rgba(255,255,255,0.12);border-radius:8px;max-height:160px;overflow-y:auto;"></div>
+        </div>
+        <!-- 簽到退紀錄 -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            ✍ 簽到退
+            <span id="profileConfirmAttCount" style="font-weight:400;"></span>
+          </div>
+          <div id="profileConfirmAttList" style="background:rgba(255,255,255,0.12);border-radius:8px;max-height:160px;overflow-y:auto;"></div>
+        </div>
+        <!-- 操作按鈕 -->
+        <button onclick="profileConfirmOk()"
+          style="width:100%;background:white;color:var(--red);border:none;border-radius:8px;padding:13px;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:8px;">
+          ✓ 確認無誤
+        </button>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.65);text-align:center;margin-bottom:8px;">有問題？選擇前往修改或通知管理員</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button onclick="profileGoIssue('outing')"
+            style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.4);border-radius:8px;padding:10px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            🚑 協勤有問題<br><span style="font-size:0.68rem;opacity:0.8;">前往查詢修改</span>
+          </button>
+          <button onclick="profileGoIssue('attendance')"
+            style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.4);border-radius:8px;padding:10px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            ✍ 簽到退有問題<br><span style="font-size:0.68rem;opacity:0.8;">前往查詢修改</span>
+          </button>
+        </div>
+        <button onclick="profileReportIssue()"
+          style="width:100%;background:rgba(255,200,0,0.2);color:#ffe066;border:1.5px solid rgba(255,200,0,0.5);border-radius:8px;padding:10px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+          ⚠️ 有問題，通知管理員協助
+        </button>
+        <div id="profileConfirmStatus" style="font-size:0.78rem;color:rgba(255,255,255,0.8);text-align:center;min-height:1.2em;margin-top:6px;"></div>
+      </div>
+    </div>
 
     <!-- 證照到期警示（若效期不足6個月）-->
     <div id="profileCertAlert" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:none;">
@@ -3113,10 +3226,6 @@ function _dlCSV(content, filename) {
         <label>服務項目</label>
         <input type="text" id="corrServices" placeholder="服務項目（以、分隔）" oninput="markCorrChanged(this,'corrServices')">
       </div>
-      <div class="field">
-        <label>本次案件服務人次</label>
-        <input type="number" id="corrServiceCount" min="0" step="1" placeholder="整數，例如 1" oninput="markCorrChanged(this,'corrServiceCount')">
-      </div>
       <!-- 修正對比 -->
       <div id="corrDiffAreaOuting" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
         <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
@@ -3183,6 +3292,7 @@ var COL_ITEMS = 'items', COL_FEEDBACK = 'feedback', COL_UNITS = 'units', COL_CHA
 var COL_LOGINLOG = 'loginLogs';
 var COL_MEETING  = 'meetingRecords';
 var COL_CORRECTION = 'correctionRequests';
+var COL_CONFIRM    = 'confirmTasks';
 var COL_DUTY = 'dutySchedule'; // 班表（提前定義供 loadDashboard 使用）
 var COL_CASETYPES = 'caseTypes';
 
@@ -3449,6 +3559,9 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   startIdleTimer();
   setTimeout(checkCertExpiry, 1500);
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
+  // 登入後 4 秒檢查確認任務
+  setTimeout(() => checkConfirmTask().catch(() => {}), 4000);
+
   setTimeout(async () => {
     if (!allItems || allItems.length === 0) {
       try { const docs = await fbList(COL_ITEMS); allItems = docs || []; } catch(e) {}
@@ -3520,7 +3633,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbzH409yUgq_SQ9xTXhLpDojRg3a1gMSXdzMyIWaCNOvi03vvlSYDOWjqX66nl2cfsDQmw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbz2P0rPwjf-deeMPCM6Hw6Te77WBqE8yOK1e8wd7ziiuiLlotv6ytG3U9Quez7XQyAU/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbycbBLIqGUVCNWZJ9NpGqQxOvLXc7MbKGxRmGgNVdLaDjGC1OjMJWaGpz_rv7oNCy1PUQ/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -3653,7 +3766,7 @@ function fmtTime(v) {
 function initFooters(version) {
   const ver = version || 'v1.4.05';
   const lines = [
-    `© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊　隊員林伯霖${ver}　版權所有，轉載必究`,
+    `© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊　${ver}　版權所有，轉載必究`,
     '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
     '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
     '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
@@ -4514,6 +4627,44 @@ function aeInitCanvas(canvasId) {
   cv.addEventListener('touchend',   ()=>state.drawing=false);
 }
 function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return document.getElementById(id).toDataURL('image/png'); }
+// ── 服務人次按鈕選擇 ──
+function setSvcBtn(btn) {
+  const targetId = btn.dataset.target;
+  const val      = btn.dataset.val;
+  const el       = document.getElementById(targetId);
+  if (!el) return;
+  el.value = val;
+  // 高亮選中的按鈕，其他同 target 的按鈕還原
+  document.querySelectorAll(`.svc-btn[data-target="${targetId}"]`).forEach(b => {
+    const active = b === btn;
+    b.style.background    = active ? 'var(--red)' : 'var(--warm)';
+    b.style.color         = active ? 'white' : '';
+    b.style.borderColor   = active ? 'var(--red)' : 'var(--border)';
+  });
+}
+
+function clearSvcBtns(targetId) {
+  // 手動輸入時取消所有按鈕高亮
+  document.querySelectorAll(`.svc-btn[data-target="${targetId}"]`).forEach(b => {
+    b.style.background  = 'var(--warm)';
+    b.style.color       = '';
+    b.style.borderColor = 'var(--border)';
+  });
+}
+
+// 開啟編輯 modal 時，根據現有數值同步高亮對應按鈕
+function syncSvcBtns(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const cur = String(el.value);
+  document.querySelectorAll(`.svc-btn[data-target="${targetId}"]`).forEach(b => {
+    const active = b.dataset.val === cur;
+    b.style.background  = active ? 'var(--red)' : 'var(--warm)';
+    b.style.color       = active ? 'white' : '';
+    b.style.borderColor = active ? 'var(--red)' : 'var(--border)';
+  });
+}
+
 function aeCanvasClear(id){ const s=_aeCtxMap[id]; if(!s)return; const cv=document.getElementById(id); if(!cv)return; s.ctx.clearRect(0,0,cv.width,cv.height); s.hasSig=false; }
 
 // 管理員刪除簽名：隱藏舊簽名圖、標記 deleted=1，儲存時寫入空字串
@@ -4583,13 +4734,6 @@ function submitOutingForm() {
     }
   }
   if (checked.length === 0) { alert('請至少選擇一項服務內容'); return; }
-  const _serviceCountRaw = document.getElementById('serviceCount')?.value;
-  const _serviceCount    = parseInt(_serviceCountRaw, 10);
-  if (_serviceCountRaw === '' || isNaN(_serviceCount) || _serviceCount < 0) {
-    alert('請填入本次案件服務人次（0 以上的整數）');
-    document.getElementById('serviceCount')?.focus();
-    return;
-  }
   if (!_unit)     { alert('請選擇分隊別'); return; }
   if (!_member)   { alert('請選擇協勤義消姓名'); return; }
   if (!hasSig)    { alert('請完成義消簽名'); return; }
@@ -4603,7 +4747,6 @@ function submitOutingForm() {
     district:   document.getElementById('district').value,
     address:    document.getElementById('address').value,
     services:   checked.map(cb => cb.value).join('、'),
-    serviceCount: _serviceCount,
     note:       document.getElementById('note').value,
     memberName: document.getElementById('memberSelect').value,
     signature:  canvas.toDataURL('image/png')
@@ -4615,7 +4758,6 @@ function submitOutingForm() {
   fbAdd(COL_OUTING,{
     date:data.date,caseType:data.caseType||'',timeOut:data.timeOut,timeBack:data.timeBack,
     district:data.district,address:data.address,services:data.services,
-    serviceCount:_serviceCount,
     note:data.note||'',memberName:data.memberName,signature:data.signature,
   }).then(()=>{
     document.getElementById('successMsg').classList.add('show');
@@ -4623,7 +4765,6 @@ function submitOutingForm() {
     document.getElementById('recordForm').reset();
     clearSig();
     document.getElementById('date').value = new Date().toLocaleDateString('sv');
-    const _sc = document.getElementById('serviceCount'); if (_sc) _sc.value = 1;
     document.querySelectorAll('.cb-item').forEach(el => el.classList.remove('checked'));
     updateMemberSelect();
   })
@@ -4796,7 +4937,6 @@ async function doQuery() {
         date:d.date||'',timeOut:d.timeOut||'',timeBack:d.timeBack||'',
         district:(d.district||'').replace(/^台中/,'臺中'),
         address:d.address||'',caseType:d.caseType||'',services:d.services||'',
-        serviceCount:(d.serviceCount !== undefined && d.serviceCount !== null && d.serviceCount !== '') ? parseInt(d.serviceCount,10) : '',
         note:d.note||'',
         memberName:d.memberName||'',
         signature:d.signature||'',
@@ -4874,7 +5014,7 @@ function renderQueryResults(records) {
 
   const tbody = document.getElementById('resultBody');
   if (records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
   } else {
     tbody.innerHTML = records.map((r, i) => {
       const seqNum = i + 1;
@@ -4883,9 +5023,6 @@ function renderQueryResults(records) {
       const timeStr = r.timeOut && r.timeBack ? r.timeOut+' — '+r.timeBack : (r.timeOut || '');
       const sigCell = r.signature
         ? '<img data-sig="'+i+'" style="height:40px;cursor:pointer;border:1px solid var(--border);border-radius:3px;" title="點擊放大">'
-        : '—';
-      const svcCntCell = (r.serviceCount !== undefined && r.serviceCount !== null && r.serviceCount !== '')
-        ? (r.serviceCount + ' 人')
         : '—';
       const isOwnerQ = r.memberName === _myNameQ;
       // 24小時判斷：以勤務日期(r.date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
@@ -4909,7 +5046,6 @@ function renderQueryResults(records) {
         '<td style="min-width:10em;">'+(r.address||'')+'</td>' +
         '<td style="white-space:nowrap;">'+(r.caseType||'—')+'</td>' +
         '<td>'+tags+'</td>' +
-        '<td style="white-space:nowrap;text-align:center;">'+svcCntCell+'</td>' +
         '<td style="white-space:nowrap;">'+(r.memberName||'')+'</td>' +
         '<td>'+(r.note||'')+'</td>' +
         '<td>'+sigCell+'</td>' +
@@ -5294,7 +5430,6 @@ function autoCalcEditHours() {
 }
 
 // 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
-// 同時也加總對應案件的「本次案件服務人次（serviceCount）」
 async function loadTodayCount(memberName) {
   // attCheckoutTarget 是 key（docId），不是 memberName
   const session   = attSessions[attCheckoutTarget] || {};
@@ -5302,7 +5437,6 @@ async function loadTodayCount(memberName) {
   const checkinT  = session.checkinTime || '';
   const checkoutT = document.getElementById('attCheckoutTime').value || '';
   document.getElementById('attCount').value = 0;
-  document.getElementById('attService').value = 0;
   if (!checkinT || !checkoutT) return;
 
   function toMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
@@ -5311,57 +5445,17 @@ async function loadTodayCount(memberName) {
 
   try {
     const docs = await fbList(COL_OUTING, 'date', 'asc');
-    const matched = docs.filter(r => {
+    const count = docs.filter(r => {
       if ((r.memberName||'') !== memberName) return false;
       if ((r.date||'') !== date) return false;
       const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
       const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
       if (recOutMins === null) return false;
       return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
-    });
-    const count = matched.length;
-    // 服務人次加總：把對應時段內各案件的 serviceCount 相加；若舊資料沒有此欄位，當 0 計
-    const serviceSum = matched.reduce((s,r) => s + (parseInt(r.serviceCount,10) || 0), 0);
-    document.getElementById('attCount').value   = count;
-    document.getElementById('attService').value = serviceSum;
+    }).length;
+    document.getElementById('attCount').value = count;
   } catch(e) {
-    document.getElementById('attCount').value   = 0;
-    document.getElementById('attService').value = 0;
-  }
-}
-
-// 簡易模式：同邏輯，更新 easyServiceCount 和 easyServiceDisplay
-async function easyLoadTodayService() {
-  const session = attSessions[_easyCheckoutTarget];
-  const display = document.getElementById('easyServiceDisplay');
-  const hidden  = document.getElementById('easyServiceCount');
-  if (!session) { if (display) display.textContent = '0'; if (hidden) hidden.value = '0'; return; }
-  const date      = session.date || new Date().toLocaleDateString('sv');
-  const checkinT  = session.checkinTime || '';
-  const checkoutT = document.getElementById('easyCheckoutTime')?.value || '';
-  if (!checkinT || !checkoutT) { if (display) display.textContent = '0'; if (hidden) hidden.value = '0'; return; }
-
-  function toMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
-  const inMins  = toMins(checkinT);
-  const outMins = toMins(checkoutT);
-  const memberName = session.memberName || _easyCheckoutTarget;
-
-  try {
-    const docs = await fbList(COL_OUTING, 'date', 'asc');
-    const matched = docs.filter(r => {
-      if ((r.memberName||'') !== memberName) return false;
-      if ((r.date||'') !== date) return false;
-      const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
-      const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
-      if (recOutMins === null) return false;
-      return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
-    });
-    const serviceSum = matched.reduce((s,r) => s + (parseInt(r.serviceCount,10) || 0), 0);
-    if (display) display.textContent = String(serviceSum);
-    if (hidden)  hidden.value        = String(serviceSum);
-  } catch(e) {
-    if (display) display.textContent = '0';
-    if (hidden)  hidden.value        = '0';
+    document.getElementById('attCount').value = 0;
   }
 }
 
@@ -5699,16 +5793,14 @@ async function generateRpt1() {
   const year = document.getElementById('rpt1Year').value;
   const month = document.getElementById('rpt1Month').value;
   const unit = document.getElementById('rpt1Unit').value;
-  const dutyType = document.getElementById('rpt1Category')?.value || '';
   const status = document.getElementById('rpt1Status');
   const btn = document.getElementById('rpt1Btn');
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}&dutyType=${encodeURIComponent(dutyType)}`, 'jsonpRpt1Script');
+    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt1Script');
     downloadDocx(json);
-    const catLabel = dutyType ? `（${dutyType}）` : '';
-    status.style.color='#1a6b35'; status.textContent=`✅ 下載成功${catLabel}！共 ${json.count} 筆`;
+    status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
   finally { btn.disabled = false; }
 }
@@ -5761,27 +5853,6 @@ function jsonpRequest(baseUrl, scriptId) {
     setTimeout(() => {
       if (!done) { delete window[cbName]; document.getElementById(scriptId)?.remove(); reject(new Error('請求逾時（120秒），請重試')); }
     }, 120000);
-  });
-}
-
-// 通用 JSONP：不檢查 .success，直接回傳原始 JSON（給 getLoginLog 等回陣列的 API 用）
-function jsonpRequestRaw(baseUrl, scriptId) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'jsonpCbRaw_' + Date.now();
-    let done = false;
-    window[cbName] = function(j) {
-      done = true; delete window[cbName];
-      document.getElementById(scriptId)?.remove();
-      resolve(j);
-    };
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.onerror = () => { if (!done) { delete window[cbName]; reject(new Error('JSONP 載入失敗')); } };
-    script.src = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'callback=' + cbName;
-    document.head.appendChild(script);
-    setTimeout(() => {
-      if (!done) { delete window[cbName]; document.getElementById(scriptId)?.remove(); reject(new Error('請求逾時（30秒），請重試')); }
-    }, 30000);
   });
 }
 
@@ -6743,7 +6814,14 @@ async function adminEditAtt(id) {
     <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
     <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
-    <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" style="width:100%;"></div>
+    <div class="field"><label>服務人次</label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button type="button" class="svc-btn" data-target="aeASvc" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;flex:1;transition:all 0.15s;">0</button>
+        <button type="button" class="svc-btn" data-target="aeASvc" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;flex:1;transition:all 0.15s;">1</button>
+        <button type="button" class="svc-btn" data-target="aeASvc" data-val="2" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;flex:1;transition:all 0.15s;">2</button>
+        <input type="number" id="aeASvc" value="${doc.service||0}" min="0" step="1" placeholder="其他" oninput="clearSvcBtns('aeASvc')" style="width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:8px 4px;font-size:0.9rem;">
+      </div>
+    </div>
     <div class="field">
       <label><span>簽到簽名</span></label>
       ${doc.checkinSig?`<div id="aeACheckinPrevWrap" style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeACheckinPrevWrap','aeACheckinDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeACheckinDeleted" value="0">`:''}
@@ -6825,13 +6903,12 @@ async function loadAdminOuting() {
     table.innerHTML = `<thead><tr>
       <th style="${ths2}">日期</th><th style="${ths2}">時間</th><th style="${ths2}">行政區</th>
       <th style="${ths2}">地址</th><th style="${ths2}">姓名</th><th style="${ths2}">案由</th>
-      <th style="${ths2}">服務項目</th><th style="${ths2}">服務人次</th><th style="${ths2}">備註</th><th style="${ths2}">簽名</th><th style="${ths2}">操作</th>
+      <th style="${ths2}">服務項目</th><th style="${ths2}">備註</th><th style="${ths2}">簽名</th><th style="${ths2}">操作</th>
     </tr></thead>`;
 
     const tbody = document.createElement('tbody');
     docs.forEach(d => {
       const tr = document.createElement('tr');
-      const svcCnt = (d.serviceCount !== undefined && d.serviceCount !== null && d.serviceCount !== '') ? (d.serviceCount + ' 人') : '—';
       tr.innerHTML = `
         <td style="${tds2}white-space:nowrap;">${d.date||''}</td>
         <td style="${tds2}white-space:nowrap;">${(d.timeOut||'')}～${(d.timeBack||'')}</td>
@@ -6840,7 +6917,6 @@ async function loadAdminOuting() {
         <td style="${tds2}font-weight:500;white-space:nowrap;">${d.memberName||''}</td>
         <td style="${tds2}white-space:nowrap;">${d.caseType||'—'}</td>
         <td style="${tds2}max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.services||''}">${d.services||''}</td>
-        <td style="${tds2}white-space:nowrap;text-align:center;">${svcCnt}</td>
         <td style="${tds2}max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.note||''}">${d.note||''}</td>
         <td style="${tds2}text-align:center;padding:6px 8px;">${sigB(d.signature||'')}</td>
         <td style="${tds2}white-space:nowrap;">
@@ -6870,7 +6946,6 @@ async function adminEditOut(id) {
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
-    <div class="field"><label>本次案件服務人次</label><input type="number" id="aeOSvcCount" min="0" step="1" value="${doc.serviceCount !== undefined ? doc.serviceCount : ''}" placeholder="整數，例如 1" style="width:100%;"></div>
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
     <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field">
@@ -6886,8 +6961,6 @@ async function adminEditOut(id) {
     try {
       const sigN=aeGetSig('aeOSigCanvas');
       const sigDel = document.getElementById('aeOSigDeleted')?.value === '1';
-      const _scRaw = document.getElementById('aeOSvcCount').value;
-      const _sc = parseInt(_scRaw,10);
       await fbSet(COL_OUTING,id,{
         date:document.getElementById('aeODate').value,
         caseType:document.getElementById('aeOCaseType').value.trim(),
@@ -6896,7 +6969,6 @@ async function adminEditOut(id) {
         district:document.getElementById('aeODist').value.trim(),
         address:document.getElementById('aeOAddr').value.trim(),
         services:document.getElementById('aeOSvc').value.trim(),
-        serviceCount: (_scRaw === '' || isNaN(_sc)) ? 0 : _sc,
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
         signature: sigDel ? '' : (sigN || doc.signature || ''),
@@ -6985,7 +7057,7 @@ function adminNavTo(sectionId) {
   }
   adminScrollTo(sectionId);
   document.querySelectorAll('.admin-subnav-btn').forEach(b => b.classList.remove('active-subnav'));
-  const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import'];
+  const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-confirm'];
   const idx = secIds.indexOf(sectionId);
   const btns = document.querySelectorAll('.admin-subnav-btn');
   if (btns[idx]) btns[idx].classList.add('active-subnav');
@@ -7088,7 +7160,7 @@ async function initAdminPage() {
 
   await loadUnits();
   populateUnitSelects();
-  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection()]);
+  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection(),initConfirmSection()]);
   // 版本紀錄直接在 Firestore changelogs collection 新增，不在 HTML 維護
 
   // 顯示並定位固定 tab bar
@@ -7102,7 +7174,7 @@ async function initAdminPage() {
   if (_adminTabObserver) _adminTabObserver.disconnect();
   const secIds = isAdminOnly
     ? ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import']
-    : ['adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-import'];
+    : ['adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-import','adminSec-confirm'];
   const tabs = document.querySelectorAll('.admin-tab');
   const scroller = document.getElementById('appScroll');
   _adminTabObserver = new IntersectionObserver(entries => {
@@ -7136,46 +7208,7 @@ async function initAdminPage() {
 // ════════════════════════════════════════
 // 登入紀錄（管理員限定）
 // ════════════════════════════════════════
-// 切換登入紀錄 tab（成功 / 失敗）
-function switchLoginLogTab(mode) {
-  document.getElementById('loginLogMode').value = mode;
-  const sBtn = document.getElementById('loginLogTabSuccess');
-  const fBtn = document.getElementById('loginLogTabFail');
-  if (mode === 'success') {
-    sBtn.style.background = 'var(--red-faint)';
-    sBtn.style.borderBottomColor = 'var(--red)';
-    sBtn.style.color = 'var(--red)';
-    fBtn.style.background = 'none';
-    fBtn.style.borderBottomColor = 'transparent';
-    fBtn.style.color = 'var(--text-light)';
-    // 顯示分隊欄、隱藏 Email、顯示批次刪除
-    document.getElementById('loginLogUnitField').style.display  = '';
-    document.getElementById('loginLogEmailField').style.display = 'none';
-    document.getElementById('loginLogBatchDelBtn').style.display = '';
-  } else {
-    fBtn.style.background = '#fde8e8';
-    fBtn.style.borderBottomColor = '#b94a3a';
-    fBtn.style.color = '#b94a3a';
-    sBtn.style.background = 'none';
-    sBtn.style.borderBottomColor = 'transparent';
-    sBtn.style.color = 'var(--text-light)';
-    // 隱藏分隊欄、顯示 Email、隱藏批次刪除（Sheets 後端紀錄不支援批次刪除）
-    document.getElementById('loginLogUnitField').style.display  = 'none';
-    document.getElementById('loginLogEmailField').style.display = '';
-    document.getElementById('loginLogBatchDelBtn').style.display = 'none';
-  }
-  // 切換 tab 後清空結果
-  const el = document.getElementById('adminLoginLogList');
-  if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>';
-}
-
 async function loadLoginLog() {
-  const mode = document.getElementById('loginLogMode')?.value || 'success';
-  if (mode === 'fail') return loadLoginLogFail();
-  return loadLoginLogSuccess();
-}
-
-async function loadLoginLogSuccess() {
   const el = document.getElementById('adminLoginLogList');
   if (!el) return;
   el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
@@ -7199,7 +7232,7 @@ async function loadLoginLogSuccess() {
     const ROLE_BG    = { admin:'#fff3cd', officer:'#cfe2ff', member:'#e9ecef' };
 
     el.innerHTML = `
-      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">共 ${docs.length} 筆成功登入紀錄</div>
+      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">共 ${docs.length} 筆登入紀錄</div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
           <thead>
@@ -7243,64 +7276,8 @@ async function loadLoginLogSuccess() {
   }
 }
 
-// 從後端 Google Sheets 撈登入失敗紀錄
-async function loadLoginLogFail() {
-  const el = document.getElementById('adminLoginLogList');
-  if (!el) return;
-  el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
-  try {
-    const dateFrom = document.getElementById('loginLogFrom')?.value || '';
-    const dateTo   = document.getElementById('loginLogTo')?.value   || '';
-    const email    = document.getElementById('loginLogEmail')?.value.trim() || '';
-
-    const url = BASE_URL +
-      '?action=getLoginLog' +
-      '&filterResult=fail' +
-      (dateFrom ? '&dateFrom=' + encodeURIComponent(dateFrom) : '') +
-      (dateTo   ? '&dateTo='   + encodeURIComponent(dateTo)   : '') +
-      (email    ? '&email='    + encodeURIComponent(email)    : '');
-
-    const docs = await jsonpRequestRaw(url, 'jsonpLoginLogFailScript');
-
-    if (!Array.isArray(docs) || !docs.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>查無登入失敗紀錄</div>';
-      return;
-    }
-
-    el.innerHTML = `
-      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">共 ${docs.length} 筆登入失敗紀錄（資料來源：Google Sheets）</div>
-      <div style="background:#fff8f0;border:1px solid #ffd8a8;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:0.78rem;color:#8a4a00;">
-        💡 此頁顯示嘗試登入但無權限的 Email；包含不在白名單中、Google 驗證失敗等情況
-      </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
-          <thead>
-            <tr>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">嘗試時間</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);">Email</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">Google 姓名</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">結果</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${docs.map(d => `<tr>
-              <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.time||''}</td>
-              <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;word-break:break-all;">${d.email||''}</td>
-              <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.name||''}</td>
-              <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">
-                <span style="font-size:0.7rem;background:#fde8e8;color:#b94a3a;border-radius:10px;padding:2px 8px;font-weight:600;">${d.result||'❌ 拒絕'}</span>
-              </td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-  } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + (e.message || e) + '</div>';
-  }
-}
-
 function resetLoginLog() {
-  ['loginLogFrom','loginLogTo','loginLogEmail'].forEach(id => {
+  ['loginLogFrom','loginLogTo'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const u = document.getElementById('loginLogUnit'); if (u) u.value = '';
@@ -8166,6 +8143,418 @@ async function _moveChangelog(idx, dir) {
 }
 
 
+
+// ════════════════════════════════════════
+// 上月紀錄確認任務
+// ════════════════════════════════════════
+let _confirmTaskId   = null; // 目前彈窗對應的任務 id
+
+async function initConfirmSection() {
+  // 預設月份：上個月
+  const now  = new Date();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const y    = prev.getFullYear();
+  const m    = String(prev.getMonth() + 1).padStart(2, '0');
+  const el   = document.getElementById('confirmMonth');
+  if (el) el.value = y + '-' + m;
+  // 分隊選單
+  const uSel = document.getElementById('confirmUnit');
+  if (uSel) {
+    uSel.innerHTML = '<option value="">請選擇分隊</option>' +
+      _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (usr.unit) uSel.value = usr.unit;
+  }
+  await loadAdminConfirmTasks();
+}
+
+async function createConfirmTask() {
+  const month = document.getElementById('confirmMonth')?.value;
+  const unit  = document.getElementById('confirmUnit')?.value;
+  const note  = document.getElementById('confirmNote')?.value.trim() || '';
+  const status = document.getElementById('confirmCreateStatus');
+  if (!month) { status.style.color='var(--red)'; status.textContent='請選擇確認月份'; return; }
+  if (!unit)  { status.style.color='var(--red)'; status.textContent='請選擇分隊別'; return; }
+
+  // 檢查是否已有相同月份 + 分隊的 active 任務
+  const existing = await fbList(COL_CONFIRM);
+  if (existing.some(d => d.month === month && d.unit === unit && d.status === 'active')) {
+    status.style.color = 'var(--red)';
+    status.textContent = '此月份已有進行中的確認任務';
+    return;
+  }
+
+  const btn = document.querySelector('#adminSec-confirm .btn-search');
+  if (btn) { btn.textContent = '建立中...'; btn.disabled = true; }
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const taskId = await fbAdd(COL_CONFIRM, {
+      month, unit, note, status: 'active',
+      createdBy: usr.memberName || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    status.style.color = '#1a6b35';
+    status.textContent = '✅ 確認任務已建立，成員登入時將看到通知';
+    document.getElementById('confirmNote').value = '';
+    await loadAdminConfirmTasks();
+  } catch(e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '建立失敗：' + e.message;
+  } finally {
+    if (btn) { btn.textContent = '✅ 發起確認任務並通知成員'; btn.disabled = false; }
+  }
+}
+
+async function loadAdminConfirmTasks() {
+  const el = document.getElementById('adminConfirmTaskList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    let tasks = await fbList(COL_CONFIRM);
+    if (!usr.isAdmin) tasks = tasks.filter(t => t.unit === usr.unit);
+    tasks.sort((a, b) => (b.month || '') > (a.month || '') ? 1 : -1);
+
+    if (!tasks.length) {
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">✅</span>尚無確認任務</div>';
+      return;
+    }
+    el.innerHTML = '';
+    for (const task of tasks) {
+      // 取得該分隊成員名單
+      const unitMembers = members.filter(m => (m.unit || '') === task.unit);
+      const total = unitMembers.length;
+      // 取得回應
+      let responses = [];
+      try {
+        const snap = await _fbDB.collection(COL_CONFIRM).doc(task.id)
+          .collection('responses').get();
+        responses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch(e) {}
+      const okCount    = responses.filter(r => r.result === 'ok').length;
+      const issueCount = responses.filter(r => r.result === 'issue').length;
+      const doneCount  = responses.length;
+      const pendCount  = total - doneCount;
+
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;';
+
+      // 標題列
+      const head = document.createElement('div');
+      head.style.cssText = 'background:' + (task.status === 'active' ? 'var(--red-faint)' : 'var(--warm)') + ';padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+      head.innerHTML =
+        '<span style="font-weight:700;font-size:0.95rem;color:var(--text);">📅 ' + task.month + '</span>' +
+        '<span style="font-size:0.78rem;color:var(--text-light);">' + task.unit + '</span>' +
+        (task.note ? '<span style="font-size:0.75rem;background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;">' + task.note + '</span>' : '') +
+        '<span style="margin-left:auto;font-size:0.72rem;padding:2px 10px;border-radius:10px;background:' + (task.status==='active'?'#eafaf1':'#f0f0f0') + ';color:' + (task.status==='active'?'#1a6b35':'#888') + ';font-weight:600;">' + (task.status==='active'?'進行中':'已關閉') + '</span>';
+
+      // 進度列
+      const prog = document.createElement('div');
+      prog.style.cssText = 'padding:12px 16px;border-bottom:1px solid var(--border);';
+      const pct = total > 0 ? Math.round(doneCount / total * 100) : 0;
+      prog.innerHTML =
+        '<div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-mid);margin-bottom:6px;">' +
+          '<span>已回應 <b>' + doneCount + '</b>／' + total + ' 人</span>' +
+          '<span style="color:' + (pendCount>0?'#e67e22':'#27ae60') + ';">' + (pendCount>0?'⏳ 待回應 '+pendCount+' 人':'✅ 全部完成') + '</span>' +
+        '</div>' +
+        '<div style="background:var(--border);border-radius:4px;height:8px;"><div style="background:var(--red);border-radius:4px;height:8px;width:' + pct + '%;transition:width 0.4s;"></div></div>' +
+        '<div style="display:flex;gap:16px;margin-top:8px;font-size:0.75rem;">' +
+          '<span style="color:#27ae60;">✓ 確認無誤 ' + okCount + ' 人</span>' +
+          '<span style="color:#e67e22;">⚠ 有問題 ' + issueCount + ' 人</span>' +
+          '<span style="color:var(--text-light);">未回應 ' + pendCount + ' 人</span>' +
+        '</div>';
+
+      // 明細表格
+      const detail = document.createElement('div');
+      detail.style.cssText = 'overflow-x:auto;';
+      const rows = unitMembers.map(m => {
+        const resp = responses.find(r => r.memberName === m.name);
+        let statusBadge, noteHtml = '';
+        if (!resp) {
+          statusBadge = '<span style="font-size:0.7rem;background:#f0f0f0;color:#888;border-radius:10px;padding:2px 8px;">未回應</span>';
+        } else if (resp.result === 'ok') {
+          statusBadge = '<span style="font-size:0.7rem;background:#d4edda;color:#1a6b35;border-radius:10px;padding:2px 8px;">✓ 確認無誤</span>';
+        } else {
+          const iType = resp.issueType || '';
+          const issueLabel = iType === 'admin' ? '⚠ 需管理員協助' : '⚠ 有問題';
+          const issueBg    = iType === 'admin' ? '#fde8e8' : '#fff3e0';
+          const issueColor = iType === 'admin' ? '#b94a3a' : '#e67e22';
+          statusBadge = '<span style="font-size:0.7rem;background:'+issueBg+';color:'+issueColor+';border-radius:10px;padding:2px 8px;font-weight:700;">'+issueLabel+'</span>';
+          if (resp.note) noteHtml = '<div style="font-size:0.72rem;color:#e67e22;margin-top:2px;">' + resp.note + '</div>';
+        }
+        const time = resp && resp.confirmedAt
+          ? (resp.confirmedAt.toDate ? resp.confirmedAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '')
+          : '';
+        return '<tr><td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:500;font-size:0.85rem;white-space:nowrap;">' + m.name + '</td>' +
+          '<td style="padding:10px 14px;border-bottom:1px solid var(--border);">' + statusBadge + noteHtml + '</td>' +
+          '<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--text-light);white-space:nowrap;">' + time + '</td></tr>';
+      }).join('');
+      detail.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:300px;">' +
+        '<thead><tr>' +
+          '<th style="padding:8px 14px;background:var(--warm);font-size:0.75rem;color:var(--text-mid);text-align:left;border-bottom:1px solid var(--border);">成員</th>' +
+          '<th style="padding:8px 14px;background:var(--warm);font-size:0.75rem;color:var(--text-mid);text-align:left;border-bottom:1px solid var(--border);">確認狀態</th>' +
+          '<th style="padding:8px 14px;background:var(--warm);font-size:0.75rem;color:var(--text-mid);text-align:left;border-bottom:1px solid var(--border);">回應時間</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+      // 操作按鈕
+      const foot = document.createElement('div');
+      foot.style.cssText = 'padding:10px 14px;background:var(--cream);display:flex;gap:8px;';
+      if (task.status === 'active') {
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '關閉任務';
+        closeBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);';
+        closeBtn.onclick = () => closeConfirmTask(task.id);
+        foot.appendChild(closeBtn);
+      }
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '刪除';
+      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:#b94a3a;';
+      delBtn.onclick = () => deleteConfirmTask(task.id, task.month);
+      foot.appendChild(delBtn);
+
+      card.appendChild(head);
+      card.appendChild(prog);
+      card.appendChild(detail);
+      card.appendChild(foot);
+      el.appendChild(card);
+    }
+  } catch(e) {
+    el.innerHTML = '<div style="color:#b94a3a;padding:8px 0;">載入失敗：' + e.message + '</div>';
+  }
+}
+
+async function closeConfirmTask(taskId) {
+  if (!confirm('確定關閉此任務？關閉後成員將不再看到確認提示。')) return;
+  try {
+    await fbUpdate(COL_CONFIRM, taskId, { status: 'closed' });
+    await loadAdminConfirmTasks();
+  } catch(e) { alert('操作失敗：' + e.message); }
+}
+
+async function deleteConfirmTask(taskId, month) {
+  if (!confirm('確定刪除 ' + month + ' 的確認任務？')) return;
+  try {
+    await fbDelete(COL_CONFIRM, taskId);
+    await loadAdminConfirmTasks();
+  } catch(e) { alert('刪除失敗：' + e.message); }
+}
+
+// ── 成員登入後偵測確認任務 ──
+async function checkConfirmTask() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const myName = usr.memberName || usr.name || '';
+  const myUnit = usr.unit || '';
+  if (!myName) return;
+  try {
+    // 找 active 且屬於本人分隊的任務
+    const tasks = await fbList(COL_CONFIRM);
+    const active = tasks.filter(t => t.status === 'active' && t.unit === myUnit);
+    for (const task of active) {
+      // 檢查本人是否已回應
+      let responded = false;
+      try {
+        const snap = await _fbDB.collection(COL_CONFIRM).doc(task.id)
+          .collection('responses').doc(myName).get();
+        responded = snap.exists;
+      } catch(e) {}
+      if (!responded) {
+        await openConfirmModal(task);
+        return; // 一次只顯示一個
+      }
+    }
+  } catch(e) {}
+}
+
+// ── 輕量 Modal：前往個人資料頁 ──
+function openConfirmModal(task) {
+  _confirmTaskId = task.id;
+  const month = task.month || '';
+  document.getElementById('confirmModalMonthLabel').textContent =
+    month + ' 出勤紀錄' + (task.note ? '　' + task.note : '');
+  document.getElementById('confirmRecordModal').style.display = 'flex';
+}
+
+function goToProfileConfirm() {
+  document.getElementById('confirmRecordModal').style.display = 'none';
+  navTo('profilePage');
+}
+
+// ── 個人資料頁確認區塊 ──
+let _profileConfirmTask = null;
+
+async function loadProfileConfirmSection() {
+  const sec = document.getElementById('profileConfirmSection');
+  if (!sec) return;
+  const usr    = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const myName = usr.memberName || usr.name || '';
+  const myUnit = usr.unit || '';
+  if (!myName) { sec.style.display = 'none'; return; }
+
+  try {
+    await ensureFirebase();
+    const tasks = await fbList(COL_CONFIRM);
+    const active = tasks.filter(t => t.status === 'active' && t.unit === myUnit);
+    let pendingTask = null;
+    for (const task of active) {
+      try {
+        const snap = await _fbDB.collection(COL_CONFIRM).doc(task.id)
+          .collection('responses').doc(myName).get();
+        if (!snap.exists) { pendingTask = task; break; }
+      } catch(e) {}
+    }
+
+    if (!pendingTask) { sec.style.display = 'none'; return; }
+    _profileConfirmTask = pendingTask;
+    const month = pendingTask.month || '';
+
+    document.getElementById('profileConfirmTitle').textContent = month + ' 出勤紀錄待確認';
+    document.getElementById('profileConfirmDesc').textContent =
+      '請確認以下紀錄是否正確，確認無誤後點「確認無誤」，有問題請點對應按鈕前往修改。' +
+      (pendingTask.note ? '（' + pendingTask.note + '）' : '');
+    document.getElementById('profileConfirmStatus').textContent = '';
+    sec.style.display = '';
+
+    const outEl = document.getElementById('profileConfirmOutList');
+    const attEl = document.getElementById('profileConfirmAttList');
+    outEl.innerHTML = '<div style="padding:10px 12px;color:rgba(255,255,255,0.6);font-size:0.8rem;">載入中...</div>';
+    attEl.innerHTML = '<div style="padding:10px 12px;color:rgba(255,255,255,0.6);font-size:0.8rem;">載入中...</div>';
+
+    const [outDocs, attDocs] = await Promise.all([
+      fbList(COL_OUTING, 'date', 'asc'),
+      fbList(COL_ATTEND, 'date', 'asc'),
+    ]);
+    const myOut = outDocs.filter(r => (r.memberName||'') === myName && (r.date||'').startsWith(month));
+    const myAtt = attDocs.filter(r => (r.memberName||'') === myName && (r.date||'').startsWith(month));
+
+    document.getElementById('profileConfirmOutCount').textContent = '（' + myOut.length + ' 筆）';
+    document.getElementById('profileConfirmAttCount').textContent = '（' + myAtt.length + ' 筆）';
+
+    const rowStyle = 'padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.1);font-size:0.8rem;color:white;';
+    outEl.innerHTML = myOut.length === 0
+      ? '<div style="' + rowStyle + 'color:rgba(255,255,255,0.5);text-align:center;">本月無協勤紀錄</div>'
+      : myOut.map(r =>
+          '<div style="' + rowStyle + '">' +
+            '<div style="display:flex;justify-content:space-between;">' +
+              '<span style="font-weight:600;">' + (r.date||'') + '</span>' +
+              '<span style="color:rgba(255,255,255,0.65);font-size:0.75rem;">' + (r.timeOut||'') + (r.timeBack?' ～ '+r.timeBack:'') + '</span>' +
+            '</div>' +
+            '<div style="color:rgba(255,255,255,0.75);margin-top:2px;font-size:0.75rem;">' + (r.caseType||'') + (r.district?' · '+r.district:'') + '</div>' +
+          '</div>'
+        ).join('');
+
+    attEl.innerHTML = myAtt.length === 0
+      ? '<div style="' + rowStyle + 'color:rgba(255,255,255,0.5);text-align:center;">本月無簽到退紀錄</div>'
+      : myAtt.map(r =>
+          '<div style="' + rowStyle + '">' +
+            '<div style="display:flex;justify-content:space-between;">' +
+              '<span style="font-weight:600;">' + (r.date||'') + '</span>' +
+              '<span style="color:rgba(255,255,255,0.65);font-size:0.75rem;">' + (r.checkinTime||'') + (r.checkoutTime?' ～ '+r.checkoutTime:'') + '</span>' +
+            '</div>' +
+            '<div style="color:rgba(255,255,255,0.75);margin-top:2px;font-size:0.75rem;">' + (r.dutyType||'協勤') + (r.hours?' · '+r.hours+'小時':'') + '</div>' +
+          '</div>'
+        ).join('');
+  } catch(e) { sec.style.display = 'none'; }
+}
+
+async function profileConfirmOk() {
+  if (!_profileConfirmTask) return;
+  await ensureFirebase();
+  const usr    = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const myName = usr.memberName || usr.name || '';
+  const status = document.getElementById('profileConfirmStatus');
+  try {
+    await _fbDB.collection(COL_CONFIRM).doc(_profileConfirmTask.id)
+      .collection('responses').doc(myName).set({
+        memberName: myName, result: 'ok', note: '',
+        confirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    document.getElementById('profileConfirmSection').style.display = 'none';
+    _profileConfirmTask = null;
+    _confirmTaskId = null;
+  } catch(e) {
+    status.textContent = '送出失敗：' + e.message;
+  }
+}
+
+function profileGoIssue(type) {
+  if (!_profileConfirmTask) return;
+  const usr    = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const myName = usr.memberName || usr.name || '';
+  const myUnit = usr.unit || '';
+  const month  = _profileConfirmTask.month || '';
+
+  // 不寫入任何回應，保留任務狀態
+  // 成員修正完後回個人頁面還能看到確認區塊，最後按「確認無誤」才算完成
+  // 隱藏確認區塊（但不清除 _profileConfirmTask，回來時 loadProfileConfirmSection 會重新顯示）
+
+  const dateFrom = month ? month + '-01' : '';
+  const dateTo   = month ? (() => {
+    const [y, m] = month.split('-').map(Number);
+    return month + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0');
+  })() : '';
+
+  if (type === 'outing') {
+    navTo('queryPage');
+    setTimeout(() => {
+      if (dateFrom) document.getElementById('qDateFrom').value = dateFrom;
+      if (dateTo)   document.getElementById('qDateTo').value   = dateTo;
+      const qUnit = document.getElementById('qUnit');
+      if (qUnit && myUnit) qUnit.value = myUnit;
+      filterQueryMembers();
+      setTimeout(() => {
+        const qMember = document.getElementById('qMember');
+        if (qMember) qMember.value = myName;
+        doQuery();
+      }, 100);
+    }, 300);
+  } else {
+    navTo('attQueryPage');
+    setTimeout(() => {
+      if (dateFrom) document.getElementById('aqDateFrom').value = dateFrom;
+      if (dateTo)   document.getElementById('aqDateTo').value   = dateTo;
+      const aqUnit = document.getElementById('aqUnit');
+      if (aqUnit && myUnit) aqUnit.value = myUnit;
+      filterAqMembers();
+      setTimeout(() => {
+        const aqMember = document.getElementById('aqMember');
+        if (aqMember) aqMember.value = myName;
+        doAttQuery();
+      }, 100);
+    }, 300);
+  }
+}
+
+
+async function profileReportIssue() {
+  if (!_profileConfirmTask) return;
+  await ensureFirebase();
+  const usr    = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const myName = usr.memberName || usr.name || '';
+  const status = document.getElementById('profileConfirmStatus');
+
+  if (!confirm('確定要通知管理員協助處理嗎？')) return;
+
+  try {
+    await _fbDB.collection(COL_CONFIRM).doc(_profileConfirmTask.id)
+      .collection('responses').doc(myName).set({
+        memberName: myName,
+        result: 'issue',
+        issueType: 'admin',
+        note: '成員回報有問題，請管理員協助',
+        confirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    status.textContent = '✅ 已通知管理員，請等候處理';
+    // 3 秒後隱藏確認區塊
+    setTimeout(() => {
+      document.getElementById('profileConfirmSection').style.display = 'none';
+      _profileConfirmTask = null;
+      _confirmTaskId = null;
+    }, 2500);
+  } catch(e) {
+    status.textContent = '送出失敗：' + e.message;
+  }
+}
+
 // ════════════════════════════════════════
 // LINE 瀏覽器偵測
 // ════════════════════════════════════════
@@ -8695,9 +9084,8 @@ function easyOpenCheckout(key) {
   document.getElementById('easyCheckinRef').textContent = '簽到時間：' + (s.checkinTime || '');
   buildTimeOptions('easyCheckoutTime', roundTo15(new Date()));
   const svcEl = document.getElementById('easyServiceCount'); if (svcEl) svcEl.value = '0';
-  const svcDisp = document.getElementById('easyServiceDisplay'); if (svcDisp) svcDisp.textContent = '0';
   const hdEl = document.getElementById('easyHoursDisplay'); if (hdEl) hdEl.textContent = '—';
-  easyAutoCalcHours(); // 立即根據當前簽退時間計算時數與服務人次
+  easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'block';
   _easyCheckoutHasSig = false;
@@ -8711,6 +9099,9 @@ function easyBack() {
   document.getElementById('easyCheckoutCard').style.display = 'none';
   var oc = document.getElementById('easyOutingCard');
   if (oc) oc.classList.remove('show');
+  // 重置簡易協勤服務人次
+  const _scInp = document.getElementById('easyServiceCountInput');
+  if (_scInp) { _scInp.value = '1'; clearSvcBtns('easyServiceCountInput'); }
   _easyCheckoutTarget = null;
   // 重新載入已簽到名單（刷新狀態）
   loadTodayCheckins();
@@ -8729,8 +9120,6 @@ function easyAutoCalcHours() {
   const h = calcHours(session.checkinTime, checkoutTime);
   const display = document.getElementById('easyHoursDisplay');
   if (display) display.textContent = h > 0 ? h + ' 小時' : '—';
-  // 同時重算服務人次
-  easyLoadTodayService();
 }
 
 function easyInitCanvas(type) {
@@ -9020,10 +9409,10 @@ async function easyDoOuting() {
     }
   }
   if (selected.length === 0) { alert('請至少選擇一項服務項目'); return; }
-  const _easyServiceCountRaw = document.getElementById('easyServiceCountInput')?.value;
-  const _easyServiceCount    = parseInt(_easyServiceCountRaw, 10);
-  if (_easyServiceCountRaw === '' || isNaN(_easyServiceCount) || _easyServiceCount < 0) {
-    alert('請填入本次案件服務人次（0 以上的整數）');
+  const _easySvcRaw = document.getElementById('easyServiceCountInput')?.value;
+  const _easySvc    = parseInt(_easySvcRaw, 10);
+  if (_easySvcRaw === '' || _easySvcRaw === undefined || isNaN(_easySvc) || _easySvc < 0) {
+    alert('請填入本次案件服務人次');
     document.getElementById('easyServiceCountInput')?.focus();
     return;
   }
@@ -9037,7 +9426,7 @@ async function easyDoOuting() {
   if (btn) { btn.textContent = '送出中...'; btn.disabled = true; }
 
   try {
-    await fbAdd(COL_OUTING, { date, caseType: easyCTVal, timeOut, timeBack: timeBack||timeOut, district, address, services, serviceCount: _easyServiceCount, note: '', memberName, signature });
+    await fbAdd(COL_OUTING, { date, caseType: easyCTVal, timeOut, timeBack: timeBack||timeOut, district, address, services, serviceCount: _easySvc, note: '', memberName, signature });
     alert('✅ 協勤紀錄送出成功！');
     easyBack();
   } catch(e) {
@@ -9625,6 +10014,9 @@ async function loadProfilePage() {
     certAlertEl.style.display = 'none';
   }
 
+  // 載入上月紀錄確認區塊
+  loadProfileConfirmSection();
+
   // 初始化推播通知 toggle 狀態
   // 初始化推播時間設定
   loadNotifyHoursSettings();
@@ -9969,7 +10361,6 @@ function openCorrectionModal(type, record) {
     origItem('行政區',   record.district || '');
     origItem('地址',     record.address || '');
     origItem('案件類別', record.caseType || '');
-    origItem('服務人次', (record.serviceCount !== undefined && record.serviceCount !== '') ? (record.serviceCount + ' 人') : '');
 
     _corrOriginals = {
       corrTimeOut:  record.timeOut  || '',
@@ -9977,7 +10368,6 @@ function openCorrectionModal(type, record) {
       corrAddress:  record.address  || '',
       corrCaseType: record.caseType || '',
       corrServices: record.services || '',
-      corrServiceCount: (record.serviceCount !== undefined && record.serviceCount !== null) ? String(record.serviceCount) : '',
     };
 
     document.getElementById('corrTimeOut').value   = record.timeOut  || '';
@@ -9985,8 +10375,7 @@ function openCorrectionModal(type, record) {
     document.getElementById('corrAddress').value   = record.address  || '';
     document.getElementById('corrCaseType').value  = record.caseType || '';
     document.getElementById('corrServices').value  = record.services || '';
-    document.getElementById('corrServiceCount').value = (record.serviceCount !== undefined && record.serviceCount !== null) ? record.serviceCount : '';
-    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices','corrServiceCount'].forEach(id => {
+    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'].forEach(id => {
       document.getElementById(id).classList.remove('corr-changed');
     });
     document.getElementById('corrDiffAreaOuting').style.display = 'none';
@@ -10026,8 +10415,8 @@ function updateCorrDiff() {
       return '<div class="corr-diff-row"><span style="color:var(--text-light);width:64px;flex-shrink:0;">'+lbls[id]+'</span><span style="text-decoration:line-through;color:var(--text-light);">'+(_corrOriginals[id]||'—')+'</span><span style="color:var(--text-light);margin:0 4px;">→</span><span style="color:#E67E22;font-weight:600;">'+el.value+'</span></div>';
     }).join('');
   } else {
-    const ids = ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices','corrServiceCount'];
-    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返隊時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目', corrServiceCount:'服務人次' };
+    const ids = ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'];
+    const lbls = { corrTimeOut:'出勤時間', corrTimeBack:'返隊時間', corrAddress:'地址', corrCaseType:'案件類別', corrServices:'服務項目' };
     const diffs = ids.filter(id => {
       const el = document.getElementById(id);
       return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
@@ -10115,17 +10504,11 @@ async function submitCorrection() {
     if (sigIn)  { correctedFields.checkinSig  = sigIn;  hasDiff = true; }
     if (sigOut) { correctedFields.checkoutSig = sigOut; hasDiff = true; }
   } else {
-    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
+    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services' };
     for (const [elId, field] of Object.entries(ids)) {
       const el = document.getElementById(elId);
       if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
-        // serviceCount 強制為整數
-        if (field === 'serviceCount') {
-          const n = parseInt(el.value, 10);
-          correctedFields[field] = isNaN(n) ? 0 : n;
-        } else {
-          correctedFields[field] = el.value;
-        }
+        correctedFields[field] = el.value;
         hasDiff = true;
       }
     }
@@ -10192,7 +10575,7 @@ async function loadAdminCorrections() {
       dutyType: '類別', memberName: '義消姓名',
       timeOut: '出勤時間', timeBack: '返勤時間',
       date: '日期', district: '行政區', address: '地址',
-      caseType: '案由', services: '服務項目', serviceCount: '本次案件服務人次', note: '備註',
+      caseType: '案由', services: '服務項目', note: '備註',
       checkinSig: '簽到簽名', checkoutSig: '簽退簽名', signature: '義消簽名',
     };
 
@@ -10309,8 +10692,8 @@ async function handleCorrection(corrId, docId, type, action) {
               aeODate: fields.date, aeOCaseType: fields.caseType,
               aeOOut: fields.timeOut, aeOBack: fields.timeBack,
               aeODist: fields.district, aeOAddr: fields.address,
-              aeOSvc: fields.services, aeOSvcCount: fields.serviceCount,
-              aeONote: fields.note, aeOName: fields.memberName,
+              aeOSvc: fields.services, aeONote: fields.note,
+              aeOName: fields.memberName,
             };
             Object.entries(map).forEach(([id, val]) => {
               if (val !== undefined && val !== '') {
