@@ -69,6 +69,12 @@ function getTWDateStr(offsetDays = 0) {
 }
 
 async function main() {
+  const twHour = new Date(Date.now() + 8 * 3600000).getUTCHours();
+  if (twHour < 21 || twHour >= 24) {
+    console.log(`台灣時間 ${twHour} 點，不在發送區間（21–23），跳過執行。`);
+    process.exit(0);
+  }
+
   const today    = getTWDateStr(0);
   const tomorrow = getTWDateStr(1);
 
