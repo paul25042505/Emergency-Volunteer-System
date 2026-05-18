@@ -139,7 +139,7 @@ body {
   .menu-btn { display: none !important; }
   .overlay { display: none !important; }
   #appScroll { padding-left: 260px; }
-  .query-wrap { max-width: none; padding-left: 0; padding-right: 0; }
+  #adminPage > .query-wrap.admin-full { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; }
 }
 
 .drawer nav { padding: 16px 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
@@ -7125,6 +7125,8 @@ function adminShowSection(sectionId) {
     const el = document.getElementById(id);
     if (el) el.style.display = (id === sectionId) ? '' : 'none';
   });
+  const wrap = document.querySelector('#adminPage > .query-wrap');
+  if (wrap) wrap.classList.toggle('admin-full', sectionId === 'adminSec-att' || sectionId === 'adminSec-outing');
   const sel = document.getElementById('adminSecSelect');
   if (sel) sel.value = sectionId;
   document.querySelectorAll('.admin-subnav-btn').forEach(b => {
