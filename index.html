@@ -139,6 +139,7 @@ body {
   .menu-btn { display: none !important; }
   .overlay { display: none !important; }
   #appScroll { padding-left: 260px; }
+  .query-wrap { max-width: none; }
 }
 
 .drawer nav { padding: 16px 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
@@ -6980,11 +6981,11 @@ async function loadAdminOuting() {
         <td style="${tds2}white-space:nowrap;">${d.date||''}</td>
         <td style="${tds2}white-space:nowrap;">${(d.timeOut||'')}～${(d.timeBack||'')}</td>
         <td style="${tds2}white-space:nowrap;">${d.district||''}</td>
-        <td style="${tds2}max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.address||''}">${d.address||''}</td>
+        <td style="${tds2}min-width:10em;">${d.address||''}</td>
         <td style="${tds2}font-weight:500;white-space:nowrap;">${d.memberName||''}</td>
         <td style="${tds2}white-space:nowrap;">${d.caseType||'—'}</td>
-        <td style="${tds2}max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.services||''}">${d.services||''}</td>
-        <td style="${tds2}max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.note||''}">${d.note||''}</td>
+        <td style="${tds2}min-width:8em;">${d.services||''}</td>
+        <td style="${tds2}min-width:6em;">${d.note||''}</td>
         <td style="${tds2}text-align:center;padding:6px 8px;">${sigB(d.signature||'')}</td>
         <td style="${tds2}white-space:nowrap;">
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}">✏️ 編輯</button>
