@@ -109,6 +109,38 @@ body {
 }
 .drawer.open { transform: translateX(0); }
 
+/* ── 手機首頁大按鈕 ── */
+@media (max-width: 899px) {
+  #dashboardPage .stat-card { padding: 10px 8px; }
+  #dashboardPage .stat-num { font-size: 1.4rem; }
+  .quick-entry-grid { gap: 10px !important; }
+  .quick-entry-grid button {
+    min-height: 120px !important;
+    padding: 22px 10px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08) !important;
+  }
+  .quick-entry-grid button div:first-child {
+    font-size: 2.2rem !important;
+    margin-bottom: 10px !important;
+  }
+  .quick-entry-grid button div:nth-child(2) {
+    font-size: 0.92rem !important;
+  }
+  .quick-entry-grid button div:nth-child(3) {
+    font-size: 0.73rem !important;
+    margin-top: 5px !important;
+  }
+}
+
+/* ── Desktop：側邊欄常駐 + 全版面 ── */
+@media (min-width: 900px) {
+  .drawer { transform: translateX(0) !important; transition: none !important; box-shadow: none; }
+  .menu-btn { display: none !important; }
+  .overlay { display: none !important; }
+  #appScroll { padding-left: 260px; }
+}
+
 .drawer nav { padding: 16px 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
 .drawer nav button {
   display: flex; align-items: center; gap: 12px; padding: 14px 24px;
@@ -766,7 +798,7 @@ function _dlCSV(content, filename) {
     <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
     <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>待領物品</button>
     <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍</span>簽到簽退登錄</button>
-    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">📊</span>簽到簽退記錄查詢</button>
+    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">🔍</span>簽到簽退記錄查詢</button>
     <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>協勤案件登錄</button>
     <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>協勤紀錄查詢</button>
     <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
@@ -790,6 +822,9 @@ function _dlCSV(content, filename) {
       <button onclick="adminNavTo('adminSec-schedule')" class="admin-subnav-btn" id="adminSubNav-schedule"><span class="icon" style="font-size:0.75rem;">📅</span>定訓行事曆</button>
       <button onclick="adminNavTo('adminSec-changelog')"class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📝</span>版本紀錄</button>
       <button id="adminSubNav-loginlog" onclick="adminNavTo('adminSec-loginlog')" class="admin-subnav-btn" style="display:none;"><span class="icon" style="font-size:0.75rem;">🔐</span>登入紀錄</button>
+      <button onclick="adminNavTo('adminSec-temppass')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🔑</span>臨時密碼</button>
+      <button onclick="adminNavTo('adminSec-import')"   class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📥</span>批次匯入</button>
+      <button onclick="adminNavTo('adminSec-confirm')"  class="admin-subnav-btn" id="adminSubNav-confirm"><span class="icon" style="font-size:0.75rem;">✅</span>確認任務</button>
     </div>
   </nav>
 </div>
@@ -964,7 +999,7 @@ function _dlCSV(content, filename) {
         <div class="section-title">快速入口</div>
         <div class="section-line"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="quick-entry-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
           <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人基本資料</div>
@@ -986,7 +1021,7 @@ function _dlCSV(content, filename) {
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤簽到</div>
         </button>
         <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📊</div>
+          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退查詢</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤紀錄查詢</div>
         </button>
@@ -1105,6 +1140,7 @@ function _dlCSV(content, filename) {
               oninput="clearSvcBtns('easyServiceCountInput')"
               style="width:72px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:12px 4px;font-size:1rem;">
           </div>
+          <p style="margin:6px 0 0;font-size:0.85rem;color:var(--red);font-weight:500;">⚠️ 請記得確認服務人次，勿漏填！</p>
         </div>
         <div class="field">
           <label>義消簽名</label>
@@ -1236,6 +1272,7 @@ function _dlCSV(content, filename) {
                 oninput="clearSvcBtns('serviceCount')"
                 style="width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:8px 4px;font-size:0.9rem;">
             </div>
+            <p style="margin:6px 0 0;font-size:0.82rem;color:var(--red);font-weight:500;">⚠️ 請記得確認服務人次，勿漏填！</p>
           </div>
           <div class="card-divider"></div>
           <div class="field">
@@ -1418,6 +1455,7 @@ function _dlCSV(content, filename) {
               <th>地址</th>
               <th>案由</th>
               <th>服務項目</th>
+              <th>服務人次</th>
               <th>義消姓名</th>
               <th>備註</th>
               <th>簽名</th>
@@ -1841,6 +1879,14 @@ function _dlCSV(content, filename) {
                 <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
               </select>
             </div>
+            <div class="field">
+              <label>類別</label>
+              <select id="rpt1DutyType" style="width:100%;">
+                <option value="">全部</option>
+                <option value="協勤">協勤</option>
+                <option value="公差">公差</option>
+              </select>
+            </div>
           </div>
           <div id="rpt1Status" style="font-size:0.78rem;min-height:1.3em;margin-top:4px;margin-bottom:4px;"></div>
           <div class="filter-actions"><button class="btn-search" onclick="generateRpt1()" id="rpt1Btn">⬇ 產生並下載</button></div>
@@ -1969,7 +2015,7 @@ function _dlCSV(content, filename) {
       </div>
 
       <!-- 數字摘要 -->
-      <div class="stats-row" id="caseStatsOverview" style="margin-bottom:16px;"></div>
+      <div class="stats-row" id="caseStatsOverview" style="margin-bottom:16px;grid-template-columns:repeat(2,1fr);"></div>
 
       <!-- 圖表區：圓餅 + 長條並排 -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="caseChartsGrid">
@@ -2246,28 +2292,29 @@ function _dlCSV(content, filename) {
 <div class="page" id="adminPage">
   <div class="query-wrap">
 
-    <!-- 後台導覽 Tab -->
-    <div id="adminTabBar" style="display:none;position:fixed;top:56px;left:0;right:0;z-index:150;background:var(--cream);padding:5px 10px 6px;border-bottom:2px solid var(--border);gap:4px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-      <button onclick="adminScrollTo('adminSec-units')"    class="admin-tab">🏢 分隊</button>
-      <button onclick="adminScrollTo('adminSec-wl')"       class="admin-tab">👤 帳號</button>
-      <button onclick="adminScrollTo('adminSec-att')"      class="admin-tab">✍ 簽到退</button>
-      <button onclick="adminScrollTo('adminSec-outing')"   class="admin-tab">🚑 協勤</button>
-      <button onclick="adminScrollTo('adminSec-casetypes')" class="admin-tab" id="adminTab-casetypes">🏷 案由</button>
-      <button onclick="adminScrollTo('adminSec-items')"    class="admin-tab">📦 物品</button>
-      <button id="adminTab-announce" onclick="adminScrollTo('adminSec-announce')" class="admin-tab">📢 公告</button>
-      <button onclick="adminScrollTo('adminSec-feedback')" class="admin-tab">💬 回饋</button>
-      <button onclick="adminScrollTo('adminSec-correction')" class="admin-tab" id="adminTab-correction">📝 修正</button>
-      <button onclick="adminScrollTo('adminSec-schedule')" class="admin-tab" id="adminTab-schedule">📅 定訓</button>
-      <button onclick="adminScrollTo('adminSec-temppass')" class="admin-tab" id="adminTab-temppass">🔑 臨時密碼</button>
-      <button onclick="adminScrollTo('adminSec-changelog')"class="admin-tab">📝 版本</button>
-      <button id="adminTab-loginlog" onclick="adminScrollTo('adminSec-loginlog')" class="admin-tab" style="display:none;">🔐 登入紀錄</button>
-      <button onclick="adminScrollTo('adminSec-import')" class="admin-tab">📥 批次匯入</button>
-      <button onclick="adminScrollTo('adminSec-confirm')" class="admin-tab" id="adminTab-confirm">✅ 確認任務</button>
+    <!-- 後台功能選擇器 -->
+    <div id="adminSecSelector" class="card" style="display:none;margin-bottom:16px;padding:12px 16px;">
+      <label style="font-size:0.8rem;color:var(--text-mid);font-weight:600;display:block;margin-bottom:6px;">切換功能</label>
+      <select id="adminSecSelect" onchange="adminShowSection(this.value)" style="width:100%;">
+        <option value="adminSec-units"      id="adminSelOpt-units">🏢 分隊管理</option>
+        <option value="adminSec-wl">👤 成員帳號</option>
+        <option value="adminSec-att">✍ 簽到退紀錄</option>
+        <option value="adminSec-outing">🚑 協勤紀錄</option>
+        <option value="adminSec-casetypes">🏷 案由管理</option>
+        <option value="adminSec-items">📦 物品領用</option>
+        <option value="adminSec-announce"   id="adminSelOpt-announce">📢 公告管理</option>
+        <option value="adminSec-feedback">💬 意見回饋</option>
+        <option value="adminSec-correction">📝 修正申請</option>
+        <option value="adminSec-schedule">📅 定訓行事曆</option>
+        <option value="adminSec-temppass">🔑 臨時密碼</option>
+        <option value="adminSec-changelog"  id="adminSelOpt-changelog">📝 版本紀錄</option>
+        <option value="adminSec-loginlog"   id="adminSelOpt-loginlog" style="display:none;">🔐 登入紀錄</option>
+        <option value="adminSec-import">📥 批次匯入</option>
+        <option value="adminSec-confirm">✅ 確認任務</option>
+      </select>
     </div>
-    <!-- tab bar 佔位，避免內容被蓋住 -->
-    <div id="adminTabBarSpacer" style="display:none;height:8px;"></div>
 
-    <div class="section" id="adminSec-units">
+    <div class="section" id="adminSec-units" style="display:none;">
       <div class="section-head"><div class="section-num">🏢</div><div class="section-title">分隊管理</div><div class="section-line"></div>
         <button onclick="loadAdminUnits()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
@@ -2280,7 +2327,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-wl">
+    <div class="section" id="adminSec-wl" style="display:none;">
       <div class="section-head"><div class="section-num">👤</div><div class="section-title">成員帳號管理</div><div class="section-line"></div>
         <button onclick="loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
@@ -2340,7 +2387,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-att">
+    <div class="section" id="adminSec-att" style="display:none;">
       <div class="section-head"><div class="section-num">✍</div><div class="section-title">簽到簽退紀錄</div><div class="section-line"></div></div>
       <div class="filter-card">
         <div class="filter-grid">
@@ -2364,7 +2411,7 @@ function _dlCSV(content, filename) {
       </div>
       <div id="adminAttList" style="margin-top:12px;overflow-x:auto;"></div>
     </div>
-    <div class="section" id="adminSec-outing">
+    <div class="section" id="adminSec-outing" style="display:none;">
       <div class="section-head"><div class="section-num">📋</div><div class="section-title">協勤紀錄管理</div><div class="section-line"></div></div>
       <div class="filter-card">
         <div class="filter-grid">
@@ -2388,7 +2435,7 @@ function _dlCSV(content, filename) {
       </div>
       <div id="adminOutList" style="margin-top:12px;overflow-x:auto;"></div>
     </div>
-    <div class="section" id="adminSec-casetypes">
+    <div class="section" id="adminSec-casetypes" style="display:none;">
       <div class="section-head"><div class="section-num">🏷</div><div class="section-title">案由管理</div><div class="section-line"></div>
         <button onclick="loadAdminCaseTypes()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
@@ -2399,13 +2446,13 @@ function _dlCSV(content, filename) {
       <div id="adminCaseTypeList"></div>
     </div>
 
-    <div class="section" id="adminSec-items">
+    <div class="section" id="adminSec-items" style="display:none;">
       <div class="section-head"><div class="section-num">📦</div><div class="section-title">物品領用管理</div><div class="section-line"></div>
         <button onclick="loadAdminItems()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
       </div>
       <div id="adminItemList"></div>
     </div>
-    <div class="section" id="adminSec-announce">
+    <div class="section" id="adminSec-announce" style="display:none;">
       <div class="section-head">
         <div class="section-num">📢</div>
         <div class="section-title">公告管理</div>
@@ -2451,7 +2498,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-feedback">
+    <div class="section" id="adminSec-feedback" style="display:none;">
       <div class="section-head"><div class="section-num">💬</div><div class="section-title">意見回饋</div><div class="section-line"></div>
         <button onclick="batchDelChecked('fbChk',COL_FEEDBACK,loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">🗑️ 批次刪除</button>
         <button onclick="loadAdminFeedback()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
@@ -2459,7 +2506,7 @@ function _dlCSV(content, filename) {
       <div id="adminFeedbackList"></div>
     </div>
 
-    <div class="section" id="adminSec-correction">
+    <div class="section" id="adminSec-correction" style="display:none;">
       <div class="section-head">
         <div class="section-num">📝</div>
         <div class="section-title">修正申請</div>
@@ -2470,7 +2517,7 @@ function _dlCSV(content, filename) {
       <div id="adminCorrectionList" style="margin-top:4px;"></div>
     </div>
 
-    <div class="section" id="adminSec-schedule">
+    <div class="section" id="adminSec-schedule" style="display:none;">
       <div class="section-head">
         <div class="section-num">📅</div>
         <div class="section-title">定訓行事曆</div>
@@ -2503,7 +2550,7 @@ function _dlCSV(content, filename) {
 
     </div>
     <!-- ══════ SECTION：臨時密碼管理 ══════ -->
-    <div class="section" id="adminSec-temppass">
+    <div class="section" id="adminSec-temppass" style="display:none;">
       <div class="section-head">
         <div class="section-num">🔑</div>
         <div class="section-title">臨時密碼管理</div>
@@ -2565,7 +2612,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-changelog">
+    <div class="section" id="adminSec-changelog" style="display:none;">
       <div class="section-head">
         <div class="section-num">📝</div>
         <div class="section-title">版本修改紀錄管理</div>
@@ -2627,7 +2674,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-import">
+    <div class="section" id="adminSec-import" style="display:none;">
       <div class="section-head">
         <div class="section-num">📥</div>
         <div class="section-title">批次匯入</div>
@@ -2668,7 +2715,7 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- ══ SECTION：確認任務 ══ -->
-    <div class="section" id="adminSec-confirm">
+    <div class="section" id="adminSec-confirm" style="display:none;">
       <div class="section-head">
         <div class="section-num">✅</div>
         <div class="section-title">上月紀錄確認任務</div>
@@ -3226,6 +3273,10 @@ function _dlCSV(content, filename) {
         <label>服務項目</label>
         <input type="text" id="corrServices" placeholder="服務項目（以、分隔）" oninput="markCorrChanged(this,'corrServices')">
       </div>
+      <div class="field">
+        <label>本次案件服務人次</label>
+        <input type="number" id="corrServiceCount" min="0" step="1" oninput="markCorrChanged(this,'corrServiceCount')">
+      </div>
       <!-- 修正對比 -->
       <div id="corrDiffAreaOuting" style="display:none;background:#fff8f0;border-radius:6px;padding:10px 12px;margin-bottom:14px;">
         <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:6px;">修正對比</div>
@@ -3318,7 +3369,8 @@ function ensureFirebase() {
   if (_fbInitPromise) return _fbInitPromise;
   _fbInitPromise = new Promise(function(resolve, reject) {
     function tryInit() {
-      if (typeof firebase === 'undefined') {
+      // 等待 firebase-app-compat 和 firebase-firestore-compat 都載完
+      if (typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
         setTimeout(tryInit, 50); return;
       }
       try {
@@ -3333,11 +3385,14 @@ function ensureFirebase() {
           });
         }
         _fbDB = firebase.firestore();
-        // 啟用離線快取：第一次慢，之後從本地讀取大幅加速
         _fbDB.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         _fbReady = true;
         resolve();
-      } catch(e) { console.warn('Firebase init failed:', e); resolve(); }
+      } catch(e) {
+        console.warn('Firebase init failed:', e);
+        _fbInitPromise = null; // 允許下次重試
+        reject(e);
+      }
     }
     tryInit();
   });
@@ -3633,7 +3688,7 @@ function startIdleTimer() {
 // ════════════════════════════════════════
 // URL 常數
 // ════════════════════════════════════════
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbz2P0rPwjf-deeMPCM6Hw6Te77WBqE8yOK1e8wd7ziiuiLlotv6ytG3U9Quez7XQyAU/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbxw_las6IiW4y6gfnqdgVClgp3qewOkwvewUNGBkxnJ13_kGsPXLsXlJ7VwXj7foAakxQ/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbycbBLIqGUVCNWZJ9NpGqQxOvLXc7MbKGxRmGgNVdLaDjGC1OjMJWaGpz_rv7oNCy1PUQ/exec';
 
 // ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
@@ -3766,15 +3821,15 @@ function fmtTime(v) {
 function initFooters(version) {
   const ver = version || 'v1.4.05';
   const lines = [
-    `© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊　${ver}　版權所有，轉載必究`,
-    '本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。',
-    '本網站資訊僅供參考，緊急狀況請撥打 04-25327425。',
-    '隱私權保護政策｜網站安全政策｜資訊無障礙聲明',
-  ].join('　');
+    `© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊　${ver}`,
+    `版權所有，轉載必究　系統開發：林伯霖`,
+    `本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。`,
+    `隱私權保護政策｜網站安全政策｜資訊無障礙聲明`,
+  ].join('<br>');
   document.querySelectorAll('.site-footer-placeholder, .form-footer').forEach(el => {
     el.className = 'form-footer';
     el.style.marginTop = '28px';
-    el.textContent = lines;
+    el.innerHTML = lines;
   });
 }
 
@@ -3962,27 +4017,7 @@ function syncHeaderHeight() {
   });
 }
 
-function _positionAdminTabBar() {
-  const bar    = document.getElementById('adminTabBar');
-  const spacer = document.getElementById('adminTabBarSpacer');
-  if (!bar) return;
-  bar.style.display = 'flex';
-  // 雙重 rAF：確保 bar display:flex 後已渲染出完整高度才量測
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const header  = document.querySelector('.header');
-      const scroller= document.getElementById('appScroll');
-      const headerH = header ? Math.round(header.getBoundingClientRect().height) : 56;
-      bar.style.top = headerH + 'px';
-      const barH    = Math.round(bar.getBoundingClientRect().height);
-      if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
-      if (spacer) {
-        spacer.style.display = 'block';
-        spacer.style.height  = barH + 'px';
-      }
-    });
-  });
-}
+function _positionAdminTabBar() { /* tab bar 已移除 */ }
 
 function navTo(pageId, fromHistory) {
   syncHeaderHeight();
@@ -4627,7 +4662,18 @@ function aeInitCanvas(canvasId) {
   cv.addEventListener('touchend',   ()=>state.drawing=false);
 }
 function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return document.getElementById(id).toDataURL('image/png'); }
+// ── 簽名放大 ──
+function viewSig(sig) {
+  if (!sig) return;
+  document.getElementById('sigModalImg').src = sig;
+  document.getElementById('sigModal').style.display = 'flex';
+}
+
 // ── 服務人次按鈕選擇 ──
+function setSvcBtnByVal(targetId, val) {
+  const btn = document.querySelector(`.svc-btn[data-target="${targetId}"][data-val="${String(val)}"]`);
+  if (btn) setSvcBtn(btn);
+}
 function setSvcBtn(btn) {
   const targetId = btn.dataset.target;
   const val      = btn.dataset.val;
@@ -4874,6 +4920,12 @@ function toggleAttQuerySort() {
 
 async function updateQueryMemberSelect() {
   try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) {}
+  const _now = new Date();
+  const _m1 = new Date(_now.getFullYear(), _now.getMonth(), 1).toLocaleDateString('sv');
+  const _m2 = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toLocaleDateString('sv');
+  const _df = document.getElementById('qDateFrom'), _dt = document.getElementById('qDateTo');
+  if (_df && !_df.value) _df.value = _m1;
+  if (_dt && !_dt.value) _dt.value = _m2;
 
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const isAdmin   = usr.isAdmin   || false;
@@ -4937,6 +4989,7 @@ async function doQuery() {
         date:d.date||'',timeOut:d.timeOut||'',timeBack:d.timeBack||'',
         district:(d.district||'').replace(/^台中/,'臺中'),
         address:d.address||'',caseType:d.caseType||'',services:d.services||'',
+        serviceCount:d.serviceCount,
         note:d.note||'',
         memberName:d.memberName||'',
         signature:d.signature||'',
@@ -5014,7 +5067,7 @@ function renderQueryResults(records) {
 
   const tbody = document.getElementById('resultBody');
   if (records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
   } else {
     tbody.innerHTML = records.map((r, i) => {
       const seqNum = i + 1;
@@ -5022,7 +5075,7 @@ function renderQueryResults(records) {
         .map(s => '<span class="tag">'+s+'</span>').join('');
       const timeStr = r.timeOut && r.timeBack ? r.timeOut+' — '+r.timeBack : (r.timeOut || '');
       const sigCell = r.signature
-        ? '<img data-sig="'+i+'" style="height:40px;cursor:pointer;border:1px solid var(--border);border-radius:3px;" title="點擊放大">'
+        ? '<button onclick="viewSig(filteredRecords['+i+'].signature)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:1rem;" title="點擊查看簽名">🔍</button>'
         : '—';
       const isOwnerQ = r.memberName === _myNameQ;
       // 24小時判斷：以勤務日期(r.date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
@@ -5046,6 +5099,7 @@ function renderQueryResults(records) {
         '<td style="min-width:10em;">'+(r.address||'')+'</td>' +
         '<td style="white-space:nowrap;">'+(r.caseType||'—')+'</td>' +
         '<td>'+tags+'</td>' +
+        '<td style="text-align:center;white-space:nowrap;">'+(r.serviceCount !== undefined ? r.serviceCount : '—')+'</td>' +
         '<td style="white-space:nowrap;">'+(r.memberName||'')+'</td>' +
         '<td>'+(r.note||'')+'</td>' +
         '<td>'+sigCell+'</td>' +
@@ -5053,14 +5107,6 @@ function renderQueryResults(records) {
         '</tr>';
     }).join('');
 
-    tbody.querySelectorAll('img[data-sig]').forEach(img => {
-      const idx = parseInt(img.getAttribute('data-sig'));
-      img.src = records[idx].signature;
-      img.addEventListener('click', () => {
-        document.getElementById('sigModalImg').src = records[idx].signature;
-        document.getElementById('sigModal').style.display = 'flex';
-      });
-    });
   }
   document.getElementById('resultCard').style.display = 'block';
 }
@@ -5419,7 +5465,11 @@ function autoCalcHours() {
   const outTime = document.getElementById('attCheckoutTime').value;
   if (!inTime || !outTime) return;
   document.getElementById('attHours').value = calcHours(inTime, outTime);
-  if (attCheckoutTarget) loadTodayCount(attCheckoutTarget);
+  if (attCheckoutTarget) {
+    const session = attSessions[attCheckoutTarget] || {};
+    const memberName = session.memberName || attCheckoutTarget;
+    loadTodayCount(memberName);
+  }
 }
 
 function autoCalcEditHours() {
@@ -5472,7 +5522,7 @@ async function doCheckout() {
   const serviceVal = parseInt(document.getElementById('attService').value)  || 0;
   // 補簽退：日期用 session 裡記錄的簽到日期，不一定是今天
   const todayStr   = (attSessions[attCheckoutTarget] && attSessions[attCheckoutTarget].date) || document.getElementById('attDate').value;
-  const memberObj  = members.find(m => m.name === attCheckoutTarget) || {};
+  const memberObj  = members.find(m => m.name === memberName) || {};
 
   document.getElementById('attHours').value = hours;
 
@@ -5514,6 +5564,12 @@ let aqFiltered = [];
 
 async function initAttQuery() {
   await Promise.all([loadMembers(), loadUnits()]);
+  const _now = new Date();
+  const _m1 = new Date(_now.getFullYear(), _now.getMonth(), 1).toLocaleDateString('sv');
+  const _m2 = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toLocaleDateString('sv');
+  const _df = document.getElementById('aqDateFrom'), _dt = document.getElementById('aqDateTo');
+  if (_df && !_df.value) _df.value = _m1;
+  if (_dt && !_dt.value) _dt.value = _m2;
 
   // 填分隊選單
   const unitSel = document.getElementById('aqUnit');
@@ -5646,8 +5702,8 @@ function renderAttQueryResults() {
       const svc   = r.service !== undefined ? r.service : (r['服務人次'] !== undefined ? r['服務人次'] : 0);
       const cinSig  = r.checkinSig  || '';
       const coutSig = r.checkoutSig || '';
-      const sigCell = (sig) => sig
-        ? `<img src="${sig}" style="height:44px;max-width:100px;display:block;margin:auto;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;">`
+      const sigCell = (sig, idx, field) => sig
+        ? `<button onclick="viewSig(aqFiltered[${idx}].${field})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:1rem;" title="點擊查看簽名">🔍</button>`
         : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
       // 操作按鈕
       const isOwnerAq = name === _myNameAq;
@@ -5670,8 +5726,8 @@ function renderAttQueryResults() {
         '<td style="white-space:nowrap;">'+title+'</td>' +
         '<td style="white-space:nowrap;">'+cin+'</td>' +
         '<td style="white-space:nowrap;">'+cout+'</td>' +
-        '<td style="text-align:center;padding:4px;">'+sigCell(cinSig)+'</td>' +
-        '<td style="text-align:center;padding:4px;">'+sigCell(coutSig)+'</td>' +
+        '<td style="text-align:center;padding:4px;">'+sigCell(cinSig,i,'checkinSig')+'</td>' +
+        '<td style="text-align:center;padding:4px;">'+sigCell(coutSig,i,'checkoutSig')+'</td>' +
         '<td style="text-align:center;">'+hrs+'</td>' +
         '<td style="text-align:center;">'+cnt+'</td>' +
         '<td style="text-align:center;">'+svc+'</td>' +
@@ -5776,29 +5832,47 @@ async function initReportPage() {
     document.getElementById(id).value = curM;
   });
   // 載入分隊選單
+  const rptUnitIds = ['rpt1Unit','rpt2Unit','rpt3Unit'];
+  rptUnitIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">載入中...</option>';
+  });
   try {
     await loadUnits();
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-    ['rpt1Unit','rpt2Unit','rpt3Unit'].forEach(id => {
+    if (_unitsList.length === 0) {
+      rptUnitIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<option value="">（尚未設定分隊，請至後台新增）</option>';
+      });
+    } else {
+      rptUnitIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = '<option value="">請選擇分隊</option>' +
+          _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
+        if (usr.unit) el.value = usr.unit;
+      });
+    }
+  } catch(e) {
+    rptUnitIds.forEach(id => {
       const el = document.getElementById(id);
-      if (!el) return;
-      el.innerHTML = '<option value="">請選擇分隊</option>' +
-        _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
-      if (usr.unit) el.value = usr.unit;
+      if (el) el.innerHTML = '<option value="">載入失敗，請重新整理</option>';
     });
-  } catch(e) {}
+  }
 }
 
 async function generateRpt1() {
   const year = document.getElementById('rpt1Year').value;
   const month = document.getElementById('rpt1Month').value;
   const unit = document.getElementById('rpt1Unit').value;
+  const dutyType = document.getElementById('rpt1DutyType').value;
   const status = document.getElementById('rpt1Status');
   const btn = document.getElementById('rpt1Btn');
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt1Script');
+    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}&dutyType=${encodeURIComponent(dutyType)}`, 'jsonpRpt1Script');
     downloadDocx(json);
     status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
@@ -6814,14 +6888,7 @@ async function adminEditAtt(id) {
     <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
     <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
-    <div class="field"><label>服務人次</label>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <button type="button" class="svc-btn" data-target="aeASvc" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;flex:1;transition:all 0.15s;">0</button>
-        <button type="button" class="svc-btn" data-target="aeASvc" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;flex:1;transition:all 0.15s;">1</button>
-        <button type="button" class="svc-btn" data-target="aeASvc" data-val="2" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;flex:1;transition:all 0.15s;">2</button>
-        <input type="number" id="aeASvc" value="${doc.service||0}" min="0" step="1" placeholder="其他" oninput="clearSvcBtns('aeASvc')" style="width:60px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:8px 4px;font-size:0.9rem;">
-      </div>
-    </div>
+    <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" min="0" step="1" style="width:100%;"></div>
     <div class="field">
       <label><span>簽到簽名</span></label>
       ${doc.checkinSig?`<div id="aeACheckinPrevWrap" style="margin-bottom:4px;"><img src="${doc.checkinSig}" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div><div style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<span style="display:flex;gap:4px;"><button type="button" onclick="aeCanvasClear('aeACheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">清除重簽</button><button type="button" onclick="aeDeleteSig('aeACheckinPrevWrap','aeACheckinDeleted')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;">🗑️ 刪除簽名</button></span></div><input type="hidden" id="aeACheckinDeleted" value="0">`:''}
@@ -6946,6 +7013,7 @@ async function adminEditOut(id) {
     <div class="field"><label>行政區</label><input type="text" id="aeODist" value="${doc.district||''}" style="width:100%;"></div>
     <div class="field"><label>詳細地址</label><input type="text" id="aeOAddr" value="${doc.address||''}" style="width:100%;"></div>
     <div class="field"><label>服務內容</label><input type="text" id="aeOSvc" value="${doc.services||''}" style="width:100%;"></div>
+    <div class="field"><label>本次案件服務人次</label><input type="number" id="aeOServiceCount" value="${doc.serviceCount||0}" min="0" step="1" style="width:100%;"></div>
     <div class="field"><label>備註</label><input type="text" id="aeONote" value="${doc.note||''}" style="width:100%;"></div>
     <div class="field"><label>義消姓名</label><input type="text" id="aeOName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field">
@@ -6969,6 +7037,7 @@ async function adminEditOut(id) {
         district:document.getElementById('aeODist').value.trim(),
         address:document.getElementById('aeOAddr').value.trim(),
         services:document.getElementById('aeOSvc').value.trim(),
+        serviceCount:parseInt(document.getElementById('aeOServiceCount').value)||0,
         note:document.getElementById('aeONote').value.trim(),
         memberName:document.getElementById('aeOName').value.trim(),
         signature: sigDel ? '' : (sigN || doc.signature || ''),
@@ -7049,40 +7118,46 @@ async function adminDel(col,id,label,reloadFn) {
   catch(e){alert('刪除失敗：'+e.message);}
 }
 
+function adminShowSection(sectionId) {
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-confirm'];
+  allSecs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (id === sectionId) ? '' : 'none';
+  });
+  const sel = document.getElementById('adminSecSelect');
+  if (sel) sel.value = sectionId;
+  document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+    b.classList.remove('active-subnav');
+    if ((b.getAttribute('onclick')||'').includes(sectionId)) b.classList.add('active-subnav');
+  });
+  document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
+}
+
 function adminNavTo(sectionId) {
   if (!document.getElementById('adminPage').classList.contains('active')) {
     navTo('adminPage');
-    setTimeout(() => adminScrollTo(sectionId), 600);
+    setTimeout(() => adminShowSection(sectionId), 600);
     return;
   }
-  adminScrollTo(sectionId);
-  document.querySelectorAll('.admin-subnav-btn').forEach(b => b.classList.remove('active-subnav'));
-  const secIds = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-confirm'];
-  const idx = secIds.indexOf(sectionId);
-  const btns = document.querySelectorAll('.admin-subnav-btn');
-  if (btns[idx]) btns[idx].classList.add('active-subnav');
+  adminShowSection(sectionId);
   closeDrawer();
 }
 
-function _positionAdminTabBar() {
-  const bar = document.getElementById('adminTabBar');
-  if (!bar) return;
-  bar.style.display = 'flex';
-  syncHeaderHeight(); // 內部雙重 rAF，確保 tabbar 多行高度量測正確
-}
+// _positionAdminTabBar 已於上方定義為 no-op
 
 function adminScrollTo(sectionId) {
+  adminShowSection(sectionId);
+}
+
+function _adminScrollTo_legacy(sectionId) {
   const el = document.getElementById(sectionId);
   if (!el) return;
 
   const scroller = document.getElementById('appScroll');
-  const bar      = document.getElementById('adminTabBar');
 
   if (scroller) {
-    // tab bar 的 bottom（相對於視窗）就是內容應該開始的地方
-    const barBottom   = bar ? bar.getBoundingClientRect().bottom : 100;
+    const barBottom   = 100;
     const elTop       = el.getBoundingClientRect().top;
-    // 目標捲動量 = 目前 scrollTop + (元素頂部 - tab bar 底部) - 16px 間距
     const target = scroller.scrollTop + elTop - barBottom - 16;
 
     window._adminScrolling = true;
@@ -7115,39 +7190,23 @@ async function initAdminPage() {
     const el=document.getElementById(id); if(el)el.value=i%2===0?from:to;
   });
 
-  // 管理員限定：登入紀錄、分隊管理、公告管理、版本紀錄
-  const adminOnlySecs = [
-    'adminSec-loginlog', 'adminTab-loginlog', 'adminSubNav-loginlog',  // 登入紀錄
-    'adminSec-units',                                                    // 分隊管理（section，tab/subnav 另處理）
-    'adminSec-announce', 'adminTab-announce', 'adminSubNav-announce',   // 公告管理
-    'adminSec-changelog',                                                // 版本紀錄（section，tab/subnav 另處理）
-  ];
-  adminOnlySecs.forEach(id => {
+  // 管理員限定功能：選單 option 和 subnav 顯示控制
+  const adminOnlyIds = ['adminSelOpt-units','adminSelOpt-announce','adminSelOpt-changelog','adminSelOpt-loginlog','adminSubNav-loginlog','adminSubNav-announce'];
+  adminOnlyIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = isAdminOnly ? '' : 'none';
   });
-
-  // 承辦人也隱藏分隊管理和版本紀錄的 tab 和 subnav 按鈕
   if (!isAdminOnly) {
-    // 找到並隱藏對應的 tab 按鈕（以 onclick 內容比對）
-    document.querySelectorAll('.admin-tab').forEach(btn => {
-      const oc = btn.getAttribute('onclick') || '';
-      if (oc.includes('adminSec-units') || oc.includes('adminSec-changelog')) {
-        btn.style.display = 'none';
-      }
-    });
     document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
       const oc = btn.getAttribute('onclick') || '';
-      if (oc.includes('adminSec-units') || oc.includes('adminSec-changelog')) {
-        btn.style.display = 'none';
-      }
+      if (oc.includes('adminSec-units') || oc.includes('adminSec-changelog')) btn.style.display = 'none';
     });
   } else {
-    // 管理員顯示全部
-    document.querySelectorAll('.admin-tab, .admin-subnav-btn').forEach(btn => {
+    document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
       if (!btn.id || !btn.id.includes('loginlog')) btn.style.display = '';
     });
   }
+
   // 設定登入紀錄分隊篩選
   if (isAdminOnly) {
     const llUnit = document.getElementById('loginLogUnit');
@@ -7161,47 +7220,12 @@ async function initAdminPage() {
   await loadUnits();
   populateUnitSelects();
   await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection(),initConfirmSection()]);
-  // 版本紀錄直接在 Firestore changelogs collection 新增，不在 HTML 維護
 
-  // 顯示並定位固定 tab bar
-  _positionAdminTabBar();
-
-  // 預設高亮第一個 tab
-  const firstTab = document.querySelector('.admin-tab');
-  if (firstTab) firstTab.classList.add('active');
-
-  // IntersectionObserver：滾動時自動高亮對應 tab
-  if (_adminTabObserver) _adminTabObserver.disconnect();
-  const secIds = isAdminOnly
-    ? ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-changelog','adminSec-loginlog','adminSec-import']
-    : ['adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-import','adminSec-confirm'];
-  const tabs = document.querySelectorAll('.admin-tab');
-  const scroller = document.getElementById('appScroll');
-  _adminTabObserver = new IntersectionObserver(entries => {
-    if (window._adminScrolling) return; // 手動點擊捲動中，暫停 observer
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const sid = entry.target.id;
-        if (secIds.includes(sid)) {
-          tabs.forEach(t => {
-            t.classList.remove('active');
-            if ((t.getAttribute('onclick')||'').includes(sid)) t.classList.add('active');
-          });
-          document.querySelectorAll('.admin-subnav-btn').forEach(b => {
-            b.classList.remove('active-subnav');
-            if ((b.getAttribute('onclick')||'').includes(sid)) b.classList.add('active-subnav');
-          });
-        }
-      }
-    });
-  }, {
-    root: scroller,
-    rootMargin: '-20% 0px -60% 0px'
-  });
-  secIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) _adminTabObserver.observe(el);
-  });
+  // 顯示選擇器，預設顯示第一個可見 section
+  const selector = document.getElementById('adminSecSelector');
+  if (selector) selector.style.display = '';
+  const firstSec = isAdminOnly ? 'adminSec-units' : 'adminSec-wl';
+  adminShowSection(firstSec);
 }
 
 
@@ -7473,13 +7497,13 @@ async function loadAnnouncement() {
     const bar = document.getElementById('announcementBar');
     if (!active.length) { if(bar) bar.style.display='none'; return; }
 
-    // 顯示橫幅公告
-    const banners = active.filter(d => !d.urgent);
-    if (banners.length && bar) {
+    // 顯示橫幅公告（包含緊急公告）
+    if (active.length && bar) {
       bar.style.display = '';
-      bar.innerHTML = banners.map(d => `
-        <div style="background:linear-gradient(135deg,#b94a3a,#d4604f);color:white;border-radius:8px;padding:10px 16px;margin-bottom:6px;font-size:0.85rem;line-height:1.6;">
+      bar.innerHTML = active.map(d => `
+        <div style="background:${d.urgent ? 'linear-gradient(135deg,#8b0000,#b94a3a)' : 'linear-gradient(135deg,#b94a3a,#d4604f)'};color:white;border-radius:8px;padding:10px 16px;margin-bottom:6px;font-size:0.85rem;line-height:1.6;">
           <div style="font-weight:700;margin-bottom:4px;">
+            ${d.urgent  ? '<span style="font-size:0.72rem;background:rgba(255,255,255,0.25);border-radius:4px;padding:1px 6px;margin-right:6px;">🚨 緊急</span>' : ''}
             ${d.pinned ? '<span style="font-size:0.72rem;background:rgba(255,255,255,0.25);border-radius:4px;padding:1px 6px;margin-right:6px;">📌 置頂</span>' : ''}
             📢 公告
           </div>
@@ -8870,6 +8894,7 @@ function hideChangelogForm() {
 async function initFormPage() {
   await Promise.all([loadMembers(), loadUnits(), loadCaseTypes()]);
   renderCaseTypeGrid();
+  setSvcBtnByVal('serviceCount', 1);
   const unitSel = document.getElementById('formUnitSel');
   if (unitSel) {
     const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
@@ -9100,8 +9125,7 @@ function easyBack() {
   var oc = document.getElementById('easyOutingCard');
   if (oc) oc.classList.remove('show');
   // 重置簡易協勤服務人次
-  const _scInp = document.getElementById('easyServiceCountInput');
-  if (_scInp) { _scInp.value = '1'; clearSvcBtns('easyServiceCountInput'); }
+  setSvcBtnByVal('easyServiceCountInput', 1);
   _easyCheckoutTarget = null;
   // 重新載入已簽到名單（刷新狀態）
   loadTodayCheckins();
@@ -9317,6 +9341,7 @@ function easyShowOuting() {
     });
   }
   _easyOutingHasSig = false;
+  setSvcBtnByVal('easyServiceCountInput', 1);
   setTimeout(() => easyInitOutingCanvas(), 100);
 }
 
@@ -10283,6 +10308,7 @@ async function deleteSchedule(id, date) {
 
 // ── 暫存原始值（用來比較修改差異）
 var _corrOriginals = {};
+var _corrMeta = {};
 
 // 自動補冒號：輸入4碼數字時自動格式化為 HH:MM（24小時制）
 function fmtCorrTime(el) {
@@ -10338,6 +10364,7 @@ function openCorrectionModal(type, record) {
     origItem('服務人次', svc !== '' ? svc + ' 人' : '');
 
     _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
+    _corrMeta = { memberName: record.memberName || record['姓名'] || '', date: record.date || '', checkinTime: cin };
 
     document.getElementById('corrCheckin').value  = cin;
     document.getElementById('corrCheckout').value = cout;
@@ -10363,19 +10390,22 @@ function openCorrectionModal(type, record) {
     origItem('案件類別', record.caseType || '');
 
     _corrOriginals = {
-      corrTimeOut:  record.timeOut  || '',
-      corrTimeBack: record.timeBack || '',
-      corrAddress:  record.address  || '',
-      corrCaseType: record.caseType || '',
-      corrServices: record.services || '',
+      corrTimeOut:      record.timeOut  || '',
+      corrTimeBack:     record.timeBack || '',
+      corrAddress:      record.address  || '',
+      corrCaseType:     record.caseType || '',
+      corrServices:     record.services || '',
+      corrServiceCount: record.serviceCount !== undefined ? String(record.serviceCount) : '',
     };
+    _corrMeta = { memberName: record.memberName || '', date: record.date || '', timeOut: record.timeOut || '' };
 
-    document.getElementById('corrTimeOut').value   = record.timeOut  || '';
-    document.getElementById('corrTimeBack').value  = record.timeBack || '';
-    document.getElementById('corrAddress').value   = record.address  || '';
-    document.getElementById('corrCaseType').value  = record.caseType || '';
-    document.getElementById('corrServices').value  = record.services || '';
-    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices'].forEach(id => {
+    document.getElementById('corrTimeOut').value        = record.timeOut  || '';
+    document.getElementById('corrTimeBack').value       = record.timeBack || '';
+    document.getElementById('corrAddress').value        = record.address  || '';
+    document.getElementById('corrCaseType').value       = record.caseType || '';
+    document.getElementById('corrServices').value       = record.services || '';
+    document.getElementById('corrServiceCount').value   = record.serviceCount !== undefined ? record.serviceCount : '';
+    ['corrTimeOut','corrTimeBack','corrAddress','corrCaseType','corrServices','corrServiceCount'].forEach(id => {
       document.getElementById(id).classList.remove('corr-changed');
     });
     document.getElementById('corrDiffAreaOuting').style.display = 'none';
@@ -10504,7 +10534,7 @@ async function submitCorrection() {
     if (sigIn)  { correctedFields.checkinSig  = sigIn;  hasDiff = true; }
     if (sigOut) { correctedFields.checkoutSig = sigOut; hasDiff = true; }
   } else {
-    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services' };
+    const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
     for (const [elId, field] of Object.entries(ids)) {
       const el = document.getElementById(elId);
       if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
@@ -10524,6 +10554,10 @@ async function submitCorrection() {
     await fbAdd(COL_CORRECTION, {
       type,
       docId,
+      memberName:  _corrMeta.memberName || '',
+      date:        _corrMeta.date || '',
+      checkinTime: _corrMeta.checkinTime || '',
+      timeOut:     _corrMeta.timeOut || '',
       reasonTags,
       reason,
       correctedFields,
@@ -10575,7 +10609,7 @@ async function loadAdminCorrections() {
       dutyType: '類別', memberName: '義消姓名',
       timeOut: '出勤時間', timeBack: '返勤時間',
       date: '日期', district: '行政區', address: '地址',
-      caseType: '案由', services: '服務項目', note: '備註',
+      caseType: '案由', services: '服務項目', serviceCount: '服務人次', note: '備註',
       checkinSig: '簽到簽名', checkoutSig: '簽退簽名', signature: '義消簽名',
     };
 
@@ -10638,6 +10672,8 @@ async function loadAdminCorrections() {
           ${statusBadge}
           <span style="font-size:0.82rem;font-weight:700;">${d.memberName||''}</span>
           <span style="font-size:0.78rem;color:var(--text-light);">${d.date||''}</span>
+          ${d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">簽到 ${d.checkinTime}</span>` : ''}
+          ${d.timeOut && !d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">出勤 ${d.timeOut}</span>` : ''}
           <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">${submittedBy}<button onclick="adminDel('${COL_CORRECTION}','${d.id}','修正申請',loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button></span>
         </div>
         ${reasonTags || reasonNote ? `<div style="margin-bottom:10px;">${reasonTags}${reasonNote}</div>` : ''}
