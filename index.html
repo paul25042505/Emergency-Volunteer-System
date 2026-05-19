@@ -7736,7 +7736,7 @@ function filterMemberList() {
     const isOfficer = m.role === 'officer' || m.title === '分隊承辦人';
     const isAdmin   = m.role === 'admin';
     var cert = m.cert
-      ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 8px;">' + m.cert + '</span>'
+      ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 8px;white-space:nowrap;display:inline-block;">' + m.cert + '</span>'
       : '<span style="font-size:0.68rem;color:var(--text-light);">—</span>';
     var bg = isOfficer ? '#fdf0ff' : (idx % 2 === 0 ? 'white' : 'var(--warm)');
     var nameCell = (m.name||'—');
@@ -7757,7 +7757,8 @@ function filterMemberList() {
   container.innerHTML =
     '<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);">'
     + '<div style="padding:8px 14px;font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);border-bottom:1px solid var(--border);">' + countStr + '</div>'
-    + '<table style="width:100%;border-collapse:collapse;">'
+    + '<div style="overflow-x:auto;">'
+    + '<table style="width:100%;border-collapse:collapse;min-width:280px;">'
     + '<thead><tr style="background:var(--red);color:white;">'
     + '<th style="padding:10px 8px;text-align:center;font-size:0.78rem;font-weight:600;width:36px;">#</th>'
     + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">姓名</th>'
@@ -7766,6 +7767,7 @@ function filterMemberList() {
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table>'
+    + '</div>'
     + '</div>';
 }
 
