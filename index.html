@@ -5076,7 +5076,7 @@ function renderQueryResults(records) {
         .map(s => '<span class="tag">'+s+'</span>').join('');
       const timeStr = r.timeOut && r.timeBack ? r.timeOut+' — '+r.timeBack : (r.timeOut || '');
       const sigCell = r.signature
-        ? '<button onclick="viewSig(filteredRecords['+i+'].signature)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:1rem;" title="點擊查看簽名">🔍</button>'
+        ? '<img src="'+r.signature+'" style="height:36px;max-width:80px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="viewSig(filteredRecords['+i+'].signature)" title="點擊查看簽名">'
         : '—';
       const isOwnerQ = r.memberName === _myNameQ;
       // 24小時判斷：以勤務日期(r.date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
@@ -5704,7 +5704,7 @@ function renderAttQueryResults() {
       const cinSig  = r.checkinSig  || '';
       const coutSig = r.checkoutSig || '';
       const sigCell = (sig, idx, field) => sig
-        ? `<button onclick="viewSig(aqFiltered[${idx}].${field})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:1rem;" title="點擊查看簽名">🔍</button>`
+        ? `<img src="${sig}" style="height:36px;max-width:80px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="viewSig(aqFiltered[${idx}].${field})" title="點擊查看簽名">`
         : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
       // 操作按鈕
       const isOwnerAq = name === _myNameAq;
@@ -6575,7 +6575,7 @@ async function loadAdminWhitelist(filterUnit) {
       info.style.cssText = 'flex:1;min-width:0;';
 
       var nameRow = document.createElement('div');
-      nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+      nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;';
 
       var nameSpan = document.createElement('span');
       nameSpan.style.cssText = 'font-weight:600;font-size:0.92rem;';
