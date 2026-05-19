@@ -7745,8 +7745,8 @@ function filterMemberList() {
     var numCell = isOfficer ? '<span style="color:var(--text-light);">—</span>' : idx++;
     rows += '<tr style="background:' + bg + ';">'
       + '<td style="padding:11px 8px;text-align:center;font-size:0.78rem;color:var(--text-light);font-weight:500;">' + numCell + '</td>'
-      + '<td style="padding:11px 14px;font-weight:600;font-size:0.88rem;">' + nameCell + '</td>'
-      + '<td style="padding:11px 14px;font-size:0.83rem;color:var(--text-mid);">' + (m.title||'—') + '</td>'
+      + '<td style="padding:11px 14px;font-weight:600;font-size:0.88rem;white-space:nowrap;">' + nameCell + '</td>'
+      + '<td style="padding:11px 14px;font-size:0.83rem;color:var(--text-mid);white-space:nowrap;">' + (m.title||'—') + '</td>'
       + '<td style="padding:11px 14px;">' + cert + '</td>'
       + '</tr>';
   });
