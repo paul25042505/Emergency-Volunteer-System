@@ -4810,6 +4810,7 @@ function submitOutingForm() {
   fbAdd(COL_OUTING,{
     date:data.date,caseType:data.caseType||'',timeOut:data.timeOut,timeBack:data.timeBack,
     district:data.district,address:data.address,services:data.services,
+    serviceCount:parseInt(document.getElementById('serviceCount').value)||0,
     note:data.note||'',memberName:data.memberName,signature:data.signature,
   }).then(()=>{
     document.getElementById('successMsg').classList.add('show');
