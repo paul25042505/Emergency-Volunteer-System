@@ -10779,8 +10779,30 @@ async function handleCorrection(corrId, docId, type, action) {
 // 備勤排班：假日與時段容量規則
 // ════════════════════════════════════════
 
-// 台灣國定假日（固定日期）
-const TW_FIXED_HOLIDAYS = ['01-01','02-28','04-04','04-05','05-01','06-10','09-03','10-10'];
+// 台灣國定假日（固定日期） MM-DD → 名稱
+const TW_FIXED_HOLIDAYS = {
+  '01-01': '元旦',
+  '02-28': '和平紀念日',
+  '04-04': '兒童節',
+  '04-05': '清明節',
+  '05-01': '勞動節',
+  '09-03': '軍人節',
+  '10-10': '國慶日',
+};
+
+// 農曆假日名稱對照（日期 → 名稱）
+const TW_LUNAR_HOLIDAY_NAMES = {
+  '2025-01-27':'除夕', '2025-01-28':'初一', '2025-01-29':'初二',
+  '2025-01-30':'初三', '2025-01-31':'初四', '2025-02-01':'初五', '2025-02-02':'初六',
+  '2025-04-03':'清明連假', '2025-04-04':'清明節',
+  '2025-05-30':'端午連假', '2025-05-31':'端午節', '2025-06-01':'端午連假',
+  '2025-09-06':'中秋連假', '2025-09-07':'中秋節',
+  '2026-02-14':'除夕', '2026-02-15':'春節初一', '2026-02-16':'春節初二',
+  '2026-02-17':'春節初三', '2026-02-18':'春節初四', '2026-02-19':'春節初五', '2026-02-20':'春節初六',
+  '2026-04-03':'清明連假', '2026-04-04':'清明節',
+  '2026-06-19':'端午連假', '2026-06-20':'端午節', '2026-06-21':'端午連假',
+  '2026-09-24':'中秋連假', '2026-09-25':'中秋節',
+};
 
 // 農曆假日（2025~2026）
 const TW_LUNAR_HOLIDAYS = [
@@ -10790,11 +10812,18 @@ const TW_LUNAR_HOLIDAYS = [
   '2026-04-03','2026-04-04','2026-06-19','2026-06-20','2026-06-21','2026-09-24','2026-09-25',
 ];
 
+function getHolidayName(dateStr) {
+  const mmdd = dateStr.slice(5);
+  if (TW_FIXED_HOLIDAYS[mmdd]) return TW_FIXED_HOLIDAYS[mmdd];
+  if (TW_LUNAR_HOLIDAY_NAMES[dateStr]) return TW_LUNAR_HOLIDAY_NAMES[dateStr];
+  return '';
+}
+
 function isDutyHoliday(dateStr) {
   const d = new Date(dateStr);
   const dow = d.getDay();
   if (dow === 0 || dow === 6) return true;
-  if (TW_FIXED_HOLIDAYS.includes(dateStr.slice(5))) return true;
+  if (TW_FIXED_HOLIDAYS[dateStr.slice(5)]) return true;
   if (TW_LUNAR_HOLIDAYS.includes(dateStr)) return true;
   return false;
 }
@@ -11084,9 +11113,17 @@ function renderDutyCalendar() {
     }
 
     if (isHoliday && !isToday) {
-      const dot = document.createElement('div');
-      dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:#c0392b;margin-top:2px;';
-      cell.appendChild(dot);
+      const hName = getHolidayName(dateStr);
+      if (hName) {
+        const hn = document.createElement('div');
+        hn.style.cssText = 'font-size:0.52rem;color:#c0392b;line-height:1.2;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%;';
+        hn.textContent = hName;
+        cell.appendChild(hn);
+      } else {
+        const dot = document.createElement('div');
+        dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:#c0392b;margin-top:2px;';
+        cell.appendChild(dot);
+      }
     }
 
     grid.appendChild(cell);
@@ -11126,7 +11163,10 @@ function renderDutyList() {
     // 日期標題 + 新增按鈕
     html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
     html += '<div style="font-size:0.75rem;color:var(--text-light);">' + dateStr;
-    if (isHoliday) html += ' <span style="background:#fdebd0;color:#c0392b;border-radius:4px;padding:1px 6px;font-size:0.68rem;font-weight:600;">假日</span>';
+    if (isHoliday) {
+      const hName = getHolidayName(dateStr);
+      html += ' <span style="background:#fdebd0;color:#c0392b;border-radius:4px;padding:1px 6px;font-size:0.68rem;font-weight:600;">' + (hName || '假日') + '</span>';
+    }
     html += '</div>';
     html += !isDutyDateAllowed(dateStr) ? '<span style="font-size:0.7rem;color:#aaa;padding:3px 8px;">未開放</span>' : '<button onclick="openQuickAdd(&quot;' + dateStr + '&quot;)" style="background:var(--red);color:white;border:none;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:600;cursor:pointer;">＋ 新增</button>';
     html += '</div>';
