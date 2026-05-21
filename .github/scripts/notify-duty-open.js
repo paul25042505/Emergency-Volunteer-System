@@ -21,7 +21,7 @@ function getNextMonthStr() {
   return `${year} 年 ${month} 月`;
 }
 
-async function sendLineMessage(text) {
+function sendLineMessageOnce(text) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       to:       LINE_GROUP_ID,
@@ -40,13 +40,48 @@ async function sendLineMessage(text) {
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         if (res.statusCode === 200) resolve(data);
-        else reject(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`));
+        else reject(Object.assign(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`), { statusCode: res.statusCode, body: data }));
       });
     });
     req.on('error', reject);
     req.write(body);
     req.end();
   });
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function sendLineMessage(text, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await sendLineMessageOnce(text);
+      return;
+    } catch (e) {
+      if (e.statusCode === 429) {
+        // 月度配額耗盡時不重試，避免無謂等待
+        const isQuotaExhausted = e.body && (
+          e.body.includes('Monthly') ||
+          e.body.includes('monthly') ||
+          e.body.includes('quota') ||
+          e.body.includes('limit has been reached')
+        );
+        if (isQuotaExhausted) {
+          console.warn('⚠️ LINE 月度訊息配額已達上限，本月剩餘天數無法發送通知。');
+          console.warn('   請至 LINE Developers 確認配額，或升級方案。');
+          return;
+        }
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 2000; // 4s, 8s, 16s
+          console.log(`⏳ LINE API 速率限制（429），等待 ${delay / 1000}s 後重試（${attempt}/${maxRetries}）...`);
+          await sleep(delay);
+          continue;
+        }
+      }
+      throw e;
+    }
+  }
 }
 
 async function main() {

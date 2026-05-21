@@ -11186,7 +11186,7 @@ function renderDutyList() {
       else                  { cellBg='#eaf2ff'; cellColor='#1a3a6b'; nameBg='#2980b9'; }
 
       html += '<div style="background:' + cellBg + ';color:' + cellColor + ';border-radius:8px;padding:6px 4px;text-align:center;line-height:1.5;min-height:60px;">';
-      html += '<div style="font-weight:700;font-size:0.75rem;">' + String(h).padStart(2,'0') + ':00</div>';
+      html += '<div style="font-weight:700;font-size:0.75rem;">' + String(h).padStart(2,'0') + '-' + String(h+1).padStart(2,'0') + '</div>';
       if (isTrainingSlot) {
         const topic = getDutyTrainingNote(dateStr);
         html += '<div style="font-size:0.58rem;background:#8e44ad;color:white;border-radius:4px;padding:1px 4px;margin-top:2px;">' + (topic||'定訓') + '</div>';
@@ -11225,6 +11225,29 @@ function scrollToDutyDate(dateStr) {
   scroller.scrollBy({ top: elTop - scrollerTop - offset, behavior: 'smooth' });
 }
 
+// 計算某成員在次月已排的總小時數
+function getNextMonthDutyHoursForMember(memberName) {
+  const now  = new Date();
+  const nextY = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+  const nextM = (now.getMonth() + 1) % 12;
+  let total = 0;
+  _dutyDocs.forEach(doc => {
+    if (doc.memberName !== memberName) return;
+    const d = new Date(doc.date + 'T00:00:00');
+    if (d.getFullYear() !== nextY || d.getMonth() !== nextM) return;
+    total += parseInt((doc.end||'0').split(':')[0]) - parseInt((doc.start||'0').split(':')[0]);
+  });
+  return total;
+}
+
+function isDateInNextMonth(dateStr) {
+  const now  = new Date();
+  const nextY = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+  const nextM = (now.getMonth() + 1) % 12;
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.getFullYear() === nextY && d.getMonth() === nextM;
+}
+
 async function addDutySchedule() {
   const date   = document.getElementById('dutyDate').value;
   const member = document.getElementById('dutyMember').value;
@@ -11239,6 +11262,16 @@ async function addDutySchedule() {
 
   const startHH = parseInt(start.split(':')[0]);
   const endHH   = parseInt(end.split(':')[0]);
+
+  // 次月排班 12 小時限制（20日起開放次月，但每人最多先排12小時；次月1日起解除）
+  if (isDateInNextMonth(date)) {
+    const newHours = endHH - startHH;
+    const already  = getNextMonthDutyHoursForMember(member);
+    if (already + newHours > 12) {
+      alert('⚠️ 次月班表每人最多先排 12 小時（' + member + ' 已排 ' + already + ' 小時，本次 ' + newHours + ' 小時，合計 ' + (already + newHours) + ' 小時）。\n次月1日起限制解除。');
+      return;
+    }
+  }
 
   // 定訓時段檢查
   const trainingSlots = [];
@@ -11355,6 +11388,17 @@ async function submitQuickAdd() {
   if (!start || !end || start >= end) { alert('請確認時間'); return; }
   const startHH = parseInt(start.split(':')[0]);
   const endHH   = parseInt(end.split(':')[0]);
+
+  // 次月排班 12 小時限制
+  if (isDateInNextMonth(_qaDate)) {
+    const newHours = endHH - startHH;
+    const already  = getNextMonthDutyHoursForMember(member);
+    if (already + newHours > 12) {
+      alert('⚠️ 次月班表每人最多先排 12 小時（' + member + ' 已排 ' + already + ' 小時，本次 ' + newHours + ' 小時，合計 ' + (already + newHours) + ' 小時）。\n次月1日起限制解除。');
+      return;
+    }
+  }
+
   const trainingSlots = [];
   for (let h = startHH; h < endHH; h++) {
     if (isDutyTrainingBlock(_qaDate, h)) trainingSlots.push(String(h).padStart(2,'0') + ':00');
