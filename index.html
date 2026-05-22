@@ -4810,6 +4810,7 @@ function submitOutingForm() {
   fbAdd(COL_OUTING,{
     date:data.date,caseType:data.caseType||'',timeOut:data.timeOut,timeBack:data.timeBack,
     district:data.district,address:data.address,services:data.services,
+    serviceCount:parseInt(document.getElementById('serviceCount').value)||0,
     note:data.note||'',memberName:data.memberName,signature:data.signature,
   }).then(()=>{
     document.getElementById('successMsg').classList.add('show');
@@ -5501,17 +5502,19 @@ async function loadTodayCount(memberName) {
 
   try {
     const docs = await fbList(COL_OUTING, 'date', 'asc');
-    const count = docs.filter(r => {
+    const matched = docs.filter(r => {
       if ((r.memberName||'') !== memberName) return false;
       if ((r.date||'') !== date) return false;
       const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
       const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
       if (recOutMins === null) return false;
       return recOutMins >= inMins && (recBackMins||recOutMins) <= outMins;
-    }).length;
-    document.getElementById('attCount').value = count;
+    });
+    document.getElementById('attCount').value   = matched.length;
+    document.getElementById('attService').value = matched.reduce((s, r) => s + (parseInt(r.serviceCount) || 0), 0);
   } catch(e) {
-    document.getElementById('attCount').value = 0;
+    document.getElementById('attCount').value   = 0;
+    document.getElementById('attService').value = 0;
   }
 }
 
