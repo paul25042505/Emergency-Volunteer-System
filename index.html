@@ -6887,7 +6887,9 @@ async function loadAdminAttendance() {
 }
 
 async function adminEditAtt(id) {
-  const doc=await fbGet(COL_ATTEND,id); if(!doc){alert('找不到資料');return;}
+  let doc;
+  try { doc=await fbGet(COL_ATTEND,id); } catch(e){alert('讀取資料失敗：'+e.message);return;}
+  if(!doc){alert('找不到資料');return;}
   document.getElementById('adminEditTitle').textContent='編輯簽到簽退';
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeADate" value="${doc.date||''}" style="width:100%;"></div>
