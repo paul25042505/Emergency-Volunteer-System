@@ -1794,6 +1794,9 @@ function _dlCSV(content, filename) {
     <div id="aqInitMsg" class="query-empty">
       <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
     </div>
+    <div id="aqLoadingMsg" class="query-empty" style="display:none;">
+      <span class="empty-icon">⏳</span>資料讀取中，請稍等...
+    </div>
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -5626,6 +5629,7 @@ async function doAttQuery() {
   if (btn) { btn.textContent = '查詢中...'; btn.disabled = true; }
   document.getElementById('aqInitMsg').style.display = 'none';
   document.getElementById('aqResultCard').style.display = 'none';
+  document.getElementById('aqLoadingMsg').style.display = 'block';
   try {
     const docs = await fbList(COL_ATTEND, 'date', 'asc');
     aqAllRecords = docs.map(d => ({
@@ -5644,6 +5648,7 @@ async function doAttQuery() {
       _t:          d._t||null,
     }));
   } catch(e) {
+    document.getElementById('aqLoadingMsg').style.display = 'none';
     alert('無法取得資料：' + e.message);
     btn.textContent = '查　詢'; btn.disabled = false;
     return;
@@ -5679,6 +5684,7 @@ async function doAttQuery() {
   _aqSortAsc = true;
   _applyAttQuerySort();
   renderAttQueryResults();
+  document.getElementById('aqLoadingMsg').style.display = 'none';
   btn.textContent = '查　詢'; btn.disabled = false;
 }
 
@@ -5723,9 +5729,11 @@ function renderAttQueryResults() {
       if (_isAdminAq || _isOfficerAq) {
         aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button>';
       } else if (isOwnerAq && within24Aq) {
-        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button>';
+        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')" style="margin-right:4px;">✏️ 編輯</button>'
+          +'<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
       } else if (isOwnerAq) {
-        aqActionBtn = '<button data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
+        aqActionBtn = '<button data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;margin-right:4px;">📝 申請修正</button>'
+          +'<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
       }
       return '<tr>' +
         '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+(i+1)+'</td>' +
@@ -5778,6 +5786,17 @@ function openAttEdit(idx) {
 
 function closeAttEdit() {
   document.getElementById('aqEditModal').style.display = 'none';
+}
+
+async function deleteOwnAtt(idx) {
+  const r = aqFiltered[idx];
+  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  const label = `${r.date||''} ${r.memberName||''} ${r.checkinTime||''}簽到`;
+  if (!confirm(`確定刪除「${label}」這筆簽到退紀錄？\n此操作無法復原。`)) return;
+  try {
+    await fbDelete(COL_ATTEND, r.id);
+    await doAttQuery();
+  } catch(e) { alert('刪除失敗：'+e.message); }
 }
 
 async function saveAttEdit() {
