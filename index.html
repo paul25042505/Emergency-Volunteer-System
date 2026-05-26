@@ -5207,6 +5207,8 @@ async function initAttendancePage() {
 
 // ── 從 Sheets 讀取今日已簽到未簽退名單 ──
 async function loadTodayCheckins() {
+  const listEl = document.getElementById('attCheckinList');
+  if (listEl) listEl.innerHTML = '<div class="member-empty"><span class="empty-icon">⏳</span>資料讀取中，請稍等...</div>';
   try {
     const docs = await fbList(COL_ATTEND, 'date', 'asc');
     // 所有已簽到但尚未簽退（包含忘記簽退的跨日記錄），用 docId 為 key
