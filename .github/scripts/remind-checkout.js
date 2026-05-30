@@ -70,15 +70,12 @@ function getTWDateStr(offsetDays = 0) {
 
 async function main() {
   const twHour = new Date(Date.now() + 8 * 3600000).getUTCHours();
-  if (twHour < 21 || twHour >= 24) {
-    console.log(`台灣時間 ${twHour} 點，不在發送區間（21–23），跳過執行。`);
-    process.exit(0);
-  }
-
   const today    = getTWDateStr(0);
   const tomorrow = getTWDateStr(1);
 
-  console.log(`今日：${today}　明日：${tomorrow}`);
+  console.log(`台灣時間：${twHour}:xx　今日：${today}　明日：${tomorrow}`);
+  console.log(`LINE_CHANNEL_ACCESS_TOKEN：${LINE_ACCESS_TOKEN ? '已設定 ✓' : '❌ 未設定！'}`);
+  if (!LINE_ACCESS_TOKEN) { console.error('❌ 缺少 LINE_CHANNEL_ACCESS_TOKEN，無法發送通知！'); process.exit(1); }
 
   // ── 讀取今日出勤紀錄 ──
   const attSnap = await db.collection('attendance')
@@ -99,93 +96,97 @@ async function main() {
 
   const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
 
-  if (LINE_ACCESS_TOKEN) {
+  let lineFailCount = 0;
 
-    // ── ① 明日班表提醒 ──
+  // ── ① 明日班表提醒 ──
+  try {
+    const dutySnap = await db.collection('dutySchedule')
+      .where('date', '==', tomorrow)
+      .get();
+
+    if (!dutySnap.empty) {
+      const slots = dutySnap.docs
+        .map(d => d.data())
+        .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+
+      const dutyLines = slots.map(d =>
+        `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
+      );
+
+      const dutyMsg = [
+        '📅 明日班表提醒',
+        `${tomorrow} 備勤人員如下：`,
+        '',
+        ...dutyLines,
+        '',
+        '⚠️ 請準時協勤，如有突發狀況請提前修改班表。',
+        '',
+        '※ 本通知由系統自動發送，請勿回覆。',
+      ].join('\n');
+
+      await sendLineGroupMessage(dutyMsg);
+      console.log('✅ LINE 明日班表提醒已發送');
+    } else {
+      console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
+    }
+  } catch(err) {
+    lineFailCount++;
+    console.error(`❌ LINE 明日班表提醒失敗：${err.message}`);
+  }
+
+  // ── ② 今日未簽退提醒 ──
+  if (notCheckedOut.length) {
+    const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
+    console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
     try {
-      const dutySnap = await db.collection('dutySchedule')
-        .where('date', '==', tomorrow)
-        .get();
-
-      if (!dutySnap.empty) {
-        const slots = dutySnap.docs
-          .map(d => d.data())
-          .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-
-        const dutyLines = slots.map(d =>
-          `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
-        );
-
-        const dutyMsg = [
-          '📅 明日班表提醒',
-          `${tomorrow} 備勤人員如下：`,
-          '',
-          ...dutyLines,
-          '',
-          '⚠️ 請準時協勤，如有突發狀況請提前修改班表。',
-          '',
-          '※ 本通知由系統自動發送，請勿回覆。',
-        ].join('\n');
-
-        await sendLineGroupMessage(dutyMsg);
-        console.log('✅ LINE 明日班表提醒已發送');
-      } else {
-        console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
-      }
+      const lineMsg = [
+        '⚠️ 簽退提醒',
+        `${today} 以下成員尚未簽退：`,
+        '',
+        names.map(n => `• ${n}`).join('\n'),
+        '',
+        '請盡快登入系統完成簽退。',
+        siteUrl,
+        '',
+        '※ 本通知由系統自動發送，請勿回覆。',
+      ].join('\n');
+      await sendLineGroupMessage(lineMsg);
+      console.log('✅ LINE 簽退提醒已發送');
     } catch(err) {
-      console.log(`❌ LINE 明日班表提醒失敗：${err.message}`);
+      lineFailCount++;
+      console.error(`❌ LINE 簽退提醒失敗：${err.message}`);
     }
-
-    // ── ② 今日未簽退提醒 ──
-    if (notCheckedOut.length) {
-      const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
-      console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
-      try {
-        const lineMsg = [
-          '⚠️ 簽退提醒',
-          `${today} 以下成員尚未簽退：`,
-          '',
-          names.map(n => `• ${n}`).join('\n'),
-          '',
-          '請盡快登入系統完成簽退。',
-          siteUrl,
-          '',
-          '※ 本通知由系統自動發送，請勿回覆。',
-        ].join('\n');
-        await sendLineGroupMessage(lineMsg);
-        console.log('✅ LINE 簽退提醒已發送');
-      } catch(err) {
-        console.log(`❌ LINE 簽退提醒失敗：${err.message}`);
-      }
-    } else {
-      console.log('今日所有人都已簽退，不發送簽退提醒。');
-    }
-
-    // ── ③ 今日協勤統計 ──
-    if (checkedOut.length) {
-      try {
-        const summaryLines = checkedOut.map(d =>
-          `• ${d.memberName}　時數：${d.hours ?? 0}h　出勤：${d.count ?? 0}次　服務人次：${d.service ?? 0}人`
-        );
-        const summaryMsg = [
-          '📋 今日協勤統計',
-          `${today} 已完成簽退人員：`,
-          '',
-          ...summaryLines,
-          '',
-          '※ 本通知由系統自動發送，請勿回覆。',
-        ].join('\n');
-        await sendLineGroupMessage(summaryMsg);
-        console.log('✅ LINE 協勤統計通知已發送');
-      } catch(err) {
-        console.log(`❌ LINE 協勤統計通知失敗：${err.message}`);
-      }
-    } else {
-      console.log('今日尚無完成簽退人員，跳過統計通知。');
-    }
-
   } else {
-    console.log('⚠️ 未設定 LINE_CHANNEL_ACCESS_TOKEN，跳過 LINE 通知');
+    console.log('今日所有人都已簽退，不發送簽退提醒。');
+  }
+
+  // ── ③ 今日協勤統計 ──
+  if (checkedOut.length) {
+    try {
+      const summaryLines = checkedOut.map(d =>
+        `• ${d.memberName}　時數：${d.hours ?? 0}h　出勤：${d.count ?? 0}次　服務人次：${d.service ?? 0}人`
+      );
+      const summaryMsg = [
+        '📋 今日協勤統計',
+        `${today} 已完成簽退人員：`,
+        '',
+        ...summaryLines,
+        '',
+        '※ 本通知由系統自動發送，請勿回覆。',
+      ].join('\n');
+      await sendLineGroupMessage(summaryMsg);
+      console.log('✅ LINE 協勤統計通知已發送');
+    } catch(err) {
+      lineFailCount++;
+      console.error(`❌ LINE 協勤統計通知失敗：${err.message}`);
+    }
+  } else {
+    console.log('今日尚無完成簽退人員，跳過統計通知。');
+  }
+
+  if (lineFailCount > 0) {
+    console.error(`\n⚠️ 共 ${lineFailCount} 則 LINE 通知發送失敗，請至 GitHub Actions 查看詳細錯誤。`);
+    process.exit(1);
   }
 
   // ── ④ 個別 Email（僅針對尚未簽退的人）──

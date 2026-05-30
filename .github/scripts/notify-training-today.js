@@ -57,6 +57,8 @@ function getTodayStr() {
 async function main() {
   const today = getTodayStr();
   console.log(`檢查 ${today} 是否有定訓...`);
+  console.log(`LINE_CHANNEL_ACCESS_TOKEN：${LINE_ACCESS_TOKEN ? '已設定 ✓' : '❌ 未設定！'}`);
+  if (!LINE_ACCESS_TOKEN) { console.error('❌ 缺少 LINE_CHANNEL_ACCESS_TOKEN，無法發送通知！'); process.exit(1); }
 
   // 查詢今日定訓
   const snap = await db.collection('trainingSchedule')
@@ -72,6 +74,7 @@ async function main() {
   const trainings = snap.docs.map(d => d.data());
   console.log(`今日有 ${trainings.length} 筆定訓`);
 
+  let lineFailCount = 0;
   for (const t of trainings) {
     const unit  = t.unit  || '全體';
     const topic = t.topic || '（未填寫主題）';
@@ -90,10 +93,12 @@ async function main() {
       await sendLineGroupMessage(msg);
       console.log(`✅ 已發送定訓通知（${unit}）`);
     } catch(err) {
-      console.log(`❌ 發送失敗（${unit}）：${err.message}`);
+      lineFailCount++;
+      console.error(`❌ 發送失敗（${unit}）：${err.message}`);
     }
   }
 
+  if (lineFailCount > 0) process.exit(1);
   console.log('定訓通知發送完成！');
 }
 

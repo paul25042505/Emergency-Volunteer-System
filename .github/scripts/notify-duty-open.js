@@ -87,6 +87,8 @@ async function sendLineMessage(text, maxRetries = 3) {
 async function main() {
   const nextMonth = getNextMonthStr();
   console.log(`發送 ${nextMonth} 班表開放通知...`);
+  console.log(`LINE_CHANNEL_ACCESS_TOKEN：${LINE_ACCESS_TOKEN ? '已設定 ✓' : '❌ 未設定！'}`);
+  if (!LINE_ACCESS_TOKEN) { console.error('❌ 缺少 LINE_CHANNEL_ACCESS_TOKEN，無法發送通知！'); process.exit(1); }
 
   const msg = [
     `📅 ${nextMonth} 備勤班表開放填寫！`,
