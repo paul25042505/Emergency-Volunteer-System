@@ -96,97 +96,57 @@ async function main() {
 
   const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
 
-  let lineFailCount = 0;
+  // ── 讀取明日班表 ──
+  const dutySnap = await db.collection('dutySchedule')
+    .where('date', '==', tomorrow)
+    .get();
 
-  // ── ① 明日班表提醒 ──
-  try {
-    const dutySnap = await db.collection('dutySchedule')
-      .where('date', '==', tomorrow)
-      .get();
+  // ── 組合單一每日通知（班表＋未簽退＋統計 → 1 則，節省配額）──
+  const sections = [];
 
-    if (!dutySnap.empty) {
-      const slots = dutySnap.docs
-        .map(d => d.data())
-        .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-
-      const dutyLines = slots.map(d =>
-        `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
-      );
-
-      const dutyMsg = [
-        '📅 明日班表提醒',
-        `${tomorrow} 備勤人員如下：`,
-        '',
-        ...dutyLines,
-        '',
-        '⚠️ 請準時協勤，如有突發狀況請提前修改班表。',
-        '',
-        '※ 本通知由系統自動發送，請勿回覆。',
-      ].join('\n');
-
-      await sendLineGroupMessage(dutyMsg);
-      console.log('✅ LINE 明日班表提醒已發送');
-    } else {
-      console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
-    }
-  } catch(err) {
-    lineFailCount++;
-    console.error(`❌ LINE 明日班表提醒失敗：${err.message}`);
+  if (!dutySnap.empty) {
+    const slots = dutySnap.docs
+      .map(d => d.data())
+      .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    const dutyLines = slots.map(d =>
+      `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
+    );
+    sections.push(['📅 明日班表', `${tomorrow}`, ...dutyLines].join('\n'));
+  } else {
+    console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
   }
 
-  // ── ② 今日未簽退提醒 ──
   if (notCheckedOut.length) {
     const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
     console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
-    try {
-      const lineMsg = [
-        '⚠️ 簽退提醒',
-        `${today} 以下成員尚未簽退：`,
-        '',
-        names.map(n => `• ${n}`).join('\n'),
-        '',
-        '請盡快登入系統完成簽退。',
-        siteUrl,
-        '',
-        '※ 本通知由系統自動發送，請勿回覆。',
-      ].join('\n');
-      await sendLineGroupMessage(lineMsg);
-      console.log('✅ LINE 簽退提醒已發送');
-    } catch(err) {
-      lineFailCount++;
-      console.error(`❌ LINE 簽退提醒失敗：${err.message}`);
-    }
+    sections.push(['⚠️ 未簽退提醒', ...names.map(n => `• ${n}`), '請盡快登入系統完成簽退。', siteUrl].join('\n'));
   } else {
     console.log('今日所有人都已簽退，不發送簽退提醒。');
   }
 
-  // ── ③ 今日協勤統計 ──
   if (checkedOut.length) {
-    try {
-      const summaryLines = checkedOut.map(d =>
-        `• ${d.memberName}　時數：${d.hours ?? 0}h　出勤：${d.count ?? 0}次　服務人次：${d.service ?? 0}人`
-      );
-      const summaryMsg = [
-        '📋 今日協勤統計',
-        `${today} 已完成簽退人員：`,
-        '',
-        ...summaryLines,
-        '',
-        '※ 本通知由系統自動發送，請勿回覆。',
-      ].join('\n');
-      await sendLineGroupMessage(summaryMsg);
-      console.log('✅ LINE 協勤統計通知已發送');
-    } catch(err) {
-      lineFailCount++;
-      console.error(`❌ LINE 協勤統計通知失敗：${err.message}`);
-    }
-  } else {
-    console.log('今日尚無完成簽退人員，跳過統計通知。');
+    const summaryLines = checkedOut.map(d =>
+      `• ${d.memberName}　${d.hours ?? 0}h　${d.count ?? 0}次　服務${d.service ?? 0}人`
+    );
+    sections.push(['📋 今日協勤統計', ...summaryLines].join('\n'));
   }
 
-  if (lineFailCount > 0) {
-    console.error(`\n⚠️ 共 ${lineFailCount} 則 LINE 通知發送失敗，請至 GitHub Actions 查看詳細錯誤。`);
-    process.exit(1);
+  if (sections.length === 0) {
+    console.log('今日無需發送任何 LINE 通知，結束。');
+  } else {
+    const combinedMsg = sections.join('\n\n') + '\n\n※ 本通知由系統自動發送，請勿回覆。';
+    try {
+      await sendLineGroupMessage(combinedMsg);
+      console.log('✅ LINE 每日通知已發送（1 則）');
+    } catch(err) {
+      const isQuota = err.message && err.message.includes('monthly limit');
+      if (isQuota) {
+        console.warn('⚠️ LINE 月度訊息配額已達上限，下個月自動重置。今日通知略過。');
+      } else {
+        console.error(`❌ LINE 通知失敗：${err.message}`);
+        process.exit(1);
+      }
+    }
   }
 
   // ── ④ 個別 Email（僅針對尚未簽退的人）──
