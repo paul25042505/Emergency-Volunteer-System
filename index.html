@@ -12517,6 +12517,28 @@ function showTempPassErr(msg) {
 // ════════════════════════════════════════
 // 自動插入 v1.9.02 版本紀錄（若尚未存在）
 
+// ── 自動插入 v1.9.07 版本紀錄（若尚未存在）────────────────────────────────
+(async function seedV1907() {
+  try {
+    const TARGET = 'v1.9.07';
+    const all = await fbList(COL_CHANGELOG);
+    if (all.some(d => d.version === TARGET)) return;
+    await Promise.all(all.filter(d => d.isLatest).map(d => fbUpdate(COL_CHANGELOG, d.id, { isLatest: false })));
+    await fbAdd(COL_CHANGELOG, {
+      version: TARGET,
+      date: '2026-05-31',
+      title: '公差英雄榜修正與快速入口更新',
+      isLatest: true,
+      items: [
+        '【修正】公差英雄榜：獎台第一名高度修正（第一名柱子最高）',
+        '【修正】公差總次數改為計算不重複出勤日數（同一天只算一次任務）',
+        '【修正】點擊總次數卡片可查看實際計入的出勤日期清單',
+        '【改善】首頁快速入口新增「公差統計」捷徑，位於協勤統計右側',
+      ],
+    });
+  } catch(e) { /* 非關鍵，靜默略過 */ }
+})();
+
 // ── 自動插入 v1.9.06 版本紀錄（若尚未存在）────────────────────────────────
 (async function seedV1906() {
   try {
