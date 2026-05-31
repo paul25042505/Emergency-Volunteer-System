@@ -12281,7 +12281,7 @@ async function loadGongchaStats() {
 
   // ── summary cards ─────────────────────────────────────────────────────────
   const filteredDocs   = pubDocs.filter(d => !unitFilter || (d.unit||'') === unitFilter);
-  const totalMissions  = new Set(filteredDocs.map(d => d.memberName + '|' + d.date)).size;
+  const totalMissions  = new Set(filteredDocs.map(d => d.date)).size;
   const participants   = ranking.filter(r => r.count > 0).length;
   const topPerson      = ranking[0] || null;
 
