@@ -2096,6 +2096,10 @@ function _dlCSV(content, filename) {
       <div style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:700;color:white;letter-spacing:0.1em;margin-bottom:6px;">公差英雄榜</div>
       <div style="font-size:0.8rem;color:rgba(255,255,255,0.75);letter-spacing:0.06em;">每一次出勤，都是對分隊最真實的貢獻</div>
       <div style="display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <select id="gcDutyType" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">
+          <option value="公差">公差</option>
+          <option value="協勤">協勤</option>
+        </select>
         <select id="gcYear" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"></select>
         <select id="gcUnit" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"><option value="">全部分隊</option></select>
       </div>
@@ -12224,8 +12228,9 @@ async function loadGongchaStats() {
     });
   }
 
-  const year    = parseInt(yrSel?.value || new Date().getFullYear());
+  const year       = parseInt(yrSel?.value || new Date().getFullYear());
   const unitFilter = unitSel?.value || '';
+  const dutyFilter = document.getElementById('gcDutyType')?.value || '公差';
 
   // ── query ─────────────────────────────────────────────────────────────────
   const dateFrom = `${year}-01-01`;
@@ -12235,8 +12240,7 @@ async function loadGongchaStats() {
     docs = await fbQuery(COL_ATTEND, [['date','>=',dateFrom],['date','<=',dateTo]], 'date', 'asc');
   } catch(e) { docs = []; }
 
-  // filter 公差 only
-  const pubDocs = docs.filter(d => (d.dutyType||'協勤') === '公差');
+  const pubDocs = docs.filter(d => (d.dutyType||'協勤') === dutyFilter);
 
   // ── aggregate per member ──────────────────────────────────────────────────
   const countMap = {};    // name → { count, unit, title }
@@ -12289,7 +12293,7 @@ async function loadGongchaStats() {
     summaryEl.innerHTML = `
       <div style="${cardStyle}">
         <div style="${numStyle}">${totalMissions}</div>
-        <div style="${lblStyle}">🚒 總任務次數</div>
+        <div style="${lblStyle}">🚒 ${dutyFilter} 總次數</div>
       </div>
       <div style="${cardStyle}">
         <div style="${numStyle}">${participants}</div>
@@ -12306,7 +12310,7 @@ async function loadGongchaStats() {
   if (podiumEl) {
     const top3 = ranking.slice(0, 3);
     if (top3.length === 0 || top3[0].count === 0) {
-      podiumEl.innerHTML = `<div style="text-align:center;padding:30px 0;color:#aaa;font-size:0.85rem;">🏅 今年尚無公差出勤紀錄<br>第一位英雄等你來！</div>`;
+      podiumEl.innerHTML = `<div style="text-align:center;padding:30px 0;color:#aaa;font-size:0.85rem;">🏅 今年尚無${dutyFilter}出勤紀錄<br>第一位英雄等你來！</div>`;
     } else {
       // order: 2nd, 1st, 3rd  (visual podium layout)
       const medals  = ['🥇','🥈','🥉'];
@@ -12344,7 +12348,7 @@ async function loadGongchaStats() {
   const isAdmin = (usr.role === 'admin' || usr.role === 'officer');
 
   if (ranking.length === 0) {
-    tableEl.innerHTML = `<div class="query-empty"><span class="empty-icon">🏅</span>尚無公差出勤資料</div>`;
+    tableEl.innerHTML = `<div class="query-empty"><span class="empty-icon">🏅</span>尚無${dutyFilter}出勤資料</div>`;
     return;
   }
 
