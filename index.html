@@ -10024,7 +10024,6 @@ async function renderMeetingStats() {
       return;
     }
 
-    // 統計每人出席次數
     const countMap = {};
     docs.forEach(d => {
       (d.attendees || []).forEach(name => {
@@ -10032,32 +10031,53 @@ async function renderMeetingStats() {
       });
     });
 
-    const relevant = isAdmin ? members : members.filter(m => (m.unit || '') === userUnit);
-    const rows = relevant.map(m => ({ name: m.name, unit: m.unit || '', count: countMap[m.name] || 0 }));
-    rows.sort((a, b) => b.count - a.count || (a.name > b.name ? 1 : -1));
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+    const relevant = (isAdmin ? members : members.filter(m => (m.unit || '') === userUnit))
+      .filter(m => (m.title || '') !== '分隊承辦人');
 
     const total = docs.length;
-    const ths = 'padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);';
+    const ths = 'padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);cursor:pointer;user-select:none;white-space:nowrap;';
     const tds = 'padding:8px 10px;border-bottom:1px solid var(--border);font-size:0.82rem;';
+
+    const sortMode = el.dataset.sort || 'count';
+
+    const rows = relevant.map(m => ({
+      name: m.name, unit: m.unit || '', title: m.title || '',
+      titleRank: TITLE_ORDER.indexOf(m.title || ''),
+      count: countMap[m.name] || 0,
+    }));
+
+    if (sortMode === 'count') {
+      rows.sort((a, b) => b.count - a.count || (a.titleRank === -1 ? 999 : a.titleRank) - (b.titleRank === -1 ? 999 : b.titleRank) || (a.name > b.name ? 1 : -1));
+    } else {
+      rows.sort((a, b) => (a.titleRank === -1 ? 999 : a.titleRank) - (b.titleRank === -1 ? 999 : b.titleRank) || (a.name > b.name ? 1 : -1));
+    }
+
     let rank = 0, prevCount = -1;
+    const countArrow = sortMode === 'count' ? ' ↓' : '';
+    const titleArrow = sortMode === 'weight' ? ' ↓' : '';
+
     el.innerHTML = `
       <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:12px;">${thisYear} 年度共 ${total} 次定訓</div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;">
           <thead><tr>
-            <th style="${ths}">排名</th>
+            <th style="${ths}" onclick="meetingStatsSortBy('count')">排名</th>
+            <th style="${ths}" onclick="meetingStatsSortBy('weight')">職稱${titleArrow}</th>
             <th style="${ths}">姓名</th>
             ${isAdmin ? `<th style="${ths}">分隊</th>` : ''}
-            <th style="${ths}text-align:center;">出席次數</th>
+            <th style="${ths}text-align:center;" onclick="meetingStatsSortBy('count')">出席次數${countArrow}</th>
             <th style="${ths}text-align:center;">出席率</th>
           </tr></thead>
           <tbody>
             ${rows.map(r => {
-              if (r.count !== prevCount) { rank++; prevCount = r.count; }
+              if (sortMode === 'count' && r.count !== prevCount) { rank++; prevCount = r.count; }
               const pct = total > 0 ? Math.round(r.count / total * 100) : 0;
               const color = pct >= 80 ? '#1a6b35' : pct >= 50 ? '#856404' : '#b94a3a';
+              const rankStr = sortMode === 'count' ? (r.count > 0 ? rank : '—') : '—';
               return `<tr style="${r.count === 0 ? 'opacity:0.45;' : ''}">
-                <td style="${tds}color:var(--text-light);">${r.count > 0 ? rank : '—'}</td>
+                <td style="${tds}color:var(--text-light);">${rankStr}</td>
+                <td style="${tds}color:var(--text-light);white-space:nowrap;">${r.title}</td>
                 <td style="${tds}font-weight:500;">${r.name}</td>
                 ${isAdmin ? `<td style="${tds}color:var(--text-light);">${r.unit}</td>` : ''}
                 <td style="${tds}text-align:center;font-weight:700;">${r.count}</td>
@@ -10071,6 +10091,12 @@ async function renderMeetingStats() {
     el.innerHTML = `<div style="color:#b94a3a;padding:8px 0;">載入失敗：${e.message}</div>`;
   }
 }
+
+function meetingStatsSortBy(mode) {
+  const el = document.getElementById('meetingStatsContent');
+  if (el) { el.dataset.sort = mode; renderMeetingStats(); }
+}
+
 
 async function meetingDelete(id, title) {
   if (!confirm('確定要刪除「' + title + '」？')) return;
