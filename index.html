@@ -3910,22 +3910,23 @@ function buildTimeOptions(selId, selectedVal) {
   }
 }
 
-// 簽到時間選單：只顯示過去 60 分鐘內的時段，防止填寫過早時間
+// 簽到時間選單：顯示過去 60 分鐘到未來 60 分鐘的時段，防止大幅回填時間
 function buildCheckinTimeOptions(selId) {
   const sel = document.getElementById(selId);
   if (!sel) return;
   sel.innerHTML = '';
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  const curSlot  = Math.floor(nowMins / 15) * 15;
+  const curSlot   = Math.floor(nowMins / 15) * 15;
   const startSlot = Math.max(6 * 60, curSlot - 60);
-  for (let t = startSlot; t <= curSlot; t += 15) {
+  const endSlot   = Math.min(23 * 60, curSlot + 60);
+  for (let t = startSlot; t <= endSlot; t += 15) {
     const val = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
     const opt = document.createElement('option');
     opt.value = val; opt.textContent = val;
+    if (t === curSlot) opt.selected = true;
     sel.appendChild(opt);
   }
-  if (sel.options.length > 0) sel.selectedIndex = sel.options.length - 1;
 }
 
 // 回傳簽到時間與目前時間相差幾分鐘（正值 = 早於現在）
