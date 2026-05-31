@@ -12198,6 +12198,14 @@ async function reloadMembersUnit() {
 // ════════════════════════════════════════
 // 公差英雄榜
 // ════════════════════════════════════════
+function gcShowDates() {
+  const dates = window._gcUniqueDates || [];
+  const duty  = window._gcDutyFilter  || '公差';
+  const year  = window._gcYear        || '';
+  const body  = dates.length ? dates.map(d => '• ' + d).join('\n') : '（無資料）';
+  alert(duty + ' 出勤日期（' + year + ' 年）：\n\n' + body);
+}
+
 async function loadGongchaStats() {
   const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
 
@@ -12291,11 +12299,11 @@ async function loadGongchaStats() {
     const cardStyle = 'background:white;border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #f0ece8;cursor:pointer;';
     const numStyle  = 'font-size:1.55rem;font-weight:800;color:#8b1a0e;line-height:1.1;';
     const lblStyle  = 'font-size:0.72rem;color:#888;margin-top:4px;letter-spacing:0.04em;';
-    const dateList  = uniqueDates.length
-      ? uniqueDates.map(d => `• ${d}`).join('\n')
-      : '（無資料）';
+    window._gcUniqueDates = uniqueDates;
+    window._gcDutyFilter  = dutyFilter;
+    window._gcYear        = year;
     summaryEl.innerHTML = `
-      <div style="${cardStyle}" onclick="alert('${dutyFilter} 出勤日期（${year}年）：\n\n${dateList}')">
+      <div style="${cardStyle}" onclick="gcShowDates()">
         <div style="${numStyle}">${totalMissions}</div>
         <div style="${lblStyle}">🚒 ${dutyFilter} 總次數</div>
       </div>
