@@ -5223,8 +5223,9 @@ async function loadTodayCheckins() {
   if (listEl) listEl.innerHTML = '<div class="member-empty"><span class="empty-icon">⏳</span>資料讀取中，請稍等...</div>';
   try {
     const docs = await fbList(COL_ATTEND, 'date', 'asc');
-    // 所有已簽到但尚未簽退（包含忘記簽退的跨日記錄），用 docId 為 key
+    const activeIds = new Set();
     docs.filter(r => r.checkinTime && !r.checkoutTime).forEach(r => {
+      activeIds.add(r.id);
       const key = r.id;
       if (!attSessions[key]) {
         attSessions[key] = {
@@ -5237,6 +5238,12 @@ async function loadTodayCheckins() {
           dutyType:    r.dutyType || '協勤',
           done:        false,
         };
+      }
+    });
+    // 清除已被刪除的紀錄（非暫存的 tempKey）
+    Object.keys(attSessions).forEach(key => {
+      if (!key.startsWith('new_') && !activeIds.has(key)) {
+        delete attSessions[key];
       }
     });
   } catch(e) {}
