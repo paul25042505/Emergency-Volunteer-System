@@ -3104,7 +3104,7 @@ function _dlCSV(content, filename) {
 
       <div class="field">
         <label>分隊 <span class="req">*</span></label>
-        <select id="meetingUnit">
+        <select id="meetingUnit" onchange="meetingLoadAttendees()">
           <option value="">請選擇分隊</option>
         </select>
       </div>
@@ -3112,9 +3112,27 @@ function _dlCSV(content, filename) {
         <label>會議內容 <span class="req">*</span></label>
         <textarea id="meetingContent" style="min-height:220px;line-height:1.8;" placeholder="請貼上或輸入會議記錄內容..."></textarea>
       </div>
+      <div class="field">
+        <label>與會人員</label>
+        <div id="meetingAttendeesHint" style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">請先選擇分隊</div>
+        <div id="meetingAttendeesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px;max-height:240px;overflow-y:auto;background:#fafaf8;border:1px solid var(--border);border-radius:6px;padding:10px;min-height:44px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+          <button type="button" onclick="meetingCheckAll(true)" style="background:none;border:1px solid var(--border);border-radius:5px;padding:4px 12px;font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">全選</button>
+          <button type="button" onclick="meetingCheckAll(false)" style="background:none;border:1px solid var(--border);border-radius:5px;padding:4px 12px;font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">清除</button>
+          <span id="meetingAttCount" style="font-size:0.78rem;color:var(--text-light);margin-left:auto;"></span>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;margin-top:6px;">
         <button onclick="meetingSave()" style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:13px;font-size:0.95rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">儲存</button>
         <button onclick="meetingHideForm()" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:13px;font-size:0.95rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">取消</button>
+      </div>
+    </div>
+
+    <!-- 出席統計 -->
+    <div id="meetingStatsWrap" style="display:none;margin-bottom:20px;">
+      <button onclick="toggleMeetingStats(this)" style="background:white;border:1px solid var(--border);border-radius:6px;padding:10px 20px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;color:var(--text-mid);">📊 本年度出席統計</button>
+      <div id="meetingStatsPanel" style="display:none;background:white;border:1px solid var(--border);border-radius:8px;padding:18px;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div id="meetingStatsContent"><div style="color:var(--text-light);padding:8px 0;">載入中...</div></div>
       </div>
     </div>
 
@@ -9722,9 +9740,14 @@ async function loadMeetingPage() {
   const isOfficer = usr.isOfficer || false;
   const userUnit  = usr.unit || '';
 
-  // 顯示新增按鈕（承辦人/管理員）
+  // 顯示新增按鈕與統計按鈕（承辦人/管理員）
   const addWrap = document.getElementById('meetingAddWrap');
   if (addWrap) addWrap.style.display = '';
+  const statsWrap = document.getElementById('meetingStatsWrap');
+  if (statsWrap) statsWrap.style.display = '';
+  // 重置統計面板
+  const statsPanel = document.getElementById('meetingStatsPanel');
+  if (statsPanel) statsPanel.style.display = 'none';
 
   // 填分隊選單
   try { await loadUnits(); } catch(e) {}
@@ -9777,7 +9800,8 @@ async function renderMeetingList() {
       headTitle.textContent = doc.title || '（無標題）';
       const headMeta = document.createElement('div');
       headMeta.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-top:3px;';
-      headMeta.textContent = (doc.date || '') + (doc.unit ? '　' + doc.unit : '');
+      const attCount = (doc.attendees && doc.attendees.length) ? doc.attendees.length : 0;
+      headMeta.textContent = (doc.date || '') + (doc.unit ? '　' + doc.unit : '') + (attCount > 0 ? `　👥 ${attCount} 人出席` : '');
       headInfo.appendChild(headTitle);
       headInfo.appendChild(headMeta);
       const headArrow = document.createElement('span');
@@ -9788,8 +9812,30 @@ async function renderMeetingList() {
 
       // 內文（預設折疊）
       const body = document.createElement('div');
-      body.style.cssText = 'display:none;padding:18px;white-space:pre-wrap;font-size:0.9rem;line-height:1.9;color:var(--text);';
-      body.textContent = doc.content || '';
+      body.style.cssText = 'display:none;padding:18px;font-size:0.9rem;color:var(--text);';
+      const contentDiv = document.createElement('div');
+      contentDiv.style.cssText = 'white-space:pre-wrap;line-height:1.9;';
+      contentDiv.textContent = doc.content || '';
+      body.appendChild(contentDiv);
+      // 與會人員名單
+      if (doc.attendees && doc.attendees.length > 0) {
+        const attSec = document.createElement('div');
+        attSec.style.cssText = 'margin-top:16px;padding-top:14px;border-top:1px solid var(--border);';
+        const attLabel = document.createElement('div');
+        attLabel.style.cssText = 'font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;';
+        attLabel.textContent = `與會人員（${doc.attendees.length} 人）`;
+        attSec.appendChild(attLabel);
+        const tags = document.createElement('div');
+        tags.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+        doc.attendees.forEach(n => {
+          const tag = document.createElement('span');
+          tag.style.cssText = 'font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 9px;';
+          tag.textContent = n;
+          tags.appendChild(tag);
+        });
+        attSec.appendChild(tags);
+        body.appendChild(attSec);
+      }
 
       // 展開/收合
       head.onclick = () => {
@@ -9825,7 +9871,7 @@ async function renderMeetingList() {
   }
 }
 
-function meetingShowForm(doc) {
+async function meetingShowForm(doc) {
   _meetingEditId = doc ? doc.id : null;
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
 
@@ -9845,6 +9891,10 @@ function meetingShowForm(doc) {
       unitSel.disabled = false;
     }
   }
+
+  // 載入與會人員核取方塊（編輯時帶入已存名單）
+  const savedAttendees = doc ? (doc.attendees || []) : [];
+  await meetingLoadAttendees(savedAttendees);
 
   const form = document.getElementById('meetingForm');
   form.style.display = '';
@@ -9868,7 +9918,8 @@ async function meetingSave() {
   if (!content) { alert('請填入會議內容'); return; }
 
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const data = { title, date, unit, content, updatedBy: usr.memberName || usr.name || '' };
+  const attendees = Array.from(document.querySelectorAll('.meeting-att-chk:checked')).map(c => c.value);
+  const data = { title, date, unit, content, attendees, updatedBy: usr.memberName || usr.name || '' };
 
   const saveBtn = document.querySelector('#meetingForm button');
   saveBtn.textContent = '儲存中...'; saveBtn.disabled = true;
@@ -9885,6 +9936,134 @@ async function meetingSave() {
     alert('儲存失敗：' + e.message);
   } finally {
     saveBtn.textContent = '儲存'; saveBtn.disabled = false;
+  }
+}
+
+async function meetingLoadAttendees(preSelected) {
+  const unit = document.getElementById('meetingUnit')?.value || '';
+  const container = document.getElementById('meetingAttendeesList');
+  const hint = document.getElementById('meetingAttendeesHint');
+  if (!container) return;
+  if (!unit) {
+    container.innerHTML = '';
+    if (hint) hint.style.display = '';
+    updateMeetingAttCount();
+    return;
+  }
+  if (hint) hint.style.display = 'none';
+  try {
+    await loadMembers();
+    const unitMembers = members
+      .filter(m => (m.unit || '') === unit)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-TW'));
+    container.innerHTML = '';
+    unitMembers.forEach(m => {
+      const checked = Array.isArray(preSelected) && preSelected.includes(m.name);
+      const label = document.createElement('label');
+      label.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;padding:5px 8px;border-radius:5px;background:white;border:1px solid var(--border);user-select:none;';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'meeting-att-chk';
+      chk.value = m.name;
+      chk.checked = checked;
+      chk.addEventListener('change', updateMeetingAttCount);
+      label.appendChild(chk);
+      label.appendChild(document.createTextNode(m.name));
+      container.appendChild(label);
+    });
+    updateMeetingAttCount();
+  } catch(e) {
+    container.innerHTML = '<div style="color:#b94a3a;font-size:0.78rem;padding:6px;">載入失敗</div>';
+  }
+}
+
+function meetingCheckAll(check) {
+  document.querySelectorAll('.meeting-att-chk').forEach(c => c.checked = check);
+  updateMeetingAttCount();
+}
+
+function updateMeetingAttCount() {
+  const cnt = document.querySelectorAll('.meeting-att-chk:checked').length;
+  const el = document.getElementById('meetingAttCount');
+  if (el) el.textContent = cnt > 0 ? `已勾選 ${cnt} 人` : '';
+}
+
+async function toggleMeetingStats(btn) {
+  const panel = document.getElementById('meetingStatsPanel');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? '📊 本年度出席統計' : '📊 本年度出席統計 ▲';
+  if (!isOpen) await renderMeetingStats();
+}
+
+async function renderMeetingStats() {
+  const el = document.getElementById('meetingStatsContent');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const thisYear = new Date().getFullYear();
+    const yearStart = `${thisYear}-01-01`;
+    const yearEnd   = `${thisYear}-12-31`;
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const isAdmin = usr.isAdmin || false;
+    const userUnit = usr.unit || '';
+
+    await loadMembers();
+    let docs = await fbList(COL_MEETING, 'date', 'asc');
+    docs = docs.filter(d => (d.date || '') >= yearStart && (d.date || '') <= yearEnd);
+    if (!isAdmin) docs = docs.filter(d => (d.unit || '') === userUnit);
+
+    if (docs.length === 0) {
+      el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">本年度尚無定訓記錄</div>';
+      return;
+    }
+
+    // 統計每人出席次數
+    const countMap = {};
+    docs.forEach(d => {
+      (d.attendees || []).forEach(name => {
+        countMap[name] = (countMap[name] || 0) + 1;
+      });
+    });
+
+    const relevant = isAdmin ? members : members.filter(m => (m.unit || '') === userUnit);
+    const rows = relevant.map(m => ({ name: m.name, unit: m.unit || '', count: countMap[m.name] || 0 }));
+    rows.sort((a, b) => b.count - a.count || (a.name > b.name ? 1 : -1));
+
+    const total = docs.length;
+    const ths = 'padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);';
+    const tds = 'padding:8px 10px;border-bottom:1px solid var(--border);font-size:0.82rem;';
+    let rank = 0, prevCount = -1;
+    el.innerHTML = `
+      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:12px;">${thisYear} 年度共 ${total} 次定訓</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="${ths}">排名</th>
+            <th style="${ths}">姓名</th>
+            ${isAdmin ? `<th style="${ths}">分隊</th>` : ''}
+            <th style="${ths}text-align:center;">出席次數</th>
+            <th style="${ths}text-align:center;">出席率</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r => {
+              if (r.count !== prevCount) { rank++; prevCount = r.count; }
+              const pct = total > 0 ? Math.round(r.count / total * 100) : 0;
+              const color = pct >= 80 ? '#1a6b35' : pct >= 50 ? '#856404' : '#b94a3a';
+              return `<tr style="${r.count === 0 ? 'opacity:0.45;' : ''}">
+                <td style="${tds}color:var(--text-light);">${r.count > 0 ? rank : '—'}</td>
+                <td style="${tds}font-weight:500;">${r.name}</td>
+                ${isAdmin ? `<td style="${tds}color:var(--text-light);">${r.unit}</td>` : ''}
+                <td style="${tds}text-align:center;font-weight:700;">${r.count}</td>
+                <td style="${tds}text-align:center;font-weight:600;color:${color};">${r.count > 0 ? pct + '%' : '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="color:#b94a3a;padding:8px 0;">載入失敗：${e.message}</div>`;
   }
 }
 
