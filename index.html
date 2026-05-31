@@ -12238,16 +12238,19 @@ async function loadGongchaStats() {
 
   const pubDocs = docs.filter(d => (d.dutyType||'協勤') === dutyFilter);
 
-  // ── aggregate per member ──────────────────────────────────────────────────
-  const countMap = {};    // name → { count, unit, title }
+  // ── aggregate per member (same day = 1 mission) ──────────────────────────
+  const countMap = {};    // name → { count, unit, title, _dates: Set }
   pubDocs.forEach(d => {
     const name = d.memberName || '';
     if (!name) return;
     if (unitFilter && (d.unit||'') !== unitFilter) return;
     if (!countMap[name]) {
-      countMap[name] = { name, unit: d.unit||'', title: d.title||'', count: 0 };
+      countMap[name] = { name, unit: d.unit||'', title: d.title||'', count: 0, _dates: new Set() };
     }
-    countMap[name].count += 1;
+    if (!countMap[name]._dates.has(d.date)) {
+      countMap[name]._dates.add(d.date);
+      countMap[name].count += 1;
+    }
   });
 
   // also include members with 0 count (so everyone appears)
@@ -12277,7 +12280,8 @@ async function loadGongchaStats() {
   }
 
   // ── summary cards ─────────────────────────────────────────────────────────
-  const totalMissions  = pubDocs.filter(d => !unitFilter || (d.unit||'') === unitFilter).length;
+  const filteredDocs   = pubDocs.filter(d => !unitFilter || (d.unit||'') === unitFilter);
+  const totalMissions  = new Set(filteredDocs.map(d => d.memberName + '|' + d.date)).size;
   const participants   = ranking.filter(r => r.count > 0).length;
   const topPerson      = ranking[0] || null;
 
