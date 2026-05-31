@@ -9955,7 +9955,7 @@ async function meetingLoadAttendees(preSelected) {
     await loadMembers();
     const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
     const unitMembers = members
-      .filter(m => (m.unit || '') === unit)
+      .filter(m => (m.unit || '') === unit && (m.title || '') !== '分隊承辦人')
       .sort((a, b) => {
         const aw = TITLE_ORDER.indexOf(a.title||''); const bw = TITLE_ORDER.indexOf(b.title||'');
         if (aw !== bw) return (aw === -1 ? 999 : aw) - (bw === -1 ? 999 : bw);
