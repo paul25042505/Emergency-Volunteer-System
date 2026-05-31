@@ -805,6 +805,7 @@ function _dlCSV(content, filename) {
     <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>協勤紀錄查詢</button>
     <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
     <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>協勤統計</button>
+    <button id="nav-gongcha" onclick="navTo('gongchaPage')"><span class="icon">🏅</span>公差統計</button>
     <button id="nav-feedback" onclick="navTo('feedbackPage')"><span class="icon">💬</span>意見回饋</button>
     <button id="nav-duty" onclick="navTo('dutyPage')"><span class="icon">📅</span>備勤排班</button>
     <button id="nav-meeting" onclick="navTo('meetingPage')"><span class="icon">📒</span>定訓與公告</button>
@@ -2079,6 +2080,43 @@ function _dlCSV(content, filename) {
           </table>
         </div>
       </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：公差統計 ══════ -->
+<div class="page" id="gongchaPage">
+  <div class="query-wrap" style="padding-bottom:0;">
+
+    <!-- Hero Banner -->
+    <div style="background:linear-gradient(135deg,#b94a3a 0%,#8b1a0e 60%,#5c0f08 100%);border-radius:14px;padding:28px 20px 24px;margin-bottom:20px;text-align:center;box-shadow:0 6px 24px rgba(185,74,58,0.35);">
+      <div style="font-size:2.4rem;margin-bottom:6px;">🏅</div>
+      <div style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:700;color:white;letter-spacing:0.1em;margin-bottom:6px;">公差英雄榜</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.75);letter-spacing:0.06em;">每一次出勤，都是對分隊最真實的貢獻</div>
+      <div style="display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <select id="gcYear" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"></select>
+        <select id="gcUnit" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"><option value="">全部分隊</option></select>
+      </div>
+    </div>
+
+    <!-- 摘要卡片 -->
+    <div id="gcSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;"></div>
+
+    <!-- 前三名獎台 -->
+    <div id="gcPodium" style="margin-bottom:20px;"></div>
+
+    <!-- 完整排行 -->
+    <div class="section" style="margin-bottom:0;">
+      <div class="section-head">
+        <div class="section-num">📋</div>
+        <div class="section-title">完整排行榜</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+    <div id="gcTable" style="margin-bottom:0;">
+      <div class="query-empty"><span class="empty-icon">🏅</span>載入中...</div>
     </div>
 
     <div class="site-footer-placeholder"></div>
@@ -4109,6 +4147,7 @@ async function refreshCurrentPage() {
     case 'changelogPage':      await loadChangelog(); break;
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
+    case 'gongchaPage':        await loadGongchaStats(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
     default: break;
@@ -4170,6 +4209,7 @@ function navTo(pageId, fromHistory) {
     dutyPage:       ['備勤排班', 'Duty Schedule', 'nav-duty'],
   meetingPage:    ['定訓與公告', 'Training & Announcements', 'nav-meeting'],
     myCorrectionsPage: ['我的申請記錄', 'My Requests', 'nav-mycorrections'],
+    gongchaPage:    ['公差英雄榜', 'Merit Leaderboard', 'nav-gongcha'],
     changelogPage:  ['版本修改紀錄', 'Version History', 'nav-changelog'],
     feedbackPage:   ['意見回饋', 'Feedback', 'nav-feedback'],
     adminPage:      ['管理員後台', 'Admin Panel', 'nav-admin'],
@@ -4200,6 +4240,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'profilePage')   loadProfilePage();
   else if (pageId === 'meetingPage')   loadMeetingPage();
   else if (pageId === 'myCorrectionsPage') loadMyCorrections();
+  else if (pageId === 'gongchaPage')       loadGongchaStats();
   else if (pageId === 'changelogPage') loadChangelog();
   else if (pageId === 'dutyPage')      initDutyPage();
 
@@ -12152,6 +12193,199 @@ async function reloadMembersUnit() {
   } catch(e) {
     if (sel) sel.innerHTML = '<option value="">錯誤：' + e.message + '</option>';
   }
+}
+
+// ════════════════════════════════════════
+// 公差英雄榜
+// ════════════════════════════════════════
+async function loadGongchaStats() {
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+
+  // ── populate year select ──────────────────────────────────────────────────
+  const yrSel = document.getElementById('gcYear');
+  if (yrSel && !yrSel.options.length) {
+    const curY = new Date().getFullYear();
+    for (let y = curY; y >= curY - 3; y--) {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y + ' 年';
+      if (y === curY) o.selected = true;
+      yrSel.appendChild(o);
+    }
+  }
+
+  // ── populate unit select ──────────────────────────────────────────────────
+  const unitSel = document.getElementById('gcUnit');
+  if (unitSel && unitSel.options.length <= 1) {
+    const units = await getUnitsList();
+    units.forEach(u => {
+      const o = document.createElement('option');
+      o.value = u; o.textContent = u;
+      unitSel.appendChild(o);
+    });
+  }
+
+  const year    = parseInt(yrSel?.value || new Date().getFullYear());
+  const unitFilter = unitSel?.value || '';
+
+  // ── query ─────────────────────────────────────────────────────────────────
+  const dateFrom = `${year}-01-01`;
+  const dateTo   = `${year}-12-31`;
+  let docs = [];
+  try {
+    docs = await fbQuery(COL_ATTEND, [['date','>=',dateFrom],['date','<=',dateTo]], 'date', 'asc');
+  } catch(e) { docs = []; }
+
+  // filter 公差 only
+  const pubDocs = docs.filter(d => (d.dutyType||'協勤') === '公差');
+
+  // ── aggregate per member ──────────────────────────────────────────────────
+  const countMap = {};    // name → { count, unit, title }
+  pubDocs.forEach(d => {
+    const name = d.memberName || '';
+    if (!name) return;
+    if (unitFilter && (d.unit||'') !== unitFilter) return;
+    if (!countMap[name]) {
+      countMap[name] = { name, unit: d.unit||'', title: d.title||'', count: 0 };
+    }
+    countMap[name].count += 1;
+  });
+
+  // also include members with 0 count (so everyone appears)
+  members.filter(m => m.title !== '分隊承辦人').forEach(m => {
+    if (unitFilter && (m.unit||'') !== unitFilter) return;
+    if (!countMap[m.name]) {
+      countMap[m.name] = { name: m.name, unit: m.unit||'', title: m.title||'', count: 0 };
+    }
+    // fill missing title/unit from members list
+    if (!countMap[m.name].title) countMap[m.name].title = m.title||'';
+    if (!countMap[m.name].unit)  countMap[m.name].unit  = m.unit||'';
+  });
+
+  const ranking = Object.values(countMap).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    const aw = TITLE_ORDER.indexOf(a.title); const bw = TITLE_ORDER.indexOf(b.title);
+    return (aw===-1?999:aw) - (bw===-1?999:bw);
+  });
+
+  // ── achievement tier ──────────────────────────────────────────────────────
+  function tier(n) {
+    if (n >= 10) return { badge:'💎', label:'頂尖貢獻者', color:'#5b21b6', bg:'#ede9fe' };
+    if (n >= 7)  return { badge:'🥇', label:'資深英雄',   color:'#92400e', bg:'#fef3c7' };
+    if (n >= 4)  return { badge:'🥈', label:'優秀骨幹',   color:'#1e3a5f', bg:'#dbeafe' };
+    if (n >= 1)  return { badge:'🥉', label:'新星戰士',   color:'#065f46', bg:'#d1fae5' };
+    return { badge:'⭐', label:'蓄勢待發', color:'#6b7280', bg:'#f3f4f6' };
+  }
+
+  // ── summary cards ─────────────────────────────────────────────────────────
+  const totalMissions  = pubDocs.filter(d => !unitFilter || (d.unit||'') === unitFilter).length;
+  const participants   = ranking.filter(r => r.count > 0).length;
+  const topPerson      = ranking[0] || null;
+
+  const summaryEl = document.getElementById('gcSummary');
+  if (summaryEl) {
+    const cardStyle = 'background:white;border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #f0ece8;';
+    const numStyle  = 'font-size:1.55rem;font-weight:800;color:#8b1a0e;line-height:1.1;';
+    const lblStyle  = 'font-size:0.72rem;color:#888;margin-top:4px;letter-spacing:0.04em;';
+    summaryEl.innerHTML = `
+      <div style="${cardStyle}">
+        <div style="${numStyle}">${totalMissions}</div>
+        <div style="${lblStyle}">🚒 總任務次數</div>
+      </div>
+      <div style="${cardStyle}">
+        <div style="${numStyle}">${participants}</div>
+        <div style="${lblStyle}">👥 參與人次</div>
+      </div>
+      <div style="${cardStyle}">
+        <div style="${numStyle}">${topPerson && topPerson.count > 0 ? topPerson.count : '—'}</div>
+        <div style="${lblStyle}">🏆 ${topPerson && topPerson.count > 0 ? topPerson.name : '尚無資料'}</div>
+      </div>`;
+  }
+
+  // ── podium (top 3) ────────────────────────────────────────────────────────
+  const podiumEl = document.getElementById('gcPodium');
+  if (podiumEl) {
+    const top3 = ranking.slice(0, 3);
+    if (top3.length === 0 || top3[0].count === 0) {
+      podiumEl.innerHTML = `<div style="text-align:center;padding:30px 0;color:#aaa;font-size:0.85rem;">🏅 今年尚無公差出勤紀錄<br>第一位英雄等你來！</div>`;
+    } else {
+      // order: 2nd, 1st, 3rd  (visual podium layout)
+      const medals  = ['🥇','🥈','🥉'];
+      const heights = ['70px','90px','55px'];
+      const bgCols  = ['linear-gradient(160deg,#c8a415,#f5d06e)','linear-gradient(160deg,#9e9e9e,#d8d8d8)','linear-gradient(160deg,#a0622c,#d4956a)'];
+      const order   = [1, 0, 2]; // silver on left, gold centre, bronze right
+      const cols    = order.map(i => {
+        const r = top3[i];
+        if (!r) return '<div style="flex:1;"></div>';
+        const t = tier(r.count);
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:0;">
+          <div style="font-size:${i===0?'1.6':'1.25'}rem;">${medals[i]}</div>
+          <div style="font-weight:800;font-size:${i===0?'0.92':'0.82'}rem;color:#222;text-align:center;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</div>
+          <div style="font-size:0.68rem;color:#666;margin-bottom:4px;">${r.title}</div>
+          <div style="width:100%;background:${bgCols[i]};border-radius:10px 10px 0 0;height:${heights[i]};display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.12);">
+            <div style="font-size:1.35rem;font-weight:900;color:white;">${r.count}</div>
+            <div style="font-size:0.65rem;color:rgba(255,255,255,0.85);">次</div>
+          </div>
+        </div>`;
+      });
+      podiumEl.innerHTML = `
+        <div style="background:white;border-radius:14px;padding:20px 16px 0;box-shadow:0 2px 10px rgba(0,0,0,0.07);border:1px solid #f0ece8;">
+          <div style="text-align:center;font-size:0.75rem;color:#888;margin-bottom:16px;letter-spacing:0.06em;">🏆 前三名英雄</div>
+          <div style="display:flex;align-items:flex-end;gap:8px;height:180px;">${cols.join('')}</div>
+        </div>`;
+    }
+  }
+
+  // ── full ranking table ────────────────────────────────────────────────────
+  const tableEl = document.getElementById('gcTable');
+  if (!tableEl) return;
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const myName = usr.memberName || usr.name || '';
+  const isAdmin = (usr.role === 'admin' || usr.role === 'officer');
+
+  if (ranking.length === 0) {
+    tableEl.innerHTML = `<div class="query-empty"><span class="empty-icon">🏅</span>尚無公差出勤資料</div>`;
+    return;
+  }
+
+  const rows = ranking.map((r, idx) => {
+    const t = tier(r.count);
+    const isMe = r.name === myName;
+    const rowBg = isMe ? 'background:#fff8f0;' : (idx % 2 === 0 ? 'background:white;' : 'background:#fafafa;');
+    const rankDisplay = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+    return `<tr style="${rowBg}${isMe ? 'font-weight:600;' : ''}">
+      <td style="text-align:center;font-size:${idx<3?'1.15':'0.85'}rem;padding:9px 6px;">${rankDisplay}</td>
+      <td style="font-size:0.75rem;color:#666;padding:9px 4px;">${r.title||'—'}</td>
+      <td style="padding:9px 6px;font-size:0.85rem;">${r.name}${isMe ? ' <span style="font-size:0.65rem;background:#fde68a;color:#92400e;border-radius:20px;padding:1px 6px;">我</span>' : ''}</td>
+      ${isAdmin ? `<td style="font-size:0.75rem;color:#777;padding:9px 4px;">${r.unit||'—'}</td>` : ''}
+      <td style="text-align:center;font-weight:700;font-size:0.92rem;color:#8b1a0e;padding:9px 6px;">${r.count}</td>
+      <td style="text-align:center;padding:9px 6px;">
+        <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.68rem;background:${t.bg};color:${t.color};border-radius:20px;padding:3px 8px;font-weight:600;white-space:nowrap;">
+          ${t.badge} ${t.label}
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tableEl.innerHTML = `
+    <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #f0ece8;margin-bottom:16px;">
+      <table style="width:100%;border-collapse:collapse;font-family:'Noto Sans TC',sans-serif;">
+        <thead>
+          <tr style="background:linear-gradient(135deg,#b94a3a,#8b1a0e);color:white;">
+            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">排名</th>
+            <th style="padding:10px 4px;font-size:0.75rem;font-weight:600;text-align:left;">職稱</th>
+            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:left;">姓名</th>
+            ${isAdmin ? '<th style="padding:10px 4px;font-size:0.75rem;font-weight:600;text-align:left;">分隊</th>' : ''}
+            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">次數</th>
+            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">勳章</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="text-align:center;font-size:0.7rem;color:#bbb;padding:4px 0 12px;letter-spacing:0.04em;">
+      💎 10次以上・🥇 7–9次・🥈 4–6次・🥉 1–3次・⭐ 蓄勢待發
+    </div>`;
 }
 
 </script>
