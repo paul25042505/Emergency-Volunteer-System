@@ -2096,10 +2096,6 @@ function _dlCSV(content, filename) {
       <div style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:700;color:white;letter-spacing:0.1em;margin-bottom:6px;">公差英雄榜</div>
       <div style="font-size:0.8rem;color:rgba(255,255,255,0.75);letter-spacing:0.06em;">每一次出勤，都是對分隊最真實的貢獻</div>
       <div style="display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <select id="gcDutyType" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">
-          <option value="公差">公差</option>
-          <option value="協勤">協勤</option>
-        </select>
         <select id="gcYear" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"></select>
         <select id="gcUnit" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"><option value="">全部分隊</option></select>
       </div>
@@ -12230,7 +12226,7 @@ async function loadGongchaStats() {
 
   const year       = parseInt(yrSel?.value || new Date().getFullYear());
   const unitFilter = unitSel?.value || '';
-  const dutyFilter = document.getElementById('gcDutyType')?.value || '公差';
+  const dutyFilter = '公差';
 
   // ── query ─────────────────────────────────────────────────────────────────
   const dateFrom = `${year}-01-01`;
