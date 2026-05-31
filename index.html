@@ -1068,6 +1068,11 @@ function _dlCSV(content, filename) {
           <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">定訓與公告</div>
           <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">定訓記錄與公告</div>
         </button>
+        <button onclick="navTo('changelogPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+          <div style="font-size:1.6rem;margin-bottom:8px;">📝</div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">版本修改紀錄</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">系統更新說明</div>
+        </button>
       </div>
     </div>
     <div class="site-footer-placeholder"></div>
@@ -12516,28 +12521,6 @@ function showTempPassErr(msg) {
 // 後台：臨時密碼管理
 // ════════════════════════════════════════
 // 自動插入 v1.9.02 版本紀錄（若尚未存在）
-
-// ── 自動插入 v1.9.07 版本紀錄（若尚未存在）────────────────────────────────
-(async function seedV1907() {
-  try {
-    const TARGET = 'v1.9.07';
-    const all = await fbList(COL_CHANGELOG);
-    if (all.some(d => d.version === TARGET)) return;
-    await Promise.all(all.filter(d => d.isLatest).map(d => fbUpdate(COL_CHANGELOG, d.id, { isLatest: false })));
-    await fbAdd(COL_CHANGELOG, {
-      version: TARGET,
-      date: '2026-05-31',
-      title: '公差英雄榜修正與快速入口更新',
-      isLatest: true,
-      items: [
-        '【修正】公差英雄榜：獎台第一名高度修正（第一名柱子最高）',
-        '【修正】公差總次數改為計算不重複出勤日數（同一天只算一次任務）',
-        '【修正】點擊總次數卡片可查看實際計入的出勤日期清單',
-        '【改善】首頁快速入口新增「公差統計」捷徑，位於協勤統計右側',
-      ],
-    });
-  } catch(e) { /* 非關鍵，靜默略過 */ }
-})();
 
 // ── 自動插入 v1.9.06 版本紀錄（若尚未存在）────────────────────────────────
 (async function seedV1906() {
