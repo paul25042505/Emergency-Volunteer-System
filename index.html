@@ -5741,19 +5741,21 @@ async function doAttQuery() {
   try {
     const docs = await fbList(COL_ATTEND, 'date', 'asc');
     aqAllRecords = docs.map(d => ({
-      id:          d.id||'',
-      date:        d.date||'',
-      dutyType:    d.dutyType||'協勤',
-      title:       d.title||'',
-      memberName:  d.memberName||'',
-      checkinTime: d.checkinTime||'',
-      checkoutTime:d.checkoutTime||'',
-      hours:       d.hours||0,
-      count:       d.count||0,
-      service:     d.service||0,
-      checkinSig:  d.checkinSig||'',
-      checkoutSig: d.checkoutSig||'',
-      _t:          d._t||null,
+      id:               d.id||'',
+      date:             d.date||'',
+      dutyType:         d.dutyType||'協勤',
+      title:            d.title||'',
+      memberName:       d.memberName||'',
+      checkinTime:      d.checkinTime||'',
+      checkoutTime:     d.checkoutTime||'',
+      hours:            d.hours||0,
+      count:            d.count||0,
+      service:          d.service||0,
+      checkinSig:       d.checkinSig||'',
+      checkoutSig:      d.checkoutSig||'',
+      timeAdjusted:     d.timeAdjusted||false,
+      checkinRecordedAt:d.checkinRecordedAt||'',
+      _t:               d._t||null,
     }));
   } catch(e) {
     document.getElementById('aqLoadingMsg').style.display = 'none';
