@@ -1578,7 +1578,7 @@ function _dlCSV(content, filename) {
             <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
             <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
             <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="2" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">2</button>
-            <input type="number" id="easyServiceCount" min="0" step="1" value="1" placeholder="其他"
+            <input type="number" id="easyServiceCount" min="0" step="1" value="0" placeholder="其他"
               oninput="clearSvcBtns('easyServiceCount')"
               style="flex:1;min-width:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:1rem;text-align:center;font-family:'Noto Sans TC',sans-serif;">
           </div>
@@ -9171,7 +9171,7 @@ function easyOpenCheckout(key) {
   const isPub = (s.dutyType || '協勤') === '公差';
   const svcField = document.getElementById('easyServiceField');
   if (svcField) svcField.style.display = isPub ? 'none' : '';
-  if (!isPub) setSvcBtnByVal('easyServiceCount', 1);
+  setSvcBtnByVal('easyServiceCount', 0);
   easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'block';
