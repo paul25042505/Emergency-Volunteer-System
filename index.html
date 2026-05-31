@@ -1569,7 +1569,7 @@ function _dlCSV(content, filename) {
           </div>
           <div class="field" style="margin-bottom:0;">
             <label>出勤次數</label>
-            <div style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
+            <div id="easyCountDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
         </div>
         <div class="field" style="margin-bottom:0;" id="easyServiceField">
@@ -9172,6 +9172,8 @@ function easyOpenCheckout(key) {
   const svcField = document.getElementById('easyServiceField');
   if (svcField) svcField.style.display = isPub ? 'none' : '';
   setSvcBtnByVal('easyServiceCount', 0);
+  const cntEl = document.getElementById('easyCountDisplay');
+  if (cntEl) cntEl.textContent = isPub ? '0' : '1';
   easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'block';
@@ -9304,10 +9306,11 @@ async function easyDoCheckout() {
   btn.textContent = '送出中...'; btn.disabled = true;
 
   try {
+    const count = checkoutDuty === '公差' ? 0 : 1;
     if (session.fbDocId) {
-      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
+      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count, service }).catch(() => {});
     } else {
-      fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
+      fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count, service }).catch(() => {});
     }
 
     attSessions[_easyCheckoutTarget].done        = true;
