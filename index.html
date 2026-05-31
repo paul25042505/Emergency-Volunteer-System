@@ -10054,19 +10054,22 @@ async function renderMeetingStats() {
     }
 
     let rank = 0, prevCount = -1;
-    const countArrow = sortMode === 'count' ? ' ↓' : '';
-    const titleArrow = sortMode === 'weight' ? ' ↓' : '';
-
     el.innerHTML = `
-      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:12px;">${thisYear} 年度共 ${total} 次定訓</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:0.78rem;color:var(--text-light);">${thisYear} 年度共 ${total} 次定訓</span>
+        <div style="display:flex;gap:6px;">
+          <button onclick="meetingStatsSortBy('count')" style="padding:4px 12px;font-size:0.75rem;border-radius:6px;border:1px solid var(--border);cursor:pointer;font-family:'Noto Sans TC',sans-serif;${sortMode==='count'?'background:var(--red);color:white;border-color:var(--red);':'background:white;color:var(--text-mid);'}">出席次數</button>
+          <button onclick="meetingStatsSortBy('weight')" style="padding:4px 12px;font-size:0.75rem;border-radius:6px;border:1px solid var(--border);cursor:pointer;font-family:'Noto Sans TC',sans-serif;${sortMode==='weight'?'background:var(--red);color:white;border-color:var(--red);':'background:white;color:var(--text-mid);'}">職稱權重</button>
+        </div>
+      </div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;">
           <thead><tr>
-            <th style="${ths}" onclick="meetingStatsSortBy('count')">排名</th>
-            <th style="${ths}" onclick="meetingStatsSortBy('weight')">職稱${titleArrow}</th>
+            <th style="${ths}">排名</th>
+            <th style="${ths}">職稱</th>
             <th style="${ths}">姓名</th>
             ${isAdmin ? `<th style="${ths}">分隊</th>` : ''}
-            <th style="${ths}text-align:center;" onclick="meetingStatsSortBy('count')">出席次數${countArrow}</th>
+            <th style="${ths}text-align:center;">出席次數</th>
             <th style="${ths}text-align:center;">出席率</th>
           </tr></thead>
           <tbody>
