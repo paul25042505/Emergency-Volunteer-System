@@ -9212,7 +9212,7 @@ function easyAutoCalcHours() {
   if (!checkoutTime) return;
   const h = calcHours(session.checkinTime, checkoutTime);
   const display = document.getElementById('easyHoursDisplay');
-  if (display) display.textContent = h > 0 ? h + ' 小時' : '—';
+  if (display) display.textContent = h > 0 ? h + ' 小時' : '0';
   easyLoadCount();
 }
 
