@@ -1563,11 +1563,11 @@ function _dlCSV(content, filename) {
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="easyCountGrid">
           <div class="field" style="margin-bottom:0;">
-            <label>協勤時數</label>
+            <label>備勤時數</label>
             <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
           </div>
           <div class="field" style="margin-bottom:0;" id="easyCountField">
-            <label>出勤次數</label>
+            <label>備勤次數</label>
             <div id="easyCountDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
         </div>
@@ -1698,11 +1698,11 @@ function _dlCSV(content, filename) {
           </div>
           <div class="card-divider"></div>
           <div class="field">
-            <label>協勤時數</label>
+            <label>備勤時數</label>
             <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;" readonly>
           </div>
           <div class="field" id="attCountField">
-            <label>出勤次數</label>
+            <label>備勤次數</label>
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field" id="attServiceField">
@@ -1788,8 +1788,8 @@ function _dlCSV(content, filename) {
           <thead>
             <tr>
               <th>#</th><th>日期</th><th>類別</th><th>姓名</th><th>職稱</th>
-              <th>簽到</th><th>簽退</th><th>簽到簽名</th><th>簽退簽名</th><th>協勤時數</th>
-              <th>出勤次數</th><th>服務人次</th><th>操作</th>
+              <th>簽到</th><th>簽退</th><th>簽到簽名</th><th>簽退簽名</th><th>備勤時數</th>
+              <th>備勤次數</th><th>服務人次</th><th>操作</th>
             </tr>
           </thead>
           <tbody id="aqResultBody"></tbody>
@@ -1831,8 +1831,8 @@ function _dlCSV(content, filename) {
       <div class="field"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
       <div class="field"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
     </div>
-    <div class="field"><label>協勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
-    <div class="field"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
+    <div class="field"><label>備勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
+    <div class="field"><label>備勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
     <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
     <div class="field">
       <label><span>簽到簽名</span></label>
@@ -2007,7 +2007,7 @@ function _dlCSV(content, filename) {
         <div class="result-head"><h3 id="statsTableTitle">協勤排行榜</h3></div>
         <div class="result-table-wrap">
           <table class="stats-table">
-            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>出勤次數</th><th>協勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
+            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>備勤次數</th><th>備勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
             <tbody id="statsTableBody"></tbody>
           </table>
         </div>
@@ -3214,7 +3214,7 @@ function _dlCSV(content, filename) {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div class="field" style="margin-bottom:0;">
-          <label>出勤次數</label>
+          <label>備勤次數</label>
           <input type="number" id="corrCount" min="0" oninput="markCorrChanged(this,'corrCount')">
         </div>
         <div class="field" style="margin-bottom:0;">
@@ -5518,7 +5518,7 @@ function autoCalcEditHours() {
   document.getElementById('aqEditHours').value = calcHours(inTime, outTime);
 }
 
-// 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
+// 查當班時段備勤次數（簽到時間 ~ 簽退時間內）
 async function loadTodayCount(memberName) {
   // attCheckoutTarget 是 key（docId），不是 memberName
   const session   = attSessions[attCheckoutTarget] || {};
@@ -6944,8 +6944,8 @@ async function adminEditAtt(id) {
     <div class="field"><label>姓名</label><input type="text" id="aeAName" value="${doc.memberName||''}" style="width:100%;"></div>
     <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
-    <div class="field"><label>協勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
-    <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
+    <div class="field"><label>備勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
+    <div class="field"><label>備勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" min="0" step="1" style="width:100%;"></div>
     <div class="field">
       <label><span>簽到簽名</span></label>
@@ -10472,8 +10472,8 @@ function openCorrectionModal(type, record) {
     origItem('義消',     record.memberName || record['姓名'] || '');
     origItem('簽到',     cin);
     origItem('簽退',     cout);
-    origItem('協勤時數', hrs !== '' ? hrs + ' 小時' : '');
-    origItem('出勤次數', cnt !== '' ? cnt + ' 次' : '');
+    origItem('備勤時數', hrs !== '' ? hrs + ' 小時' : '');
+    origItem('備勤次數', cnt !== '' ? cnt + ' 次' : '');
     origItem('服務人次', svc !== '' ? svc + ' 人' : '');
 
     _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
@@ -10544,7 +10544,7 @@ function updateCorrDiff() {
   const type = document.getElementById('corrType').value;
   if (type === 'attendance') {
     const ids = ['corrCheckin','corrCheckout','corrCount','corrService'];
-    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'出勤次數', corrService:'服務人次' };
+    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'備勤次數', corrService:'服務人次' };
     const diffs = ids.filter(id => {
       const el = document.getElementById(id);
       return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
@@ -10718,7 +10718,7 @@ async function loadAdminCorrections() {
     // 欄位中文名稱對照
     const fieldLabels = {
       checkinTime: '簽到時間', checkoutTime: '簽退時間',
-      hours: '協勤時數', count: '協勤次數', service: '服務人次',
+      hours: '備勤時數', count: '備勤次數', service: '服務人次',
       dutyType: '類別', memberName: '義消姓名',
       timeOut: '出勤時間', timeBack: '返勤時間',
       date: '日期', district: '行政區', address: '地址',
