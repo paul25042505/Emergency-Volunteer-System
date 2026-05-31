@@ -1780,6 +1780,7 @@ function _dlCSV(content, filename) {
     </div>
 
     <div class="result-card" id="aqResultCard" style="display:none;">
+      <div id="aqAdjustBanner" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:0.82rem;color:#856404;line-height:1.5;"></div>
       <div class="result-head">
         <h3>查詢結果</h3>
         <button id="aqSortBtn" onclick="toggleAttQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
@@ -5848,7 +5849,7 @@ function renderAttQueryResults() {
         '<td style="white-space:nowrap;">'+duty+'</td>' +
         '<td style="white-space:nowrap;">'+name+'</td>' +
         '<td style="white-space:nowrap;">'+title+'</td>' +
-        '<td style="white-space:nowrap;">'+cin+(r.timeAdjusted ? '&nbsp;<span title="⚠️ 時間異常，實際送出：'+(r.checkinRecordedAt||'不明')+'" style="cursor:help;color:#e65c00;">⚠️</span>' : '')+'</td>' +
+        '<td style="white-space:nowrap;">'+cin+(r.timeAdjusted ? '&nbsp;<button onclick="showTimeAdjustInfo('+i+')" style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:1px 7px;font-size:0.72rem;cursor:pointer;color:#856404;font-family:inherit;">⚠️ 時間異常</button>' : '')+'</td>' +
         '<td style="white-space:nowrap;">'+cout+'</td>' +
         '<td style="text-align:center;padding:4px;">'+sigCell(cinSig,i,'checkinSig')+'</td>' +
         '<td style="text-align:center;padding:4px;">'+sigCell(coutSig,i,'checkoutSig')+'</td>' +
@@ -5858,8 +5859,45 @@ function renderAttQueryResults() {
         '<td>'+aqActionBtn+'</td>' +
         '</tr>';
     }).join('');
+
+    // 若成員本人有 ⚠️ 紀錄，在表格上方顯示警示橫幅
+    if (!_isAdminAq && !_isOfficerAq) {
+      const flagged = aqFiltered.filter(r => r.timeAdjusted);
+      const bannerEl = document.getElementById('aqAdjustBanner');
+      if (bannerEl) {
+        if (flagged.length > 0) {
+          bannerEl.style.display = 'block';
+          bannerEl.innerHTML = `<span style="font-size:1rem;">⚠️</span>&nbsp;您有 <strong>${flagged.length}</strong> 筆簽到紀錄被系統標記「時間異常」，填報時間與實際送出時間不符。此資訊已對分隊承辦人及管理員公開，點擊各筆紀錄的 ⚠️ 按鈕查看詳情。`;
+        } else {
+          bannerEl.style.display = 'none';
+        }
+      }
+    }
   }
   document.getElementById('aqResultCard').style.display = 'block';
+}
+
+function showTimeAdjustInfo(idx) {
+  const r = aqFiltered[idx];
+  if (!r || !r.timeAdjusted) return;
+  const cin      = r.checkinTime || '';
+  const recorded = r.checkinRecordedAt || '不明';
+  let diffText = '';
+  if (cin && recorded !== '不明') {
+    const [h1, m1] = cin.split(':').map(Number);
+    const [h2, m2] = recorded.split(':').map(Number);
+    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff > 0) diffText = `，相差 ${diff} 分鐘`;
+  }
+  alert(
+    `⚠️ 此紀錄已被系統標記「時間異常」\n\n` +
+    `填寫簽到時間：${cin}\n` +
+    `系統記錄送出時間：${recorded}${diffText}\n\n` +
+    `填報時間與實際送出時間不符，\n` +
+    `此資訊已記錄並對分隊承辦人及管理員公開，\n` +
+    `可供核查出勤紀錄真實性。\n\n` +
+    `如有疑問，請向管理員說明。`
+  );
 }
 
 function openAttEdit(idx) {
@@ -6989,7 +7027,7 @@ async function loadAdminAttendance() {
         <td style="${tds}white-space:nowrap;">${d.date||''}</td>
         <td style="${tds}white-space:nowrap;">${d.dutyType||'協勤'}</td>
         <td style="${tds}font-weight:500;white-space:nowrap;">${d.memberName||''}</td>
-        <td style="${tds}white-space:nowrap;">${d.checkinTime||''}${d.timeAdjusted ? `&nbsp;<span title="⚠️ 時間異常！實際送出時間：${d.checkinRecordedAt||'不明'}" style="cursor:help;color:#e65c00;font-size:0.85rem;">⚠️</span>` : ''}</td>
+        <td style="${tds}white-space:nowrap;">${d.checkinTime||''}${d.timeAdjusted ? `&nbsp;<span style="display:inline-block;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:1px 7px;font-size:0.7rem;color:#856404;vertical-align:middle;" title="實際送出：${d.checkinRecordedAt||'不明'}">⚠️ 異常（送出 ${d.checkinRecordedAt||'不明'}）</span>` : ''}</td>
         <td style="${tds}white-space:nowrap;">${d.checkoutTime||''}</td>
         <td style="${tds}text-align:center;">${d.hours||0}</td>
         <td style="${tds}text-align:center;">${d.count||0}</td>
