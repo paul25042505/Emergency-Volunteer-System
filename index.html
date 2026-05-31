@@ -1562,12 +1562,12 @@ function _dlCSV(content, filename) {
           <label>簽退時間</label>
           <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="easyCountGrid">
           <div class="field" style="margin-bottom:0;">
             <label>協勤時數</label>
             <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
           </div>
-          <div class="field" style="margin-bottom:0;">
+          <div class="field" style="margin-bottom:0;" id="easyCountField">
             <label>出勤次數</label>
             <div id="easyCountDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
@@ -1702,7 +1702,7 @@ function _dlCSV(content, filename) {
             <label>協勤時數</label>
             <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;" readonly>
           </div>
-          <div class="field">
+          <div class="field" id="attCountField">
             <label>出勤次數</label>
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
@@ -5351,6 +5351,8 @@ function openCheckout(key) {
   const isPub = (resolvedSession.dutyType || '協勤') === '公差';
   const attSvcField = document.getElementById('attServiceField');
   if (attSvcField) attSvcField.style.display = isPub ? 'none' : '';
+  const attCntField = document.getElementById('attCountField');
+  if (attCntField) attCntField.style.display = isPub ? 'none' : '';
   document.getElementById('attMain').style.display         = 'none';
   document.getElementById('attCheckoutView').style.display = 'block';
   attCheckoutHasSig = false;
@@ -9164,6 +9166,8 @@ function easyOpenCheckout(key) {
   const isPub = (s.dutyType || '協勤') === '公差';
   const svcField = document.getElementById('easyServiceField');
   if (svcField) svcField.style.display = isPub ? 'none' : '';
+  const cntField = document.getElementById('easyCountField');
+  if (cntField) cntField.style.display = isPub ? 'none' : '';
   const svcEl = document.getElementById('easyServiceCount');
   if (svcEl) svcEl.textContent = '0';
   const cntEl = document.getElementById('easyCountDisplay');
