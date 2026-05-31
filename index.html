@@ -12220,7 +12220,7 @@ async function loadGongchaStats() {
   // ── populate unit select ──────────────────────────────────────────────────
   const unitSel = document.getElementById('gcUnit');
   if (unitSel && unitSel.options.length <= 1) {
-    const units = await getUnitsList();
+    const units = await loadUnits();
     units.forEach(u => {
       const o = document.createElement('option');
       o.value = u; o.textContent = u;
