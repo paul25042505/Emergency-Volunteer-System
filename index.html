@@ -9167,8 +9167,8 @@ function easyOpenCheckout(key) {
   const svcEl = document.getElementById('easyServiceCount');
   if (svcEl) svcEl.textContent = '0';
   const cntEl = document.getElementById('easyCountDisplay');
-  if (cntEl) cntEl.textContent = isPub ? '0' : '1';
-  easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
+  if (cntEl) cntEl.textContent = '0';
+  easyAutoCalcHours(); // 觸發時數計算與出勤/服務人次查詢
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'block';
   _easyCheckoutHasSig = false;
@@ -9202,6 +9202,47 @@ function easyAutoCalcHours() {
   const h = calcHours(session.checkinTime, checkoutTime);
   const display = document.getElementById('easyHoursDisplay');
   if (display) display.textContent = h > 0 ? h + ' 小時' : '—';
+  easyLoadCount();
+}
+
+async function easyLoadCount() {
+  const session = attSessions[_easyCheckoutTarget];
+  if (!session) return;
+  const isPub = (session.dutyType || '協勤') === '公差';
+  const cntEl = document.getElementById('easyCountDisplay');
+  const svcEl = document.getElementById('easyServiceCount');
+  if (isPub) {
+    if (cntEl) cntEl.textContent = '0';
+    return;
+  }
+  const memberName = session.memberName || '';
+  const date       = session.date || '';
+  const checkinT   = session.checkinTime || '';
+  const checkoutT  = document.getElementById('easyCheckoutTime')?.value || '';
+  if (!checkinT || !checkoutT || !memberName || !date) {
+    if (cntEl) cntEl.textContent = '0';
+    if (svcEl) svcEl.textContent = '0';
+    return;
+  }
+  function toMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+  const inMins  = toMins(checkinT);
+  const outMins = toMins(checkoutT);
+  try {
+    const docs = await fbList(COL_OUTING, 'date', 'asc');
+    const matched = docs.filter(r => {
+      if ((r.memberName||'') !== memberName) return false;
+      if ((r.date||'') !== date) return false;
+      const recOut  = r.timeOut  ? toMins(r.timeOut)  : null;
+      const recBack = r.timeBack ? toMins(r.timeBack) : recOut;
+      if (recOut === null) return false;
+      return recOut >= inMins && (recBack||recOut) <= outMins;
+    });
+    if (cntEl) cntEl.textContent = String(matched.length);
+    if (svcEl) svcEl.textContent = String(matched.reduce((s,r) => s + (parseInt(r.serviceCount)||0), 0));
+  } catch(e) {
+    if (cntEl) cntEl.textContent = '0';
+    if (svcEl) svcEl.textContent = '0';
+  }
 }
 
 function easyInitCanvas(type) {
