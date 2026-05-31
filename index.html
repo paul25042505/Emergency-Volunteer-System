@@ -1562,14 +1562,6 @@ function _dlCSV(content, filename) {
           <label>簽退時間</label>
           <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
         </div>
-        <div class="field">
-          <label>類別</label>
-          <div class="duty-toggle">
-            <button type="button" class="duty-btn active" id="easyCheckoutDutyOut" onclick="setEasyCheckoutDuty('協勤')">協勤</button>
-            <button type="button" class="duty-btn" id="easyCheckoutDutyPub" onclick="setEasyCheckoutDuty('公差')">公差</button>
-          </div>
-          <input type="hidden" id="easyCheckoutDutyType" value="協勤">
-        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field" style="margin-bottom:0;">
             <label>協勤時數</label>
@@ -4673,15 +4665,6 @@ function setEasyCheckinDuty(type) {
   document.getElementById('easyDutyOut').classList.toggle('active', type === '協勤');
   document.getElementById('easyDutyPub').classList.toggle('active', type === '公差');
   document.getElementById('easyCheckinDutyType').value = type;
-}
-function setEasyCheckoutDuty(type) {
-  document.getElementById('easyCheckoutDutyOut').classList.toggle('active', type === '協勤');
-  document.getElementById('easyCheckoutDutyPub').classList.toggle('active', type === '公差');
-  document.getElementById('easyCheckoutDutyType').value = type;
-  const isPub = type === '公差';
-  const svcField = document.getElementById('easyServiceField');
-  if (svcField) svcField.style.display = isPub ? 'none' : '';
-  if (!isPub) setSvcBtnByVal('easyServiceCount', 1);
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
 
@@ -9185,7 +9168,10 @@ function easyOpenCheckout(key) {
   document.getElementById('easyCheckinRef').textContent = '簽到時間：' + (s.checkinTime || '');
   buildTimeOptions('easyCheckoutTime', roundTo15(new Date()));
   const hdEl = document.getElementById('easyHoursDisplay'); if (hdEl) hdEl.textContent = '—';
-  setEasyCheckoutDuty(s.dutyType || '協勤');
+  const isPub = (s.dutyType || '協勤') === '公差';
+  const svcField = document.getElementById('easyServiceField');
+  if (svcField) svcField.style.display = isPub ? 'none' : '';
+  if (!isPub) setSvcBtnByVal('easyServiceCount', 1);
   easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'block';
@@ -9308,7 +9294,7 @@ async function easyDoCheckout() {
   const session    = attSessions[_easyCheckoutTarget];
   const memberName = session.memberName || _easyCheckoutTarget;
   const hours      = calcHours(session.checkinTime, checkoutTime);
-  const checkoutDuty = document.getElementById('easyCheckoutDutyType')?.value || session.dutyType || '協勤';
+  const checkoutDuty = session.dutyType || '協勤';
   const service    = (checkoutDuty === '公差') ? 0 : (parseInt(document.getElementById('easyServiceCount')?.value) || 0);
   const date       = session.date || new Date().toLocaleDateString('sv');
   const memberObj  = members.find(m => m.name === memberName) || {};
@@ -9319,7 +9305,7 @@ async function easyDoCheckout() {
 
   try {
     if (session.fbDocId) {
-      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count: 1, service, dutyType: checkoutDuty }).catch(() => {});
+      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
     } else {
       fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count: 1, service }).catch(() => {});
     }
