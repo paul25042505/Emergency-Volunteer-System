@@ -12500,6 +12500,33 @@ function showTempPassErr(msg) {
 // ════════════════════════════════════════
 // 自動插入 v1.9.02 版本紀錄（若尚未存在）
 
+// ── 自動插入 v1.9.06 版本紀錄（若尚未存在）────────────────────────────────
+(async function seedV1906() {
+  try {
+    const TARGET = 'v1.9.06';
+    const all = await fbList(COL_CHANGELOG);
+    if (all.some(d => d.version === TARGET)) return;
+    // 先把其他 isLatest 取消
+    await Promise.all(all.filter(d => d.isLatest).map(d => fbUpdate(COL_CHANGELOG, d.id, { isLatest: false })));
+    await fbAdd(COL_CHANGELOG, {
+      version: TARGET,
+      date: '2026-05-31',
+      title: '成員申請追蹤、簽到防偽、定訓出席統計、公差英雄榜',
+      isLatest: true,
+      items: [
+        '【新功能】新增「我的申請記錄」頁面，成員可自行追蹤修正申請進度與審核結果',
+        '【新功能】簽到防偽機制：限制時間選單範圍（±60分鐘）、異常填報警告彈窗、系統自動標記⚠️並通知承辦人',
+        '【新功能】⚠️ 時間異常標記成員本人可見，點擊可查看填報與實際送出時間差異',
+        '【新功能】定訓與公告新增與會人員勾選清單（按職稱權重排序，排除承辦人）',
+        '【新功能】定訓出席統計表：含職稱欄、排除承辦人，可切換按次數或職稱排序',
+        '【新功能】新增「公差英雄榜」頁面，統計各成員全年公差出勤天數排行，含獎台視覺與成就勳章',
+        '【改善】導覽列「我的申請記錄」移至個人基本資料下方',
+        '【改善】Header 新增↻重新整理按鈕',
+        '【改善】首頁快速入口新增「我的申請記錄」捷徑',
+      ],
+    });
+  } catch(e) { /* 非關鍵，靜默略過 */ }
+})();
 
 </script>
 
