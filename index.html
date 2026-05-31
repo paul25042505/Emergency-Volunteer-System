@@ -1713,7 +1713,7 @@ function _dlCSV(content, filename) {
             <label>出勤次數</label>
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
-          <div class="field">
+          <div class="field" id="attServiceField">
             <label>服務人次</label>
             <input type="number" id="attService" min="0" step="1" value="0" placeholder="0" style="width:100%;background:#f5f5f5;color:var(--text-mid);" readonly>
           </div>
@@ -5355,6 +5355,9 @@ function openCheckout(key) {
   document.getElementById('attCount').value   = '';
   document.getElementById('attService').value = '';
   document.getElementById('attSuccessMsg')?.classList.remove('show');
+  const isPub = (resolvedSession.dutyType || '協勤') === '公差';
+  const attSvcField = document.getElementById('attServiceField');
+  if (attSvcField) attSvcField.style.display = isPub ? 'none' : '';
   document.getElementById('attMain').style.display         = 'none';
   document.getElementById('attCheckoutView').style.display = 'block';
   attCheckoutHasSig = false;
@@ -5552,7 +5555,7 @@ async function doCheckout() {
   const memberName = session.memberName || attCheckoutTarget;
   const hours      = calcHours(session.checkinTime, checkoutTime);
   const countVal   = parseInt(document.getElementById('attCount').value)   || 0;
-  const serviceVal = parseInt(document.getElementById('attService').value)  || 0;
+  const serviceVal = (session.dutyType === '公差') ? 0 : (parseInt(document.getElementById('attService').value) || 0);
   // 補簽退：日期用 session 裡記錄的簽到日期，不一定是今天
   const todayStr   = (attSessions[attCheckoutTarget] && attSessions[attCheckoutTarget].date) || document.getElementById('attDate').value;
   const memberObj  = members.find(m => m.name === memberName) || {};
