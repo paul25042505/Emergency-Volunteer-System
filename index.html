@@ -3417,6 +3417,15 @@ async function fbList(col, orderByField, orderDir) {
   const s = await q.get();
   return s.docs.map(d=>({id:d.id,...d.data()}));
 }
+async function fbQuery(col, conditions, orderByField, orderDir) {
+  await ensureFirebase();
+  let q = _fbDB.collection(col);
+  if (conditions) conditions.forEach(([f,op,v]) => { q = q.where(f, op, v); });
+  if (orderByField) q = q.orderBy(orderByField, orderDir || 'asc');
+  q = q.limit(500);
+  const s = await q.get();
+  return s.docs.map(d=>({id:d.id,...d.data()}));
+}
 async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
 async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});}
 async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);}
@@ -5215,7 +5224,8 @@ async function loadTodayCheckins() {
   const listEl = document.getElementById('attCheckinList');
   if (listEl) listEl.innerHTML = '<div class="member-empty"><span class="empty-icon">⏳</span>資料讀取中，請稍等...</div>';
   try {
-    const docs = await fbList(COL_ATTEND, 'date', 'asc');
+    const cutoff = (() => { const d = new Date(); d.setDate(d.getDate()-30); return d.toLocaleDateString('sv'); })();
+    const docs = await fbQuery(COL_ATTEND, [['date','>=',cutoff]], 'date', 'asc');
     const activeIds = new Set();
     docs.filter(r => r.checkinTime && !r.checkoutTime).forEach(r => {
       activeIds.add(r.id);
@@ -5523,10 +5533,9 @@ async function loadTodayCount(memberName) {
   const outMins = toMins(checkoutT);
 
   try {
-    const docs = await fbList(COL_OUTING, 'date', 'asc');
+    const docs = await fbQuery(COL_OUTING, [['date','==',date]]);
     const matched = docs.filter(r => {
       if ((r.memberName||'') !== memberName) return false;
-      if ((r.date||'') !== date) return false;
       const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
       const recBackMins = r.timeBack ? toMins(r.timeBack) : recOutMins;
       if (recOutMins === null) return false;
@@ -9232,10 +9241,9 @@ async function easyLoadCount() {
   const inMins  = toMins(checkinT);
   const outMins = toMins(checkoutT);
   try {
-    const docs = await fbList(COL_OUTING, 'date', 'asc');
+    const docs = await fbQuery(COL_OUTING, [['date','==',date]]);
     const matched = docs.filter(r => {
       if ((r.memberName||'') !== memberName) return false;
-      if ((r.date||'') !== date) return false;
       const recOut  = r.timeOut  ? toMins(r.timeOut)  : null;
       const recBack = r.timeBack ? toMins(r.timeBack) : recOut;
       if (recOut === null) return false;
