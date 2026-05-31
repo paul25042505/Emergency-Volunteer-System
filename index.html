@@ -807,6 +807,7 @@ function _dlCSV(content, filename) {
     <button id="nav-feedback" onclick="navTo('feedbackPage')"><span class="icon">💬</span>意見回饋</button>
     <button id="nav-duty" onclick="navTo('dutyPage')"><span class="icon">📅</span>備勤排班</button>
     <button id="nav-meeting" onclick="navTo('meetingPage')"><span class="icon">📒</span>定訓與公告</button>
+    <button id="nav-mycorrections" onclick="navTo('myCorrectionsPage')"><span class="icon">📋</span>我的申請記錄</button>
     <button id="nav-changelog" onclick="navTo('changelogPage')"><span class="icon">📝</span>版本修改紀錄</button>
     <button id="nav-admin" onclick="navTo('adminPage')" style="display:none;border-top:1px solid rgba(255,255,255,0.15);margin-top:8px;padding-top:12px;"><span class="icon">⚙️</span>管理員後台</button>
     <!-- 後台子導覽（管理員才顯示，進入 adminPage 後展開）-->
@@ -3125,6 +3126,33 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ PAGE：版本修改紀錄 ══════ -->
+<div class="page" id="myCorrectionsPage">
+  <div class="query-wrap">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">📋</div>
+        <div class="section-title">我的申請記錄</div>
+        <div class="section-line"></div>
+      </div>
+    </div>
+    <div style="padding:0 0 8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="myCorrFilter" onchange="renderMyCorrections()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans TC',sans-serif;font-size:0.85rem;background:white;">
+          <option value="all">全部狀態</option>
+          <option value="pending">待審核</option>
+          <option value="approved">已核准</option>
+          <option value="rejected">已拒絕</option>
+        </select>
+        <span id="myCorrCount" style="font-size:0.8rem;color:var(--text-light);"></span>
+      </div>
+    </div>
+    <div id="myCorrList">
+      <div class="query-empty"><span class="empty-icon">📋</span>載入中...</div>
+    </div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
 <div class="page" id="changelogPage">
   <div class="query-wrap">
     <div class="section">
@@ -4066,6 +4094,7 @@ function navTo(pageId, fromHistory) {
     itemsPage:      ['物品領用', 'Item Pickup', 'nav-items'],
     dutyPage:       ['備勤排班', 'Duty Schedule', 'nav-duty'],
   meetingPage:    ['定訓與公告', 'Training & Announcements', 'nav-meeting'],
+    myCorrectionsPage: ['我的申請記錄', 'My Requests', 'nav-mycorrections'],
     changelogPage:  ['版本修改紀錄', 'Version History', 'nav-changelog'],
     feedbackPage:   ['意見回饋', 'Feedback', 'nav-feedback'],
     adminPage:      ['管理員後台', 'Admin Panel', 'nav-admin'],
@@ -4095,6 +4124,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'feedbackPage') initFeedbackPage();
   else if (pageId === 'profilePage')   loadProfilePage();
   else if (pageId === 'meetingPage')   loadMeetingPage();
+  else if (pageId === 'myCorrectionsPage') loadMyCorrections();
   else if (pageId === 'changelogPage') loadChangelog();
   else if (pageId === 'dutyPage')      initDutyPage();
 
@@ -10878,7 +10908,140 @@ async function handleCorrection(corrId, docId, type, action) {
   } catch(e) { alert('操作失敗：' + e.message); }
 }
 
+// ════════════════════════════════════════
+// 我的申請記錄
+// ════════════════════════════════════════
+let _myCorrs = [];
 
+async function loadMyCorrections() {
+  const el = document.getElementById('myCorrList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const me = usr.memberName || usr.name || '';
+    if (!me) {
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>無法識別使用者</div>';
+      return;
+    }
+    const all = await fbQuery(COL_CORRECTION, [['submittedBy', '==', me]]);
+    _myCorrs = all.sort((a, b) => {
+      const ta = a.submittedAt?.seconds || 0;
+      const tb = b.submittedAt?.seconds || 0;
+      return tb - ta;
+    });
+    renderMyCorrections();
+  } catch (e) {
+    el.innerHTML = '<div style="color:#b94a3a;padding:8px 0;">載入失敗：' + e.message + '</div>';
+  }
+}
+
+function renderMyCorrections() {
+  const el = document.getElementById('myCorrList');
+  if (!el) return;
+
+  const filter = document.getElementById('myCorrFilter')?.value || 'all';
+  const docs = filter === 'all' ? _myCorrs : _myCorrs.filter(d => d.status === filter);
+
+  const countEl = document.getElementById('myCorrCount');
+  if (countEl) countEl.textContent = `共 ${_myCorrs.length} 筆，顯示 ${docs.length} 筆`;
+
+  if (!docs.length) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>沒有符合的申請記錄</div>';
+    return;
+  }
+
+  const fieldLabels = {
+    checkinTime: '簽到時間', checkoutTime: '簽退時間',
+    hours: '備勤時數', count: '備勤次數', service: '服務人次',
+    dutyType: '類別', memberName: '義消姓名',
+    timeOut: '出勤時間', timeBack: '返勤時間',
+    date: '日期', district: '行政區', address: '地址',
+    caseType: '案由', services: '服務項目', serviceCount: '服務人次', note: '備註',
+    checkinSig: '簽到簽名', checkoutSig: '簽退簽名', signature: '義消簽名',
+  };
+
+  const statusBadgeMap = {
+    pending:  '<span style="background:#cfe2ff;color:#084298;border-radius:10px;padding:3px 10px;font-size:0.75rem;font-weight:600;">待審核</span>',
+    approved: '<span style="background:#d4edda;color:#1a6b35;border-radius:10px;padding:3px 10px;font-size:0.75rem;font-weight:600;">已核准</span>',
+    rejected: '<span style="background:#fde8e8;color:#b94a3a;border-radius:10px;padding:3px 10px;font-size:0.75rem;font-weight:600;">已拒絕</span>',
+  };
+
+  el.innerHTML = '';
+  docs.forEach(d => {
+    const card = document.createElement('div');
+    const statusColor = d.status === 'pending' ? '#9ec5fe' : d.status === 'approved' ? '#a3d9a5' : '#f5c6c6';
+    card.style.cssText = `background:white;border:1px solid ${statusColor};border-radius:10px;padding:16px;margin-bottom:12px;`;
+
+    const typeLabel = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
+    const cf = d.correctedFields || {};
+    const og = d.originals || {};
+    const sigKeys = ['checkinSig', 'checkoutSig', 'signature'];
+
+    let diffRows = '';
+    const allKeys = new Set([...Object.keys(cf), ...Object.keys(og)]);
+    allKeys.forEach(key => {
+      if (!cf[key] && !og[key]) return;
+      const label = fieldLabels[key] || key;
+      if (sigKeys.includes(key)) {
+        if (!cf[key]) return;
+        const oldSig = og[key] ? `<img src="${og[key]}" style="height:32px;border:1px solid #eee;border-radius:4px;background:#fafaf8;vertical-align:middle;">` : '<span style="color:var(--text-light);">未簽名</span>';
+        const newSig = `<img src="${cf[key]}" style="height:32px;border:1px solid #9ec5fe;border-radius:4px;background:#f0f4ff;vertical-align:middle;">`;
+        diffRows += `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+          <span style="width:72px;flex-shrink:0;font-size:0.75rem;color:var(--text-light);">${label}</span>
+          <span>${oldSig}</span>
+          <span style="color:var(--text-light);font-size:0.85rem;">→</span>
+          <span>${newSig}</span>
+        </div>`;
+      } else {
+        const oldVal = og[key] !== undefined ? String(og[key]) : '—';
+        const newVal = cf[key] !== undefined ? String(cf[key]) : '';
+        if (!newVal || oldVal === newVal) return;
+        diffRows += `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+          <span style="width:72px;flex-shrink:0;font-size:0.75rem;color:var(--text-light);">${label}</span>
+          <span style="font-size:0.82rem;text-decoration:line-through;color:var(--text-light);">${oldVal}</span>
+          <span style="color:var(--text-light);font-size:0.85rem;">→</span>
+          <span style="font-size:0.82rem;font-weight:600;color:#1a6b35;">${newVal}</span>
+        </div>`;
+      }
+    });
+    if (!diffRows) diffRows = '<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0;">（無欄位差異資料）</div>';
+
+    const submittedAt = d.submittedAt?.seconds
+      ? new Date(d.submittedAt.seconds * 1000).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '';
+    const handledAt = d.handledAt?.seconds
+      ? new Date(d.handledAt.seconds * 1000).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '';
+
+    const statusBadge = statusBadgeMap[d.status] || '';
+    const reasonTags = d.reasonTags ? `<span style="font-size:0.75rem;background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;">${d.reasonTags}</span>` : '';
+    const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:var(--text-light);margin-top:6px;">補充：${d.reason}</div>` : '';
+
+    let statusNote = '';
+    if (d.status === 'approved' && handledAt) statusNote = `<div style="font-size:0.75rem;color:#1a6b35;margin-top:8px;">✅ 已於 ${handledAt} 核准</div>`;
+    if (d.status === 'rejected' && handledAt) statusNote = `<div style="font-size:0.75rem;color:#b94a3a;margin-top:8px;">❌ 已於 ${handledAt} 拒絕</div>`;
+    if (d.status === 'pending') statusNote = `<div style="font-size:0.75rem;color:#084298;margin-top:8px;">⏳ 申請中，等待管理員審核</div>`;
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <span style="font-size:0.78rem;background:var(--warm);border-radius:4px;padding:2px 8px;">${typeLabel}</span>
+        ${statusBadge}
+        <span style="font-size:0.82rem;font-weight:700;">${d.date || ''}</span>
+        ${d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">簽到 ${d.checkinTime}</span>` : ''}
+        ${d.timeOut && !d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">出勤 ${d.timeOut}</span>` : ''}
+        ${submittedAt ? `<span style="font-size:0.72rem;color:var(--text-light);margin-left:auto;">送出 ${submittedAt}</span>` : ''}
+      </div>
+      ${reasonTags || reasonNote ? `<div style="margin-bottom:10px;">${reasonTags}${reasonNote}</div>` : ''}
+      <div style="background:var(--warm);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">申請修正內容</div>
+        ${diffRows}
+      </div>
+      ${statusNote}
+    `;
+    el.appendChild(card);
+  });
+}
 
 
 
