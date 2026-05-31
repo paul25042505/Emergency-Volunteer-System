@@ -1522,6 +1522,14 @@ function _dlCSV(content, filename) {
           <select id="easyCheckinTime"></select>
         </div>
         <div class="field">
+          <label>類別 <span class="req">*</span></label>
+          <div class="duty-toggle">
+            <button type="button" class="duty-btn active" id="easyDutyOut" onclick="setEasyCheckinDuty('協勤')">協勤</button>
+            <button type="button" class="duty-btn" id="easyDutyPub" onclick="setEasyCheckinDuty('公差')">公差</button>
+          </div>
+          <input type="hidden" id="easyCheckinDutyType" value="協勤">
+        </div>
+        <div class="field">
           <label>簽到簽名</label>
           <div class="sig-wrap">
             <canvas id="easyCheckinCanvas"></canvas>
@@ -1564,11 +1572,17 @@ function _dlCSV(content, filename) {
             <div style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
         </div>
-        <div class="field" style="margin-bottom:0;">
-            <label>服務人次</label>
-            <div id="easyServiceDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">0</div>
-            <input type="hidden" id="easyServiceCount" value="0">
+        <div class="field" style="margin-bottom:0;" id="easyServiceField">
+          <label>服務人次 <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
+            <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
+            <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="2" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">2</button>
+            <input type="number" id="easyServiceCount" min="0" step="1" value="1" placeholder="其他"
+              oninput="clearSvcBtns('easyServiceCount')"
+              style="flex:1;min-width:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:1rem;text-align:center;font-family:'Noto Sans TC',sans-serif;">
           </div>
+        </div>
         <div class="field">
           <label>簽退簽名</label>
           <div class="sig-wrap">
@@ -4646,6 +4660,11 @@ function setAttDuty(type) {
   document.getElementById('attDutyOut').classList.toggle('active', type === '協勤');
   document.getElementById('attDutyPub').classList.toggle('active', type === '公差');
   document.getElementById('attDutyType').value = type;
+}
+function setEasyCheckinDuty(type) {
+  document.getElementById('easyDutyOut').classList.toggle('active', type === '協勤');
+  document.getElementById('easyDutyPub').classList.toggle('active', type === '公差');
+  document.getElementById('easyCheckinDutyType').value = type;
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
 
@@ -9112,6 +9131,7 @@ function easyShowCheckin() {
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'none';
   buildTimeOptions('easyCheckinTime', roundTo15(new Date()));
+  setEasyCheckinDuty('協勤');
   _easyCheckinHasSig = false;
   setTimeout(() => easyInitCanvas('checkin'), 100);
 }
@@ -9144,8 +9164,11 @@ function easyOpenCheckout(key) {
   document.getElementById('easyCheckoutName').textContent = s.memberName || key;
   document.getElementById('easyCheckinRef').textContent = '簽到時間：' + (s.checkinTime || '');
   buildTimeOptions('easyCheckoutTime', roundTo15(new Date()));
-  const svcEl = document.getElementById('easyServiceCount'); if (svcEl) svcEl.value = '0';
   const hdEl = document.getElementById('easyHoursDisplay'); if (hdEl) hdEl.textContent = '—';
+  const isPub = (s.dutyType || '協勤') === '公差';
+  const svcField = document.getElementById('easyServiceField');
+  if (svcField) svcField.style.display = isPub ? 'none' : '';
+  setSvcBtnByVal('easyServiceCount', isPub ? 0 : 1);
   easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'block';
@@ -9241,13 +9264,14 @@ async function easyDoCheckin() {
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkinSig = _easyCheckinCtx.canvas.toDataURL('image/png');
   const date       = new Date().toLocaleDateString('sv');
+  const dutyType   = document.getElementById('easyCheckinDutyType')?.value || '協勤';
   const btn        = document.querySelector('.easy-submit-btn.do-checkin');
   btn.textContent  = '簽到中...'; btn.disabled = true;
 
   try {
     const tempKey = 'new_' + memberName + '_' + Date.now();
-    attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType: '協勤', done: false };
-    fbAdd(COL_ATTEND, { date, dutyType: '協勤', title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0 })
+    attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType, done: false };
+    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0 })
       .then(docId => { if (attSessions[tempKey]) { attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId }); delete attSessions[tempKey]; } }).catch(() => {});
 
     alert('✅ ' + memberName + ' 簽到成功！');
@@ -9267,7 +9291,7 @@ async function easyDoCheckout() {
   const session    = attSessions[_easyCheckoutTarget];
   const memberName = session.memberName || _easyCheckoutTarget;
   const hours      = calcHours(session.checkinTime, checkoutTime);
-  const service    = parseInt(document.getElementById('easyServiceCount')?.value) || 0;
+  const service    = (session.dutyType === '公差') ? 0 : (parseInt(document.getElementById('easyServiceCount')?.value) || 0);
   const date       = session.date || new Date().toLocaleDateString('sv');
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkoutSig = _easyCheckoutCtx.canvas.toDataURL('image/png');
