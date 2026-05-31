@@ -3910,6 +3910,46 @@ function buildTimeOptions(selId, selectedVal) {
   }
 }
 
+// 簽到時間選單：只顯示過去 60 分鐘內的時段，防止填寫過早時間
+function buildCheckinTimeOptions(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  sel.innerHTML = '';
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const curSlot  = Math.floor(nowMins / 15) * 15;
+  const startSlot = Math.max(6 * 60, curSlot - 60);
+  for (let t = startSlot; t <= curSlot; t += 15) {
+    const val = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = val;
+    sel.appendChild(opt);
+  }
+  if (sel.options.length > 0) sel.selectedIndex = sel.options.length - 1;
+}
+
+// 回傳簽到時間與目前時間相差幾分鐘（正值 = 早於現在）
+function checkinTimeDiffMins(timeVal) {
+  const now = new Date();
+  const [h, m] = timeVal.split(':').map(Number);
+  return now.getHours() * 60 + now.getMinutes() - (h * 60 + m);
+}
+
+// 時間異常警告對話框；回傳 true = 使用者確認繼續
+function warnCheckinTimeAdjust(timeVal, diffMins) {
+  const n = new Date();
+  const nowStr = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  return confirm(
+    `⚠️ 時間異常警告\n\n` +
+    `您填寫的簽到時間為 ${timeVal}，\n比目前系統時間（${nowStr}）早了 ${diffMins} 分鐘。\n\n` +
+    `送出後此筆紀錄將被標記為「時間異常」，\n` +
+    `系統會自動通知分隊承辦人及管理員進行核查。\n\n` +
+    `請確實記錄抵達時間，切勿提前填寫。\n` +
+    `違規填報將影響出勤紀錄正確性，管理員可查閱實際送出時間。\n\n` +
+    `確定要繼續送出嗎？`
+  );
+}
+
 // ════════════════════════════════════════
 // Navigation
 // ════════════════════════════════════════
@@ -5205,7 +5245,7 @@ async function initAttendancePage() {
 
   const now = new Date();
   document.getElementById('attDate').value = now.toLocaleDateString('sv');
-  buildTimeOptions('attCheckinTime', roundTo15(now));
+  buildCheckinTimeOptions('attCheckinTime');
   buildTimeOptions('attCheckoutTime', roundTo15(now));
 
   try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) { console.warn('loadMembers/Units:', e); }
@@ -5468,6 +5508,11 @@ async function doCheckin() {
     if (!confirm(`${memberName} 已有簽到紀錄（${attSessions[memberName].checkinTime}），要重新簽到嗎？`)) return;
   }
 
+  const _attTimeDiff = checkinTimeDiffMins(timeVal);
+  if (_attTimeDiff > 30) {
+    if (!warnCheckinTimeAdjust(timeVal, _attTimeDiff)) return;
+  }
+
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkinSig = attCheckinCtx.canvas.toDataURL('image/png');
   const date       = document.getElementById('attDate').value;
@@ -5477,6 +5522,8 @@ async function doCheckin() {
 
   try {
     const dutyTypeVal = document.getElementById('attDutyType')?.value || '協勤';
+    const _nowRecorded = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
+    const _timeAdjFields = _attTimeDiff > 30 ? { timeAdjusted: true, checkinRecordedAt: _nowRecorded } : {};
     // 先建立 tempKey session，讓 .then() 回呼能正確找到它
     const tempKey = 'new_' + memberName + '_' + Date.now();
     attSessions[tempKey] = {
@@ -5493,6 +5540,7 @@ async function doCheckin() {
     fbAdd(COL_ATTEND, {
       date, dutyType: dutyTypeVal, title: memberObj.title || '', memberName,
       checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0,
+      ..._timeAdjFields,
     }).then(docId => {
       // 將 tempKey 更新成真正的 Firestore docId
       if (attSessions[tempKey]) {
@@ -5509,7 +5557,7 @@ async function doCheckin() {
     setAttDuty('協勤');
     attCheckinHasSig = false;
     clearAttCanvas('checkin');
-    buildTimeOptions('attCheckinTime', roundTo15(new Date()));
+    buildCheckinTimeOptions('attCheckinTime');
     renderCheckinList();
     window.scrollTo({ top: document.getElementById('attCheckinList').offsetTop - 80, behavior: 'smooth' });
 
@@ -5799,7 +5847,7 @@ function renderAttQueryResults() {
         '<td style="white-space:nowrap;">'+duty+'</td>' +
         '<td style="white-space:nowrap;">'+name+'</td>' +
         '<td style="white-space:nowrap;">'+title+'</td>' +
-        '<td style="white-space:nowrap;">'+cin+'</td>' +
+        '<td style="white-space:nowrap;">'+cin+(r.timeAdjusted ? '&nbsp;<span title="⚠️ 時間異常，實際送出：'+(r.checkinRecordedAt||'不明')+'" style="cursor:help;color:#e65c00;">⚠️</span>' : '')+'</td>' +
         '<td style="white-space:nowrap;">'+cout+'</td>' +
         '<td style="text-align:center;padding:4px;">'+sigCell(cinSig,i,'checkinSig')+'</td>' +
         '<td style="text-align:center;padding:4px;">'+sigCell(coutSig,i,'checkoutSig')+'</td>' +
@@ -6940,7 +6988,7 @@ async function loadAdminAttendance() {
         <td style="${tds}white-space:nowrap;">${d.date||''}</td>
         <td style="${tds}white-space:nowrap;">${d.dutyType||'協勤'}</td>
         <td style="${tds}font-weight:500;white-space:nowrap;">${d.memberName||''}</td>
-        <td style="${tds}white-space:nowrap;">${d.checkinTime||''}</td>
+        <td style="${tds}white-space:nowrap;">${d.checkinTime||''}${d.timeAdjusted ? `&nbsp;<span title="⚠️ 時間異常！實際送出時間：${d.checkinRecordedAt||'不明'}" style="cursor:help;color:#e65c00;font-size:0.85rem;">⚠️</span>` : ''}</td>
         <td style="${tds}white-space:nowrap;">${d.checkoutTime||''}</td>
         <td style="${tds}text-align:center;">${d.hours||0}</td>
         <td style="${tds}text-align:center;">${d.count||0}</td>
@@ -9167,7 +9215,7 @@ function easyShowCheckin() {
   document.getElementById('easyCheckinCard').style.display = 'block';
   document.getElementById('easyCheckoutList').style.display = 'none';
   document.getElementById('easyCheckoutCard').style.display = 'none';
-  buildTimeOptions('easyCheckinTime', roundTo15(new Date()));
+  buildCheckinTimeOptions('easyCheckinTime');
   setEasyCheckinDuty('協勤');
   _easyCheckinHasSig = false;
   setTimeout(() => easyInitCanvas('checkin'), 100);
@@ -9343,6 +9391,11 @@ async function easyDoCheckin() {
   if (!timeVal)    { alert('請選擇簽到時間'); return; }
   if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
 
+  const _easyTimeDiff = checkinTimeDiffMins(timeVal);
+  if (_easyTimeDiff > 30) {
+    if (!warnCheckinTimeAdjust(timeVal, _easyTimeDiff)) return;
+  }
+
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkinSig = _easyCheckinCtx.canvas.toDataURL('image/png');
   const date       = new Date().toLocaleDateString('sv');
@@ -9351,9 +9404,11 @@ async function easyDoCheckin() {
   btn.textContent  = '簽到中...'; btn.disabled = true;
 
   try {
+    const _easyNowRecorded = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
+    const _easyTimeAdjFields = _easyTimeDiff > 30 ? { timeAdjusted: true, checkinRecordedAt: _easyNowRecorded } : {};
     const tempKey = 'new_' + memberName + '_' + Date.now();
     attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType, done: false };
-    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0 })
+    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0, ..._easyTimeAdjFields })
       .then(docId => { if (attSessions[tempKey]) { attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId }); delete attSessions[tempKey]; } }).catch(() => {});
 
     alert('✅ ' + memberName + ' 簽到成功！');
