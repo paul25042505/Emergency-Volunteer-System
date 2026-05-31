@@ -9998,7 +9998,7 @@ async function toggleMeetingStats(btn) {
   if (!panel) return;
   const isOpen = panel.style.display !== 'none';
   panel.style.display = isOpen ? 'none' : 'block';
-  if (btn) btn.textContent = isOpen ? '📊 本年度出席統計' : '📊 本年度出席統計 ▲';
+  if (btn) btn.textContent = '📊 本年度出席統計';
   if (!isOpen) await renderMeetingStats();
 }
 
