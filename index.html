@@ -894,7 +894,6 @@ function _dlCSV(content, filename) {
         <div id="dashDateTimeWrap" style="display:flex;flex-direction:column;width:100%;">
           <div style="flex:1;">
             <div id="dashInfoDate" style="font-size:0.82rem;font-weight:600;color:var(--text-light);font-family:'Noto Serif TC',serif;letter-spacing:0.02em;line-height:1.5;"></div>
-            <div id="dashInfoLunar" style="font-size:0.75rem;color:var(--text-light);margin-top:1px;font-family:'Noto Serif TC',serif;line-height:1.5;"></div>
           </div>
           <div id="dashInfoTime" style="font-size:2rem;font-weight:700;color:var(--text);letter-spacing:0.04em;font-variant-numeric:tabular-nums;line-height:1;margin-top:6px;"></div>
         </div>
@@ -4279,14 +4278,8 @@ function startDashClock() {
     const now = new Date();
     const dateEl  = document.getElementById('dashInfoDate');
     const timeEl  = document.getElementById('dashInfoTime');
-    const lunarEl = document.getElementById('dashInfoLunar');
     if (dateEl) dateEl.textContent = now.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
     if (timeEl) timeEl.textContent = now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-    if (lunarEl) {
-      const lunar = getLunarDate(now);
-      const term  = getSolarTerm(now);
-      lunarEl.textContent = term ? lunar + '　【' + term + '】' : lunar;
-    }
   }
   update();
   clearInterval(_dashClockTimer);
