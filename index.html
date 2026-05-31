@@ -1573,15 +1573,9 @@ function _dlCSV(content, filename) {
           </div>
         </div>
         <div class="field" style="margin-bottom:0;" id="easyServiceField">
-          <label>服務人次 <span class="req">*</span></label>
-          <div style="display:flex;gap:8px;margin-top:4px;">
-            <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
-            <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
-            <button type="button" class="svc-btn" data-target="easyServiceCount" data-val="2" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">2</button>
-            <input type="number" id="easyServiceCount" min="0" step="1" value="0" placeholder="其他"
-              oninput="clearSvcBtns('easyServiceCount')"
-              style="flex:1;min-width:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:1rem;text-align:center;font-family:'Noto Sans TC',sans-serif;">
-          </div>
+          <label>服務人次</label>
+          <input type="number" id="easyServiceCount" min="0" step="1" value="0"
+            style="width:100%;font-size:1rem;padding:10px 13px;border:1px solid var(--border);border-radius:8px;text-align:center;font-family:'Noto Sans TC',sans-serif;background:#fff;">
         </div>
         <div class="field">
           <label>簽退簽名</label>
@@ -9171,7 +9165,8 @@ function easyOpenCheckout(key) {
   const isPub = (s.dutyType || '協勤') === '公差';
   const svcField = document.getElementById('easyServiceField');
   if (svcField) svcField.style.display = isPub ? 'none' : '';
-  setSvcBtnByVal('easyServiceCount', 0);
+  const svcInput = document.getElementById('easyServiceCount');
+  if (svcInput) svcInput.value = '0';
   const cntEl = document.getElementById('easyCountDisplay');
   if (cntEl) cntEl.textContent = isPub ? '0' : '1';
   easyAutoCalcHours(); // 立即根據當前簽退時間計算時數
