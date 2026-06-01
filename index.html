@@ -5087,19 +5087,17 @@ function rdEditAtt() {
   const block = document.getElementById('rdAttBlock');
   if (!block) return;
   const a = window._rdData.attDoc || {};
-  const iS = 'border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:0.82rem;font-family:"Noto Sans TC",sans-serif;box-sizing:border-box;';
-  const savS = 'background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82rem;font-family:"Noto Sans TC",sans-serif;';
-  const canS = 'background:none;border:1px solid #ccc;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.82rem;font-family:"Noto Sans TC",sans-serif;';
+  const iS = 'width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:"Noto Sans TC",sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;';
   block.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">簽到</div><input id="rdAtt-cin" value="${a.checkinTime||''}" style="${iS}width:100%;" placeholder="HH:MM"></div>
-      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">簽退</div><input id="rdAtt-cout" value="${a.checkoutTime||''}" style="${iS}width:100%;" placeholder="HH:MM"></div>
-      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">出勤次數</div><input id="rdAtt-cnt" value="${a.count||0}" style="${iS}width:100%;" type="number" min="0"></div>
-      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">服務人次</div><input id="rdAtt-svc" value="${a.service||0}" style="${iS}width:100%;" type="number" min="0"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">簽到</div><input id="rdAtt-cin"  value="${a.checkinTime||''}"  style="${iS}" placeholder="HH:MM" inputmode="numeric"></div>
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">簽退</div><input id="rdAtt-cout" value="${a.checkoutTime||''}" style="${iS}" placeholder="HH:MM" inputmode="numeric"></div>
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">出勤次數</div><input id="rdAtt-cnt" value="${a.count||0}"   style="${iS}" type="number" min="0" inputmode="numeric"></div>
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">服務人次</div><input id="rdAtt-svc" value="${a.service||0}"  style="${iS}" type="number" min="0" inputmode="numeric"></div>
     </div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="rdSaveAtt()" style="${savS}">儲存</button>
-      <button onclick="rdCancelEdit()" style="${canS}">取消</button>
+    <div style="display:flex;gap:10px;">
+      <button onclick="rdSaveAtt()" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;">儲存</button>
+      <button onclick="rdCancelEdit()" style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;">取消</button>
     </div>`;
 }
 
@@ -5120,16 +5118,18 @@ function rdEditOut(idx) {
   const row = document.getElementById(`rdOutRow-${idx}`);
   if (!row) return;
   const o = window._rdData.outDocs[idx];
-  const iS = 'border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:0.78rem;font-family:"Noto Sans TC",sans-serif;height:30px;box-sizing:border-box;';
-  const savS = 'background:var(--red);color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;margin-right:4px;height:30px;';
-  const canS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;height:30px;';
-  row.innerHTML = `
-    <td style="padding:4px 6px;"><input id="rdOut-t-${idx}" value="${o.timeOut||''}" style="${iS}width:56px;" placeholder="HH:MM"></td>
-    <td style="padding:4px 6px;"><input id="rdOut-ct-${idx}" value="${o.caseType||''}" style="${iS}width:70px;"></td>
-    <td style="padding:4px 6px;text-align:center;"><input id="rdOut-svc-${idx}" value="${o.serviceCount ?? ''}" style="${iS}width:44px;" type="number" min="0" placeholder="—"></td>
-    <td></td>
-    <td style="padding:4px 6px;white-space:nowrap;">
-      <button onclick="rdSaveOut(${idx})" style="${savS}">儲存</button>
+  const iS = 'width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:"Noto Sans TC",sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;';
+  row.innerHTML = `<td colspan="5" style="padding:8px 4px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;margin-bottom:10px;">
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">出勤時間</div><input id="rdOut-t-${idx}"   value="${o.timeOut||''}"        style="${iS}" placeholder="HH:MM" inputmode="numeric"></div>
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">案由</div><input     id="rdOut-ct-${idx}"  value="${o.caseType||''}"       style="${iS}"></div>
+      <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">服務人次</div><input id="rdOut-svc-${idx}" value="${o.serviceCount??''}"   style="${iS}" type="number" min="0" inputmode="numeric" placeholder="—"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="rdSaveOut(${idx})" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;">儲存</button>
+      <button onclick="rdCancelEdit()"    style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;">取消</button>
+    </div>
+  </td>`;
       <button onclick="rdCancelEdit()" style="${canS}">取消</button>
     </td>`;
 }
