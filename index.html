@@ -11286,8 +11286,8 @@ async function loadAdminCorrections() {
       try {
         const col = d.type === 'outing' ? COL_OUTING : COL_ATTEND;
         const orig = await fbGet(col, d.docId);
-        console.log('[corrSig] docId=', d.docId, 'orig=', orig ? {checkinSig: orig.checkinSig?.slice?.(0,30), checkoutSig: orig.checkoutSig?.slice?.(0,30)} : null);
         if (orig) docSigCache[d.docId] = { checkinSig: orig.checkinSig||'', checkoutSig: orig.checkoutSig||'', signature: orig.signature||'' };
+        else docSigCache[d.docId] = { _notFound: true };
       } catch(e) { /* 原始紀錄可能已刪除 */ }
     }));
 
@@ -11307,15 +11307,19 @@ async function loadAdminCorrections() {
       const typeLabel = isDeleteReq
         ? (d.type === 'outing' ? '🗑️ 刪除申請・協勤' : '🗑️ 刪除申請・簽到退')
         : (d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄');
-      const cf = d.correctedFields || {};
       // 相容舊格式（key 為 form element ID）與新格式（key 為真實欄位名）
       const _OG_MAP = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service', corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
+      const cf = Object.fromEntries(Object.entries(d.correctedFields||{}).map(([k,v])=>[_OG_MAP[k]||k, v]));
       const og = Object.fromEntries(Object.entries(d.originals||{}).map(([k,v])=>[_OG_MAP[k]||k, v]));
       // 用實際原始紀錄補全簽名（originals 可能沒存簽名）
       const liveSigs = docSigCache[d.docId] || {};
       if (!og.checkinSig  && liveSigs.checkinSig)  og.checkinSig  = liveSigs.checkinSig;
       if (!og.checkoutSig && liveSigs.checkoutSig) og.checkoutSig = liveSigs.checkoutSig;
       if (!og.signature   && liveSigs.signature)   og.signature   = liveSigs.signature;
+      // 偵錯：顯示 docId 及簽名抓取狀態（診斷簽名顯示問題）
+      const _dbgDocId = d.docId ? d.docId.slice(0,8) : '（無）';
+      const _dbgLive  = !d.docId ? '無docId' : liveSigs._notFound ? '找不到紀錄' : (liveSigs.checkinSig||liveSigs.signature) ? '✓有簽名' : Object.keys(liveSigs).length ? '無簽名' : '載入失敗';
+      const _dbgOgSig = og.checkinSig||og.signature ? '✓' : '✗';
 
       // 產生修正對比列表
       const sigKeys = ['checkinSig','checkoutSig','signature'];
@@ -11369,6 +11373,7 @@ async function loadAdminCorrections() {
           <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">修正對比</div>
           ${diffRows}
         </div>
+        <div style="font-size:0.68rem;color:#aaa;padding:2px 0 6px;">🔍 docId:${_dbgDocId} | 即時簽名:${_dbgLive} | 原始簽名:${_dbgOgSig}</div>
         ${isPending ? `
         <div style="display:flex;gap:8px;margin-top:4px;">
           <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
@@ -11531,8 +11536,9 @@ function renderMyCorrections() {
     const typeLabel = isDelReq
       ? (d.type === 'outing' ? '🗑️ 刪除申請・協勤' : '🗑️ 刪除申請・簽到退')
       : (d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄');
-    const cf = d.correctedFields || {};
-    const og = d.originals || {};
+    const _MY_MAP = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service', corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
+    const cf = Object.fromEntries(Object.entries(d.correctedFields||{}).map(([k,v])=>[_MY_MAP[k]||k, v]));
+    const og = Object.fromEntries(Object.entries(d.originals||{}).map(([k,v])=>[_MY_MAP[k]||k, v]));
     const sigKeys = ['checkinSig', 'checkoutSig', 'signature'];
 
     let diffRows = '';
