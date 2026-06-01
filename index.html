@@ -5262,7 +5262,7 @@ async function rdMergeAtt(otherAttId) {
     + `此動作無法復原。`;
   if (!confirm(msg)) return;
   try {
-    await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout });
+    await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout, checkoutSig: later.checkinSig || '' });
     await fbDelete(COL_ATTEND, dropId);
     await syncAttServiceForDate(memberName, date);
     repairShowDetail(memberName, date, keepId, opts||{});
