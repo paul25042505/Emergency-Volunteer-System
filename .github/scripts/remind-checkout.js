@@ -70,10 +70,12 @@ function getTWDateStr(offsetDays = 0) {
 
 async function main() {
   const twHour = new Date(Date.now() + 8 * 3600000).getUTCHours();
-  const today    = getTWDateStr(0);
-  const tomorrow = getTWDateStr(1);
+  // 若 GitHub Actions 延遲到隔天凌晨 0~5 點才執行，視為前一天夜間的補發
+  const dateOffset = (twHour >= 0 && twHour < 6) ? -1 : 0;
+  const today    = getTWDateStr(dateOffset);
+  const tomorrow = getTWDateStr(dateOffset + 1);
 
-  console.log(`台灣時間：${twHour}:xx　今日：${today}　明日：${tomorrow}`);
+  console.log(`台灣時間：${twHour}:xx　日期偏移：${dateOffset}　今日：${today}　明日：${tomorrow}`);
   console.log(`LINE_CHANNEL_ACCESS_TOKEN：${LINE_ACCESS_TOKEN ? '已設定 ✓' : '❌ 未設定！'}`);
   if (!LINE_ACCESS_TOKEN) { console.error('❌ 缺少 LINE_CHANNEL_ACCESS_TOKEN，無法發送通知！'); process.exit(1); }
 
