@@ -5267,9 +5267,11 @@ function renderQueryResults(records) {
         const _idQ2 = r.id||'';
         actionCell = '<button onclick="adminEditOut(&quot;'+_idQ2+'&quot;)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">✏️ 編輯</button>';
       } else if (isOwnerQ && within24Q) {
-        actionCell = '<button onclick="openOutingEdit('+i+')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">✏️ 編輯</button>';
+        actionCell = '<button onclick="openOutingEdit('+i+')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;margin-right:4px;">✏️ 編輯</button>'
+          +'<button onclick="deleteOwnOut('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 刪除</button>';
       } else if (isOwnerQ) {
-        actionCell = '<button data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;">📝 申請修正</button>';
+        actionCell = '<button data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;margin-right:4px;">📝 申請修正</button>'
+          +'<button onclick="requestDeleteOut('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 申請刪除</button>';
       }
       return '<tr>' +
         '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+seqNum+'</td>' +
@@ -5927,7 +5929,7 @@ function renderAttQueryResults() {
           +'<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
       } else if (isOwnerAq) {
         aqActionBtn = '<button data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;margin-right:4px;">📝 申請修正</button>'
-          +'<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
+          +'<button class="att-member-btn" onclick="requestDeleteAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 申請刪除</button>';
       }
       return '<tr>' +
         '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+(i+1)+'</td>' +
@@ -6028,6 +6030,59 @@ async function deleteOwnAtt(idx) {
     await fbDelete(COL_ATTEND, r.id);
     await doAttQuery();
   } catch(e) { alert('刪除失敗：'+e.message); }
+}
+
+async function deleteOwnOut(idx) {
+  const recs = filteredRecords;
+  const r = recs[idx];
+  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  const label = `${r.date||''} ${r.memberName||''} ${r.timeOut||''}出勤`;
+  if (!confirm(`確定刪除「${label}」這筆出勤紀錄？\n此操作無法復原。`)) return;
+  try {
+    await fbDelete(COL_OUTING, r.id);
+    await doQuery();
+  } catch(e) { alert('刪除失敗：'+e.message); }
+}
+
+async function requestDeleteAtt(idx) {
+  const r = aqFiltered[idx];
+  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  const label = `${r.date||''} ${r.memberName||''} 簽到 ${r.checkinTime||''}`;
+  if (!confirm(`超過 24 小時的紀錄需送審才能刪除。\n\n申請刪除「${label}」？\n審核通過後將由承辦人執行刪除。`)) return;
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  try {
+    await fbAdd(COL_CORRECTION, {
+      type: 'attendance', requestType: 'delete', docId: r.id,
+      memberName: r.memberName||'', date: r.date||'', checkinTime: r.checkinTime||'',
+      originals: { checkinTime: r.checkinTime, checkoutTime: r.checkoutTime, dutyType: r.dutyType },
+      correctedFields: {}, reasonTags: '申請刪除', reason: '',
+      status: 'pending',
+      submittedBy: usr.memberName||usr.name||'',
+      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    alert('✅ 刪除申請已送出，承辦人審核後執行。');
+  } catch(e) { alert('送出失敗：'+e.message); }
+}
+
+async function requestDeleteOut(idx) {
+  const recs = filteredRecords;
+  const r = recs[idx];
+  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  const label = `${r.date||''} ${r.memberName||''} 出勤 ${r.timeOut||''}`;
+  if (!confirm(`超過 24 小時的紀錄需送審才能刪除。\n\n申請刪除「${label}」？\n審核通過後將由承辦人執行刪除。`)) return;
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  try {
+    await fbAdd(COL_CORRECTION, {
+      type: 'outing', requestType: 'delete', docId: r.id,
+      memberName: r.memberName||'', date: r.date||'', timeOut: r.timeOut||'',
+      originals: { timeOut: r.timeOut, timeBack: r.timeBack, address: r.address, caseType: r.caseType },
+      correctedFields: {}, reasonTags: '申請刪除', reason: '',
+      status: 'pending',
+      submittedBy: usr.memberName||usr.name||'',
+      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    alert('✅ 刪除申請已送出，承辦人審核後執行。');
+  } catch(e) { alert('送出失敗：'+e.message); }
 }
 
 async function saveAttEdit() {
@@ -11143,7 +11198,10 @@ async function loadAdminCorrections() {
         rejected: '<span style="background:#fde8e8;color:#b94a3a;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">已拒絕</span>',
       }[d.status] || '';
 
-      const typeLabel = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
+      const isDeleteReq = d.requestType === 'delete';
+      const typeLabel = isDeleteReq
+        ? (d.type === 'outing' ? '🗑️ 刪除申請・協勤' : '🗑️ 刪除申請・簽到退')
+        : (d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄');
       const cf = d.correctedFields || {};
       const og = d.originals || {};
 
@@ -11203,7 +11261,7 @@ async function loadAdminCorrections() {
         <div style="display:flex;gap:8px;margin-top:4px;">
           <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
             style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:9px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            ✅ 核准並前往修改
+            ${isDeleteReq ? '✅ 核准刪除' : '✅ 核准並前往修改'}
           </button>
           <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','rejected')"
             style="flex:1;background:white;color:#b94a3a;border:1px solid #f5c6c6;border-radius:6px;padding:9px;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
@@ -11226,8 +11284,17 @@ async function handleCorrection(corrId, docId, type, action) {
     });
 
     if (action === 'approved' && docId) {
-      // 用 fbGet 取申請單（比直接用 _fbDB 更安全）
       const corrData = await fbGet(COL_CORRECTION, corrId);
+
+      // 刪除申請：直接刪除原始紀錄
+      if (corrData && corrData.requestType === 'delete') {
+        const col = type === 'outing' ? COL_OUTING : COL_ATTEND;
+        await fbDelete(col, docId);
+        await loadAdminCorrections();
+        alert('✅ 已核准並刪除該筆紀錄。');
+        return;
+      }
+
       const fields = (corrData && corrData.correctedFields) || {};
 
       // 先開啟編輯 Modal
@@ -11348,7 +11415,10 @@ function renderMyCorrections() {
     const statusColor = d.status === 'pending' ? '#9ec5fe' : d.status === 'approved' ? '#a3d9a5' : '#f5c6c6';
     card.style.cssText = `background:white;border:1px solid ${statusColor};border-radius:10px;padding:16px;margin-bottom:12px;`;
 
-    const typeLabel = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
+    const isDelReq  = d.requestType === 'delete';
+    const typeLabel = isDelReq
+      ? (d.type === 'outing' ? '🗑️ 刪除申請・協勤' : '🗑️ 刪除申請・簽到退')
+      : (d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄');
     const cf = d.correctedFields || {};
     const og = d.originals || {};
     const sigKeys = ['checkinSig', 'checkoutSig', 'signature'];
@@ -11409,7 +11479,7 @@ function renderMyCorrections() {
       </div>
       ${reasonTags || reasonNote ? `<div style="margin-bottom:10px;">${reasonTags}${reasonNote}</div>` : ''}
       <div style="background:var(--warm);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-        <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">申請修正內容</div>
+        <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">${isDelReq ? '申請刪除紀錄' : '申請修正內容'}</div>
         ${diffRows}
       </div>
       ${statusNote}
