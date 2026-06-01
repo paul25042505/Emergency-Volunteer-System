@@ -5081,20 +5081,48 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
     html += `<div id="rdAttBlock" style="background:var(--warm);border-radius:8px;padding:10px 14px;margin-bottom:14px;">`;
     if (!attDoc) {
       html += '<span style="font-size:0.82rem;color:var(--text-light);">無簽到退紀錄</span>';
+    } else if (opts.hideOutings && otherAttDocs.length > 0) {
+      // Lookup/merge mode with duplicates — show all records + merge preview
+      const allAttSorted = [attDoc, ...otherAttDocs]
+        .sort((a,b) => (a.checkinTime||'99:99') <= (b.checkinTime||'99:99') ? -1 : 1);
+      const earliest = allAttSorted[0];
+      const latest   = allAttSorted[allAttSorted.length - 1];
+      // the "other" to pass to rdMergeAtt: the later one (will be deleted)
+      const mergeOther = otherAttDocs.find(a => a.id === latest.id) || otherAttDocs[0];
+      const mergeOtherEsc = mergeOther.id.replace(/'/g,"\\'");
+
+      html += `<div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">備勤紀錄（共 ${allAttSorted.length} 筆）</div>`;
+      allAttSorted.forEach((a, i) => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #e5e0d8;">
+          <div>
+            <span style="font-size:0.7rem;color:var(--text-light);margin-right:6px;">筆 ${i+1}</span>
+            <span style="font-size:0.88rem;font-weight:600;">簽到 ${a.checkinTime||'??:??'}</span>
+            <span style="color:var(--text-light);margin:0 4px;font-size:0.82rem;">→</span>
+            <span style="font-size:0.88rem;${a.checkoutTime?'':'color:#b94a3a;'}">簽退 ${a.checkoutTime||'未填'}</span>
+          </div>
+        </div>`;
+      });
+      html += `<div style="margin-top:12px;background:#dbeeff;border-radius:8px;padding:12px;">
+        <div style="font-size:0.75rem;color:#1a5276;margin-bottom:6px;font-weight:600;">合併後結果</div>
+        <div style="font-size:1rem;font-weight:700;color:#1a5276;margin-bottom:4px;">
+          ${earliest.checkinTime||'??:??'} ~ ${latest.checkinTime||'??:??'}
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:10px;">
+          保留「${earliest.checkinTime||'??:??'}」那筆・刪除「${latest.checkinTime||'??:??'}」那筆
+        </div>
+        <button onclick="rdMergeAtt('${mergeOtherEsc}')" style="width:100%;background:#1a5276;color:white;border:none;border-radius:8px;padding:11px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+          🔗 確認合併
+        </button>
+      </div>`;
     } else {
+      // Normal mode (or lookup with no duplicate)
       html += `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
         <div style="font-size:0.82rem;">
           <span style="font-weight:600;">備勤：</span>${attDoc.checkinTime||'??:??'} ~ ${attDoc.checkoutTime||'??:??'}
           &nbsp;｜&nbsp;目前 出勤 <strong>${attDoc.count??'—'}</strong> 次・服務 <strong>${attDoc.service??'—'}</strong> 人
           &nbsp;→&nbsp;<span style="color:#1a6b9a;">修後 出勤 <strong>${stats.count}</strong> 次・服務 <strong>${stats.service}</strong> 人</span>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-          <button onclick="rdEditAtt()" style="${eBtnS}">✏️ 編輯</button>
-          ${otherAttDocs.map(oa => {
-            const oaEsc = oa.id.replace(/'/g,"\\'");
-            return `<button onclick="rdMergeAtt('${oaEsc}')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:&quot;Noto Sans TC&quot;,sans-serif;color:#1a5276;white-space:nowrap;">🔗 合併：以 ${oa.checkinTime||'??:??'} 為簽退</button>`;
-          }).join('')}
-        </div>
+        <button onclick="rdEditAtt()" style="${eBtnS}">✏️ 編輯</button>
       </div>`;
     }
     html += `</div>`;
