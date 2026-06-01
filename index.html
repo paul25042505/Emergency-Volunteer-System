@@ -5264,6 +5264,7 @@ async function rdMergeAtt(otherAttId) {
   try {
     await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout });
     await fbDelete(COL_ATTEND, dropId);
+    await syncAttServiceForDate(memberName, date);
     repairShowDetail(memberName, date, keepId, opts||{});
   } catch(e) { alert('合併失敗：' + e.message); }
 }
