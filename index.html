@@ -5116,13 +5116,17 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
       </div>`;
     } else {
       // Normal mode (or lookup with no duplicate)
+      const missingSig = attDoc.checkinSig && !attDoc.checkoutSig;
       html += `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
         <div style="font-size:0.82rem;">
           <span style="font-weight:600;">備勤：</span>${attDoc.checkinTime||'??:??'} ~ ${attDoc.checkoutTime||'??:??'}
           &nbsp;｜&nbsp;目前 出勤 <strong>${attDoc.count??'—'}</strong> 次・服務 <strong>${attDoc.service??'—'}</strong> 人
           &nbsp;→&nbsp;<span style="color:#1a6b9a;">修後 出勤 <strong>${stats.count}</strong> 次・服務 <strong>${stats.service}</strong> 人</span>
         </div>
-        <button onclick="rdEditAtt()" style="${eBtnS}">✏️ 編輯</button>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button onclick="rdEditAtt()" style="${eBtnS}">✏️ 編輯</button>
+          ${missingSig ? `<button onclick="rdCopyCheckinSig()" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:&quot;Noto Sans TC&quot;,sans-serif;color:#1a5276;white-space:nowrap;">📋 補充簽退簽名</button>` : ''}
+        </div>
       </div>`;
     }
     html += `</div>`;
@@ -5218,6 +5222,16 @@ function rdCancelEdit() {
   repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId, window._rdData.opts||{});
 }
 
+async function rdCopyCheckinSig() {
+  const { memberName, date, attDocId, attDoc, opts } = window._rdData;
+  if (!attDoc?.checkinSig) return;
+  if (!confirm('將簽到簽名複製為簽退簽名？')) return;
+  try {
+    await fbUpdate(COL_ATTEND, attDoc.id, { checkoutSig: attDoc.checkinSig });
+    repairShowDetail(memberName, date, attDocId, opts||{});
+  } catch(e) { alert('更新失敗：' + e.message); }
+}
+
 function repairLookupInitUnits() {
   const sel = document.getElementById('repairLookupUnit');
   if (!sel) return;
@@ -5262,7 +5276,7 @@ async function rdMergeAtt(otherAttId) {
     + `此動作無法復原。`;
   if (!confirm(msg)) return;
   try {
-    await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout, checkoutSig: later.checkinSig || '' });
+    await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout, checkoutSig: later.checkinSig || earlier.checkinSig || '' });
     await fbDelete(COL_ATTEND, dropId);
     await syncAttServiceForDate(memberName, date);
     repairShowDetail(memberName, date, keepId, opts||{});
