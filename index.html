@@ -4991,20 +4991,24 @@ async function repairAllAttService(btn) {
 
 async function repairShowDetail(memberName, date) {
   let modal = document.getElementById('repairDetailModal');
-  if (modal) modal.remove();
-  modal = document.createElement('div');
-  modal.id = 'repairDetailModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
-  modal.onclick = e => { if (e.target === modal) modal.remove(); };
-  modal.innerHTML = '<div style="background:white;border-radius:12px;max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:20px;box-sizing:border-box;"><div style="font-size:0.82rem;color:var(--text-mid);">載入中...</div></div>';
-  document.body.appendChild(modal);
+  if (modal) { modal.querySelector('div').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);padding:20px;">載入中...</div>'; }
+  else {
+    modal = document.createElement('div');
+    modal.id = 'repairDetailModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = '<div style="background:white;border-radius:12px;max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:20px;box-sizing:border-box;"><div style="font-size:0.82rem;color:var(--text-mid);">載入中...</div></div>';
+    document.body.appendChild(modal);
+  }
   try {
     const [attDocs, outDocs] = await Promise.all([
       fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]),
       fbQuery(COL_OUTING,  [['memberName','==',memberName],['date','==',date]]),
     ]);
+    window._rdData = { memberName, date, attDocs, outDocs };
     const att = attDocs[0] || {};
     const cin = att.checkinTime || '', cout = att.checkoutTime || '';
+    const eBtnS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;color:#555;';
     let html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
       <div><div style="font-size:1rem;font-weight:700;">${memberName}</div><div style="font-size:0.82rem;color:var(--text-mid);">${date}</div></div>
       <button onclick="document.getElementById('repairDetailModal').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-mid);line-height:1;">✕</button>
@@ -5014,13 +5018,14 @@ async function repairShowDetail(memberName, date) {
       html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;margin-bottom:14px;">無記錄</div>';
     } else {
       html += '<div style="overflow-x:auto;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
-      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">簽到</th><th style="padding:6px 8px;text-align:left;">簽退</th><th style="padding:6px 8px;text-align:center;">出勤次數</th><th style="padding:6px 8px;text-align:center;">服務人次</th></tr></thead><tbody>';
-      attDocs.forEach(a => {
-        html += `<tr style="border-bottom:1px solid var(--border);">
+      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">簽到</th><th style="padding:6px 8px;text-align:left;">簽退</th><th style="padding:6px 8px;text-align:center;">出勤次數</th><th style="padding:6px 8px;text-align:center;">服務人次</th><th></th></tr></thead><tbody>';
+      attDocs.forEach((a, i) => {
+        html += `<tr id="rdAttRow-${i}" style="border-bottom:1px solid var(--border);">
           <td style="padding:6px 8px;">${a.checkinTime||'—'}</td>
           <td style="padding:6px 8px;">${a.checkoutTime||'—'}</td>
           <td style="padding:6px 8px;text-align:center;">${a.count ?? '—'}</td>
           <td style="padding:6px 8px;text-align:center;">${a.service ?? '—'}</td>
+          <td style="padding:6px 8px;text-align:center;"><button onclick="rdEditAtt(${i})" style="${eBtnS}">✏️</button></td>
         </tr>`;
       });
       html += '</tbody></table></div>';
@@ -5030,8 +5035,8 @@ async function repairShowDetail(memberName, date) {
       html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;">無記錄</div>';
     } else {
       html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
-      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">出勤時間</th><th style="padding:6px 8px;text-align:left;">案由</th><th style="padding:6px 8px;text-align:center;">服務人次</th><th style="padding:6px 8px;text-align:center;">計入</th></tr></thead><tbody>';
-      outDocs.forEach(o => {
+      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">出勤時間</th><th style="padding:6px 8px;text-align:left;">案由</th><th style="padding:6px 8px;text-align:center;">服務人次</th><th style="padding:6px 8px;text-align:center;">計入</th><th></th></tr></thead><tbody>';
+      outDocs.forEach((o, i) => {
         const isKp = o.caseType === '空跑';
         const t = o.timeOut || '';
         const inWin = !isKp && (!cin || !t || (cout ? (t >= cin && t <= cout) : t >= cin));
@@ -5041,11 +5046,12 @@ async function repairShowDetail(memberName, date) {
             ? '<span style="background:#d4edda;color:#1a6b35;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✓</span>'
             : '<span style="background:#f8d7da;color:#b94a3a;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✗</span>';
         const dim = (!inWin && !isKp) ? 'color:var(--text-light);' : '';
-        html += `<tr style="border-bottom:1px solid var(--border);${dim}">
+        html += `<tr id="rdOutRow-${i}" style="border-bottom:1px solid var(--border);${dim}">
           <td style="padding:6px 8px;">${o.timeOut||'—'}</td>
           <td style="padding:6px 8px;">${o.caseType||'—'}</td>
           <td style="padding:6px 8px;text-align:center;">${o.serviceCount ?? '—'}</td>
           <td style="padding:6px 8px;text-align:center;">${badge}</td>
+          <td style="padding:6px 8px;text-align:center;"><button onclick="rdEditOut(${i})" style="${eBtnS}">✏️</button></td>
         </tr>`;
       });
       html += '</tbody></table></div>';
@@ -5054,6 +5060,72 @@ async function repairShowDetail(memberName, date) {
   } catch(e) {
     modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">❌ 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
   }
+}
+
+function rdEditAtt(idx) {
+  const row = document.getElementById(`rdAttRow-${idx}`);
+  if (!row) return;
+  const a = window._rdData.attDocs[idx];
+  const iS = 'border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:0.78rem;font-family:"Noto Sans TC",sans-serif;';
+  const savS = 'background:var(--red);color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;margin-right:4px;';
+  const canS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;';
+  row.innerHTML = `
+    <td style="padding:4px 6px;"><input id="rdAtt-cin-${idx}" value="${a.checkinTime||''}" style="${iS}width:56px;" placeholder="HH:MM"></td>
+    <td style="padding:4px 6px;"><input id="rdAtt-cout-${idx}" value="${a.checkoutTime||''}" style="${iS}width:56px;" placeholder="HH:MM"></td>
+    <td style="padding:4px 6px;text-align:center;"><input id="rdAtt-cnt-${idx}" value="${a.count||0}" style="${iS}width:42px;" type="number" min="0"></td>
+    <td style="padding:4px 6px;text-align:center;"><input id="rdAtt-svc-${idx}" value="${a.service||0}" style="${iS}width:42px;" type="number" min="0"></td>
+    <td style="padding:4px 6px;white-space:nowrap;">
+      <button onclick="rdSaveAtt(${idx})" style="${savS}">儲存</button>
+      <button onclick="rdCancelEdit()" style="${canS}">取消</button>
+    </td>`;
+}
+
+async function rdSaveAtt(idx) {
+  const a   = window._rdData.attDocs[idx];
+  const cin  = document.getElementById(`rdAtt-cin-${idx}`)?.value.trim()  || '';
+  const cout = document.getElementById(`rdAtt-cout-${idx}`)?.value.trim() || '';
+  const cnt  = parseInt(document.getElementById(`rdAtt-cnt-${idx}`)?.value)  || 0;
+  const svc  = parseInt(document.getElementById(`rdAtt-svc-${idx}`)?.value)  || 0;
+  try {
+    await fbUpdate(COL_ATTEND, a.id, { checkinTime: cin, checkoutTime: cout, count: cnt, service: svc });
+    repairShowDetail(window._rdData.memberName, window._rdData.date);
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+function rdEditOut(idx) {
+  const row = document.getElementById(`rdOutRow-${idx}`);
+  if (!row) return;
+  const o = window._rdData.outDocs[idx];
+  const iS = 'border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:0.78rem;font-family:"Noto Sans TC",sans-serif;';
+  const savS = 'background:var(--red);color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;margin-right:4px;';
+  const canS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;';
+  row.innerHTML = `
+    <td style="padding:4px 6px;"><input id="rdOut-t-${idx}" value="${o.timeOut||''}" style="${iS}width:56px;" placeholder="HH:MM"></td>
+    <td style="padding:4px 6px;"><input id="rdOut-ct-${idx}" value="${o.caseType||''}" style="${iS}width:70px;"></td>
+    <td style="padding:4px 6px;text-align:center;"><input id="rdOut-svc-${idx}" value="${o.serviceCount ?? ''}" style="${iS}width:42px;" type="number" min="0" placeholder="—"></td>
+    <td></td>
+    <td style="padding:4px 6px;white-space:nowrap;">
+      <button onclick="rdSaveOut(${idx})" style="${savS}">儲存</button>
+      <button onclick="rdCancelEdit()" style="${canS}">取消</button>
+    </td>`;
+}
+
+async function rdSaveOut(idx) {
+  const o   = window._rdData.outDocs[idx];
+  const t   = document.getElementById(`rdOut-t-${idx}`)?.value.trim()  || '';
+  const ct  = document.getElementById(`rdOut-ct-${idx}`)?.value.trim() || '';
+  const raw = document.getElementById(`rdOut-svc-${idx}`)?.value;
+  const svc = (raw === '' || raw === undefined) ? null : (parseInt(raw) || 0);
+  try {
+    const upd = { timeOut: t, caseType: ct };
+    if (svc !== null) upd.serviceCount = svc;
+    await fbUpdate(COL_OUTING, o.id, upd);
+    repairShowDetail(window._rdData.memberName, window._rdData.date);
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+function rdCancelEdit() {
+  repairShowDetail(window._rdData.memberName, window._rdData.date);
 }
 
 async function syncAttServiceForDate(memberName, date) {
