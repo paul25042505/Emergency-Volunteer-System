@@ -11279,6 +11279,17 @@ async function loadAdminCorrections() {
       checkinSig: '簽到簽名', checkoutSig: '簽退簽名', signature: '義消簽名',
     };
 
+    // 預先撈所有原始紀錄的簽名（docId → { checkinSig, checkoutSig, signature }）
+    const docSigCache = {};
+    await Promise.all(docs.filter(d => d.docId).map(async d => {
+      if (docSigCache[d.docId]) return;
+      try {
+        const col = d.type === 'outing' ? COL_OUTING : COL_ATTEND;
+        const orig = await fbGet(col, d.docId);
+        if (orig) docSigCache[d.docId] = { checkinSig: orig.checkinSig||'', checkoutSig: orig.checkoutSig||'', signature: orig.signature||'' };
+      } catch(e) { /* 原始紀錄可能已刪除 */ }
+    }));
+
     el.innerHTML = '';
     docs.forEach(d => {
       const card = document.createElement('div');
@@ -11299,6 +11310,11 @@ async function loadAdminCorrections() {
       // 相容舊格式（key 為 form element ID）與新格式（key 為真實欄位名）
       const _OG_MAP = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service', corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
       const og = Object.fromEntries(Object.entries(d.originals||{}).map(([k,v])=>[_OG_MAP[k]||k, v]));
+      // 用實際原始紀錄補全簽名（originals 可能沒存簽名）
+      const liveSigs = docSigCache[d.docId] || {};
+      if (!og.checkinSig  && liveSigs.checkinSig)  og.checkinSig  = liveSigs.checkinSig;
+      if (!og.checkoutSig && liveSigs.checkoutSig) og.checkoutSig = liveSigs.checkoutSig;
+      if (!og.signature   && liveSigs.signature)   og.signature   = liveSigs.signature;
 
       // 產生修正對比列表
       const sigKeys = ['checkinSig','checkoutSig','signature'];
