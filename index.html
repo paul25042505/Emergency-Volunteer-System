@@ -5091,7 +5091,7 @@ function rdEditAtt() {
   const savS = 'background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82rem;font-family:"Noto Sans TC",sans-serif;';
   const canS = 'background:none;border:1px solid #ccc;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.82rem;font-family:"Noto Sans TC",sans-serif;';
   block.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">簽到</div><input id="rdAtt-cin" value="${a.checkinTime||''}" style="${iS}width:100%;" placeholder="HH:MM"></div>
       <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">簽退</div><input id="rdAtt-cout" value="${a.checkoutTime||''}" style="${iS}width:100%;" placeholder="HH:MM"></div>
       <div><div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:3px;">出勤次數</div><input id="rdAtt-cnt" value="${a.count||0}" style="${iS}width:100%;" type="number" min="0"></div>
