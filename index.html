@@ -4910,15 +4910,17 @@ async function repairPreview(btn) {
       const diffCell = (oldV, newV) => oldV !== newV
         ? `<span style="text-decoration:line-through;color:#b94a3a;">${oldV}</span> → <span style="font-weight:700;color:#1a6b35;">${newV}</span>`
         : `<span style="color:var(--text-light);">${oldV}</span>`;
-      const rows = diffs.map((r, i) =>
-        `<tr style="border-bottom:1px solid var(--border);">
+      const rows = diffs.map((r, i) => {
+        const mEsc = r.memberName.replace(/'/g,"&#39;");
+        return `<tr style="border-bottom:1px solid var(--border);">
           <td style="padding:7px 8px;font-size:0.8rem;"><input type="checkbox" class="repair-chk" data-idx="${i}" checked style="margin-right:4px;" onchange="repairUpdateExecBtn()"></td>
           <td style="padding:7px 8px;font-size:0.8rem;">${r.date}</td>
           <td style="padding:7px 8px;font-size:0.8rem;">${r.memberName}</td>
           <td style="padding:7px 8px;font-size:0.8rem;text-align:center;">${diffCell(r.oldCount, r.newCount)}</td>
           <td style="padding:7px 8px;font-size:0.8rem;text-align:center;">${diffCell(r.oldService, r.newService)}</td>
-        </tr>`
-      ).join('');
+          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;"><button type="button" onclick="repairShowDetail('${mEsc}','${r.date}')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;">📋 詳細</button></td>
+        </tr>`;
+      }).join('');
       area.style.display = 'block';
       area.innerHTML = `
         <div style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
@@ -4937,6 +4939,7 @@ async function repairPreview(btn) {
                 <th style="padding:8px;font-size:0.78rem;text-align:left;">義消</th>
                 <th style="padding:8px;font-size:0.78rem;text-align:center;">出勤次數</th>
                 <th style="padding:8px;font-size:0.78rem;text-align:center;">服務人次</th>
+                <th style="padding:8px;font-size:0.78rem;text-align:center;"></th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -4984,6 +4987,73 @@ async function repairAllAttService(btn) {
   } catch(e) {
     if (log) log.textContent = '❌ 發生錯誤：' + e.message;
     btn.disabled = false;
+  }
+}
+
+async function repairShowDetail(memberName, date) {
+  let modal = document.getElementById('repairDetailModal');
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'repairDetailModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = '<div style="background:white;border-radius:12px;max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:20px;box-sizing:border-box;"><div style="font-size:0.82rem;color:var(--text-mid);">載入中...</div></div>';
+  document.body.appendChild(modal);
+  try {
+    const [attDocs, outDocs] = await Promise.all([
+      fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]),
+      fbQuery(COL_OUTING,  [['memberName','==',memberName],['date','==',date]]),
+    ]);
+    const att = attDocs[0] || {};
+    const cin = att.checkinTime || '', cout = att.checkoutTime || '';
+    let html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+      <div><div style="font-size:1rem;font-weight:700;">${memberName}</div><div style="font-size:0.82rem;color:var(--text-mid);">${date}</div></div>
+      <button onclick="document.getElementById('repairDetailModal').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-mid);line-height:1;">✕</button>
+    </div>`;
+    html += `<div style="font-weight:600;font-size:0.82rem;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;">📋 簽到退紀錄（${attDocs.length} 筆）</div>`;
+    if (!attDocs.length) {
+      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;margin-bottom:14px;">無記錄</div>';
+    } else {
+      html += '<div style="overflow-x:auto;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
+      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">簽到</th><th style="padding:6px 8px;text-align:left;">簽退</th><th style="padding:6px 8px;text-align:center;">出勤次數</th><th style="padding:6px 8px;text-align:center;">服務人次</th></tr></thead><tbody>';
+      attDocs.forEach(a => {
+        html += `<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 8px;">${a.checkinTime||'—'}</td>
+          <td style="padding:6px 8px;">${a.checkoutTime||'—'}</td>
+          <td style="padding:6px 8px;text-align:center;">${a.count ?? '—'}</td>
+          <td style="padding:6px 8px;text-align:center;">${a.service ?? '—'}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    }
+    html += `<div style="font-weight:600;font-size:0.82rem;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;">🚑 出勤紀錄（${outDocs.length} 筆）<span style="font-weight:400;font-size:0.75rem;color:var(--text-light);margin-left:8px;">✓=計入 ✗=不計</span></div>`;
+    if (!outDocs.length) {
+      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;">無記錄</div>';
+    } else {
+      html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
+      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">出勤時間</th><th style="padding:6px 8px;text-align:left;">案由</th><th style="padding:6px 8px;text-align:center;">服務人次</th><th style="padding:6px 8px;text-align:center;">計入</th></tr></thead><tbody>';
+      outDocs.forEach(o => {
+        const isKp = o.caseType === '空跑';
+        const t = o.timeOut || '';
+        const inWin = !isKp && (!cin || !t || (cout ? (t >= cin && t <= cout) : t >= cin));
+        const badge = isKp
+          ? '<span style="background:#e9ecef;color:#6c757d;font-size:0.7rem;padding:1px 6px;border-radius:4px;">空跑</span>'
+          : inWin
+            ? '<span style="background:#d4edda;color:#1a6b35;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✓</span>'
+            : '<span style="background:#f8d7da;color:#b94a3a;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✗</span>';
+        const dim = (!inWin && !isKp) ? 'color:var(--text-light);' : '';
+        html += `<tr style="border-bottom:1px solid var(--border);${dim}">
+          <td style="padding:6px 8px;">${o.timeOut||'—'}</td>
+          <td style="padding:6px 8px;">${o.caseType||'—'}</td>
+          <td style="padding:6px 8px;text-align:center;">${o.serviceCount ?? '—'}</td>
+          <td style="padding:6px 8px;text-align:center;">${badge}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    }
+    modal.querySelector('div').innerHTML = html;
+  } catch(e) {
+    modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">❌ 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
   }
 }
 
@@ -7649,6 +7719,17 @@ function adminShowSection(sectionId) {
     if ((b.getAttribute('onclick')||'').includes(sectionId)) b.classList.add('active-subnav');
   });
   document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
+  if (sectionId === 'adminSec-repair') {
+    const df = document.getElementById('repairDateFrom');
+    const dt = document.getElementById('repairDateTo');
+    if (df && !df.value) {
+      const now = new Date();
+      const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+      const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
+      df.value = `${y}-${m}-01`;
+      if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+    }
+  }
 }
 
 function adminNavTo(sectionId) {
