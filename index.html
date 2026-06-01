@@ -11286,6 +11286,7 @@ async function loadAdminCorrections() {
       try {
         const col = d.type === 'outing' ? COL_OUTING : COL_ATTEND;
         const orig = await fbGet(col, d.docId);
+        console.log('[corrSig] docId=', d.docId, 'orig=', orig ? {checkinSig: orig.checkinSig?.slice?.(0,30), checkoutSig: orig.checkoutSig?.slice?.(0,30)} : null);
         if (orig) docSigCache[d.docId] = { checkinSig: orig.checkinSig||'', checkoutSig: orig.checkoutSig||'', signature: orig.signature||'' };
       } catch(e) { /* 原始紀錄可能已刪除 */ }
     }));
