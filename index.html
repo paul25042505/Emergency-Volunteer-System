@@ -2377,6 +2377,7 @@ function _dlCSV(content, filename) {
         <option value="adminSec-changelog"  id="adminSelOpt-changelog">📝 版本紀錄</option>
         <option value="adminSec-loginlog"   id="adminSelOpt-loginlog" style="display:none;">🔐 登入紀錄</option>
         <option value="adminSec-import">📥 批次匯入</option>
+        <option value="adminSec-repair">🔧 資料修復</option>
         <option value="adminSec-confirm">✅ 確認任務</option>
       </select>
     </div>
@@ -2793,9 +2794,15 @@ function _dlCSV(content, filename) {
           重新計算所有成員的簽退<strong>服務人次</strong>，使其與協勤紀錄的 serviceCount 總和一致。<br>
           <span style="color:var(--red);font-weight:600;">適用於：歷史資料匯入後或大量編輯後的資料不一致。</span>
         </div>
-        <button onclick="repairAllAttService(this)" style="background:var(--red);color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-          🔄 重算全部簽退服務人次
-        </button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            🔍 預覽待修復項目
+          </button>
+          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;">
+            🔄 確認執行修復
+          </button>
+        </div>
+        <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
     </div>
@@ -4874,36 +4881,92 @@ function autoZeroSvcIfNeeded(cb, targetId) {
   cb.closest('.cb-item')?.classList.toggle('checked', cb.checked);
 }
 
-async function repairAllAttService(btn) {
+async function _repairBuildDiffList() {
+  const [outDocs, attDocs] = await Promise.all([
+    fbList(COL_OUTING, 'date', 'asc'),
+    fbList(COL_ATTEND, 'date', 'asc'),
+  ]);
+  const sumMap = {};
+  outDocs.forEach(d => {
+    const key = (d.memberName||'') + '|' + (d.date||'');
+    sumMap[key] = (sumMap[key] || 0) + (parseInt(d.serviceCount) || 0);
+  });
+  const diffs = [];
+  attDocs.forEach(d => {
+    const key = (d.memberName||'') + '|' + (d.date||'');
+    const expected = sumMap[key] || 0;
+    if ((d.service || 0) !== expected) {
+      diffs.push({ id: d.id, memberName: d.memberName||'', date: d.date||'', old: d.service||0, expected });
+    }
+  });
+  return diffs;
+}
+
+async function repairPreview(btn) {
+  const area = document.getElementById('repairPreviewArea');
+  const execBtn = document.getElementById('repairExecBtn');
   const log = document.getElementById('repairLog');
-  if (!confirm('確定要重算所有簽退紀錄的服務人次？此操作會批次更新資料庫。')) return;
-  btn.disabled = true; btn.textContent = '計算中...';
+  btn.disabled = true; btn.textContent = '查詢中...';
   if (log) log.textContent = '';
   try {
-    const [outDocs, attDocs] = await Promise.all([
-      fbList(COL_OUTING, 'date', 'asc'),
-      fbList(COL_ATTEND, 'date', 'asc'),
-    ]);
-    // Build sum map: "memberName|date" → total serviceCount
-    const sumMap = {};
-    outDocs.forEach(d => {
-      const key = (d.memberName||'') + '|' + (d.date||'');
-      sumMap[key] = (sumMap[key] || 0) + (parseInt(d.serviceCount) || 0);
-    });
-    let updated = 0;
-    await Promise.all(attDocs.map(async d => {
-      const key = (d.memberName||'') + '|' + (d.date||'');
-      const expected = sumMap[key] || 0;
-      if ((d.service || 0) !== expected) {
-        await fbUpdate(COL_ATTEND, d.id, { service: expected });
-        updated++;
-      }
-    }));
-    if (log) log.textContent = `✅ 完成！共更新 ${updated} 筆簽退紀錄的服務人次。`;
+    const diffs = await _repairBuildDiffList();
+    if (!diffs.length) {
+      area.style.display = 'block';
+      area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">✅ 所有簽退服務人次均正確，無需修復。</div>';
+      execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
+    } else {
+      const rows = diffs.map(r =>
+        `<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px;font-size:0.8rem;">${r.date}</td>
+          <td style="padding:7px 8px;font-size:0.8rem;">${r.memberName}</td>
+          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;text-decoration:line-through;color:#b94a3a;">${r.old}</td>
+          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;font-weight:700;color:#1a6b35;">${r.expected}</td>
+        </tr>`
+      ).join('');
+      area.style.display = 'block';
+      area.innerHTML = `
+        <div style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+          ⚠️ 發現 <strong>${diffs.length}</strong> 筆簽退紀錄的服務人次需要修正，請確認後點「確認執行修復」。
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+            <thead>
+              <tr style="background:var(--warm);">
+                <th style="padding:8px;font-size:0.78rem;text-align:left;">日期</th>
+                <th style="padding:8px;font-size:0.78rem;text-align:left;">義消</th>
+                <th style="padding:8px;font-size:0.78rem;text-align:center;">目前值</th>
+                <th style="padding:8px;font-size:0.78rem;text-align:center;">修正後</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+      execBtn.disabled = false; execBtn.style.background = 'var(--red)'; execBtn.style.cursor = 'pointer';
+    }
+  } catch(e) {
+    area.style.display = 'block';
+    area.innerHTML = '<div style="color:#b94a3a;font-size:0.82rem;">❌ 查詢失敗：' + e.message + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = '🔍 預覽待修復項目';
+  }
+}
+
+async function repairAllAttService(btn) {
+  const log = document.getElementById('repairLog');
+  const area = document.getElementById('repairPreviewArea');
+  const execBtn = document.getElementById('repairExecBtn');
+  btn.disabled = true; btn.textContent = '修復中...';
+  if (log) log.textContent = '';
+  try {
+    const diffs = await _repairBuildDiffList();
+    await Promise.all(diffs.map(d => fbUpdate(COL_ATTEND, d.id, { service: d.expected })));
+    if (area) area.style.display = 'none';
+    execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
+    if (log) log.textContent = `✅ 完成！共更新 ${diffs.length} 筆簽退紀錄的服務人次。`;
   } catch(e) {
     if (log) log.textContent = '❌ 發生錯誤：' + e.message;
   } finally {
-    btn.disabled = false; btn.textContent = '🔄 重算全部簽退服務人次';
+    btn.disabled = false; btn.textContent = '🔄 確認執行修復';
   }
 }
 
