@@ -1586,7 +1586,7 @@ function _dlCSV(content, filename) {
             <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
           </div>
           <div class="field" style="margin-bottom:0;" id="easyCountField">
-            <label>備勤次數</label>
+            <label>出勤次數</label>
             <div id="easyCountDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
           </div>
         </div>
@@ -1721,7 +1721,7 @@ function _dlCSV(content, filename) {
             <input type="number" id="attHours" min="0" step="0.5" placeholder="選擇簽退時間後自動計算" style="width:100%;" readonly>
           </div>
           <div class="field" id="attCountField">
-            <label>備勤次數</label>
+            <label>出勤次數</label>
             <input type="number" id="attCount" min="0" step="1" placeholder="0" style="width:100%;" readonly>
           </div>
           <div class="field" id="attServiceField">
@@ -1852,7 +1852,7 @@ function _dlCSV(content, filename) {
       <div class="field"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
     </div>
     <div class="field"><label>備勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
-    <div class="field"><label>備勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
+    <div class="field"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
     <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
     <div class="field">
       <label><span>簽到簽名</span></label>
@@ -2027,7 +2027,7 @@ function _dlCSV(content, filename) {
         <div class="result-head"><h3 id="statsTableTitle">協勤排行榜</h3></div>
         <div class="result-table-wrap">
           <table class="stats-table">
-            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>備勤次數</th><th>備勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
+            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>出勤次數</th><th>備勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
             <tbody id="statsTableBody"></tbody>
           </table>
         </div>
@@ -3349,7 +3349,7 @@ function _dlCSV(content, filename) {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div class="field" style="margin-bottom:0;">
-          <label>備勤次數</label>
+          <label>出勤次數</label>
           <input type="number" id="corrCount" min="0" oninput="markCorrChanged(this,'corrCount')">
         </div>
         <div class="field" style="margin-bottom:0;">
@@ -4888,21 +4888,25 @@ function autoZeroSvcIfNeeded(cb, targetId) {
   cb.closest('.cb-item')?.classList.toggle('checked', cb.checked);
 }
 
-// 依備勤時間區間計算該筆簽退應有的服務人次（排除空跑、只算出勤時段內的案件）
-function calcServiceForAtt(attDoc, outDocs) {
+// 依備勤時間區間計算出勤次數與服務人次（排除空跑、只算備勤時段內的案件）
+function calcAttStats(attDoc, outDocs) {
   const cin  = attDoc.checkinTime  || '';
   const cout = attDoc.checkoutTime || '';
-  return outDocs
+  const valid = outDocs
     .filter(o => o.caseType !== '空跑')
     .filter(o => {
-      if (!cin) return true;       // 無備勤時間區間，全部納入
+      if (!cin) return true;
       const t = o.timeOut || '';
       if (!t) return false;
-      if (!cout) return t >= cin;  // 無簽退時間，只要出勤後即算
+      if (!cout) return t >= cin;
       return t >= cin && t <= cout;
-    })
-    .reduce((s, o) => s + (parseInt(o.serviceCount) || 0), 0);
+    });
+  return {
+    count:   valid.length,
+    service: valid.reduce((s, o) => s + (parseInt(o.serviceCount) || 0), 0),
+  };
 }
+function calcServiceForAtt(attDoc, outDocs) { return calcAttStats(attDoc, outDocs).service; }
 
 async function _repairBuildDiffList(dateFrom, dateTo) {
   const outConds = [];
@@ -4923,9 +4927,15 @@ async function _repairBuildDiffList(dateFrom, dateTo) {
   attDocs.forEach(d => {
     const key  = (d.memberName||'') + '|' + (d.date||'');
     const outs = outMap[key] || [];
-    const expected = calcServiceForAtt(d, outs);
-    if ((d.service || 0) !== expected) {
-      diffs.push({ id: d.id, memberName: d.memberName||'', date: d.date||'', old: d.service||0, expected });
+    const stats = calcAttStats(d, outs);
+    const oldCount   = d.count   || 0;
+    const oldService = d.service || 0;
+    if (oldCount !== stats.count || oldService !== stats.service) {
+      diffs.push({
+        id: d.id, memberName: d.memberName||'', date: d.date||'',
+        oldCount, oldService,
+        newCount: stats.count, newService: stats.service,
+      });
     }
   });
   return diffs;
@@ -4946,33 +4956,36 @@ async function repairPreview(btn) {
       area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">✅ 所有簽退服務人次均正確，無需修復。</div>';
       execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
     } else {
+      const diffCell = (oldV, newV) => oldV !== newV
+        ? `<span style="text-decoration:line-through;color:#b94a3a;">${oldV}</span> → <span style="font-weight:700;color:#1a6b35;">${newV}</span>`
+        : `<span style="color:var(--text-light);">${oldV}</span>`;
       const rows = diffs.map((r, i) =>
         `<tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:7px 8px;font-size:0.8rem;"><input type="checkbox" class="repair-chk" data-idx="${i}" checked style="margin-right:4px;"></td>
+          <td style="padding:7px 8px;font-size:0.8rem;"><input type="checkbox" class="repair-chk" data-idx="${i}" checked style="margin-right:4px;" onchange="repairUpdateExecBtn()"></td>
           <td style="padding:7px 8px;font-size:0.8rem;">${r.date}</td>
           <td style="padding:7px 8px;font-size:0.8rem;">${r.memberName}</td>
-          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;text-decoration:line-through;color:#b94a3a;">${r.old}</td>
-          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;font-weight:700;color:#1a6b35;">${r.expected}</td>
+          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;">${diffCell(r.oldCount, r.newCount)}</td>
+          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;">${diffCell(r.oldService, r.newService)}</td>
         </tr>`
       ).join('');
       area.style.display = 'block';
       area.innerHTML = `
         <div style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
-          ⚠️ 發現 <strong>${diffs.length}</strong> 筆簽退紀錄的服務人次需要修正，請勾選後點「確認執行修復」。
+          ⚠️ 發現 <strong>${diffs.length}</strong> 筆簽退紀錄需要修正，請勾選後點「確認執行修復」。
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <button type="button" onclick="repairToggleAll(true)"  style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:4px;background:white;cursor:pointer;">全選</button>
           <button type="button" onclick="repairToggleAll(false)" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:4px;background:white;cursor:pointer;">取消全選</button>
         </div>
         <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;" onchange="repairUpdateExecBtn()">
+          <table style="width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
             <thead>
               <tr style="background:var(--warm);">
                 <th style="padding:8px;font-size:0.78rem;width:32px;"></th>
                 <th style="padding:8px;font-size:0.78rem;text-align:left;">日期</th>
                 <th style="padding:8px;font-size:0.78rem;text-align:left;">義消</th>
-                <th style="padding:8px;font-size:0.78rem;text-align:center;">目前值</th>
-                <th style="padding:8px;font-size:0.78rem;text-align:center;">修正後</th>
+                <th style="padding:8px;font-size:0.78rem;text-align:center;">出勤次數</th>
+                <th style="padding:8px;font-size:0.78rem;text-align:center;">服務人次</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -5013,10 +5026,10 @@ async function repairAllAttService(btn) {
   btn.disabled = true;
   if (log) log.textContent = '';
   try {
-    await Promise.all(selected.map(i => fbUpdate(COL_ATTEND, diffs[i].id, { service: diffs[i].expected })));
+    await Promise.all(selected.map(i => fbUpdate(COL_ATTEND, diffs[i].id, { count: diffs[i].newCount, service: diffs[i].newService })));
     if (area) area.style.display = 'none';
     btn.disabled = true; btn.style.background = '#ccc'; btn.style.cursor = 'not-allowed';
-    if (log) log.textContent = `✅ 完成！共更新 ${selected.length} 筆簽退紀錄的服務人次。`;
+    if (log) log.textContent = `✅ 完成！共更新 ${selected.length} 筆簽退紀錄的出勤次數與服務人次。`;
   } catch(e) {
     if (log) log.textContent = '❌ 發生錯誤：' + e.message;
     btn.disabled = false;
@@ -5028,9 +5041,10 @@ async function syncAttServiceForDate(memberName, date) {
   try {
     const outDocs = await fbQuery(COL_OUTING, [['date','==',date],['memberName','==',memberName]]);
     const attDocs = await fbQuery(COL_ATTEND, [['date','==',date],['memberName','==',memberName]]);
-    await Promise.all(attDocs.map(d =>
-      fbUpdate(COL_ATTEND, d.id, { service: calcServiceForAtt(d, outDocs) })
-    ));
+    await Promise.all(attDocs.map(d => {
+      const { count, service } = calcAttStats(d, outDocs);
+      return fbUpdate(COL_ATTEND, d.id, { count, service });
+    }));
   } catch(e) { console.warn('syncAttService:', e); }
 }
 
@@ -5870,7 +5884,7 @@ function autoCalcEditHours() {
   document.getElementById('aqEditHours').value = calcHours(inTime, outTime);
 }
 
-// 查當班時段備勤次數（簽到時間 ~ 簽退時間內）
+// 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
 async function loadTodayCount(memberName) {
   // attCheckoutTarget 是 key（docId），不是 memberName
   const session   = attSessions[attCheckoutTarget] || {};
@@ -7389,7 +7403,7 @@ async function adminEditAtt(id) {
     <div class="field"><label>簽到時間</label><input type="time" id="aeAIn" value="${doc.checkinTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>簽退時間</label><input type="time" id="aeAOut" value="${doc.checkoutTime||''}" lang="en-GB" style="width:100%;"></div>
     <div class="field"><label>備勤時數</label><input type="number" id="aeAHours" value="${doc.hours||0}" step="0.5" style="width:100%;"></div>
-    <div class="field"><label>備勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
+    <div class="field"><label>出勤次數</label><input type="number" id="aeACount" value="${doc.count||0}" style="width:100%;"></div>
     <div class="field"><label>服務人次</label><input type="number" id="aeASvc" value="${doc.service||0}" min="0" step="1" style="width:100%;"></div>
     <div class="field">
       <label><span>簽到簽名</span></label>
@@ -11139,7 +11153,7 @@ function openCorrectionModal(type, record) {
     origItem('簽到',     cin);
     origItem('簽退',     cout);
     origItem('備勤時數', hrs !== '' ? hrs + ' 小時' : '');
-    origItem('備勤次數', cnt !== '' ? cnt + ' 次' : '');
+    origItem('出勤次數', cnt !== '' ? cnt + ' 次' : '');
     origItem('服務人次', svc !== '' ? svc + ' 人' : '');
 
     _corrOriginals = {
@@ -11214,7 +11228,7 @@ function updateCorrDiff() {
   const type = document.getElementById('corrType').value;
   if (type === 'attendance') {
     const ids = ['corrCheckin','corrCheckout','corrCount','corrService'];
-    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'備勤次數', corrService:'服務人次' };
+    const lbls = { corrCheckin:'簽到時間', corrCheckout:'簽退時間', corrCount:'出勤次數', corrService:'服務人次' };
     const diffs = ids.filter(id => {
       const el = document.getElementById(id);
       return el && el.value !== String(_corrOriginals[id] !== undefined ? _corrOriginals[id] : '');
@@ -11388,7 +11402,7 @@ async function loadAdminCorrections() {
     // 欄位中文名稱對照
     const fieldLabels = {
       checkinTime: '簽到時間', checkoutTime: '簽退時間',
-      hours: '備勤時數', count: '備勤次數', service: '服務人次',
+      hours: '備勤時數', count: '出勤次數', service: '服務人次',
       dutyType: '類別', memberName: '義消姓名',
       timeOut: '出勤時間', timeBack: '返勤時間',
       date: '日期', district: '行政區', address: '地址',
@@ -11629,7 +11643,7 @@ function renderMyCorrections() {
 
   const fieldLabels = {
     checkinTime: '簽到時間', checkoutTime: '簽退時間',
-    hours: '備勤時數', count: '備勤次數', service: '服務人次',
+    hours: '備勤時數', count: '出勤次數', service: '服務人次',
     dutyType: '類別', memberName: '義消姓名',
     timeOut: '出勤時間', timeBack: '返勤時間',
     date: '日期', district: '行政區', address: '地址',
