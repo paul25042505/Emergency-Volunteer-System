@@ -1791,7 +1791,6 @@ function _dlCSV(content, filename) {
         <div class="filter-actions">
           <button class="btn-search" onclick="doAttQuery()">查　詢</button>
           <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
-          <button id="aqAddBtn" onclick="openAttEditNew()" style="display:none;background:var(--red);color:white;border:none;border-radius:8px;padding:9px 16px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">＋ 新增紀錄</button>
         </div>
       </div>
     </div>
@@ -6122,8 +6121,6 @@ function renderAttQueryResults() {
     const _usrAq = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
     const _isAdminAq = _usrAq.isAdmin||false, _isOfficerAq = _usrAq.isOfficer||false;
     const _myNameAq = _usrAq.memberName||_usrAq.name||'';
-    const _aqAddBtn = document.getElementById('aqAddBtn');
-    if (_aqAddBtn) _aqAddBtn.style.display = (_isAdminAq || _isOfficerAq) ? '' : 'none';
     tbody.innerHTML = aqFiltered.map((r, i) => {
       const date  = r.date || fmtAqDate(r['日期'] || '');
       const duty  = r.dutyType || r['類別'] || '';
@@ -7782,13 +7779,6 @@ async function initAdminPage() {
   if(!u.isAdmin && !u.isOfficer){alert('您沒有管理員權限');navTo('dashboardPage');return;}
   const isAdminOnly = u.isAdmin || u.role === 'admin';
 
-  const now=new Date(), y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0');
-  const from=y+'-'+m+'-01';
-  const to=y+'-'+m+'-'+String(new Date(y,now.getMonth()+1,0).getDate()).padStart(2,'0');
-  ['adminAttFrom','adminAttTo','adminOutFrom','adminOutTo'].forEach((id,i)=>{
-    const el=document.getElementById(id); if(el)el.value=i%2===0?from:to;
-  });
-
   // 管理員限定功能：選單 option 和 subnav 顯示控制
   const adminOnlyIds = ['adminSelOpt-units','adminSelOpt-announce','adminSelOpt-changelog','adminSelOpt-loginlog','adminSubNav-loginlog','adminSubNav-announce'];
   adminOnlyIds.forEach(id => {
@@ -7818,7 +7808,7 @@ async function initAdminPage() {
 
   await loadUnits();
   populateUnitSelects();
-  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAttendance(),loadAdminOuting(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection(),initConfirmSection()]);
+  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection(),initConfirmSection()]);
 
   // 顯示選擇器，預設顯示第一個可見 section
   const selector = document.getElementById('adminSecSelector');
