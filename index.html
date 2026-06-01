@@ -1276,7 +1276,7 @@ function _dlCSV(content, filename) {
               <label class="cb-item"><input type="checkbox" value="使用止血帶"> 使用止血帶</label>
               <label class="cb-item"><input type="checkbox" value="骨折固定"> 骨折固定</label>
               <label class="cb-item"><input type="checkbox" value="頸圈固定"> 頸圈固定</label>
-              <label class="cb-item"><input type="checkbox" value="拒絕送醫" onchange="autoZeroSvcIfNeeded(this,'serviceCount')"> 拒絕送醫</label>
+              <label class="cb-item"><input type="checkbox" value="拒絕送醫" onchange="this.closest('.cb-item')?.classList.toggle('checked',this.checked)"> 拒絕送醫</label>
               <label class="cb-item"><input type="checkbox" value="空跑" onchange="autoZeroSvcIfNeeded(this,'serviceCount')"> 空跑</label>
             </div>
           </div>
@@ -2791,15 +2791,22 @@ function _dlCSV(content, filename) {
       </div>
       <div class="card">
         <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">
-          重新計算所有成員的簽退<strong>服務人次</strong>，使其與協勤紀錄的 serviceCount 總和一致。<br>
+          依備勤時間區間重新計算簽退<strong>服務人次</strong>（排除空跑案件，只計算備勤時段內的出勤）。<br>
           <span style="color:var(--red);font-weight:600;">適用於：歷史資料匯入後或大量編輯後的資料不一致。</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+          <label style="font-size:0.82rem;color:var(--text-mid);">日期區間</label>
+          <input type="date" id="repairDateFrom" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:0.82rem;">
+          <span style="font-size:0.82rem;color:var(--text-mid);">至</span>
+          <input type="date" id="repairDateTo"   style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:0.82rem;">
+          <span style="font-size:0.75rem;color:var(--text-light);">（留空 = 全部）</span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
             🔍 預覽待修復項目
           </button>
           <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;">
-            🔄 確認執行修復
+            🔄 確認執行修復（0 筆）
           </button>
         </div>
         <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
@@ -4881,20 +4888,42 @@ function autoZeroSvcIfNeeded(cb, targetId) {
   cb.closest('.cb-item')?.classList.toggle('checked', cb.checked);
 }
 
-async function _repairBuildDiffList() {
+// 依備勤時間區間計算該筆簽退應有的服務人次（排除空跑、只算出勤時段內的案件）
+function calcServiceForAtt(attDoc, outDocs) {
+  const cin  = attDoc.checkinTime  || '';
+  const cout = attDoc.checkoutTime || '';
+  return outDocs
+    .filter(o => o.caseType !== '空跑')
+    .filter(o => {
+      if (!cin) return true;       // 無備勤時間區間，全部納入
+      const t = o.timeOut || '';
+      if (!t) return false;
+      if (!cout) return t >= cin;  // 無簽退時間，只要出勤後即算
+      return t >= cin && t <= cout;
+    })
+    .reduce((s, o) => s + (parseInt(o.serviceCount) || 0), 0);
+}
+
+async function _repairBuildDiffList(dateFrom, dateTo) {
+  const outConds = [];
+  const attConds = [];
+  if (dateFrom) { outConds.push(['date','>=',dateFrom]); attConds.push(['date','>=',dateFrom]); }
+  if (dateTo)   { outConds.push(['date','<=',dateTo]);   attConds.push(['date','<=',dateTo]);   }
   const [outDocs, attDocs] = await Promise.all([
-    fbList(COL_OUTING, 'date', 'asc'),
-    fbList(COL_ATTEND, 'date', 'asc'),
+    outConds.length ? fbQuery(COL_OUTING, outConds, 'date', 'asc') : fbList(COL_OUTING, 'date', 'asc'),
+    attConds.length ? fbQuery(COL_ATTEND, attConds, 'date', 'asc') : fbList(COL_ATTEND, 'date', 'asc'),
   ]);
-  const sumMap = {};
-  outDocs.forEach(d => {
-    const key = (d.memberName||'') + '|' + (d.date||'');
-    sumMap[key] = (sumMap[key] || 0) + (parseInt(d.serviceCount) || 0);
+  // 按 memberName|date 分組出勤紀錄，方便逐筆比對
+  const outMap = {};
+  outDocs.forEach(o => {
+    const key = (o.memberName||'') + '|' + (o.date||'');
+    (outMap[key] = outMap[key] || []).push(o);
   });
   const diffs = [];
   attDocs.forEach(d => {
-    const key = (d.memberName||'') + '|' + (d.date||'');
-    const expected = sumMap[key] || 0;
+    const key  = (d.memberName||'') + '|' + (d.date||'');
+    const outs = outMap[key] || [];
+    const expected = calcServiceForAtt(d, outs);
     if ((d.service || 0) !== expected) {
       diffs.push({ id: d.id, memberName: d.memberName||'', date: d.date||'', old: d.service||0, expected });
     }
@@ -4903,20 +4932,23 @@ async function _repairBuildDiffList() {
 }
 
 async function repairPreview(btn) {
-  const area = document.getElementById('repairPreviewArea');
-  const execBtn = document.getElementById('repairExecBtn');
-  const log = document.getElementById('repairLog');
+  const area   = document.getElementById('repairPreviewArea');
+  const execBtn= document.getElementById('repairExecBtn');
+  const log    = document.getElementById('repairLog');
+  const df     = document.getElementById('repairDateFrom')?.value || '';
+  const dt     = document.getElementById('repairDateTo')?.value   || '';
   btn.disabled = true; btn.textContent = '查詢中...';
   if (log) log.textContent = '';
   try {
-    const diffs = await _repairBuildDiffList();
+    const diffs = await _repairBuildDiffList(df, dt);
     if (!diffs.length) {
       area.style.display = 'block';
       area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">✅ 所有簽退服務人次均正確，無需修復。</div>';
       execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
     } else {
-      const rows = diffs.map(r =>
+      const rows = diffs.map((r, i) =>
         `<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px;font-size:0.8rem;"><input type="checkbox" class="repair-chk" data-idx="${i}" checked style="margin-right:4px;"></td>
           <td style="padding:7px 8px;font-size:0.8rem;">${r.date}</td>
           <td style="padding:7px 8px;font-size:0.8rem;">${r.memberName}</td>
           <td style="padding:7px 8px;font-size:0.8rem;text-align:center;text-decoration:line-through;color:#b94a3a;">${r.old}</td>
@@ -4926,12 +4958,17 @@ async function repairPreview(btn) {
       area.style.display = 'block';
       area.innerHTML = `
         <div style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
-          ⚠️ 發現 <strong>${diffs.length}</strong> 筆簽退紀錄的服務人次需要修正，請確認後點「確認執行修復」。
+          ⚠️ 發現 <strong>${diffs.length}</strong> 筆簽退紀錄的服務人次需要修正，請勾選後點「確認執行修復」。
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <button type="button" onclick="repairToggleAll(true)"  style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:4px;background:white;cursor:pointer;">全選</button>
+          <button type="button" onclick="repairToggleAll(false)" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:4px;background:white;cursor:pointer;">取消全選</button>
         </div>
         <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;background:white;border:1px solid var(--border);border-radius:8px;overflow:hidden;" onchange="repairUpdateExecBtn()">
             <thead>
               <tr style="background:var(--warm);">
+                <th style="padding:8px;font-size:0.78rem;width:32px;"></th>
                 <th style="padding:8px;font-size:0.78rem;text-align:left;">日期</th>
                 <th style="padding:8px;font-size:0.78rem;text-align:left;">義消</th>
                 <th style="padding:8px;font-size:0.78rem;text-align:center;">目前值</th>
@@ -4941,7 +4978,8 @@ async function repairPreview(btn) {
             <tbody>${rows}</tbody>
           </table>
         </div>`;
-      execBtn.disabled = false; execBtn.style.background = 'var(--red)'; execBtn.style.cursor = 'pointer';
+      window._repairDiffs = diffs;
+      repairUpdateExecBtn();
     }
   } catch(e) {
     area.style.display = 'block';
@@ -4951,22 +4989,37 @@ async function repairPreview(btn) {
   }
 }
 
-async function repairAllAttService(btn) {
-  const log = document.getElementById('repairLog');
-  const area = document.getElementById('repairPreviewArea');
+function repairToggleAll(checked) {
+  document.querySelectorAll('.repair-chk').forEach(c => c.checked = checked);
+  repairUpdateExecBtn();
+}
+
+function repairUpdateExecBtn() {
+  const n = document.querySelectorAll('.repair-chk:checked').length;
   const execBtn = document.getElementById('repairExecBtn');
-  btn.disabled = true; btn.textContent = '修復中...';
+  if (!execBtn) return;
+  execBtn.disabled = n === 0;
+  execBtn.style.background = n > 0 ? 'var(--red)' : '#ccc';
+  execBtn.style.cursor = n > 0 ? 'pointer' : 'not-allowed';
+  execBtn.textContent = `🔄 確認執行修復（${n} 筆）`;
+}
+
+async function repairAllAttService(btn) {
+  const log  = document.getElementById('repairLog');
+  const area = document.getElementById('repairPreviewArea');
+  const diffs = window._repairDiffs || [];
+  const selected = Array.from(document.querySelectorAll('.repair-chk:checked')).map(c => parseInt(c.dataset.idx));
+  if (!selected.length) return;
+  btn.disabled = true;
   if (log) log.textContent = '';
   try {
-    const diffs = await _repairBuildDiffList();
-    await Promise.all(diffs.map(d => fbUpdate(COL_ATTEND, d.id, { service: d.expected })));
+    await Promise.all(selected.map(i => fbUpdate(COL_ATTEND, diffs[i].id, { service: diffs[i].expected })));
     if (area) area.style.display = 'none';
-    execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
-    if (log) log.textContent = `✅ 完成！共更新 ${diffs.length} 筆簽退紀錄的服務人次。`;
+    btn.disabled = true; btn.style.background = '#ccc'; btn.style.cursor = 'not-allowed';
+    if (log) log.textContent = `✅ 完成！共更新 ${selected.length} 筆簽退紀錄的服務人次。`;
   } catch(e) {
     if (log) log.textContent = '❌ 發生錯誤：' + e.message;
-  } finally {
-    btn.disabled = false; btn.textContent = '🔄 確認執行修復';
+    btn.disabled = false;
   }
 }
 
@@ -4974,9 +5027,10 @@ async function syncAttServiceForDate(memberName, date) {
   if (!memberName || !date) return;
   try {
     const outDocs = await fbQuery(COL_OUTING, [['date','==',date],['memberName','==',memberName]]);
-    const total   = outDocs.reduce((s, d) => s + (parseInt(d.serviceCount) || 0), 0);
     const attDocs = await fbQuery(COL_ATTEND, [['date','==',date],['memberName','==',memberName]]);
-    await Promise.all(attDocs.map(d => fbUpdate(COL_ATTEND, d.id, { service: total })));
+    await Promise.all(attDocs.map(d =>
+      fbUpdate(COL_ATTEND, d.id, { service: calcServiceForAtt(d, outDocs) })
+    ));
   } catch(e) { console.warn('syncAttService:', e); }
 }
 
@@ -7474,7 +7528,7 @@ async function adminEditOut(id) {
     ['aeOOut','aeOBack'].forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('lang','en-GB');el.setAttribute('data-time-24','1');}});
     const svcEl = document.getElementById('aeOSvc');
     if (svcEl) svcEl.addEventListener('input', () => {
-      if (/空跑|拒絕送醫/.test(svcEl.value)) {
+      if (/空跑/.test(svcEl.value)) {
         const cnt = document.getElementById('aeOServiceCount');
         if (cnt) cnt.value = 0;
       }
@@ -9849,7 +9903,7 @@ function easyShowOuting() {
     btn.dataset.value = s;
     btn.onclick = () => {
       btn.classList.toggle('selected');
-      if ((s === '空跑' || s === '拒絕送醫') && btn.classList.contains('selected')) {
+      if (s === '空跑' && btn.classList.contains('selected')) {
         setSvcBtnByVal('easyServiceCountInput', 0);
       }
     };
