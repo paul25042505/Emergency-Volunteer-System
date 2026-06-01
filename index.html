@@ -815,8 +815,6 @@ function _dlCSV(content, filename) {
     <div id="adminSubNav" style="display:none;">
       <button onclick="adminNavTo('adminSec-units')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🏢</span>分隊管理</button>
       <button onclick="adminNavTo('adminSec-wl')"       class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">👤</span>成員帳號</button>
-      <button onclick="adminNavTo('adminSec-att')"      class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">✍</span>簽到退紀錄</button>
-      <button onclick="adminNavTo('adminSec-outing')"   class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🚑</span>協勤紀錄</button>
       <button onclick="adminNavTo('adminSec-casetypes')" class="admin-subnav-btn" id="adminSubNav-casetypes"><span class="icon" style="font-size:0.75rem;">🏷</span>案由</button>
       <button onclick="adminNavTo('adminSec-items')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📦</span>物品領用</button>
       <button id="adminSubNav-announce" onclick="adminNavTo('adminSec-announce')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📢</span>公告管理</button>
@@ -1793,6 +1791,7 @@ function _dlCSV(content, filename) {
         <div class="filter-actions">
           <button class="btn-search" onclick="doAttQuery()">查　詢</button>
           <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
+          <button id="aqAddBtn" onclick="openAttEditNew()" style="display:none;background:var(--red);color:white;border:none;border-radius:8px;padding:9px 16px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">＋ 新增紀錄</button>
         </div>
       </div>
     </div>
@@ -1832,11 +1831,12 @@ function _dlCSV(content, filename) {
   <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
     <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:16px;color:var(--text);">編輯紀錄</h3>
     <input type="hidden" id="aqEditRow">
-    <div class="field"><label>日期</label><input type="date" id="aqEditDate" style="width:100%;"></div>
-    <div class="field"><label>姓名</label><input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;"></div>
-    <div class="field">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+    <div class="field" style="margin-bottom:0;"><label>日期</label><input type="date" id="aqEditDate" style="width:100%;"></div>
+    <div class="field" style="margin-bottom:0;"><label>姓名</label><input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;"></div>
+    <div class="field" style="margin-bottom:0;">
       <label>類別</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
         <label id="aqEditDutyAttLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--red);border-radius:10px;cursor:pointer;background:var(--red-faint);font-weight:600;font-size:0.95rem;color:var(--red);transition:all 0.15s;">
           <input type="radio" name="aqEditDuty" id="aqEditDutyAtt" value="協勤" checked style="display:none;" onchange="updateDutyStyle()">
           🚑 協勤
@@ -1847,28 +1847,29 @@ function _dlCSV(content, filename) {
         </label>
       </div>
     </div>
-    <div class="row-2">
-      <div class="field"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
-      <div class="field"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
+    <div class="row-2" style="margin-bottom:0;">
+      <div class="field" style="margin-bottom:0;"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
+      <div class="field" style="margin-bottom:0;"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
     </div>
-    <div class="field"><label>備勤時數</label><input type="number" id="aqEditHours" style="width:100%;" min="0" step="0.5" readonly></div>
-    <div class="field"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1" readonly></div>
-    <div class="field"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
-    <div class="field">
+    <div class="field" style="margin-bottom:0;"><label>備勤時數</label><input type="number" id="aqEditHours" style="width:100%;background:#f5f5f5;" min="0" step="0.5" readonly></div>
+    <div class="field" style="margin-bottom:0;"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1"></div>
+    <div class="field" style="margin-bottom:0;"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
+    <div class="field" style="margin-bottom:0;">
       <label><span>簽到簽名</span></label>
       <div id="aqEditCheckinPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
       <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
-    <div class="field">
+    <div class="field" style="margin-bottom:0;">
       <label><span>簽退簽名</span></label>
       <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
       <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:8px;">
+    </div><!-- end flex column -->
+    <div style="display:flex;gap:10px;margin-top:16px;">
       <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
       <button onclick="closeAttEdit()" class="btn-reset">取消</button>
     </div>
@@ -2365,8 +2366,6 @@ function _dlCSV(content, filename) {
       <select id="adminSecSelect" onchange="adminShowSection(this.value)" style="width:100%;">
         <option value="adminSec-units"      id="adminSelOpt-units">🏢 分隊管理</option>
         <option value="adminSec-wl">👤 成員帳號</option>
-        <option value="adminSec-att">✍ 簽到退紀錄</option>
-        <option value="adminSec-outing">🚑 協勤紀錄</option>
         <option value="adminSec-casetypes">🏷 案由管理</option>
         <option value="adminSec-items">📦 物品領用</option>
         <option value="adminSec-announce"   id="adminSelOpt-announce">📢 公告管理</option>
@@ -2455,54 +2454,6 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-att" style="display:none;">
-      <div class="section-head"><div class="section-num">✍</div><div class="section-title">簽到簽退紀錄</div><div class="section-line"></div></div>
-      <div class="filter-card">
-        <div class="filter-grid">
-          <div class="field"><label>日期（起）</label><input type="date" id="adminAttFrom"></div>
-          <div class="field"><label>日期（迄）</label><input type="date" id="adminAttTo"></div>
-          <div class="field"><label>分隊別</label>
-            <select id="adminAttUnit" onchange="adminAttUnitChange()">
-              <option value="">— 全部分隊 —</option>
-            </select>
-          </div>
-          <div class="field"><label>義消姓名</label>
-            <select id="adminAttMember">
-              <option value="">— 全部成員 —</option>
-            </select>
-          </div>
-        </div>
-        <div class="filter-actions" style="display:flex;gap:8px;">
-          <button class="btn-search" onclick="loadAdminAttendance()" style="flex:1;">查　詢</button>
-          <button onclick="adminClearDate('adminAttFrom','adminAttTo');document.getElementById('adminAttUnit').value='';document.getElementById('adminAttMember').value='';adminAttUnitChange();loadAdminAttendance();" class="btn-reset" style="white-space:nowrap;">全部</button>
-        </div>
-      </div>
-      <div id="adminAttList" style="margin-top:12px;overflow-x:auto;"></div>
-    </div>
-    <div class="section" id="adminSec-outing" style="display:none;">
-      <div class="section-head"><div class="section-num">📋</div><div class="section-title">協勤紀錄管理</div><div class="section-line"></div></div>
-      <div class="filter-card">
-        <div class="filter-grid">
-          <div class="field"><label>日期（起）</label><input type="date" id="adminOutFrom"></div>
-          <div class="field"><label>日期（迄）</label><input type="date" id="adminOutTo"></div>
-          <div class="field"><label>分隊別</label>
-            <select id="adminOutUnit" onchange="adminOutUnitChange()">
-              <option value="">— 全部分隊 —</option>
-            </select>
-          </div>
-          <div class="field"><label>義消姓名</label>
-            <select id="adminOutMember">
-              <option value="">— 全部成員 —</option>
-            </select>
-          </div>
-        </div>
-        <div class="filter-actions" style="display:flex;gap:8px;">
-          <button class="btn-search" onclick="loadAdminOuting()" style="flex:1;">查　詢</button>
-          <button onclick="adminClearDate('adminOutFrom','adminOutTo');document.getElementById('adminOutUnit').value='';document.getElementById('adminOutMember').value='';adminOutUnitChange();loadAdminOuting();" class="btn-reset" style="white-space:nowrap;">全部</button>
-        </div>
-      </div>
-      <div id="adminOutList" style="margin-top:12px;overflow-x:auto;"></div>
-    </div>
     <div class="section" id="adminSec-casetypes" style="display:none;">
       <div class="section-head"><div class="section-num">🏷</div><div class="section-title">案由管理</div><div class="section-line"></div>
         <button onclick="loadAdminCaseTypes()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
@@ -6101,6 +6052,8 @@ function renderAttQueryResults() {
     const _usrAq = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
     const _isAdminAq = _usrAq.isAdmin||false, _isOfficerAq = _usrAq.isOfficer||false;
     const _myNameAq = _usrAq.memberName||_usrAq.name||'';
+    const _aqAddBtn = document.getElementById('aqAddBtn');
+    if (_aqAddBtn) _aqAddBtn.style.display = (_isAdminAq || _isOfficerAq) ? '' : 'none';
     tbody.innerHTML = aqFiltered.map((r, i) => {
       const date  = r.date || fmtAqDate(r['日期'] || '');
       const duty  = r.dutyType || r['類別'] || '';
@@ -6123,7 +6076,8 @@ function renderAttQueryResults() {
       const within24Aq = recTimeAq && (Date.now()-recTimeAq < 86400000);
       let aqActionBtn = '';
       if (_isAdminAq || _isOfficerAq) {
-        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button>';
+        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')" style="margin-right:4px;">✏️ 編輯</button>'
+          + '<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
       } else if (isOwnerAq && within24Aq) {
         aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')" style="margin-right:4px;">✏️ 編輯</button>'
           +'<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
@@ -6188,9 +6142,37 @@ function showTimeAdjustInfo(idx) {
   );
 }
 
+function openAttEditNew() {
+  document.getElementById('aqEditRow').value = '';
+  document.getElementById('aqEditDate').value = new Date().toLocaleDateString('sv');
+  document.getElementById('aqEditName').value = '';
+  document.getElementById('aqEditName').removeAttribute('readonly');
+  document.getElementById('aqEditName').style.background = '';
+  const dutyAtt = document.getElementById('aqEditDutyAtt');
+  if (dutyAtt) { dutyAtt.checked = true; updateDutyStyle(); }
+  document.getElementById('aqEditCheckin').value  = '';
+  document.getElementById('aqEditCheckout').value = '';
+  document.getElementById('aqEditHours').value   = '';
+  document.getElementById('aqEditCount').value   = '';
+  document.getElementById('aqEditService').value = '';
+  const cinPrev  = document.getElementById('aqEditCheckinPrev');
+  const coutPrev = document.getElementById('aqEditCheckoutPrev');
+  const cinNote  = document.getElementById('aqEditCheckinPrevNote');
+  const coutNote = document.getElementById('aqEditCheckoutPrevNote');
+  if (cinPrev)  cinPrev.style.display  = 'none';
+  if (coutPrev) coutPrev.style.display = 'none';
+  if (cinNote)  cinNote.style.display  = 'none';
+  if (coutNote) coutNote.style.display = 'none';
+  document.getElementById('aqEditModal').style.display = 'flex';
+  autoCalcEditHours();
+  setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
+}
+
 function openAttEdit(idx) {
   const r = aqFiltered[idx];
   document.getElementById('aqEditRow').value = idx;
+  document.getElementById('aqEditName').setAttribute('readonly','');
+  document.getElementById('aqEditName').style.background = '#f5f5f5';
   document.getElementById('aqEditDate').value = r.date || fmtAqDate(r['日期'] || '');
   document.getElementById('aqEditName').value = r.memberName || r['姓名'] || '';
   // 協勤/公差
@@ -6286,25 +6268,29 @@ async function requestDeleteOut(idx) {
 }
 
 async function saveAttEdit() {
-  const idx = parseInt(document.getElementById('aqEditRow').value);
-  const r = aqFiltered[idx];
-  if (!r || !r.id) { alert('找不到紀錄 ID，無法儲存'); return; }
+  const rowVal = document.getElementById('aqEditRow').value;
+  const isNew  = rowVal === '';
+  const r = isNew ? null : aqFiltered[parseInt(rowVal)];
+  if (!isNew && (!r || !r.id)) { alert('找不到紀錄 ID，無法儲存'); return; }
   const cinNew=aeGetSig('aqEditCheckinCanvas'), coutNew=aeGetSig('aqEditCheckoutCanvas');
   const btn = document.querySelector('#aqEditModal .btn-search');
   btn.textContent = '儲存中...'; btn.disabled = true;
+  const data = {
+    date:        document.getElementById('aqEditDate').value,
+    dutyType:    document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤',
+    memberName:  isNew ? document.getElementById('aqEditName').value.trim() : (r.memberName || r['姓名'] || ''),
+    checkinTime: document.getElementById('aqEditCheckin').value,
+    checkoutTime:document.getElementById('aqEditCheckout').value,
+    hours:       parseFloat(document.getElementById('aqEditHours').value)||0,
+    count:       parseInt(document.getElementById('aqEditCount').value)||0,
+    service:     parseInt(document.getElementById('aqEditService').value)||0,
+    checkinSig:  cinNew  || (r?.checkinSig  || ''),
+    checkoutSig: coutNew || (r?.checkoutSig || ''),
+  };
+  if (isNew && !data.memberName) { alert('請填入義消姓名'); btn.textContent='儲存'; btn.disabled=false; return; }
   try {
-    await fbSet(COL_ATTEND, r.id, {
-      date:        document.getElementById('aqEditDate').value,
-      dutyType:    document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤',
-      memberName:  r.memberName || r['姓名'] || '',
-      checkinTime: document.getElementById('aqEditCheckin').value,
-      checkoutTime:document.getElementById('aqEditCheckout').value,
-      hours:       parseFloat(document.getElementById('aqEditHours').value)||0,
-      count:       parseInt(document.getElementById('aqEditCount').value)||0,
-      service:     parseInt(document.getElementById('aqEditService').value)||0,
-      checkinSig:  cinNew  || r.checkinSig  || '',
-      checkoutSig: coutNew || r.checkoutSig || '',
-    });
+    if (isNew) await fbAdd(COL_ATTEND, data);
+    else       await fbSet(COL_ATTEND, r.id, data);
     closeAttEdit();
     await doAttQuery();
   } catch(e) {
@@ -7649,13 +7635,13 @@ async function adminDel(col,id,label,reloadFn) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm'];
   allSecs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = (id === sectionId) ? '' : 'none';
   });
   const wrap = document.querySelector('#adminPage > .query-wrap');
-  if (wrap) wrap.classList.toggle('admin-full', sectionId === 'adminSec-att' || sectionId === 'adminSec-outing');
+  if (wrap) wrap.classList.remove('admin-full');
   const sel = document.getElementById('adminSecSelect');
   if (sel) sel.value = sectionId;
   document.querySelectorAll('.admin-subnav-btn').forEach(b => {
