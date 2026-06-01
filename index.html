@@ -5120,13 +5120,13 @@ function rdEditOut(idx) {
   const row = document.getElementById(`rdOutRow-${idx}`);
   if (!row) return;
   const o = window._rdData.outDocs[idx];
-  const iS = 'border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:0.78rem;font-family:"Noto Sans TC",sans-serif;';
-  const savS = 'background:var(--red);color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;margin-right:4px;';
-  const canS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;';
+  const iS = 'border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:0.78rem;font-family:"Noto Sans TC",sans-serif;height:30px;box-sizing:border-box;';
+  const savS = 'background:var(--red);color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;margin-right:4px;height:30px;';
+  const canS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;height:30px;';
   row.innerHTML = `
     <td style="padding:4px 6px;"><input id="rdOut-t-${idx}" value="${o.timeOut||''}" style="${iS}width:56px;" placeholder="HH:MM"></td>
     <td style="padding:4px 6px;"><input id="rdOut-ct-${idx}" value="${o.caseType||''}" style="${iS}width:70px;"></td>
-    <td style="padding:4px 6px;text-align:center;"><input id="rdOut-svc-${idx}" value="${o.serviceCount ?? ''}" style="${iS}width:42px;" type="number" min="0" placeholder="—"></td>
+    <td style="padding:4px 6px;text-align:center;"><input id="rdOut-svc-${idx}" value="${o.serviceCount ?? ''}" style="${iS}width:44px;" type="number" min="0" placeholder="—"></td>
     <td></td>
     <td style="padding:4px 6px;white-space:nowrap;">
       <button onclick="rdSaveOut(${idx})" style="${savS}">儲存</button>
