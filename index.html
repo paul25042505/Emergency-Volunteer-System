@@ -10970,7 +10970,10 @@ function openCorrectionModal(type, record) {
     origItem('備勤次數', cnt !== '' ? cnt + ' 次' : '');
     origItem('服務人次', svc !== '' ? svc + ' 人' : '');
 
-    _corrOriginals = { corrCheckin: cin, corrCheckout: cout, corrCount: String(cnt), corrService: String(svc) };
+    _corrOriginals = {
+      checkinTime: cin, checkoutTime: cout, count: String(cnt), service: String(svc),
+      checkinSig: record.checkinSig || '', checkoutSig: record.checkoutSig || '',
+    };
     _corrMeta = { memberName: record.memberName || record['姓名'] || '', date: record.date || '', checkinTime: cin };
 
     document.getElementById('corrCheckin').value  = cin;
@@ -10997,12 +11000,13 @@ function openCorrectionModal(type, record) {
     origItem('案件類別', record.caseType || '');
 
     _corrOriginals = {
-      corrTimeOut:      record.timeOut  || '',
-      corrTimeBack:     record.timeBack || '',
-      corrAddress:      record.address  || '',
-      corrCaseType:     record.caseType || '',
-      corrServices:     record.services || '',
-      corrServiceCount: record.serviceCount !== undefined ? String(record.serviceCount) : '',
+      timeOut:      record.timeOut  || '',
+      timeBack:     record.timeBack || '',
+      address:      record.address  || '',
+      caseType:     record.caseType || '',
+      services:     record.services || '',
+      serviceCount: record.serviceCount !== undefined ? String(record.serviceCount) : '',
+      signature:    record.signature || '',
     };
     _corrMeta = { memberName: record.memberName || '', date: record.date || '', timeOut: record.timeOut || '' };
 
@@ -11131,7 +11135,7 @@ async function submitCorrection() {
     const ids = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service' };
     for (const [elId, field] of Object.entries(ids)) {
       const el = document.getElementById(elId);
-      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
+      if (el && el.value !== String(_corrOriginals[field] !== undefined ? _corrOriginals[field] : '')) {
         correctedFields[field] = el.value;
         hasDiff = true;
       }
@@ -11144,7 +11148,7 @@ async function submitCorrection() {
     const ids = { corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
     for (const [elId, field] of Object.entries(ids)) {
       const el = document.getElementById(elId);
-      if (el && el.value !== String(_corrOriginals[elId] !== undefined ? _corrOriginals[elId] : '')) {
+      if (el && el.value !== String(_corrOriginals[field] !== undefined ? _corrOriginals[field] : '')) {
         correctedFields[field] = el.value;
         hasDiff = true;
       }
