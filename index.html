@@ -1275,8 +1275,8 @@ function _dlCSV(content, filename) {
               <label class="cb-item"><input type="checkbox" value="使用止血帶"> 使用止血帶</label>
               <label class="cb-item"><input type="checkbox" value="骨折固定"> 骨折固定</label>
               <label class="cb-item"><input type="checkbox" value="頸圈固定"> 頸圈固定</label>
-              <label class="cb-item"><input type="checkbox" value="拒絕送醫"> 拒絕送醫</label>
-              <label class="cb-item"><input type="checkbox" value="空跑"> 空跑</label>
+              <label class="cb-item"><input type="checkbox" value="拒絕送醫" onchange="autoZeroSvcIfNeeded(this,'serviceCount')"> 拒絕送醫</label>
+              <label class="cb-item"><input type="checkbox" value="空跑" onchange="autoZeroSvcIfNeeded(this,'serviceCount')"> 空跑</label>
             </div>
           </div>
           <div class="card-divider"></div>
@@ -4849,6 +4849,21 @@ function viewSig(sig) {
 }
 
 // ── 服務人次按鈕選擇 ──
+function autoZeroSvcIfNeeded(cb, targetId) {
+  if (cb.checked) setSvcBtnByVal(targetId, 0);
+  cb.closest('.cb-item')?.classList.toggle('checked', cb.checked);
+}
+
+async function syncAttServiceForDate(memberName, date) {
+  if (!memberName || !date) return;
+  try {
+    const outDocs = await fbQuery(COL_OUTING, [['date','==',date],['memberName','==',memberName]]);
+    const total   = outDocs.reduce((s, d) => s + (parseInt(d.serviceCount) || 0), 0);
+    const attDocs = await fbQuery(COL_ATTEND, [['date','==',date],['memberName','==',memberName]]);
+    await Promise.all(attDocs.map(d => fbUpdate(COL_ATTEND, d.id, { service: total })));
+  } catch(e) { console.warn('syncAttService:', e); }
+}
+
 function setSvcBtnByVal(targetId, val) {
   const btn = document.querySelector(`.svc-btn[data-target="${targetId}"][data-val="${String(val)}"]`);
   if (btn) setSvcBtn(btn);
@@ -7340,13 +7355,22 @@ async function adminEditOut(id) {
     </div>`;
   setTimeout(()=>{ aeInitCanvas('aeOSigCanvas');
     ['aeOOut','aeOBack'].forEach(id=>{const el=document.getElementById(id);if(el){el.setAttribute('lang','en-GB');el.setAttribute('data-time-24','1');}});
+    const svcEl = document.getElementById('aeOSvc');
+    if (svcEl) svcEl.addEventListener('input', () => {
+      if (/空跑|拒絕送醫/.test(svcEl.value)) {
+        const cnt = document.getElementById('aeOServiceCount');
+        if (cnt) cnt.value = 0;
+      }
+    });
   },50);
   adminEditSave=async()=>{
     try {
       const sigN=aeGetSig('aeOSigCanvas');
       const sigDel = document.getElementById('aeOSigDeleted')?.value === '1';
+      const newDate   = document.getElementById('aeODate').value;
+      const newMember = document.getElementById('aeOName').value.trim();
       await fbSet(COL_OUTING,id,{
-        date:document.getElementById('aeODate').value,
+        date: newDate,
         caseType:document.getElementById('aeOCaseType').value.trim(),
         timeOut:document.getElementById('aeOOut').value,
         timeBack:document.getElementById('aeOBack').value,
@@ -7355,9 +7379,14 @@ async function adminEditOut(id) {
         services:document.getElementById('aeOSvc').value.trim(),
         serviceCount:parseInt(document.getElementById('aeOServiceCount').value)||0,
         note:document.getElementById('aeONote').value.trim(),
-        memberName:document.getElementById('aeOName').value.trim(),
+        memberName: newMember,
         signature: sigDel ? '' : (sigN || doc.signature || ''),
       });
+      // 同步更新對應的簽退服務人次
+      await syncAttServiceForDate(newMember, newDate);
+      if (doc.memberName !== newMember || doc.date !== newDate) {
+        await syncAttServiceForDate(doc.memberName, doc.date);
+      }
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('queryPage')?.classList.contains('active')) await doQuery();
       else await loadAdminOuting();
@@ -9701,7 +9730,12 @@ function easyShowOuting() {
     btn.className = 'easy-service-btn';
     btn.textContent = s;
     btn.dataset.value = s;
-    btn.onclick = () => btn.classList.toggle('selected');
+    btn.onclick = () => {
+      btn.classList.toggle('selected');
+      if ((s === '空跑' || s === '拒絕送醫') && btn.classList.contains('selected')) {
+        setSvcBtnByVal('easyServiceCountInput', 0);
+      }
+    };
     grid.appendChild(btn);
   });
 
