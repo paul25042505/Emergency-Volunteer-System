@@ -827,6 +827,7 @@ function _dlCSV(content, filename) {
       <button id="adminSubNav-loginlog" onclick="adminNavTo('adminSec-loginlog')" class="admin-subnav-btn" style="display:none;"><span class="icon" style="font-size:0.75rem;">🔐</span>登入紀錄</button>
       <button onclick="adminNavTo('adminSec-temppass')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🔑</span>臨時密碼</button>
       <button onclick="adminNavTo('adminSec-import')"   class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📥</span>批次匯入</button>
+      <button onclick="adminNavTo('adminSec-repair')"   class="admin-subnav-btn" id="adminSubNav-repair"><span class="icon" style="font-size:0.75rem;">🔧</span>資料修復</button>
       <button onclick="adminNavTo('adminSec-confirm')"  class="admin-subnav-btn" id="adminSubNav-confirm"><span class="icon" style="font-size:0.75rem;">✅</span>確認任務</button>
     </div>
   </nav>
@@ -2777,6 +2778,25 @@ function _dlCSV(content, filename) {
           </div>
           <div id="importOutResult" style="margin-top:10px;font-size:0.82rem;"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ SECTION：資料修復 ══ -->
+    <div class="section" id="adminSec-repair" style="display:none;">
+      <div class="section-head">
+        <div class="section-num">🔧</div>
+        <div class="section-title">資料修復工具</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">
+          重新計算所有成員的簽退<strong>服務人次</strong>，使其與協勤紀錄的 serviceCount 總和一致。<br>
+          <span style="color:var(--red);font-weight:600;">適用於：歷史資料匯入後或大量編輯後的資料不一致。</span>
+        </div>
+        <button onclick="repairAllAttService(this)" style="background:var(--red);color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+          🔄 重算全部簽退服務人次
+        </button>
+        <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
     </div>
 
@@ -4854,6 +4874,39 @@ function autoZeroSvcIfNeeded(cb, targetId) {
   cb.closest('.cb-item')?.classList.toggle('checked', cb.checked);
 }
 
+async function repairAllAttService(btn) {
+  const log = document.getElementById('repairLog');
+  if (!confirm('確定要重算所有簽退紀錄的服務人次？此操作會批次更新資料庫。')) return;
+  btn.disabled = true; btn.textContent = '計算中...';
+  if (log) log.textContent = '';
+  try {
+    const [outDocs, attDocs] = await Promise.all([
+      fbList(COL_OUTING, 'date', 'asc'),
+      fbList(COL_ATTEND, 'date', 'asc'),
+    ]);
+    // Build sum map: "memberName|date" → total serviceCount
+    const sumMap = {};
+    outDocs.forEach(d => {
+      const key = (d.memberName||'') + '|' + (d.date||'');
+      sumMap[key] = (sumMap[key] || 0) + (parseInt(d.serviceCount) || 0);
+    });
+    let updated = 0;
+    await Promise.all(attDocs.map(async d => {
+      const key = (d.memberName||'') + '|' + (d.date||'');
+      const expected = sumMap[key] || 0;
+      if ((d.service || 0) !== expected) {
+        await fbUpdate(COL_ATTEND, d.id, { service: expected });
+        updated++;
+      }
+    }));
+    if (log) log.textContent = `✅ 完成！共更新 ${updated} 筆簽退紀錄的服務人次。`;
+  } catch(e) {
+    if (log) log.textContent = '❌ 發生錯誤：' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '🔄 重算全部簽退服務人次';
+  }
+}
+
 async function syncAttServiceForDate(memberName, date) {
   if (!memberName || !date) return;
   try {
@@ -5001,6 +5054,7 @@ function submitOutingForm() {
     serviceCount:parseInt(document.getElementById('serviceCount').value)||0,
     note:data.note||'',memberName:data.memberName,signature:data.signature,
   }).then(()=>{
+    syncAttServiceForDate(data.memberName, data.date);
     document.getElementById('successMsg').classList.add('show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     document.getElementById('recordForm').reset();
@@ -7464,7 +7518,7 @@ async function adminDel(col,id,label,reloadFn) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-confirm'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-att','adminSec-outing','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm'];
   allSecs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = (id === sectionId) ? '' : 'none';
@@ -9864,6 +9918,7 @@ async function easyDoOuting() {
 
   try {
     await fbAdd(COL_OUTING, { date, caseType: easyCTVal, timeOut, timeBack: timeBack||timeOut, district, address, services, serviceCount: _easySvc, note: '', memberName, signature });
+    syncAttServiceForDate(memberName, date);
     alert('✅ 協勤紀錄送出成功！');
     easyBack();
   } catch(e) {
