@@ -2765,18 +2765,18 @@ function _dlCSV(content, filename) {
 
       <!-- 直接查詢 / 合併 -->
       <div class="card" style="margin-top:14px;">
-        <div style="font-size:0.88rem;font-weight:600;margin-bottom:10px;">🔍 直接查詢紀錄</div>
-        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:12px;">輸入姓名與日期，直接檢視該筆簽到退與出勤紀錄（可合併重複簽到）。</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="font-size:0.88rem;font-weight:600;margin-bottom:6px;">🔍 直接查詢紀錄</div>
+        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;">輸入姓名與日期，直接檢視該筆簽到退與出勤紀錄（可合併重複簽到）。</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
           <div>
             <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">姓名</div>
-            <input id="repairLookupName" type="text" placeholder="請輸入姓名" style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;width:120px;">
+            <input id="repairLookupName" type="text" placeholder="請輸入姓名" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;">
           </div>
           <div>
             <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">日期</div>
-            <input id="repairLookupDate" type="date" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.85rem;">
+            <input id="repairLookupDate" type="date" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;">
           </div>
-          <button onclick="repairLookup()" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:8px 18px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">查詢</button>
+          <button onclick="repairLookup()" style="width:100%;background:#1a6b9a;color:white;border:none;border-radius:8px;padding:12px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔍 查詢</button>
         </div>
       </div>
     </div>
