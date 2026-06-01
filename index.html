@@ -11296,7 +11296,9 @@ async function loadAdminCorrections() {
         ? (d.type === 'outing' ? '🗑️ 刪除申請・協勤' : '🗑️ 刪除申請・簽到退')
         : (d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄');
       const cf = d.correctedFields || {};
-      const og = d.originals || {};
+      // 相容舊格式（key 為 form element ID）與新格式（key 為真實欄位名）
+      const _OG_MAP = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service', corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
+      const og = Object.fromEntries(Object.entries(d.originals||{}).map(([k,v])=>[_OG_MAP[k]||k, v]));
 
       // 產生修正對比列表
       const sigKeys = ['checkinSig','checkoutSig','signature'];
