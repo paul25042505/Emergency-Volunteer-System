@@ -2762,6 +2762,23 @@ function _dlCSV(content, filename) {
         <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
+
+      <!-- 直接查詢 / 合併 -->
+      <div class="card" style="margin-top:14px;">
+        <div style="font-size:0.88rem;font-weight:600;margin-bottom:10px;">🔍 直接查詢紀錄</div>
+        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:12px;">輸入姓名與日期，直接檢視該筆簽到退與出勤紀錄（可合併重複簽到）。</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">姓名</div>
+            <input id="repairLookupName" type="text" placeholder="請輸入姓名" style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;width:120px;">
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">日期</div>
+            <input id="repairLookupDate" type="date" style="border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.85rem;">
+          </div>
+          <button onclick="repairLookup()" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:8px 18px;font-size:0.85rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">查詢</button>
+        </div>
+      </div>
     </div>
 
     <!-- ══ SECTION：確認任務 ══ -->
@@ -5161,6 +5178,14 @@ async function rdSaveOut(idx) {
 
 function rdCancelEdit() {
   repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId);
+}
+
+async function repairLookup() {
+  const name = document.getElementById('repairLookupName')?.value.trim();
+  const date = document.getElementById('repairLookupDate')?.value;
+  if (!name) { alert('請輸入姓名'); return; }
+  if (!date) { alert('請選擇日期'); return; }
+  await repairShowDetail(name, date, null);
 }
 
 async function rdMergeAtt(otherAttId) {
