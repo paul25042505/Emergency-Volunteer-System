@@ -4846,9 +4846,9 @@ function calcAttStats(attDoc, outDocs) {
   const valid = outDocs
     .filter(o => o.caseType !== '空跑')
     .filter(o => {
-      if (!cin) return true;
+      if (!cin) return true;              // 簽到退無時間紀錄 → 全部計入
       const t = o.timeOut || '';
-      if (!t) return false;
+      if (!t) return true;               // 協勤紀錄未填出勤時間 → 計入（無法判斷就不排除）
       if (!cout) return t >= cin;
       return t >= cin && t <= cout;
     });
