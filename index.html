@@ -5001,11 +5001,13 @@ async function repairShowDetail(memberName, date, attDocId) {
     document.body.appendChild(modal);
   }
   try {
-    const [attDoc, outDocs] = await Promise.all([
+    const [attDoc, outDocs, allAttDocs] = await Promise.all([
       attDocId ? fbGet(COL_ATTEND, attDocId) : fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]).then(r=>r[0]||null),
       fbQuery(COL_OUTING, [['memberName','==',memberName],['date','==',date]]),
+      fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]),
     ]);
-    window._rdData = { memberName, date, attDocId, attDoc, outDocs };
+    const otherAttDocs = allAttDocs.filter(a => a.id !== (attDoc?.id || attDocId));
+    window._rdData = { memberName, date, attDocId, attDoc, outDocs, otherAttDocs };
 
     const cin = attDoc?.checkinTime||'', cout = attDoc?.checkoutTime||'';
     const stats = attDoc ? calcAttStats(attDoc, outDocs) : {count:0,service:0};
@@ -5061,7 +5063,13 @@ async function repairShowDetail(memberName, date, attDocId) {
           &nbsp;｜&nbsp;目前 出勤 <strong>${attDoc.count??'—'}</strong> 次・服務 <strong>${attDoc.service??'—'}</strong> 人
           &nbsp;→&nbsp;<span style="color:#1a6b9a;">修後 出勤 <strong>${stats.count}</strong> 次・服務 <strong>${stats.service}</strong> 人</span>
         </div>
-        <button onclick="rdEditAtt()" style="${eBtnS}">✏️ 編輯</button>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+          <button onclick="rdEditAtt()" style="${eBtnS}">✏️ 編輯</button>
+          ${otherAttDocs.map(oa => {
+            const oaEsc = oa.id.replace(/'/g,"\\'");
+            return `<button onclick="rdMergeAtt('${oaEsc}')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:&quot;Noto Sans TC&quot;,sans-serif;color:#1a5276;white-space:nowrap;">🔗 合併：以 ${oa.checkinTime||'??:??'} 為簽退</button>`;
+          }).join('')}
+        </div>
       </div>`;
     }
     html += `</div>`;
@@ -5153,6 +5161,22 @@ async function rdSaveOut(idx) {
 
 function rdCancelEdit() {
   repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId);
+}
+
+async function rdMergeAtt(otherAttId) {
+  const { memberName, date, attDocId, attDoc, otherAttDocs } = window._rdData;
+  const other = otherAttDocs.find(a => a.id === otherAttId);
+  if (!other || !attDoc) return;
+  const msg = `合併確認：\n\n`
+    + `保留：簽到 ${attDoc.checkinTime||'??:??'}，將簽退設為 ${other.checkinTime||'??:??'}\n`
+    + `刪除：另一筆（簽到 ${other.checkinTime||'??:??'} 簽退 ${other.checkoutTime||'無'}）\n\n`
+    + `此動作無法復原。`;
+  if (!confirm(msg)) return;
+  try {
+    await fbUpdate(COL_ATTEND, attDoc.id, { checkoutTime: other.checkinTime || '' });
+    await fbDelete(COL_ATTEND, other.id);
+    repairShowDetail(memberName, date, attDocId);
+  } catch(e) { alert('合併失敗：' + e.message); }
 }
 
 async function syncAttServiceForDate(memberName, date) {
