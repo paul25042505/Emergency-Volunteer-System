@@ -5005,57 +5005,101 @@ async function repairShowDetail(memberName, date) {
       fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]),
       fbQuery(COL_OUTING,  [['memberName','==',memberName],['date','==',date]]),
     ]);
+    // store with original indices preserved
     window._rdData = { memberName, date, attDocs, outDocs };
-    const att = attDocs[0] || {};
-    const cin = att.checkinTime || '', cout = att.checkoutTime || '';
+
+    // sort attDocs by checkinTime, outDocs by timeOut
+    const attSorted = attDocs.map((a,i)=>({...a,_i:i})).sort((a,b)=>(a.checkinTime||'') < (b.checkinTime||'') ? -1 : 1);
+    const outSorted = outDocs.map((o,i)=>({...o,_i:i})).sort((a,b)=>(a.timeOut||'99:99') < (b.timeOut||'99:99') ? -1 : 1);
+
+    // assign each outing to first matching att window (空跑 → skip bucket)
+    const assigned = new Set();
+    const attOutMap = new Map(attSorted.map(a => [a._i, []]));
+    const skipOuts = [], unmatched = [];
+    attSorted.forEach(a => {
+      const cin = a.checkinTime||'', cout = a.checkoutTime||'';
+      outSorted.forEach(o => {
+        if (assigned.has(o._i)) return;
+        if (o.caseType === '空跑') return;
+        const t = o.timeOut||'';
+        const inWin = !cin || !t || (cout ? (t>=cin && t<=cout) : t>=cin);
+        if (inWin) { attOutMap.get(a._i).push(o); assigned.add(o._i); }
+      });
+    });
+    outSorted.forEach(o => {
+      if (assigned.has(o._i)) return;
+      if (o.caseType === '空跑') skipOuts.push(o); else unmatched.push(o);
+    });
+
     const eBtnS = 'background:none;border:1px solid #ccc;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:"Noto Sans TC",sans-serif;color:#555;';
+    const thS   = 'padding:6px 8px;font-size:0.78rem;background:var(--warm);';
+    const tdS   = 'padding:6px 8px;';
+
+    const outRowHtml = (o) => {
+      const isKp = o.caseType === '空跑';
+      const badge = isKp
+        ? '<span style="background:#e9ecef;color:#6c757d;font-size:0.7rem;padding:1px 6px;border-radius:4px;">空跑</span>'
+        : '<span style="background:#d4edda;color:#1a6b35;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✓</span>';
+      return `<tr id="rdOutRow-${o._i}" style="border-bottom:1px solid var(--border);">
+        <td style="${tdS}">${o.timeOut||'—'}</td>
+        <td style="${tdS}">${o.caseType||'—'}</td>
+        <td style="${tdS}text-align:center;">${o.serviceCount ?? '—'}</td>
+        <td style="${tdS}text-align:center;">${badge}</td>
+        <td style="${tdS}text-align:center;"><button onclick="rdEditOut(${o._i})" style="${eBtnS}">✏️</button></td>
+      </tr>`;
+    };
+    const outTableHtml = (rows) => rows.length
+      ? `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+          <thead><tr><th style="${thS}text-align:left;">出勤時間</th><th style="${thS}text-align:left;">案由</th><th style="${thS}text-align:center;">服務人次</th><th style="${thS}text-align:center;">計入</th><th></th></tr></thead>
+          <tbody>${rows.map(outRowHtml).join('')}</tbody>
+        </table></div>`
+      : '<div style="font-size:0.75rem;color:var(--text-light);padding:4px 2px;">（此時段無出勤紀錄）</div>';
+
     let html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
       <div><div style="font-size:1rem;font-weight:700;">${memberName}</div><div style="font-size:0.82rem;color:var(--text-mid);">${date}</div></div>
       <button onclick="document.getElementById('repairDetailModal').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-mid);line-height:1;">✕</button>
     </div>`;
-    html += `<div style="font-weight:600;font-size:0.82rem;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;">📋 簽到退紀錄（${attDocs.length} 筆）</div>`;
-    if (!attDocs.length) {
-      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;margin-bottom:14px;">無記錄</div>';
-    } else {
-      html += '<div style="overflow-x:auto;margin-bottom:14px;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
-      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">簽到</th><th style="padding:6px 8px;text-align:left;">簽退</th><th style="padding:6px 8px;text-align:center;">出勤次數</th><th style="padding:6px 8px;text-align:center;">服務人次</th><th></th></tr></thead><tbody>';
-      attDocs.forEach((a, i) => {
-        html += `<tr id="rdAttRow-${i}" style="border-bottom:1px solid var(--border);">
-          <td style="padding:6px 8px;">${a.checkinTime||'—'}</td>
-          <td style="padding:6px 8px;">${a.checkoutTime||'—'}</td>
-          <td style="padding:6px 8px;text-align:center;">${a.count ?? '—'}</td>
-          <td style="padding:6px 8px;text-align:center;">${a.service ?? '—'}</td>
-          <td style="padding:6px 8px;text-align:center;"><button onclick="rdEditAtt(${i})" style="${eBtnS}">✏️</button></td>
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
+
+    if (!attSorted.length) {
+      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;margin-bottom:12px;">無簽到退紀錄</div>';
     }
-    html += `<div style="font-weight:600;font-size:0.82rem;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;">🚑 出勤紀錄（${outDocs.length} 筆）<span style="font-weight:400;font-size:0.75rem;color:var(--text-light);margin-left:8px;">✓=計入 ✗=不計</span></div>`;
-    if (!outDocs.length) {
-      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:6px;">無記錄</div>';
-    } else {
-      html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
-      html += '<thead><tr style="background:var(--warm);"><th style="padding:6px 8px;text-align:left;">出勤時間</th><th style="padding:6px 8px;text-align:left;">案由</th><th style="padding:6px 8px;text-align:center;">服務人次</th><th style="padding:6px 8px;text-align:center;">計入</th><th></th></tr></thead><tbody>';
-      outDocs.forEach((o, i) => {
-        const isKp = o.caseType === '空跑';
-        const t = o.timeOut || '';
-        const inWin = !isKp && (!cin || !t || (cout ? (t >= cin && t <= cout) : t >= cin));
-        const badge = isKp
-          ? '<span style="background:#e9ecef;color:#6c757d;font-size:0.7rem;padding:1px 6px;border-radius:4px;">空跑</span>'
-          : inWin
-            ? '<span style="background:#d4edda;color:#1a6b35;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✓</span>'
-            : '<span style="background:#f8d7da;color:#b94a3a;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✗</span>';
-        const dim = (!inWin && !isKp) ? 'color:var(--text-light);' : '';
-        html += `<tr id="rdOutRow-${i}" style="border-bottom:1px solid var(--border);${dim}">
-          <td style="padding:6px 8px;">${o.timeOut||'—'}</td>
-          <td style="padding:6px 8px;">${o.caseType||'—'}</td>
-          <td style="padding:6px 8px;text-align:center;">${o.serviceCount ?? '—'}</td>
-          <td style="padding:6px 8px;text-align:center;">${badge}</td>
-          <td style="padding:6px 8px;text-align:center;"><button onclick="rdEditOut(${i})" style="${eBtnS}">✏️</button></td>
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
+
+    attSorted.forEach((a, si) => {
+      const outs = attOutMap.get(a._i) || [];
+      const stats = calcAttStats(a, outs);
+      const label = attSorted.length > 1 ? `時段 ${si+1}：` : '';
+      const timeRange = `${a.checkinTime||'??:??'} ~ ${a.checkoutTime||'??:??'}`;
+      html += `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div style="background:var(--warm);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;font-size:0.82rem;">📋 ${label}${timeRange}</span>
+          <button onclick="rdEditAtt(${a._i})" style="${eBtnS}">✏️ 編輯</button>
+        </div>
+        <div style="padding:6px 12px 2px;display:flex;gap:16px;font-size:0.78rem;color:var(--text-mid);">
+          <span>目前：出勤 <strong>${a.count??'—'}</strong> 次・服務 <strong>${a.service??'—'}</strong> 人</span>
+          <span style="color:#1a6b9a;">修後：出勤 <strong>${stats.count}</strong> 次・服務 <strong>${stats.service}</strong> 人</span>
+        </div>
+        <div style="padding:8px 12px 10px;">
+          ${outTableHtml(outs)}
+        </div>
+      </div>`;
+    });
+
+    // unmatched (not in any window, not 空跑)
+    if (unmatched.length) {
+      html += `<div style="margin-bottom:12px;border:1px solid #f8d7da;border-radius:8px;overflow:hidden;">
+        <div style="background:#f8d7da;padding:8px 12px;font-weight:600;font-size:0.82rem;color:#b94a3a;">⚠️ 未計入任何備勤時段（${unmatched.length} 筆）</div>
+        <div style="padding:8px 12px;">${outTableHtml(unmatched)}</div>
+      </div>`;
     }
+
+    // 空跑
+    if (skipOuts.length) {
+      html += `<div style="margin-bottom:12px;border:1px solid #e9ecef;border-radius:8px;overflow:hidden;">
+        <div style="background:#e9ecef;padding:8px 12px;font-weight:600;font-size:0.82rem;color:#6c757d;">空跑（不計入次數）（${skipOuts.length} 筆）</div>
+        <div style="padding:8px 12px;">${outTableHtml(skipOuts)}</div>
+      </div>`;
+    }
+
     modal.querySelector('div').innerHTML = html;
   } catch(e) {
     modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">❌ 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
