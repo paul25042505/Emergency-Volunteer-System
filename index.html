@@ -2769,8 +2769,16 @@ function _dlCSV(content, filename) {
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;">輸入姓名與日期，直接檢視該筆簽到退與出勤紀錄（可合併重複簽到）。</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div>
-            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">姓名</div>
-            <input id="repairLookupName" type="text" placeholder="請輸入姓名" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;">
+            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">分隊</div>
+            <select id="repairLookupUnit" onchange="repairLookupUnitChange()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:white;">
+              <option value="">— 選擇分隊 —</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">成員</div>
+            <select id="repairLookupMember" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:white;">
+              <option value="">請先選擇分隊</option>
+            </select>
           </div>
           <div>
             <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">日期</div>
@@ -5006,7 +5014,7 @@ async function repairAllAttService(btn) {
   }
 }
 
-async function repairShowDetail(memberName, date, attDocId) {
+async function repairShowDetail(memberName, date, attDocId, opts = {}) {
   let modal = document.getElementById('repairDetailModal');
   if (modal) { modal.querySelector('div').innerHTML = '<div style="font-size:0.82rem;color:var(--text-mid);padding:20px;">載入中...</div>'; }
   else {
@@ -5024,7 +5032,7 @@ async function repairShowDetail(memberName, date, attDocId) {
       fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]),
     ]);
     const otherAttDocs = allAttDocs.filter(a => a.id !== (attDoc?.id || attDocId));
-    window._rdData = { memberName, date, attDocId, attDoc, outDocs, otherAttDocs };
+    window._rdData = { memberName, date, attDocId, attDoc, outDocs, otherAttDocs, opts };
 
     const cin = attDoc?.checkinTime||'', cout = attDoc?.checkoutTime||'';
     const stats = attDoc ? calcAttStats(attDoc, outDocs) : {count:0,service:0};
@@ -5091,20 +5099,22 @@ async function repairShowDetail(memberName, date, attDocId) {
     }
     html += `</div>`;
 
-    // outings table
-    if (!outSorted.length) {
-      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:8px;">無出勤紀錄</div>';
-    } else {
-      html += `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
-        <thead><tr>
-          <th style="${thS}">出勤時間</th>
-          <th style="${thS}">案由</th>
-          <th style="${thS}text-align:center;">服務人次</th>
-          <th style="${thS}text-align:center;">計入</th>
-          <th></th>
-        </tr></thead>
-        <tbody>${outSorted.map(outRowHtml).join('')}</tbody>
-      </table></div>`;
+    // outings table (hidden in lookup/merge mode)
+    if (!opts.hideOutings) {
+      if (!outSorted.length) {
+        html += '<div style="font-size:0.78rem;color:var(--text-light);padding:8px;background:#f5f5f5;border-radius:8px;">無出勤紀錄</div>';
+      } else {
+        html += `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+          <thead><tr>
+            <th style="${thS}">出勤時間</th>
+            <th style="${thS}">案由</th>
+            <th style="${thS}text-align:center;">服務人次</th>
+            <th style="${thS}text-align:center;">計入</th>
+            <th></th>
+          </tr></thead>
+          <tbody>${outSorted.map(outRowHtml).join('')}</tbody>
+        </table></div>`;
+      }
     }
 
     modal.querySelector('div').innerHTML = html;
@@ -5140,7 +5150,7 @@ async function rdSaveAtt() {
   const svc  = parseInt(document.getElementById('rdAtt-svc')?.value)  || 0;
   try {
     await fbUpdate(COL_ATTEND, a.id, { checkinTime: cin, checkoutTime: cout, count: cnt, service: svc });
-    repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId);
+    repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId, window._rdData.opts||{});
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 
@@ -5172,35 +5182,61 @@ async function rdSaveOut(idx) {
     const upd = { timeOut: t, caseType: ct };
     if (svc !== null) upd.serviceCount = svc;
     await fbUpdate(COL_OUTING, o.id, upd);
-    repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId);
+    repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId, window._rdData.opts||{});
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 
 function rdCancelEdit() {
-  repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId);
+  repairShowDetail(window._rdData.memberName, window._rdData.date, window._rdData.attDocId, window._rdData.opts||{});
 }
 
+function repairLookupInitUnits() {
+  const sel = document.getElementById('repairLookupUnit');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 選擇分隊 —</option>'
+    + _unitsList.map(u => `<option value="${u}"${u===cur?' selected':''}>${u}</option>`).join('');
+  repairLookupUnitChange();
+}
+function repairLookupUnitChange() {
+  const unit = document.getElementById('repairLookupUnit')?.value || '';
+  const mSel = document.getElementById('repairLookupMember');
+  if (!mSel) return;
+  const list = unit ? members.filter(m => m.unit === unit) : [];
+  mSel.innerHTML = list.length
+    ? '<option value="">— 選擇成員 —</option>' + list.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
+    : '<option value="">請先選擇分隊</option>';
+}
 async function repairLookup() {
-  const name = document.getElementById('repairLookupName')?.value.trim();
+  const name = document.getElementById('repairLookupMember')?.value;
   const date = document.getElementById('repairLookupDate')?.value;
-  if (!name) { alert('請輸入姓名'); return; }
+  if (!name) { alert('請選擇成員'); return; }
   if (!date) { alert('請選擇日期'); return; }
-  await repairShowDetail(name, date, null);
+  await repairShowDetail(name, date, null, { hideOutings: true });
 }
 
 async function rdMergeAtt(otherAttId) {
-  const { memberName, date, attDocId, attDoc, otherAttDocs } = window._rdData;
+  const { memberName, date, attDoc, otherAttDocs, opts } = window._rdData;
   const other = otherAttDocs.find(a => a.id === otherAttId);
   if (!other || !attDoc) return;
+
+  // 時間早的為簽到，時間晚的為簽退
+  const aTime = attDoc.checkinTime || '99:99';
+  const bTime = other.checkinTime  || '99:99';
+  const earlier = aTime <= bTime ? attDoc : other;
+  const later   = aTime <= bTime ? other  : attDoc;
+  const keepId = earlier.id, dropId = later.id;
+  const newCheckin = earlier.checkinTime || '', newCheckout = later.checkinTime || '';
+
   const msg = `合併確認：\n\n`
-    + `保留：簽到 ${attDoc.checkinTime||'??:??'}，將簽退設為 ${other.checkinTime||'??:??'}\n`
-    + `刪除：另一筆（簽到 ${other.checkinTime||'??:??'} 簽退 ${other.checkoutTime||'無'}）\n\n`
+    + `保留：簽到 ${newCheckin}，將簽退設為 ${newCheckout}\n`
+    + `刪除：另一筆（簽到 ${later.checkinTime||'??:??'}）\n\n`
     + `此動作無法復原。`;
   if (!confirm(msg)) return;
   try {
-    await fbUpdate(COL_ATTEND, attDoc.id, { checkoutTime: other.checkinTime || '' });
-    await fbDelete(COL_ATTEND, other.id);
-    repairShowDetail(memberName, date, attDocId);
+    await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout });
+    await fbDelete(COL_ATTEND, dropId);
+    repairShowDetail(memberName, date, keepId, opts||{});
   } catch(e) { alert('合併失敗：' + e.message); }
 }
 
@@ -7874,6 +7910,7 @@ function adminShowSection(sectionId) {
       df.value = `${y}-${m}-01`;
       if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
     }
+    repairLookupInitUnits();
   }
 }
 
