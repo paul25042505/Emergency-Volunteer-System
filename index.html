@@ -1861,7 +1861,7 @@ function _dlCSV(content, filename) {
       <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
     </div>
     <div class="field" style="margin-bottom:0;">
-      <label><span>簽退簽名</span></label>
+      <label style="display:flex;justify-content:space-between;align-items:center;"><span>簽退簽名</span><button type="button" id="aqEditCopyCheckinBtn" onclick="aqCopyCheckinSig()" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">📋 複製簽到簽名</button></label>
       <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
       <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
       <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
@@ -6488,6 +6488,8 @@ function openAttEdit(idx) {
   else{cinPrev.style.display='none';cinNote.style.display='none';}
   if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='flex';}
   else{coutPrev.style.display='none';coutNote.style.display='none';}
+  const copyBtn = document.getElementById('aqEditCopyCheckinBtn');
+  if(copyBtn) copyBtn.style.display = (r.checkinSig && !r.checkoutSig) ? 'inline-block' : 'none';
   document.getElementById('aqEditModal').style.display = 'flex';
   autoCalcEditHours();
   setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
@@ -6495,6 +6497,21 @@ function openAttEdit(idx) {
 
 function closeAttEdit() {
   document.getElementById('aqEditModal').style.display = 'none';
+}
+
+function aqCopyCheckinSig() {
+  const src = document.getElementById('aqEditCheckinPrevImg')?.src;
+  if (!src || src === window.location.href) return;
+  const canvas = document.getElementById('aqEditCheckoutCanvas');
+  if (!canvas) return;
+  const img = new Image();
+  img.onload = () => {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    document.getElementById('aqEditCopyCheckinBtn').textContent = '✅ 已複製';
+  };
+  img.src = src;
 }
 
 async function deleteOwnAtt(idx) {
