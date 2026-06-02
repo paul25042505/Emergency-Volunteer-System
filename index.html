@@ -791,7 +791,7 @@ function _dlCSV(content, filename) {
 
 <div id="globalLoadingBar" style="position:fixed;top:56px;left:0;right:0;z-index:9999;display:none;background:rgba(139,26,14,0.88);overflow:hidden;">
   <div id="globalLoadingBarFill" style="position:absolute;top:0;left:0;height:100%;width:0%;background:rgba(255,255,255,0.18);transition:width 0.25s ease;"></div>
-  <div id="globalLoadingCar" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);font-size:1rem;z-index:3;transition:left 0.25s ease;pointer-events:none;">🚑</div>
+  <div id="globalLoadingCar" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%) scaleX(-1);font-size:1rem;z-index:3;transition:left 0.25s ease;pointer-events:none;">🚑</div>
   <div id="globalLoadingLabel" style="position:relative;z-index:2;color:white;font-size:0.72rem;text-align:center;padding:6px 0;letter-spacing:0.05em;font-family:'Noto Sans TC',sans-serif;font-weight:500;">🚨 接到勤務！資料整備中，請勿重新整理…</div>
 </div>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
