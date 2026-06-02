@@ -6202,7 +6202,8 @@ async function doCheckin() {
   if (dutyTypeVal === '公差' && !document.getElementById('attOutingReasonSel')?.value) { alert('公差請填寫事由'); return; }
   if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
   if (attSessions[memberName] && !attSessions[memberName].done) {
-    if (!confirm(`${memberName} 已有簽到紀錄（${attSessions[memberName].checkinTime}），要重新簽到嗎？`)) return;
+    alert(`${memberName} 已有未簽退的簽到紀錄（${attSessions[memberName].checkinTime}），請先完成簽退。`);
+    return;
   }
 
   const _attTimeDiff = checkinTimeDiffMins(timeVal);
@@ -10291,6 +10292,10 @@ async function easyDoCheckin() {
   if (!timeVal)    { alert('請選擇簽到時間'); return; }
   if (dutyType === '公差' && !document.getElementById('easyOutingReasonSel')?.value) { alert('公差請填寫事由'); return; }
   if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
+  if (attSessions[memberName] && !attSessions[memberName].done) {
+    alert(`${memberName} 已有未簽退的簽到紀錄（${attSessions[memberName].checkinTime}），請先完成簽退。`);
+    return;
+  }
 
   const _easyTimeDiff = checkinTimeDiffMins(timeVal);
   if (!_appIsAdmin && _easyTimeDiff > 30) {
