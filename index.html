@@ -854,6 +854,7 @@ function _dlCSV(content, filename) {
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
         <span id="headerUserInfo" style="font-size:0.8rem;color:white;font-weight:600;letter-spacing:0.04em;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <span id="headerUserBadge" style="display:none;font-size:0.6rem;background:rgba(255,215,0,0.25);border:1px solid rgba(255,215,0,0.5);border-radius:10px;padding:1px 7px;color:rgba(255,235,150,1);letter-spacing:0.06em;">管理員</span>
+        <span id="headerSessionTimer" style="font-size:0.58rem;color:rgba(255,255,255,0.45);letter-spacing:0.03em;"></span>
       </div>
       <div id="headerAvatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:white;flex-shrink:0;"></div>
 
@@ -3781,6 +3782,7 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.style.display = 'inline';
   startIdleTimer();
+  startSessionTimer();
   setTimeout(checkCertExpiry, 1500);
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
   // 登入後 4 秒檢查確認任務
@@ -3852,6 +3854,44 @@ function startIdleTimer() {
     document.addEventListener(ev, reset, { passive: true })
   );
   reset();
+}
+
+// ── Session 剩餘時間計時器 ──
+let _sessionTimerInterval = null;
+function startSessionTimer() {
+  const raw = sessionStorage.getItem('rescue_user');
+  if (!raw) return;
+  let user;
+  try { user = JSON.parse(raw); } catch(e) { return; }
+  const loginAt = user.loginAt;
+  if (!loginAt) return;
+  const SESSION_MS = 8 * 3600 * 1000;
+  const update = () => {
+    const el = document.getElementById('headerSessionTimer');
+    if (!el) return;
+    const remaining = loginAt + SESSION_MS - Date.now();
+    if (remaining <= 0) {
+      el.textContent = '工作階段已到期';
+      el.style.color = 'rgba(255,120,120,0.9)';
+      return;
+    }
+    const totalMin = Math.ceil(remaining / 60000);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (totalMin > 60) {
+      el.textContent = `剩 ${h}h ${m < 10 ? '0'+m : m}m`;
+      el.style.color = 'rgba(255,255,255,0.42)';
+    } else if (totalMin > 15) {
+      el.textContent = `剩 ${totalMin} 分`;
+      el.style.color = 'rgba(255,230,100,0.85)';
+    } else {
+      el.textContent = `⚠ 剩 ${totalMin} 分`;
+      el.style.color = 'rgba(255,160,60,1)';
+    }
+  };
+  clearInterval(_sessionTimerInterval);
+  update();
+  _sessionTimerInterval = setInterval(update, 30000);
 }
 
 // ════════════════════════════════════════
