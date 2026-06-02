@@ -2816,30 +2816,6 @@ function _dlCSV(content, filename) {
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
 
-      <!-- 直接查詢 / 合併 -->
-      <div class="card" style="margin-top:14px;">
-        <div style="font-size:0.88rem;font-weight:600;margin-bottom:6px;">🔍 直接查詢紀錄</div>
-        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;">輸入姓名與日期，直接檢視該筆簽到退與出勤紀錄（可合併重複簽到）。</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">分隊</div>
-            <select id="repairLookupUnit" onchange="repairLookupUnitChange()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:white;">
-              <option value="">— 選擇分隊 —</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">成員</div>
-            <select id="repairLookupMember" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:white;">
-              <option value="">請先選擇分隊</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:0.72rem;color:var(--text-mid);margin-bottom:4px;">日期</div>
-            <input id="repairLookupDate" type="date" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;-webkit-appearance:none;appearance:none;">
-          </div>
-          <button onclick="repairLookup()" style="width:100%;background:#1a6b9a;color:white;border:none;border-radius:8px;padding:12px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔍 查詢</button>
-        </div>
-      </div>
     </div>
 
     <!-- ══ SECTION：確認任務 ══ -->
@@ -5454,56 +5430,7 @@ async function rdCopyCheckinSig() {
   } catch(e) { alert('更新失敗：' + e.message); }
 }
 
-function repairLookupInitUnits() {
-  const sel = document.getElementById('repairLookupUnit');
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— 選擇分隊 —</option>'
-    + _unitsList.map(u => `<option value="${u}"${u===cur?' selected':''}>${u}</option>`).join('');
-  repairLookupUnitChange();
-}
-function repairLookupUnitChange() {
-  const unit = document.getElementById('repairLookupUnit')?.value || '';
-  const mSel = document.getElementById('repairLookupMember');
-  if (!mSel) return;
-  const list = unit ? members.filter(m => m.unit === unit) : [];
-  mSel.innerHTML = list.length
-    ? '<option value="">— 選擇成員 —</option>' + list.map(m => `<option value="${m.name}">${m.name}</option>`).join('')
-    : '<option value="">請先選擇分隊</option>';
-}
-async function repairLookup() {
-  const name = document.getElementById('repairLookupMember')?.value;
-  const date = document.getElementById('repairLookupDate')?.value;
-  if (!name) { alert('請選擇成員'); return; }
-  if (!date) { alert('請選擇日期'); return; }
-  await repairShowDetail(name, date, null, { hideOutings: true });
-}
 
-async function rdMergeAtt(otherAttId) {
-  const { memberName, date, attDoc, otherAttDocs, opts } = window._rdData;
-  const other = otherAttDocs.find(a => a.id === otherAttId);
-  if (!other || !attDoc) return;
-
-  // 時間早的為簽到，時間晚的為簽退
-  const aTime = attDoc.checkinTime || '99:99';
-  const bTime = other.checkinTime  || '99:99';
-  const earlier = aTime <= bTime ? attDoc : other;
-  const later   = aTime <= bTime ? other  : attDoc;
-  const keepId = earlier.id, dropId = later.id;
-  const newCheckin = earlier.checkinTime || '', newCheckout = later.checkinTime || '';
-
-  const msg = `合併確認：\n\n`
-    + `保留：簽到 ${newCheckin}，將簽退設為 ${newCheckout}\n`
-    + `刪除：另一筆（簽到 ${later.checkinTime||'??:??'}）\n\n`
-    + `此動作無法復原。`;
-  if (!confirm(msg)) return;
-  try {
-    await fbUpdate(COL_ATTEND, keepId, { checkoutTime: newCheckout, checkoutSig: later.checkinSig || earlier.checkinSig || '' });
-    await fbDelete(COL_ATTEND, dropId);
-    await syncAttServiceForDate(memberName, date);
-    repairShowDetail(memberName, date, keepId, opts||{});
-  } catch(e) { alert('合併失敗：' + e.message); }
-}
 
 async function syncAttServiceForDate(memberName, date) {
   if (!memberName || !date) return;
@@ -8251,7 +8178,6 @@ function adminShowSection(sectionId) {
       df.value = `${y}-${m}-01`;
       if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
     }
-    repairLookupInitUnits();
   }
 }
 
