@@ -3767,6 +3767,7 @@ function showApp(name, email, isAdmin, isOfficer, role) {
     _appIsAdmin = true;
     document.querySelectorAll('.admin-fill-btn').forEach(btn => btn.style.display = '');
   }
+  loadOutingReasons();
   // 一般成員隱藏報表匯出
   if (!isAdmin && !isOfficer) {
     const reportNav = document.getElementById('nav-report');
@@ -4891,19 +4892,41 @@ function setEasyCheckinDuty(type) {
   const f = document.getElementById('easyOutingReasonField');
   if (f) f.style.display = type === '公差' ? '' : 'none';
 }
+const _OUTING_REASONS_KEY = 'evs_outing_reasons';
+function _saveOutingReasons() {
+  try { localStorage.setItem(_OUTING_REASONS_KEY, JSON.stringify(_attOutingReasons)); } catch(e) {}
+}
+function _appendReasonToSelects(text) {
+  ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    if (!Array.from(sel.options).some(o => o.value === text)) {
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = text;
+      sel.appendChild(opt);
+    }
+  });
+}
+function loadOutingReasons() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(_OUTING_REASONS_KEY) || '[]');
+    if (!Array.isArray(saved)) return;
+    saved.forEach(text => {
+      if (text && !_attOutingReasons.includes(text)) {
+        _attOutingReasons.push(text);
+        _appendReasonToSelects(text);
+      }
+    });
+  } catch(e) {}
+}
 function addOutingReason() {
   const reason = prompt('請輸入公差事由：');
   if (!reason || !reason.trim()) return;
   const text = reason.trim();
   if (!_attOutingReasons.includes(text)) {
     _attOutingReasons.push(text);
-    ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
-      const sel = document.getElementById(id);
-      if (!sel) return;
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = text;
-      sel.appendChild(opt);
-    });
+    _appendReasonToSelects(text);
+    _saveOutingReasons();
   }
   ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
     const sel = document.getElementById(id);
@@ -4917,6 +4940,7 @@ function deleteOutingReason(triggerId) {
   if (!confirm(`確定刪除事由「${text}」？`)) return;
   const idx = _attOutingReasons.indexOf(text);
   if (idx !== -1) _attOutingReasons.splice(idx, 1);
+  _saveOutingReasons();
   ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
     const s = document.getElementById(id);
     if (!s) return;
