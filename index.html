@@ -6223,7 +6223,7 @@ async function doCheckin() {
   if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
   const _existingSession = Object.values(attSessions).find(s => s.memberName === memberName && !s.done);
   if (_existingSession) {
-    alert(`${memberName} 已有未簽退的簽到紀錄（${_existingSession.checkinTime}），請先完成簽退。`);
+    alert(`${memberName} 已有未簽退的簽到紀錄（${_existingSession.date || ''} ${_existingSession.checkinTime}），請先完成簽退。`);
     return;
   }
 
@@ -10317,7 +10317,7 @@ async function easyDoCheckin() {
   if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
   const _easyExistingSession = Object.values(attSessions).find(s => s.memberName === memberName && !s.done);
   if (_easyExistingSession) {
-    alert(`${memberName} 已有未簽退的簽到紀錄（${_easyExistingSession.checkinTime}），請先完成簽退。`);
+    alert(`${memberName} 已有未簽退的簽到紀錄（${_easyExistingSession.date || ''} ${_easyExistingSession.checkinTime}），請先完成簽退。`);
     return;
   }
 
