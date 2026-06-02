@@ -402,6 +402,7 @@ tr:hover td { background: #fdfcfb; }
 .status-banner.idle .status-dot { background: var(--text-light); }
 .status-banner.checked-in .status-dot { background: #27ae60; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes loadingPulse { 0%{width:15%} 50%{width:70%} 100%{width:15%} }
 .btn-checkin {
   width: 100%; background: #27ae60; color: white; border: none; padding: 16px;
   font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
@@ -788,6 +789,9 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
+<div id="globalLoadingBar" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;display:none;background:rgba(185,74,58,0.15);">
+  <div id="globalLoadingBarFill" style="height:100%;width:30%;background:var(--red);border-radius:0 2px 2px 0;animation:loadingPulse 1.2s ease-in-out infinite;"></div>
+</div>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
 <!-- Drawer -->
@@ -4262,7 +4266,22 @@ function syncHeaderHeight() {
 
 function _positionAdminTabBar() { /* tab bar 已移除 */ }
 
+let _loadingCount = 0;
+function showLoading() {
+  _loadingCount++;
+  const bar = document.getElementById('globalLoadingBar');
+  if (bar) bar.style.display = 'block';
+}
+function hideLoading() {
+  _loadingCount = Math.max(0, _loadingCount - 1);
+  if (_loadingCount === 0) {
+    const bar = document.getElementById('globalLoadingBar');
+    if (bar) bar.style.display = 'none';
+  }
+}
+
 function navTo(pageId, fromHistory) {
+  showLoading();
   syncHeaderHeight();
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4303,28 +4322,29 @@ function navTo(pageId, fromHistory) {
     document.getElementById(t[2]).classList.add('active-nav');
   }
 
-  if (pageId === 'dashboardPage') loadDashboard();
-  else if (pageId === 'formPage') { initFormPage(); setTimeout(() => resizeCanvas(), 50); }
-  else if (pageId === 'membersPage') initMembersPage();
-  else if (pageId === 'queryPage') updateQueryMemberSelect();
+  const _nav = fn => Promise.resolve(fn()).finally(() => hideLoading());
+  if (pageId === 'dashboardPage') _nav(loadDashboard);
+  else if (pageId === 'formPage') { _nav(initFormPage); setTimeout(() => resizeCanvas(), 50); }
+  else if (pageId === 'membersPage') _nav(initMembersPage);
+  else if (pageId === 'queryPage') _nav(updateQueryMemberSelect);
   else if (pageId === 'attendancePage') {
     attCheckoutTarget = null;
     document.getElementById('attMain').style.display = 'block';
     document.getElementById('attCheckoutView').style.display = 'none';
-    initAttendancePage();
+    _nav(initAttendancePage);
   }
-  else if (pageId === 'statsPage') initStatsPage();
-  else if (pageId === 'reportPage') initReportPage();
-  else if (pageId === 'itemsPage')  initItemsPage();
-  else if (pageId === 'attQueryPage') initAttQuery();
-  else if (pageId === 'adminPage')    initAdminPage();
-  else if (pageId === 'feedbackPage') initFeedbackPage();
-  else if (pageId === 'profilePage')   loadProfilePage();
-  else if (pageId === 'meetingPage')   loadMeetingPage();
-  else if (pageId === 'myCorrectionsPage') loadMyCorrections();
-  else if (pageId === 'gongchaPage')       loadGongchaStats();
-  else if (pageId === 'changelogPage') loadChangelog();
-  else if (pageId === 'dutyPage')      initDutyPage();
+  else if (pageId === 'statsPage') _nav(initStatsPage);
+  else if (pageId === 'reportPage') _nav(initReportPage);
+  else if (pageId === 'itemsPage')  _nav(initItemsPage);
+  else if (pageId === 'attQueryPage') _nav(initAttQuery);
+  else if (pageId === 'adminPage')    _nav(initAdminPage);
+  else if (pageId === 'feedbackPage') _nav(initFeedbackPage);
+  else if (pageId === 'profilePage')   _nav(loadProfilePage);
+  else if (pageId === 'meetingPage')   _nav(loadMeetingPage);
+  else if (pageId === 'myCorrectionsPage') _nav(loadMyCorrections);
+  else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
+  else if (pageId === 'changelogPage') _nav(loadChangelog);
+  else if (pageId === 'dutyPage')      _nav(initDutyPage);
 
   // 進入後台時展開子導覽，離開時收起；tab bar 顯示/隱藏由 initAdminPage 控制
   const adminSubNav = document.getElementById('adminSubNav');
