@@ -789,8 +789,9 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<div id="globalLoadingBar" style="position:fixed;top:56px;left:0;right:0;height:3px;z-index:9999;display:none;background:rgba(255,255,255,0.25);">
-  <div id="globalLoadingBarFill" style="height:100%;width:0%;background:white;border-radius:0 2px 2px 0;transition:width 0.2s ease;"></div>
+<div id="globalLoadingBar" style="position:fixed;top:56px;left:0;right:0;z-index:9999;display:none;">
+  <div id="globalLoadingBarFill" style="height:3px;width:0%;background:white;border-radius:0 2px 2px 0;transition:width 0.2s ease;"></div>
+  <div style="background:rgba(0,0,0,0.55);color:white;font-size:0.72rem;text-align:center;padding:3px 0;letter-spacing:0.04em;font-family:'Noto Sans TC',sans-serif;">⏳ 資料載入中，請勿重新整理或重複點擊</div>
 </div>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
