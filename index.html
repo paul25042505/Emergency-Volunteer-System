@@ -12930,10 +12930,14 @@ async function reloadMembersUnit() {
 // 公差英雄榜
 // ════════════════════════════════════════
 function gcShowDates() {
-  const dates = window._gcUniqueDates || [];
-  const duty  = window._gcDutyFilter  || '公差';
-  const year  = window._gcYear        || '';
-  const body  = dates.length ? dates.map(d => '• ' + d).join('\n') : '（無資料）';
+  const dates   = window._gcUniqueDates  || [];
+  const reasons = window._gcDateReasons  || {};
+  const duty    = window._gcDutyFilter   || '公差';
+  const year    = window._gcYear         || '';
+  const body    = dates.length ? dates.map(d => {
+    const rs = reasons[d] ? [...reasons[d]].join('、') : '';
+    return '• ' + d + (rs ? '　' + rs : '');
+  }).join('\n') : '（無資料）';
   alert(duty + ' 出勤日期（' + year + ' 年）：\n\n' + body);
 }
 
@@ -13021,6 +13025,12 @@ async function loadGongchaStats() {
   // ── summary cards ─────────────────────────────────────────────────────────
   const filteredDocs   = pubDocs.filter(d => !unitFilter || (d.unit||'') === unitFilter);
   const uniqueDates    = [...new Set(filteredDocs.map(d => d.date))].sort();
+  const dateReasonsMap = {};
+  filteredDocs.forEach(d => {
+    if (!d.date) return;
+    if (!dateReasonsMap[d.date]) dateReasonsMap[d.date] = new Set();
+    if (d.outingReason) dateReasonsMap[d.date].add(d.outingReason);
+  });
   const totalMissions  = uniqueDates.length;
   const participants   = ranking.filter(r => r.count > 0).length;
   const topPerson      = ranking[0] || null;
@@ -13030,9 +13040,10 @@ async function loadGongchaStats() {
     const cardStyle = 'background:white;border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #f0ece8;cursor:pointer;';
     const numStyle  = 'font-size:1.55rem;font-weight:800;color:#8b1a0e;line-height:1.1;';
     const lblStyle  = 'font-size:0.72rem;color:#888;margin-top:4px;letter-spacing:0.04em;';
-    window._gcUniqueDates = uniqueDates;
-    window._gcDutyFilter  = dutyFilter;
-    window._gcYear        = year;
+    window._gcUniqueDates  = uniqueDates;
+    window._gcDateReasons  = dateReasonsMap;
+    window._gcDutyFilter   = dutyFilter;
+    window._gcYear         = year;
     summaryEl.innerHTML = `
       <div style="${cardStyle}" onclick="gcShowDates()">
         <div style="${numStyle}">${totalMissions}</div>
