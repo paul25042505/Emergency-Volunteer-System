@@ -3759,6 +3759,7 @@ function showApp(name, email, isAdmin, isOfficer, role) {
     if (adminNav) adminNav.style.display = '';
   }
   if (isAdmin) {
+    _appIsAdmin = true;
     document.querySelectorAll('.admin-fill-btn').forEach(btn => btn.style.display = '');
   }
   // 一般成員隱藏報表匯出
@@ -4027,16 +4028,16 @@ function buildTimeOptions(selId, selectedVal) {
   }
 }
 
-// 簽到時間選單：顯示過去 60 分鐘到未來 60 分鐘的時段，防止大幅回填時間
+// 簽到時間選單：管理員顯示 06:00~22:00 完整範圍；一般成員限前後 60 分鐘
 function buildCheckinTimeOptions(selId) {
   const sel = document.getElementById(selId);
   if (!sel) return;
   sel.innerHTML = '';
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  const curSlot   = Math.floor(nowMins / 15) * 15;
-  const startSlot = Math.max(6 * 60, curSlot - 60);
-  const endSlot   = Math.min(23 * 60, curSlot + 60);
+  const curSlot = Math.floor(nowMins / 15) * 15;
+  const startSlot = _appIsAdmin ? 6 * 60  : Math.max(6 * 60, curSlot - 60);
+  const endSlot   = _appIsAdmin ? 22 * 60 : Math.min(23 * 60, curSlot + 60);
   for (let t = startSlot; t <= endSlot; t += 15) {
     const val = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
     const opt = document.createElement('option');
@@ -5856,6 +5857,7 @@ let attCheckinHasSig  = false;
 let attCheckoutHasSig = false;
 let attCheckinCtx, attCheckoutCtx;
 let _attOutingReasons = [];
+let _appIsAdmin = false;
 
 function roundTo15(date) {
   const h   = date.getHours();
@@ -6140,7 +6142,7 @@ async function doCheckin() {
   }
 
   const _attTimeDiff = checkinTimeDiffMins(timeVal);
-  if (_attTimeDiff > 30) {
+  if (!_appIsAdmin && _attTimeDiff > 30) {
     if (!warnCheckinTimeAdjust(timeVal, _attTimeDiff)) return;
   }
 
@@ -10191,7 +10193,7 @@ async function easyDoCheckin() {
   if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
 
   const _easyTimeDiff = checkinTimeDiffMins(timeVal);
-  if (_easyTimeDiff > 30) {
+  if (!_appIsAdmin && _easyTimeDiff > 30) {
     if (!warnCheckinTimeAdjust(timeVal, _easyTimeDiff)) return;
   }
 
