@@ -4175,11 +4175,7 @@ function initPullToRefresh() {
       indicator.querySelector('svg').style.transform = '';
 
       try {
-        if (isLogin) {
-          location.reload();
-        } else {
-          await refreshCurrentPage();
-        }
+        location.reload();
       } catch(e) {}
 
       setTimeout(() => {
@@ -4197,12 +4193,11 @@ function initPullToRefresh() {
   setupPTR(document.getElementById('loginScreen'), true);
 }
 
-async function headerRefresh(btn) {
+function headerRefresh(btn) {
   btn.style.transition = 'transform 0.6s ease';
   btn.style.transform  = 'rotate(360deg)';
   btn.disabled = true;
-  setTimeout(() => { btn.style.transition = ''; btn.style.transform = ''; btn.disabled = false; }, 650);
-  await refreshCurrentPage();
+  setTimeout(() => location.reload(), 400);
 }
 
 async function refreshCurrentPage() {
