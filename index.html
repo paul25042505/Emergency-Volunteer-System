@@ -1552,6 +1552,7 @@ function _dlCSV(content, filename) {
               <option value="">— 請選擇或新增事由 —</option>
             </select>
             <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:52px;height:52px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.4rem;cursor:pointer;line-height:1;">＋</button>
+            <button type="button" onclick="deleteOutingReason('easyOutingReasonSel')" style="flex-shrink:0;width:52px;height:52px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.2rem;cursor:pointer;line-height:1;">🗑</button>
           </div>
         </div>
         <div class="field">
@@ -1654,6 +1655,7 @@ function _dlCSV(content, filename) {
                 <option value="">— 請選擇或新增事由 —</option>
               </select>
               <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:44px;height:44px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.3rem;cursor:pointer;line-height:1;">＋</button>
+              <button type="button" onclick="deleteOutingReason('attOutingReasonSel')" style="flex-shrink:0;width:44px;height:44px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.1rem;cursor:pointer;line-height:1;">🗑</button>
             </div>
           </div>
           <div class="field">
@@ -4877,6 +4879,21 @@ function addOutingReason() {
   ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
     const sel = document.getElementById(id);
     if (sel && Array.from(sel.options).some(o => o.value === text)) sel.value = text;
+  });
+}
+function deleteOutingReason(triggerId) {
+  const sel = document.getElementById(triggerId);
+  if (!sel || !sel.value) { alert('請先選擇要刪除的事由'); return; }
+  const text = sel.value;
+  if (!confirm(`確定刪除事由「${text}」？`)) return;
+  const idx = _attOutingReasons.indexOf(text);
+  if (idx !== -1) _attOutingReasons.splice(idx, 1);
+  ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
+    const s = document.getElementById(id);
+    if (!s) return;
+    const opt = Array.from(s.options).find(o => o.value === text);
+    if (opt) s.removeChild(opt);
+    if (s.value === text) s.value = '';
   });
 }
 function fillAdminSig(type) {
