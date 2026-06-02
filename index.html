@@ -13118,7 +13118,7 @@ async function loadGongchaStats() {
   members.filter(m => m.title !== '分隊承辦人').forEach(m => {
     if (unitFilter && (m.unit||'') !== unitFilter) return;
     if (!countMap[m.name]) {
-      countMap[m.name] = { name: m.name, unit: m.unit||'', title: m.title||'', count: 0 };
+      countMap[m.name] = { name: m.name, unit: m.unit||'', title: m.title||'', count: 0, hours: 0 };
     }
     // fill missing title/unit from members list
     if (!countMap[m.name].title) countMap[m.name].title = m.title||'';
