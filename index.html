@@ -10880,7 +10880,7 @@ async function renderMeetingStats() {
 
     const total = docs.length;
     const ths = 'padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);cursor:pointer;user-select:none;white-space:nowrap;';
-    const tds = 'padding:8px 10px;border-bottom:1px solid var(--border);font-size:0.82rem;';
+    const tds = 'padding:8px 10px;border-bottom:1px solid var(--border);font-size:0.82rem;white-space:nowrap;';
 
     const sortMode = el.dataset.sort || 'count';
 
@@ -10923,7 +10923,7 @@ async function renderMeetingStats() {
               const rankStr = sortMode === 'count' ? (r.count > 0 ? rank : '—') : '—';
               return `<tr style="${r.count === 0 ? 'opacity:0.45;' : ''}">
                 <td style="${tds}color:var(--text-light);">${rankStr}</td>
-                <td style="${tds}color:var(--text-light);white-space:nowrap;">${r.title}</td>
+                <td style="${tds}color:var(--text-light);">${r.title}</td>
                 <td style="${tds}font-weight:500;">${r.name}</td>
                 ${isAdmin ? `<td style="${tds}color:var(--text-light);">${r.unit}</td>` : ''}
                 <td style="${tds}text-align:center;font-weight:700;">${r.count}</td>
