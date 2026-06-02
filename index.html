@@ -790,8 +790,9 @@ function _dlCSV(content, filename) {
 </div>
 
 <div id="globalLoadingBar" style="position:fixed;top:56px;left:0;right:0;z-index:9999;display:none;background:rgba(139,26,14,0.88);overflow:hidden;">
-  <div id="globalLoadingBarFill" style="position:absolute;top:0;left:0;height:100%;width:0%;background:rgba(255,255,255,0.18);transition:width 0.2s ease;"></div>
-  <div style="position:relative;z-index:1;color:white;font-size:0.72rem;text-align:center;padding:6px 0;letter-spacing:0.05em;font-family:'Noto Sans TC',sans-serif;font-weight:500;">⏳ 資料載入中，請勿重新整理或重複點擊</div>
+  <div id="globalLoadingBarFill" style="position:absolute;top:0;left:0;height:100%;width:0%;background:rgba(255,255,255,0.18);transition:width 0.25s ease;"></div>
+  <div id="globalLoadingCar" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%);font-size:1rem;z-index:3;transition:left 0.25s ease;pointer-events:none;">🚑</div>
+  <div id="globalLoadingLabel" style="position:relative;z-index:2;color:white;font-size:0.72rem;text-align:center;padding:6px 0;letter-spacing:0.05em;font-family:'Noto Sans TC',sans-serif;font-weight:500;">🚨 接到勤務！資料整備中，請勿重新整理…</div>
 </div>
 <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
@@ -4277,13 +4278,16 @@ function showLoading() {
     [72, '🏥 送醫途中，快到了！'],
     [88, '🏠 任務完成，返隊中…馬上好！'],
   ];
-  const _loadingLabel = bar.querySelector('div[style*="z-index:1"]');
-  const _updateLabel = () => {
-    if (!_loadingLabel) return;
-    const msg = [..._loadingMsgs].reverse().find(([t]) => _loadingWidth >= t);
-    if (msg) _loadingLabel.textContent = msg[1];
+  const _loadingLabel = document.getElementById('globalLoadingLabel');
+  const _loadingCar   = document.getElementById('globalLoadingCar');
+  const _updateUI = () => {
+    if (_loadingLabel) {
+      const msg = [..._loadingMsgs].reverse().find(([t]) => _loadingWidth >= t);
+      if (msg) _loadingLabel.textContent = msg[1];
+    }
+    if (_loadingCar) _loadingCar.style.left = _loadingWidth + '%';
   };
-  _updateLabel();
+  _updateUI();
   requestAnimationFrame(() => {
     fill.style.transition = 'width 0.25s ease';
     _loadingTimer = setInterval(() => {
@@ -4291,7 +4295,7 @@ function showLoading() {
       _loadingWidth += Math.max(remaining * 0.1, 0.5);
       if (_loadingWidth >= 90) { _loadingWidth = 90; clearInterval(_loadingTimer); }
       fill.style.width = _loadingWidth + '%';
-      _updateLabel();
+      _updateUI();
     }, 150);
   });
 }
@@ -4304,6 +4308,8 @@ function hideLoading() {
   if (!bar || !fill) return;
   fill.style.transition = 'width 0.25s ease';
   fill.style.width = '100%';
+  const _car = document.getElementById('globalLoadingCar');
+  if (_car) _car.style.left = '100%';
   setTimeout(() => {
     bar.style.transition = 'opacity 0.3s ease';
     bar.style.opacity = '0';
