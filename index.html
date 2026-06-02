@@ -1859,7 +1859,7 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- 編輯 Modal -->
-<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;">
+<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-start;justify-content:center;padding:72px 16px 16px;overflow-y:auto;">
   <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
     <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:16px;color:var(--text);">編輯紀錄</h3>
     <input type="hidden" id="aqEditRow">
@@ -1878,6 +1878,10 @@ function _dlCSV(content, filename) {
           🔧 公差
         </label>
       </div>
+    </div>
+    <div class="field" id="aqEditReasonField" style="margin-bottom:0;display:none;">
+      <label>事由</label>
+      <input type="text" id="aqEditReason" style="width:100%;" placeholder="請填寫公差事由">
     </div>
     <div class="row-2" style="margin-bottom:0;">
       <div class="field" style="margin-bottom:0;"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
@@ -6540,6 +6544,7 @@ function openAttEditNew() {
   document.getElementById('aqEditName').style.background = '';
   const dutyAtt = document.getElementById('aqEditDutyAtt');
   if (dutyAtt) { dutyAtt.checked = true; updateDutyStyle(); }
+  const aqNR = document.getElementById('aqEditReason'); if (aqNR) aqNR.value = '';
   document.getElementById('aqEditCheckin').value  = '';
   document.getElementById('aqEditCheckout').value = '';
   document.getElementById('aqEditHours').value   = '';
@@ -6572,6 +6577,7 @@ function openAttEdit(idx) {
   if (dutyAtt) dutyAtt.checked = duty !== '公差';
   if (dutyPub) dutyPub.checked = duty === '公差';
   updateDutyStyle();
+  const aqER = document.getElementById('aqEditReason'); if (aqER) aqER.value = r.outingReason || '';
   // 簽到/簽退時間：Firebase 格式直接用，空白就空白
   document.getElementById('aqEditCheckin').value  = r.checkinTime  || fmtAqTime(r['簽到時間']  || '') || '';
   document.getElementById('aqEditCheckout').value = r.checkoutTime || fmtAqTime(r['簽退時間'] || '') || '';
@@ -6682,9 +6688,11 @@ async function saveAttEdit() {
   const cinNew=aeGetSig('aqEditCheckinCanvas'), coutNew=aeGetSig('aqEditCheckoutCanvas');
   const btn = document.querySelector('#aqEditModal .btn-search');
   btn.textContent = '儲存中...'; btn.disabled = true;
+  const _aqDutyVal = document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤';
+  const _aqReason  = _aqDutyVal === '公差' ? (document.getElementById('aqEditReason')?.value.trim() || '') : '';
   const data = {
     date:        document.getElementById('aqEditDate').value,
-    dutyType:    document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤',
+    dutyType:    _aqDutyVal,
     memberName:  isNew ? document.getElementById('aqEditName').value.trim() : (r.memberName || r['姓名'] || ''),
     checkinTime: document.getElementById('aqEditCheckin').value,
     checkoutTime:document.getElementById('aqEditCheckout').value,
@@ -6693,6 +6701,7 @@ async function saveAttEdit() {
     service:     parseInt(document.getElementById('aqEditService').value)||0,
     checkinSig:  cinNew  || (r?.checkinSig  || ''),
     checkoutSig: coutNew || (r?.checkoutSig || ''),
+    ...(_aqReason ? { outingReason: _aqReason } : { outingReason: '' }),
   };
   if (isNew && !data.memberName) { alert('請填入義消姓名'); btn.textContent='儲存'; btn.disabled=false; return; }
   try {
@@ -9869,6 +9878,8 @@ function updateDutyStyle() {
     attL.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-weight:500;font-size:0.95rem;color:var(--text-light);transition:all 0.15s;';
     pubL.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid #2980b9;border-radius:10px;cursor:pointer;background:#eaf4fb;font-weight:600;font-size:0.95rem;color:#1a5a8a;transition:all 0.15s;';
   }
+  const rf = document.getElementById('aqEditReasonField');
+  if (rf) rf.style.display = isAtt ? 'none' : '';
 }
 
 
