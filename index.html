@@ -6201,8 +6201,9 @@ async function doCheckin() {
   if (!timeVal)    { alert('請填入簽到時間'); return; }
   if (dutyTypeVal === '公差' && !document.getElementById('attOutingReasonSel')?.value) { alert('公差請填寫事由'); return; }
   if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
-  if (attSessions[memberName] && !attSessions[memberName].done) {
-    alert(`${memberName} 已有未簽退的簽到紀錄（${attSessions[memberName].checkinTime}），請先完成簽退。`);
+  const _existingSession = Object.values(attSessions).find(s => s.memberName === memberName && !s.done);
+  if (_existingSession) {
+    alert(`${memberName} 已有未簽退的簽到紀錄（${_existingSession.checkinTime}），請先完成簽退。`);
     return;
   }
 
@@ -10294,8 +10295,9 @@ async function easyDoCheckin() {
   if (!timeVal)    { alert('請選擇簽到時間'); return; }
   if (dutyType === '公差' && !document.getElementById('easyOutingReasonSel')?.value) { alert('公差請填寫事由'); return; }
   if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
-  if (attSessions[memberName] && !attSessions[memberName].done) {
-    alert(`${memberName} 已有未簽退的簽到紀錄（${attSessions[memberName].checkinTime}），請先完成簽退。`);
+  const _easyExistingSession = Object.values(attSessions).find(s => s.memberName === memberName && !s.done);
+  if (_easyExistingSession) {
+    alert(`${memberName} 已有未簽退的簽到紀錄（${_easyExistingSession.checkinTime}），請先完成簽退。`);
     return;
   }
 
