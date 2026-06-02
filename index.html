@@ -1772,6 +1772,7 @@ function _dlCSV(content, filename) {
           💡 如有填寫錯誤，可至「簽到退記錄查詢」申請修正
         </p>
         <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
+          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:6px 20px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">← 返回名單</button>
           <button type="button" onclick="goToAttQuery()" style="background:none;border:1px solid #a9dfbf;border-radius:4px;padding:6px 20px;font-size:0.82rem;color:#1a6b35;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">查看簽到紀錄 →</button>
         </div>
       </div>
@@ -6301,12 +6302,6 @@ async function doCheckout() {
     `${memberName} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
   document.getElementById('attSuccessMsg').classList.add('show');
   btn.textContent = '確認簽退送出'; btn.disabled = false;
-  // 簽退完成後回到主畫面並更新名單
-  setTimeout(() => {
-    attSessions[attCheckoutTarget].done        = true;
-    attSessions[attCheckoutTarget].checkoutTime = checkoutTime;
-    attBackToMain();
-  }, 1500);
 }
 
 
