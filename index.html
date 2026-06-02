@@ -1562,7 +1562,7 @@ function _dlCSV(content, filename) {
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
-                <button type="button" onclick="fillAdminSig('easyCheckin')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
                 <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
               </div>
             </div>
@@ -1612,7 +1612,7 @@ function _dlCSV(content, filename) {
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
-                <button type="button" onclick="fillAdminSig('easyCheckout')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
                 <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
               </div>
             </div>
@@ -1677,7 +1677,7 @@ function _dlCSV(content, filename) {
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
-                  <button type="button" onclick="fillAdminSig('checkin')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
                   <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
                 </div>
               </div>
@@ -1739,7 +1739,7 @@ function _dlCSV(content, filename) {
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
-                  <button type="button" onclick="fillAdminSig('checkout')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                  <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
                   <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
                 </div>
               </div>
@@ -3757,6 +3757,9 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   if (isAdmin || isOfficer) {
     const adminNav = document.getElementById('nav-admin');
     if (adminNav) adminNav.style.display = '';
+  }
+  if (isAdmin) {
+    document.querySelectorAll('.admin-fill-btn').forEach(btn => btn.style.display = '');
   }
   // 一般成員隱藏報表匯出
   if (!isAdmin && !isOfficer) {
