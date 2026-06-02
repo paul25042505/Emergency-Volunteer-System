@@ -6669,6 +6669,8 @@ function openAttEdit(idx) {
   if (dutyAtt) dutyAtt.checked = duty !== '公差';
   if (dutyPub) dutyPub.checked = duty === '公差';
   updateDutyStyle();
+  const aqERF = document.getElementById('aqEditReasonField');
+  if (aqERF) aqERF.style.display = duty === '公差' ? '' : 'none';
   const aqER = document.getElementById('aqEditReason'); if (aqER) aqER.value = r.outingReason || '';
   // 簽到/簽退時間：Firebase 格式直接用，空白就空白
   document.getElementById('aqEditCheckin').value  = r.checkinTime  || fmtAqTime(r['簽到時間']  || '') || '';
