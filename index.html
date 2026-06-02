@@ -5010,7 +5010,9 @@ function _appendReasonToSelects(text) {
 }
 function _saveOutingReasons() {
   try { localStorage.setItem(_OUTING_REASONS_KEY, JSON.stringify(_attOutingReasons)); } catch(e) {}
-  fbSet(COL_SETTINGS, 'outingReasons', { reasons: _attOutingReasons }).catch(() => {});
+  fbSet(COL_SETTINGS, 'outingReasons', { reasons: _attOutingReasons }).catch(() => {
+    alert('事由儲存失敗，請確認網路連線。本次新增的事由可能在重新整理後消失。');
+  });
 }
 async function loadOutingReasons() {
   let list = [];
@@ -6025,6 +6027,7 @@ async function initAttendancePage() {
   attCheckinHasSig = false;
   document.getElementById('attSuccessMsg')?.classList.remove('show');
   setTimeout(() => initAttCanvas('checkin'), 100);
+  loadOutingReasons();
 
   // 從 Firestore 讀取今日在線名單，還原 attSessions
   await loadTodayCheckins();
