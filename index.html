@@ -6797,6 +6797,8 @@ async function saveAttEdit() {
     checkinSig:  cinNew  || (r?.checkinSig  || ''),
     checkoutSig: coutNew || (r?.checkoutSig || ''),
     ...(_aqReason ? { outingReason: _aqReason } : { outingReason: '' }),
+    timeAdjusted: false,
+    checkoutTimeAdjusted: false,
   };
   if (isNew && !data.memberName) { alert('請填入義消姓名'); btn.textContent='儲存'; btn.disabled=false; return; }
   try {
