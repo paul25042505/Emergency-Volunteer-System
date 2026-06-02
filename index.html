@@ -989,7 +989,7 @@ function _dlCSV(content, filename) {
         <div class="section-title">本月累計</div>
         <div class="section-line"></div>
       </div>
-      <div class="stats-row" style="grid-template-columns:repeat(2,1fr);">
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
         <div class="stat-card">
           <div class="stat-num" id="dashMonthAtt">—</div>
           <div class="stat-label">協勤總筆數</div>
@@ -997,6 +997,10 @@ function _dlCSV(content, filename) {
         <div class="stat-card">
           <div class="stat-num" id="dashMonthHours">—</div>
           <div class="stat-label">協勤總時數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthService">—</div>
+          <div class="stat-label">服務人次</div>
         </div>
       </div>
     </div>
@@ -4703,8 +4707,10 @@ async function loadDashboard() {
     const totalHours = monthAtt.reduce((sum, r) => sum + (parseFloat(r.hours)||0), 0);
     document.getElementById('dashMonthHours').textContent =
       totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    const totalService = monthAtt.reduce((sum, r) => sum + (parseInt(r.service)||0), 0);
+    document.getElementById('dashMonthService').textContent = totalService;
   } catch(e) {
-    ['dashTodayAtt','dashTodayMembers','dashMonthAtt','dashTodaySignin','dashMonthHours'].forEach(id => {
+    ['dashTodayAtt','dashTodayMembers','dashMonthAtt','dashTodaySignin','dashMonthHours','dashMonthService'].forEach(id => {
       const el = document.getElementById(id); if (el) el.textContent = '—';
     });
   }
