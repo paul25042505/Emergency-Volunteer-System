@@ -3495,6 +3495,7 @@ function _dlCSV(content, filename) {
 // ════════════════════════════════════════
 var _fbDB = null;
 var COL_WHITELIST = 'whitelist', COL_MEMBERS = 'members';
+var COL_SETTINGS = 'settings';
 var COL_OUTING = 'outingRecords', COL_ATTEND = 'attendance';
 var COL_ITEMS = 'items', COL_FEEDBACK = 'feedback', COL_UNITS = 'units', COL_CHANGELOG = 'changelogs';
 var COL_LOGINLOG = 'loginLogs';
@@ -4893,9 +4894,6 @@ function setEasyCheckinDuty(type) {
   if (f) f.style.display = type === '公差' ? '' : 'none';
 }
 const _OUTING_REASONS_KEY = 'evs_outing_reasons';
-function _saveOutingReasons() {
-  try { localStorage.setItem(_OUTING_REASONS_KEY, JSON.stringify(_attOutingReasons)); } catch(e) {}
-}
 function _appendReasonToSelects(text) {
   ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
     const sel = document.getElementById(id);
@@ -4907,17 +4905,34 @@ function _appendReasonToSelects(text) {
     }
   });
 }
-function loadOutingReasons() {
+function _saveOutingReasons() {
+  try { localStorage.setItem(_OUTING_REASONS_KEY, JSON.stringify(_attOutingReasons)); } catch(e) {}
+  fbSet(COL_SETTINGS, 'outingReasons', { reasons: _attOutingReasons }).catch(() => {});
+}
+async function loadOutingReasons() {
+  let list = [];
   try {
-    const saved = JSON.parse(localStorage.getItem(_OUTING_REASONS_KEY) || '[]');
-    if (!Array.isArray(saved)) return;
-    saved.forEach(text => {
-      if (text && !_attOutingReasons.includes(text)) {
-        _attOutingReasons.push(text);
-        _appendReasonToSelects(text);
-      }
-    });
-  } catch(e) {}
+    const doc = await fbGet(COL_SETTINGS, 'outingReasons');
+    if (doc && Array.isArray(doc.reasons)) {
+      list = doc.reasons;
+      try { localStorage.setItem(_OUTING_REASONS_KEY, JSON.stringify(list)); } catch(e) {}
+    } else {
+      // Firestore 沒資料時從 localStorage 回退
+      const saved = JSON.parse(localStorage.getItem(_OUTING_REASONS_KEY) || '[]');
+      if (Array.isArray(saved)) list = saved;
+    }
+  } catch(e) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(_OUTING_REASONS_KEY) || '[]');
+      if (Array.isArray(saved)) list = saved;
+    } catch(e2) {}
+  }
+  list.forEach(text => {
+    if (text && !_attOutingReasons.includes(text)) {
+      _attOutingReasons.push(text);
+      _appendReasonToSelects(text);
+    }
+  });
 }
 function addOutingReason() {
   const reason = prompt('請輸入公差事由：');
