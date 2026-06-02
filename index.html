@@ -7616,8 +7616,9 @@ function adminEditMem(id,name,title,unit,cert,certExp) {
 
 async function loadAdminAttendance() {
   const el=document.getElementById('adminAttList');
-  const from=document.getElementById('adminAttFrom').value;
-  const to=document.getElementById('adminAttTo').value;
+  if (!el) return;
+  const from=document.getElementById('adminAttFrom')?.value||'';
+  const to=document.getElementById('adminAttTo')?.value||'';
   const unit=document.getElementById('adminAttUnit')?.value||'';
   const member=document.getElementById('adminAttMember')?.value||'';
   const usr=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
@@ -7745,8 +7746,9 @@ async function adminEditAtt(id) {
 
 async function loadAdminOuting() {
   const el=document.getElementById('adminOutList');
-  const from=document.getElementById('adminOutFrom').value;
-  const to=document.getElementById('adminOutTo').value;
+  if (!el) return;
+  const from=document.getElementById('adminOutFrom')?.value||'';
+  const to=document.getElementById('adminOutTo')?.value||'';
   const unit=document.getElementById('adminOutUnit')?.value||'';
   const member=document.getElementById('adminOutMember')?.value||'';
   const usr=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
