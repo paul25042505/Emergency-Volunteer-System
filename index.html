@@ -13094,14 +13094,15 @@ async function loadGongchaStats() {
   const pubDocs = docs.filter(d => (d.dutyType||'協勤') === dutyFilter);
 
   // ── aggregate per member (same day = 1 mission) ──────────────────────────
-  const countMap = {};    // name → { count, unit, title, _dates: Set }
+  const countMap = {};    // name → { count, hours, unit, title, _dates: Set }
   pubDocs.forEach(d => {
     const name = d.memberName || '';
     if (!name) return;
     if (unitFilter && (d.unit||'') !== unitFilter) return;
     if (!countMap[name]) {
-      countMap[name] = { name, unit: d.unit||'', title: d.title||'', count: 0, _dates: new Set() };
+      countMap[name] = { name, unit: d.unit||'', title: d.title||'', count: 0, hours: 0, _dates: new Set() };
     }
+    countMap[name].hours += parseFloat(d.hours) || 0;
     if (!countMap[name]._dates.has(d.date)) {
       countMap[name]._dates.add(d.date);
       countMap[name].count += 1;
@@ -13229,6 +13230,7 @@ async function loadGongchaStats() {
       <td style="padding:9px 6px;font-size:0.85rem;">${r.name}${isMe ? ' <span style="font-size:0.65rem;background:#fde68a;color:#92400e;border-radius:20px;padding:1px 6px;">我</span>' : ''}</td>
       ${isAdmin ? `<td style="font-size:0.75rem;color:#777;padding:9px 4px;">${r.unit||'—'}</td>` : ''}
       <td style="text-align:center;font-weight:700;font-size:0.92rem;color:#8b1a0e;padding:9px 6px;">${r.count}</td>
+      <td style="text-align:center;font-size:0.85rem;color:#555;padding:9px 6px;">${r.hours % 1 === 0 ? r.hours : r.hours.toFixed(1)}</td>
       <td style="text-align:center;padding:9px 6px;">
         <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.68rem;background:${t.bg};color:${t.color};border-radius:20px;padding:3px 8px;font-weight:600;white-space:nowrap;">
           ${t.badge} ${t.label}
@@ -13247,6 +13249,7 @@ async function loadGongchaStats() {
             <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:left;">姓名</th>
             ${isAdmin ? '<th style="padding:10px 4px;font-size:0.75rem;font-weight:600;text-align:left;">分隊</th>' : ''}
             <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">次數</th>
+            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">時數</th>
             <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">勳章</th>
           </tr>
         </thead>
