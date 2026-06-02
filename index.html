@@ -4073,6 +4073,26 @@ function warnCheckinTimeAdjust(timeVal, diffMins) {
     `確定要繼續送出嗎？`
   );
 }
+function checkoutTimeDiffMins(timeVal) {
+  const now = new Date();
+  const [h, m] = timeVal.split(':').map(Number);
+  return now.getHours() * 60 + now.getMinutes() - (h * 60 + m);
+}
+function warnCheckoutTimeAdjust(timeVal, diffMins) {
+  const n = new Date();
+  const nowStr = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const desc = diffMins > 0
+    ? `比目前系統時間（${nowStr}）早了 ${diffMins} 分鐘（疑似提早簽退）。`
+    : `比目前系統時間（${nowStr}）晚了 ${Math.abs(diffMins)} 分鐘（疑似延遲補簽）。`;
+  return confirm(
+    `⚠️ 時間異常警告\n\n` +
+    `您填寫的簽退時間為 ${timeVal}，\n${desc}\n\n` +
+    `送出後此筆紀錄將被標記為「時間異常」，\n` +
+    `系統會自動通知分隊承辦人及管理員進行核查。\n\n` +
+    `違規填報將影響出勤紀錄正確性，管理員可查閱實際送出時間。\n\n` +
+    `確定要繼續送出嗎？`
+  );
+}
 
 // ════════════════════════════════════════
 // Navigation
@@ -6274,6 +6294,11 @@ async function doCheckout() {
   if (!checkoutTime)      { alert('請填入簽退時間'); return; }
   if (!attCheckoutHasSig) { alert('請完成簽退簽名'); return; }
 
+  const _coDiff = checkoutTimeDiffMins(checkoutTime);
+  if (!_appIsAdmin && Math.abs(_coDiff) > 30) {
+    if (!warnCheckoutTimeAdjust(checkoutTime, _coDiff)) return;
+  }
+
   const session    = attSessions[attCheckoutTarget];
   const memberName = session.memberName || attCheckoutTarget;
   const hours      = calcHours(session.checkinTime, checkoutTime);
@@ -6282,6 +6307,8 @@ async function doCheckout() {
   // 補簽退：日期用 session 裡記錄的簽到日期，不一定是今天
   const todayStr   = (attSessions[attCheckoutTarget] && attSessions[attCheckoutTarget].date) || document.getElementById('attDate').value;
   const memberObj  = members.find(m => m.name === memberName) || {};
+  const _nowCo = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
+  const _coAdjFields = (!_appIsAdmin && Math.abs(_coDiff) > 30) ? { checkoutTimeAdjusted: true, checkoutRecordedAt: _nowCo } : {};
 
   document.getElementById('attHours').value = hours;
 
@@ -6291,11 +6318,11 @@ async function doCheckout() {
   // no-cors 無法讀取回應，直接送出後視為成功
   const checkoutSig=attCheckoutCtx.canvas.toDataURL('image/png');
   if(session.fbDocId){
-    fbUpdate(COL_ATTEND,session.fbDocId,{checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal}).catch(()=>{});
+    fbUpdate(COL_ATTEND,session.fbDocId,{checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal,..._coAdjFields}).catch(()=>{});
   } else {
     fbAdd(COL_ATTEND,{date:todayStr,dutyType:session.dutyType||'協勤',title:memberObj.title||'',
       memberName:attCheckoutTarget,checkinSig:session.checkinSig||'',checkinTime:session.checkinTime,
-      checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal}).catch(()=>{});
+      checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal,..._coAdjFields}).catch(()=>{});
   } // 忽略網路錯誤，Sheets 通常仍會寫入
 
   // 標記完成，顯示成功訊息
@@ -6386,9 +6413,12 @@ async function doAttQuery() {
       service:          d.service||0,
       checkinSig:       d.checkinSig||'',
       checkoutSig:      d.checkoutSig||'',
-      timeAdjusted:     d.timeAdjusted||false,
-      checkinRecordedAt:d.checkinRecordedAt||'',
-      _t:               d._t||null,
+      timeAdjusted:          d.timeAdjusted||false,
+      checkinRecordedAt:     d.checkinRecordedAt||'',
+      checkoutTimeAdjusted:  d.checkoutTimeAdjusted||false,
+      checkoutRecordedAt:    d.checkoutRecordedAt||'',
+      outingReason:          d.outingReason||'',
+      _t:                    d._t||null,
     }));
   } catch(e) {
     document.getElementById('aqLoadingMsg').style.display = 'none';
@@ -6486,7 +6516,7 @@ function renderAttQueryResults() {
         '<td style="white-space:nowrap;">'+name+'</td>' +
         '<td style="white-space:nowrap;">'+title+'</td>' +
         '<td style="white-space:nowrap;">'+cin+(r.timeAdjusted ? '&nbsp;<button onclick="showTimeAdjustInfo('+i+')" style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:1px 7px;font-size:0.72rem;cursor:pointer;color:#856404;font-family:inherit;">⚠️ 時間異常</button>' : '')+'</td>' +
-        '<td style="white-space:nowrap;">'+cout+'</td>' +
+        '<td style="white-space:nowrap;">'+cout+(r.checkoutTimeAdjusted ? '&nbsp;<button onclick="showCheckoutTimeAdjustInfo('+i+')" style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:1px 7px;font-size:0.72rem;cursor:pointer;color:#856404;font-family:inherit;">⚠️ 時間異常</button>' : '')+'</td>' +
         '<td style="text-align:center;padding:4px;">'+sigCell(cinSig,i,'checkinSig')+'</td>' +
         '<td style="text-align:center;padding:4px;">'+sigCell(coutSig,i,'checkoutSig')+'</td>' +
         '<td style="text-align:center;">'+hrs+'</td>' +
@@ -6498,12 +6528,12 @@ function renderAttQueryResults() {
 
     // 若成員本人有 ⚠️ 紀錄，在表格上方顯示警示橫幅
     if (!_isAdminAq && !_isOfficerAq) {
-      const flagged = aqFiltered.filter(r => r.timeAdjusted);
+      const flagged   = aqFiltered.filter(r => r.timeAdjusted || r.checkoutTimeAdjusted);
       const bannerEl = document.getElementById('aqAdjustBanner');
       if (bannerEl) {
         if (flagged.length > 0) {
           bannerEl.style.display = 'block';
-          bannerEl.innerHTML = `<span style="font-size:1rem;">⚠️</span>&nbsp;您有 <strong>${flagged.length}</strong> 筆簽到紀錄被系統標記「時間異常」，填報時間與實際送出時間不符。此資訊已對分隊承辦人及管理員公開，點擊各筆紀錄的 ⚠️ 按鈕查看詳情。`;
+          bannerEl.innerHTML = `<span style="font-size:1rem;">⚠️</span>&nbsp;您有 <strong>${flagged.length}</strong> 筆紀錄被系統標記「時間異常」，填報時間與實際送出時間不符。此資訊已對分隊承辦人及管理員公開，點擊各筆紀錄的 ⚠️ 按鈕查看詳情。`;
         } else {
           bannerEl.style.display = 'none';
         }
@@ -6528,6 +6558,29 @@ function showTimeAdjustInfo(idx) {
   alert(
     `⚠️ 此紀錄已被系統標記「時間異常」\n\n` +
     `填寫簽到時間：${cin}\n` +
+    `系統記錄送出時間：${recorded}${diffText}\n\n` +
+    `填報時間與實際送出時間不符，\n` +
+    `此資訊已記錄並對分隊承辦人及管理員公開，\n` +
+    `可供核查出勤紀錄真實性。\n\n` +
+    `如有疑問，請向管理員說明。`
+  );
+}
+function showCheckoutTimeAdjustInfo(idx) {
+  const r = aqFiltered[idx];
+  if (!r || !r.checkoutTimeAdjusted) return;
+  const cout     = r.checkoutTime || '';
+  const recorded = r.checkoutRecordedAt || '不明';
+  let diffText = '';
+  if (cout && recorded !== '不明') {
+    const [h1, m1] = cout.split(':').map(Number);
+    const [h2, m2] = recorded.split(':').map(Number);
+    const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (diff > 0)      diffText = `，實際晚了 ${diff} 分鐘（疑似延遲補簽）`;
+    else if (diff < 0) diffText = `，實際早了 ${Math.abs(diff)} 分鐘（疑似提早簽退）`;
+  }
+  alert(
+    `⚠️ 此紀錄已被系統標記「時間異常」\n\n` +
+    `填寫簽退時間：${cout}\n` +
     `系統記錄送出時間：${recorded}${diffText}\n\n` +
     `填報時間與實際送出時間不符，\n` +
     `此資訊已記錄並對分隊承辦人及管理員公開，\n` +
@@ -10232,6 +10285,11 @@ async function easyDoCheckout() {
   if (!checkoutTime)        { alert('請選擇簽退時間'); return; }
   if (!_easyCheckoutHasSig) { alert('請完成簽退簽名'); return; }
 
+  const _easyCoDiff = checkoutTimeDiffMins(checkoutTime);
+  if (!_appIsAdmin && Math.abs(_easyCoDiff) > 30) {
+    if (!warnCheckoutTimeAdjust(checkoutTime, _easyCoDiff)) return;
+  }
+
   const session    = attSessions[_easyCheckoutTarget];
   const memberName = session.memberName || _easyCheckoutTarget;
   const hours      = calcHours(session.checkinTime, checkoutTime);
@@ -10240,6 +10298,8 @@ async function easyDoCheckout() {
   const date       = session.date || new Date().toLocaleDateString('sv');
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkoutSig = _easyCheckoutCtx.canvas.toDataURL('image/png');
+  const _easyNowCo = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
+  const _easyCoAdjFields = (!_appIsAdmin && Math.abs(_easyCoDiff) > 30) ? { checkoutTimeAdjusted: true, checkoutRecordedAt: _easyNowCo } : {};
 
   const btn = document.querySelector('.easy-submit-btn.do-checkout');
   btn.textContent = '送出中...'; btn.disabled = true;
@@ -10247,9 +10307,9 @@ async function easyDoCheckout() {
   try {
     const count = checkoutDuty === '公差' ? 0 : 1;
     if (session.fbDocId) {
-      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count, service }).catch(() => {});
+      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count, service, ..._easyCoAdjFields }).catch(() => {});
     } else {
-      fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count, service }).catch(() => {});
+      fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count, service, ..._easyCoAdjFields }).catch(() => {});
     }
 
     attSessions[_easyCheckoutTarget].done        = true;
