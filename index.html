@@ -1545,13 +1545,25 @@ function _dlCSV(content, filename) {
           </div>
           <input type="hidden" id="easyCheckinDutyType" value="協勤">
         </div>
+        <div class="field" id="easyOutingReasonField" style="display:none;">
+          <label>事由 <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="easyOutingReasonSel" style="flex:1;font-size:1.05rem;padding:13px 16px;min-height:52px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text);">
+              <option value="">— 請選擇或新增事由 —</option>
+            </select>
+            <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:52px;height:52px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.4rem;cursor:pointer;line-height:1;">＋</button>
+          </div>
+        </div>
         <div class="field">
           <label>簽到簽名</label>
           <div class="sig-wrap">
             <canvas id="easyCheckinCanvas"></canvas>
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
-              <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
+              <div style="display:flex;gap:6px;">
+                <button type="button" onclick="fillAdminSig('easyCheckin')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1598,7 +1610,10 @@ function _dlCSV(content, filename) {
             <canvas id="easyCheckoutCanvas"></canvas>
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
-              <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
+              <div style="display:flex;gap:6px;">
+                <button type="button" onclick="fillAdminSig('easyCheckout')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1632,6 +1647,15 @@ function _dlCSV(content, filename) {
             </div>
             <input type="hidden" id="attDutyType" value="協勤">
           </div>
+          <div class="field" id="attOutingReasonField" style="display:none;">
+            <label>事由 <span class="req">*</span></label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="attOutingReasonSel" style="flex:1;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;background:white;color:var(--text);">
+                <option value="">— 請選擇或新增事由 —</option>
+              </select>
+              <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:44px;height:44px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.3rem;cursor:pointer;line-height:1;">＋</button>
+            </div>
+          </div>
           <div class="field">
             <label>分隊別 <span class="req">*</span></label>
             <select id="attUnitSel" onchange="filterAttMembers()" style="width:100%;">
@@ -1650,7 +1674,10 @@ function _dlCSV(content, filename) {
               <canvas id="attCheckinCanvas"></canvas>
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
-                <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" onclick="fillAdminSig('checkin')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                  <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1709,7 +1736,10 @@ function _dlCSV(content, filename) {
               <canvas id="attCheckoutCanvas"></canvas>
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
-                <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" onclick="fillAdminSig('checkout')" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                  <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
+                </div>
               </div>
             </div>
           </div>
@@ -4820,11 +4850,54 @@ function setAttDuty(type) {
   document.getElementById('attDutyOut').classList.toggle('active', type === '協勤');
   document.getElementById('attDutyPub').classList.toggle('active', type === '公差');
   document.getElementById('attDutyType').value = type;
+  const f = document.getElementById('attOutingReasonField');
+  if (f) f.style.display = type === '公差' ? '' : 'none';
 }
 function setEasyCheckinDuty(type) {
   document.getElementById('easyDutyOut').classList.toggle('active', type === '協勤');
   document.getElementById('easyDutyPub').classList.toggle('active', type === '公差');
   document.getElementById('easyCheckinDutyType').value = type;
+  const f = document.getElementById('easyOutingReasonField');
+  if (f) f.style.display = type === '公差' ? '' : 'none';
+}
+function addOutingReason() {
+  const reason = prompt('請輸入公差事由：');
+  if (!reason || !reason.trim()) return;
+  const text = reason.trim();
+  if (!_attOutingReasons.includes(text)) {
+    _attOutingReasons.push(text);
+    ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = text;
+      sel.appendChild(opt);
+    });
+  }
+  ['attOutingReasonSel', 'easyOutingReasonSel'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel && Array.from(sel.options).some(o => o.value === text)) sel.value = text;
+  });
+}
+function fillAdminSig(type) {
+  let ctx, setSig;
+  if      (type === 'checkin')      { ctx = attCheckinCtx;   setSig = () => { attCheckinHasSig  = true; }; }
+  else if (type === 'checkout')     { ctx = attCheckoutCtx;  setSig = () => { attCheckoutHasSig = true; }; }
+  else if (type === 'easyCheckin')  { ctx = _easyCheckinCtx;  setSig = () => { _easyCheckinHasSig  = true; }; }
+  else if (type === 'easyCheckout') { ctx = _easyCheckoutCtx; setSig = () => { _easyCheckoutHasSig = true; }; }
+  if (!ctx) return;
+  const ratio = window.devicePixelRatio || 1;
+  const w = ctx.canvas.width / ratio;
+  const h = ctx.canvas.height / ratio;
+  ctx.clearRect(0, 0, w, h);
+  ctx.save();
+  ctx.fillStyle = '#c0392b';
+  ctx.font = 'bold 20px "Noto Sans TC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('【系統管理員新增】', w / 2, h / 2);
+  ctx.restore();
+  setSig();
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
 
@@ -5762,6 +5835,7 @@ let attCheckoutTarget = null;
 let attCheckinHasSig  = false;
 let attCheckoutHasSig = false;
 let attCheckinCtx, attCheckoutCtx;
+let _attOutingReasons = [];
 
 function roundTo15(date) {
   const h   = date.getHours();
@@ -6036,8 +6110,10 @@ function clearAttCanvas(type) {
 async function doCheckin() {
   const memberName = document.getElementById('attMemberSel').value;
   const timeVal    = document.getElementById('attCheckinTime').value;
+  const dutyTypeVal = document.getElementById('attDutyType')?.value || '協勤';
   if (!memberName) { alert('請選擇義消成員'); return; }
   if (!timeVal)    { alert('請填入簽到時間'); return; }
+  if (dutyTypeVal === '公差' && !document.getElementById('attOutingReasonSel')?.value) { alert('公差請填寫事由'); return; }
   if (!attCheckinHasSig) { alert('請完成簽到簽名'); return; }
   if (attSessions[memberName] && !attSessions[memberName].done) {
     if (!confirm(`${memberName} 已有簽到紀錄（${attSessions[memberName].checkinTime}），要重新簽到嗎？`)) return;
@@ -6051,12 +6127,12 @@ async function doCheckin() {
   const memberObj  = members.find(m => m.name === memberName) || {};
   const checkinSig = attCheckinCtx.canvas.toDataURL('image/png');
   const date       = document.getElementById('attDate').value;
+  const outingReason = dutyTypeVal === '公差' ? (document.getElementById('attOutingReasonSel')?.value || '') : '';
 
   const btn = document.querySelector('.btn-checkin');
   btn.textContent = '簽到中...'; btn.disabled = true;
 
   try {
-    const dutyTypeVal = document.getElementById('attDutyType')?.value || '協勤';
     const _nowRecorded = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
     const _timeAdjFields = _attTimeDiff > 30 ? { timeAdjusted: true, checkinRecordedAt: _nowRecorded } : {};
     // 先建立 tempKey session，讓 .then() 回呼能正確找到它
@@ -6075,6 +6151,7 @@ async function doCheckin() {
     fbAdd(COL_ATTEND, {
       date, dutyType: dutyTypeVal, title: memberObj.title || '', memberName,
       checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0,
+      ...(outingReason ? { outingReason } : {}),
       ..._timeAdjFields,
     }).then(docId => {
       // 將 tempKey 更新成真正的 Firestore docId
@@ -6089,6 +6166,8 @@ async function doCheckin() {
 
     // 重置簽到表單
     document.getElementById('attMemberSel').value = '';
+    const _attReasonSel = document.getElementById('attOutingReasonSel');
+    if (_attReasonSel) _attReasonSel.value = '';
     setAttDuty('協勤');
     attCheckinHasSig = false;
     clearAttCanvas('checkin');
@@ -10085,8 +10164,10 @@ function easyClearCheckoutCanvas() {
 async function easyDoCheckin() {
   const memberName = document.getElementById('easyMemberSel').value;
   const timeVal    = document.getElementById('easyCheckinTime').value;
+  const dutyType   = document.getElementById('easyCheckinDutyType')?.value || '協勤';
   if (!memberName) { alert('請選擇義消成員'); return; }
   if (!timeVal)    { alert('請選擇簽到時間'); return; }
+  if (dutyType === '公差' && !document.getElementById('easyOutingReasonSel')?.value) { alert('公差請填寫事由'); return; }
   if (!_easyCheckinHasSig) { alert('請完成簽到簽名'); return; }
 
   const _easyTimeDiff = checkinTimeDiffMins(timeVal);
@@ -10094,11 +10175,11 @@ async function easyDoCheckin() {
     if (!warnCheckinTimeAdjust(timeVal, _easyTimeDiff)) return;
   }
 
-  const memberObj  = members.find(m => m.name === memberName) || {};
-  const checkinSig = _easyCheckinCtx.canvas.toDataURL('image/png');
-  const date       = new Date().toLocaleDateString('sv');
-  const dutyType   = document.getElementById('easyCheckinDutyType')?.value || '協勤';
-  const btn        = document.querySelector('.easy-submit-btn.do-checkin');
+  const memberObj    = members.find(m => m.name === memberName) || {};
+  const checkinSig   = _easyCheckinCtx.canvas.toDataURL('image/png');
+  const date         = new Date().toLocaleDateString('sv');
+  const outingReason = dutyType === '公差' ? (document.getElementById('easyOutingReasonSel')?.value || '') : '';
+  const btn          = document.querySelector('.easy-submit-btn.do-checkin');
   btn.textContent  = '簽到中...'; btn.disabled = true;
 
   try {
@@ -10106,7 +10187,7 @@ async function easyDoCheckin() {
     const _easyTimeAdjFields = _easyTimeDiff > 30 ? { timeAdjusted: true, checkinRecordedAt: _easyNowRecorded } : {};
     const tempKey = 'new_' + memberName + '_' + Date.now();
     attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType, done: false };
-    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0, ..._easyTimeAdjFields })
+    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0, ...(outingReason ? { outingReason } : {}), ..._easyTimeAdjFields })
       .then(docId => { if (attSessions[tempKey]) { attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId }); delete attSessions[tempKey]; } }).catch(() => {});
 
     alert('✅ ' + memberName + ' 簽到成功！');
