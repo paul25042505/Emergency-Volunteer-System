@@ -6221,7 +6221,7 @@ async function doCheckin() {
 
   try {
     const _nowRecorded = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
-    const _timeAdjFields = _attTimeDiff > 30 ? { timeAdjusted: true, checkinRecordedAt: _nowRecorded } : {};
+    const _timeAdjFields = (!_appIsAdmin && _attTimeDiff > 30) ? { timeAdjusted: true, checkinRecordedAt: _nowRecorded } : {};
     // 先建立 tempKey session，讓 .then() 回呼能正確找到它
     const tempKey = 'new_' + memberName + '_' + Date.now();
     attSessions[tempKey] = {
@@ -10311,7 +10311,7 @@ async function easyDoCheckin() {
 
   try {
     const _easyNowRecorded = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
-    const _easyTimeAdjFields = _easyTimeDiff > 30 ? { timeAdjusted: true, checkinRecordedAt: _easyNowRecorded } : {};
+    const _easyTimeAdjFields = (!_appIsAdmin && _easyTimeDiff > 30) ? { timeAdjusted: true, checkinRecordedAt: _easyNowRecorded } : {};
     const tempKey = 'new_' + memberName + '_' + Date.now();
     attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType, done: false };
     fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0, ...(outingReason ? { outingReason } : {}), ..._easyTimeAdjFields })
