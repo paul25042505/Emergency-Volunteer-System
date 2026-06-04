@@ -5982,9 +5982,10 @@ function renderQueryResults(records) {
       const within24Q = recTimeQ && (Date.now()-recTimeQ < 86400000);
       let actionCell = '';
       if (_isAdminQ || _isOfficerQ) {
-        // 管理員/承辦人：直接編輯
+        // 管理員/承辦人：直接編輯 + 刪除
         const _idQ2 = r.id||'';
-        actionCell = '<button onclick="adminEditOut(&quot;'+_idQ2+'&quot;)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">✏️ 編輯</button>';
+        actionCell = '<button onclick="adminEditOut(&quot;'+_idQ2+'&quot;)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;margin-right:4px;">✏️ 編輯</button>'
+          + '<button onclick="adminDelQueryOut(&quot;'+_idQ2+'&quot;,&quot;'+(r.memberName||'')+'&quot;,&quot;'+(r.date||'')+'&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 刪除</button>';
       } else if (isOwnerQ && within24Q) {
         actionCell = '<button onclick="openOutingEdit('+i+')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;margin-right:4px;">✏️ 編輯</button>'
           +'<button onclick="deleteOwnOut('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 刪除</button>';
@@ -6020,6 +6021,15 @@ function resetQuery() {
   document.getElementById('resultCard')?.style && (document.getElementById('resultCard').style.display = 'none');
   const qi = document.getElementById('queryInitMsg'); if (qi) qi.style.display = 'block';
   filteredRecords = [];
+}
+
+async function adminDelQueryOut(id, memberName, date) {
+  if (!confirm('確定刪除「' + memberName + ' ' + date + '」的出勤紀錄？此操作無法復原。')) return;
+  try {
+    await fbDelete(COL_OUTING, id);
+    filteredRecords = filteredRecords.filter(r => r.id !== id);
+    renderQueryResults(filteredRecords);
+  } catch(e) { alert('刪除失敗：' + e.message); }
 }
 
 
