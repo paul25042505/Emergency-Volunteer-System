@@ -1937,6 +1937,64 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE：報表 ══════ -->
 <div class="page" id="reportPage">
   <div class="query-wrap">
+
+    <!-- ── 資料核對 ── -->
+    <div class="section" style="margin-bottom:16px;">
+      <div class="section-head">
+        <div class="section-num">🔍</div>
+        <div class="section-title">資料核對</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="filter-card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div class="field" style="grid-column:1/-1;margin-bottom:0;">
+            <label>分隊別</label>
+            <select id="verifyUnit" style="width:100%;"></select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>民國年份</label>
+            <select id="verifyYear" style="width:100%;"></select>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>月份</label>
+            <select id="verifyMonth" style="width:100%;">
+              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="loadVerifyData()" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:13px;font-size:0.95rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;font-weight:600;min-height:unset;">🔍 查詢核對</button>
+        <div id="verifyStatus" style="display:none;text-align:center;font-size:0.85rem;color:var(--text-light);padding:8px 0;"></div>
+        <div id="verifyResults" style="display:none;margin-top:14px;">
+          <!-- 協勤費摘要 -->
+          <div style="background:linear-gradient(135deg,var(--red) 0%,#c0392b 100%);border-radius:10px;padding:14px 16px;color:white;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div>
+              <div style="font-size:0.68rem;opacity:0.75;margin-bottom:3px;letter-spacing:0.05em;">本月協勤費合計</div>
+              <div id="verifyFeeTotal" style="font-size:1.6rem;font-weight:700;">$0</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.68rem;opacity:0.75;margin-bottom:3px;letter-spacing:0.05em;">符合筆數</div>
+              <div id="verifyFeeCount" style="font-size:1.3rem;font-weight:600;">0 筆</div>
+            </div>
+          </div>
+          <!-- 核對進度 -->
+          <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-mid);margin-bottom:5px;">
+              <span>核對進度</span>
+              <span id="verifyProgress">0 / 0 筆已確認</span>
+            </div>
+            <div style="background:#e9ecef;border-radius:4px;height:7px;overflow:hidden;">
+              <div id="verifyProgressBar" style="background:#27ae60;height:100%;width:0%;transition:width 0.35s;border-radius:4px;"></div>
+            </div>
+          </div>
+          <!-- 紀錄列表 -->
+          <div id="verifyList"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="section-head">
         <div class="section-num">📑</div>
@@ -6900,22 +6958,22 @@ async function initReportPage() {
   const t = new Date();
   const curY = t.getFullYear() - 1911;
   const curM = t.getMonth() + 1;
-  ['rpt1Year','rpt2Year','rpt3Year'].forEach(id => {
+  ['rpt1Year','rpt2Year','rpt3Year','verifyYear'].forEach(id => {
     const sel = document.getElementById(id);
-    if (!sel.options.length) {
-      for (let y = curY + 1; y >= 100; y--) {
-        const opt = document.createElement('option');
-        opt.value = y; opt.textContent = y + ' 年';
-        sel.appendChild(opt);
-      }
+    if (!sel || sel.options.length) return;
+    for (let y = curY + 1; y >= 100; y--) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y + ' 年';
+      sel.appendChild(opt);
     }
     sel.value = curY;
   });
   ['rpt1Month','rpt2Month','rpt3Month'].forEach(id => {
     document.getElementById(id).value = curM;
   });
+  document.getElementById('verifyMonth').value = curM;
   // 載入分隊選單
-  const rptUnitIds = ['rpt1Unit','rpt2Unit','rpt3Unit'];
+  const rptUnitIds = ['rpt1Unit','rpt2Unit','rpt3Unit','verifyUnit'];
   rptUnitIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<option value="">載入中...</option>';
@@ -6932,7 +6990,8 @@ async function initReportPage() {
       rptUnitIds.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = '<option value="">請選擇分隊</option>' +
+        const hasAll = id === 'verifyUnit';
+        el.innerHTML = (hasAll ? '<option value="">全部分隊</option>' : '<option value="">請選擇分隊</option>') +
           _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
         if (usr.unit) el.value = usr.unit;
       });
@@ -6944,6 +7003,159 @@ async function initReportPage() {
     });
   }
 }
+
+// ── 資料核對 ──────────────────────────────
+let _verifyData = [];
+
+async function loadVerifyData() {
+  const year  = parseInt(document.getElementById('verifyYear').value);
+  const month = parseInt(document.getElementById('verifyMonth').value);
+  const unit  = document.getElementById('verifyUnit').value;
+  if (!year || !month) { alert('請選擇年份和月份'); return; }
+
+  const statusEl  = document.getElementById('verifyStatus');
+  const resultsEl = document.getElementById('verifyResults');
+  statusEl.style.display = 'block';
+  statusEl.style.color   = 'var(--text-light)';
+  statusEl.textContent   = '⏳ 載入中…';
+  resultsEl.style.display = 'none';
+
+  try {
+    const gYear     = year + 1911;
+    const mm        = String(month).padStart(2, '0');
+    const startDate = `${gYear}-${mm}-01`;
+    const endDate   = `${gYear}-${mm}-31`;
+    const all = await fbQuery(COL_ATTEND,
+      [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
+    let records = unit ? all.filter(r => r.unit === unit) : all;
+    records.sort((a,b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.checkinTime||'').localeCompare(b.checkinTime||'');
+    });
+    _verifyData = records;
+    statusEl.style.display = 'none';
+    resultsEl.style.display = 'block';
+    renderVerifyList(records);
+  } catch(e) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '❌ 載入失敗：' + e.message;
+  }
+}
+
+function _verifyMins(t1, t2) {
+  if (!t1 || !t2) return -1;
+  const [h1,m1] = t1.split(':').map(Number);
+  const [h2,m2] = t2.split(':').map(Number);
+  return (h2*60+m2) - (h1*60+m1);
+}
+
+function _verifyCardHTML(r) {
+  const mins     = _verifyMins(r.checkinTime, r.checkoutTime);
+  const qualifies = mins >= 60 && r.dutyType === '協勤';
+  const verified  = r.verified || false;
+  const [,, dd]   = (r.date||'--').split('-');
+  const mo        = parseInt((r.date||'').split('-')[1]||'0');
+  const dateStr   = mo + '月' + parseInt(dd) + '日';
+  const borderCol = verified ? '#27ae60' : qualifies ? 'var(--red)' : 'var(--border)';
+  const minsText  = mins >= 0 ? mins + ' 分鐘' : '—';
+  const minsColor = mins >= 60 ? 'var(--red)' : mins >= 0 ? 'var(--text-light)' : '#ccc';
+  const feeText   = qualifies ? '$200' : '—';
+  const feeColor  = qualifies ? '#27ae60' : '#ccc';
+  const dutyBg    = r.dutyType === '協勤' ? 'rgba(139,26,14,0.08)' : '#e8f4f8';
+  const dutyColor = r.dutyType === '協勤' ? 'var(--red)' : '#2980b9';
+  return `<div id="vcard-${r.id}" style="background:white;border:1px solid ${borderCol};border-left:3px solid ${borderCol};border-radius:10px;padding:14px;margin-bottom:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:0.68rem;background:${dutyBg};color:${dutyColor};border-radius:4px;padding:2px 8px;font-weight:600;">${r.dutyType||'協勤'}</span>
+      <span style="font-weight:700;color:var(--text);font-size:0.95rem;">${dateStr}</span>
+    </div>
+    <label id="vchklabel-${r.id}" style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.78rem;color:${verified?'#27ae60':'var(--text-light)'};">
+      <input type="checkbox" ${verified?'checked':''} onchange="toggleVerifyConfirm('${r.id}',this.checked)" style="width:16px;height:16px;accent-color:#27ae60;cursor:pointer;">
+      確認
+    </label>
+  </div>
+  <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:10px;">${r.title||''}${r.title&&r.memberName?' ':''}${r.memberName||''}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;">
+    <div>
+      <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:3px;">簽到</div>
+      <input type="time" value="${r.checkinTime||''}" onchange="saveVerifyEdit('${r.id}','checkinTime',this.value)" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;">
+    </div>
+    <div>
+      <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:3px;">簽退</div>
+      <input type="time" value="${r.checkoutTime||''}" onchange="saveVerifyEdit('${r.id}','checkoutTime',this.value)" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;">
+    </div>
+    <div style="text-align:center;min-width:52px;">
+      <div id="vmin-${r.id}" style="font-size:0.95rem;font-weight:700;color:${minsColor};">${minsText}</div>
+      <div id="vfee-${r.id}" style="font-size:0.75rem;font-weight:600;margin-top:2px;color:${feeColor};">${feeText}</div>
+    </div>
+  </div>
+</div>`;
+}
+
+function renderVerifyList(records) {
+  const list = document.getElementById('verifyList');
+  if (!records.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:24px 0;font-size:0.85rem;">本月無出勤紀錄</div>';
+  } else {
+    list.innerHTML = records.map(_verifyCardHTML).join('');
+  }
+  updateVerifySummary(records);
+}
+
+function updateVerifySummary(records) {
+  let feeCount = 0, confirmed = 0;
+  records.forEach(r => {
+    if (_verifyMins(r.checkinTime, r.checkoutTime) >= 60 && r.dutyType === '協勤') feeCount++;
+    if (r.verified) confirmed++;
+  });
+  document.getElementById('verifyFeeTotal').textContent = '$' + (feeCount * 200).toLocaleString();
+  document.getElementById('verifyFeeCount').textContent = feeCount + ' 筆';
+  document.getElementById('verifyProgress').textContent = confirmed + ' / ' + records.length + ' 筆已確認';
+  const pct = records.length ? Math.round(confirmed / records.length * 100) : 0;
+  document.getElementById('verifyProgressBar').style.width = pct + '%';
+}
+
+async function saveVerifyEdit(docId, field, value) {
+  const rec = _verifyData.find(r => r.id === docId);
+  if (!rec) return;
+  rec[field] = value;
+  const newHours = calcHours(rec.checkinTime, rec.checkoutTime);
+  const newMins  = _verifyMins(rec.checkinTime, rec.checkoutTime);
+  rec.hours = newHours;
+  const qualifies = newMins >= 60 && rec.dutyType === '協勤';
+  const minEl = document.getElementById('vmin-' + docId);
+  const feeEl = document.getElementById('vfee-' + docId);
+  if (minEl) {
+    minEl.textContent = newMins >= 0 ? newMins + ' 分鐘' : '—';
+    minEl.style.color = newMins >= 60 ? 'var(--red)' : newMins >= 0 ? 'var(--text-light)' : '#ccc';
+  }
+  if (feeEl) { feeEl.textContent = qualifies ? '$200' : '—'; feeEl.style.color = qualifies ? '#27ae60' : '#ccc'; }
+  updateVerifySummary(_verifyData);
+  try {
+    await fbUpdate(COL_ATTEND, docId, { [field]: value, hours: newHours });
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+async function toggleVerifyConfirm(docId, checked) {
+  const rec = _verifyData.find(r => r.id === docId);
+  if (!rec) return;
+  rec.verified = checked;
+  const card  = document.getElementById('vcard-' + docId);
+  const label = document.getElementById('vchklabel-' + docId);
+  if (card) {
+    const mins = _verifyMins(rec.checkinTime, rec.checkoutTime);
+    const q    = mins >= 60 && rec.dutyType === '協勤';
+    const col  = checked ? '#27ae60' : q ? 'var(--red)' : 'var(--border)';
+    card.style.borderColor     = col;
+    card.style.borderLeftColor = col;
+  }
+  if (label) label.style.color = checked ? '#27ae60' : 'var(--text-light)';
+  updateVerifySummary(_verifyData);
+  try {
+    await fbUpdate(COL_ATTEND, docId, { verified: checked });
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+// ──────────────────────────────────────────
 
 async function generateRpt1() {
   const year = document.getElementById('rpt1Year').value;
