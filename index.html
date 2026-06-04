@@ -7027,7 +7027,12 @@ async function loadVerifyData() {
     const endDate   = `${gYear}-${mm}-31`;
     const all = await fbQuery(COL_ATTEND,
       [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
-    let records = unit ? all.filter(r => r.unit === unit) : all;
+    let records = all;
+    if (unit) {
+      await loadMembers();
+      const unitNames = new Set(members.filter(m => (m.unit||'') === unit).map(m => m.name));
+      records = all.filter(r => unitNames.has(r.memberName) || (r.unit||'') === unit);
+    }
     records.sort((a,b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
       return (a.checkinTime||'').localeCompare(b.checkinTime||'');
