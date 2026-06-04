@@ -7005,8 +7005,27 @@ async function initReportPage() {
 }
 
 // ── 資料核對 ──────────────────────────────
-// _verifyData: 備勤場次陣列，每筆 = { ...COL_ATTEND record, outings:[...COL_OUTING], totalOutingMins, qualifies }
+// _verifyData: 備勤場次陣列，每筆帶有 outings[]、totalOutingMins、dayTotal、dayQualifies、isLastSession
 let _verifyData = [];
+
+// 計算各人各日的當日出勤合計，標記 dayTotal、dayQualifies、isLastSession
+function _annotateSessionDays(sessions) {
+  const dayMap = {};
+  sessions.forEach(s => {
+    const key = (s.memberName||'') + '|' + (s.date||'');
+    if (!dayMap[key]) dayMap[key] = [];
+    dayMap[key].push(s);
+  });
+  Object.values(dayMap).forEach(group => {
+    const dayTotal    = group.reduce((sum, s) => sum + (s.totalOutingMins || 0), 0);
+    const dayQualifies = dayTotal >= 60;
+    group.forEach((s, i) => {
+      s.dayTotal      = dayTotal;
+      s.dayQualifies  = dayQualifies;
+      s.isLastSession = i === group.length - 1;
+    });
+  });
+}
 
 async function loadVerifyData() {
   const year  = parseInt(document.getElementById('verifyYear').value);
@@ -7067,7 +7086,7 @@ async function loadVerifyData() {
         const m = _verifyMins(o.timeOut, o.timeBack);
         return sum + (m > 0 ? m : 0);
       }, 0);
-      return { ...a, outings: matchedOutings, totalOutingMins: totalMins, qualifies: totalMins >= 60 };
+      return { ...a, outings: matchedOutings, totalOutingMins: totalMins };
     });
 
     sessions.sort((a, b) => {
@@ -7076,6 +7095,8 @@ async function loadVerifyData() {
       const bT = b.outings.length ? (b.outings[0].timeOut||b.checkinTime||'') : (b.checkinTime||'');
       return aT.localeCompare(bT);
     });
+
+    _annotateSessionDays(sessions);
 
     statusEl.style.display = 'none';
     _verifyData = sessions;
@@ -7098,11 +7119,9 @@ function _verifyCardHTML(s) {
   const verified   = s.verified || false;
   const [, mo, dd] = (s.date||'--').split('-');
   const dateStr    = parseInt(mo) + '月' + parseInt(dd) + '日';
-  const totalMins  = s.totalOutingMins || 0;
-  const qualifies  = s.qualifies;
-  const borderCol  = verified ? '#27ae60' : qualifies ? 'var(--red)' : 'var(--border)';
-  const feeText    = qualifies ? '$200' : '—';
-  const feeColor   = qualifies ? '#27ae60' : '#ccc';
+  const sessionMins = s.totalOutingMins || 0;
+  // 邊框：最後一筆才顯示當日資格顏色
+  const borderCol  = verified ? '#27ae60' : (s.isLastSession && s.dayQualifies) ? 'var(--red)' : 'var(--border)';
   const sbMins     = _verifyMins(s.checkinTime, s.checkoutTime);
   const sbText     = sbMins >= 0 ? sbMins + ' 分' : '—';
 
@@ -7127,6 +7146,16 @@ function _verifyCardHTML(s) {
       }).join('')
     : `<div style="font-size:0.8rem;color:var(--text-light);padding:6px 0;border-top:1px solid #f0f0f0;">本次備勤無出勤紀錄</div>`;
 
+  // 底部：非最後場次只顯示本場次分鐘；最後場次顯示當日合計＋協勤費
+  const bottomRow = s.isLastSession
+    ? `<div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
+        <span style="font-size:0.78rem;color:var(--text-light);">當日出勤合計 <strong id="vtotal-${s.id}" style="color:${s.dayQualifies?'var(--red)':'var(--text-mid)'};">${s.dayTotal} 分鐘</strong></span>
+        <span style="font-size:0.95rem;font-weight:700;color:${s.dayQualifies?'#27ae60':'#ccc'};" id="vfee-${s.id}">${s.dayQualifies?'$200':'—'}</span>
+      </div>`
+    : `<div style="display:flex;justify-content:flex-end;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
+        <span style="font-size:0.78rem;color:var(--text-light);">本場次出勤 <strong id="vtotal-${s.id}" style="color:${sessionMins>0?'var(--text-mid)':'#ccc'};">${sessionMins} 分鐘</strong></span>
+      </div>`;
+
   return `<div id="vcard-${s.id}" style="background:white;border:1px solid ${borderCol};border-left:3px solid ${borderCol};border-radius:10px;padding:14px;margin-bottom:10px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <div style="display:flex;align-items:center;gap:8px;">
@@ -7142,10 +7171,7 @@ function _verifyCardHTML(s) {
     備勤　${s.checkinTime||'--:--'} ～ ${s.checkoutTime||'--:--'}　<span style="color:var(--text-mid);">${sbText}</span>
   </div>
   <div>${outingsHTML}</div>
-  <div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
-    <span style="font-size:0.78rem;color:var(--text-light);">出勤合計 <strong id="vtotal-${s.id}" style="color:${qualifies?'var(--red)':'var(--text-mid)'};">${totalMins} 分鐘</strong></span>
-    <span style="font-size:0.95rem;font-weight:700;color:${feeColor};" id="vfee-${s.id}">${feeText}</span>
-  </div>
+  ${bottomRow}
 </div>`;
 }
 
@@ -7160,28 +7186,16 @@ function renderVerifyList(sessions) {
 }
 
 function updateVerifySummary(sessions) {
-  let feeCount = 0, confirmed = 0;
-  sessions.forEach(s => {
-    if (s.qualifies) feeCount++;
-    if (s.verified) confirmed++;
-  });
+  // 協勤費以「同人同日」為單位計算，最多 $200
+  const qualifyingDays = new Set();
+  sessions.forEach(s => { if (s.isLastSession && s.dayQualifies) qualifyingDays.add((s.memberName||'') + '|' + (s.date||'')); });
+  const feeCount = qualifyingDays.size;
+  const confirmed = sessions.filter(s => s.verified).length;
   document.getElementById('verifyFeeTotal').textContent = '$' + (feeCount * 200).toLocaleString();
   document.getElementById('verifyFeeCount').textContent = feeCount + ' 筆';
   document.getElementById('verifyProgress').textContent = confirmed + ' / ' + sessions.length + ' 筆已確認';
   const pct = sessions.length ? Math.round(confirmed / sessions.length * 100) : 0;
   document.getElementById('verifyProgressBar').style.width = pct + '%';
-}
-
-async function saveAttendVerifyEdit(attendId, field, value) {
-  const session = _verifyData.find(s => s.id === attendId);
-  if (!session) return;
-  session[field] = value;
-  try {
-    const updates = { [field]: value };
-    const mins = _verifyMins(session.checkinTime, session.checkoutTime);
-    if (mins >= 0) updates.hours = +(mins / 60).toFixed(2);
-    await fbUpdate(COL_ATTEND, attendId, updates);
-  } catch(e) { alert('儲存失敗：' + e.message); }
 }
 
 async function saveOutingVerifyEdit(outingId, field, value, attendId) {
@@ -7191,26 +7205,46 @@ async function saveOutingVerifyEdit(outingId, field, value, attendId) {
   if (!outing) return;
   outing[field] = value;
 
+  // 更新該出勤紀錄的分鐘顯示
   const om = _verifyMins(outing.timeOut, outing.timeBack);
   const ominEl = document.getElementById('vomin-' + outingId);
   if (ominEl) { ominEl.textContent = om >= 0 ? om + '分' : '—'; ominEl.style.color = om >= 0 ? 'var(--text-mid)' : '#ccc'; }
 
-  const totalMins = session.outings.reduce((sum, o) => {
+  // 重算本場次出勤合計
+  session.totalOutingMins = session.outings.reduce((sum, o) => {
     const m = _verifyMins(o.timeOut, o.timeBack);
     return sum + (m > 0 ? m : 0);
   }, 0);
-  session.totalOutingMins = totalMins;
-  session.qualifies = totalMins >= 60;
 
-  const totalEl = document.getElementById('vtotal-' + attendId);
-  const feeEl   = document.getElementById('vfee-'  + attendId);
-  const card    = document.getElementById('vcard-' + attendId);
-  if (totalEl) { totalEl.textContent = totalMins + ' 分鐘'; totalEl.style.color = totalMins >= 60 ? 'var(--red)' : 'var(--text-mid)'; }
-  if (feeEl)   { feeEl.textContent = session.qualifies ? '$200' : '—'; feeEl.style.color = session.qualifies ? '#27ae60' : '#ccc'; }
-  if (card && !session.verified) {
-    const col = session.qualifies ? 'var(--red)' : 'var(--border)';
-    card.style.borderColor = col; card.style.borderLeftColor = col;
-  }
+  // 重新標注當日合計（影響同人同日所有場次）
+  _annotateSessionDays(_verifyData);
+
+  // 取得同人同日所有場次，更新 UI
+  const dayKey = (session.memberName||'') + '|' + (session.date||'');
+  const daySessions = _verifyData.filter(s => (s.memberName||'') + '|' + (s.date||'') === dayKey);
+  daySessions.forEach(s => {
+    const totalEl = document.getElementById('vtotal-' + s.id);
+    const feeEl   = document.getElementById('vfee-'  + s.id);
+    const card    = document.getElementById('vcard-' + s.id);
+    if (totalEl) {
+      if (s.isLastSession) {
+        totalEl.textContent  = s.dayTotal + ' 分鐘';
+        totalEl.style.color  = s.dayQualifies ? 'var(--red)' : 'var(--text-mid)';
+      } else {
+        totalEl.textContent  = s.totalOutingMins + ' 分鐘';
+        totalEl.style.color  = s.totalOutingMins > 0 ? 'var(--text-mid)' : '#ccc';
+      }
+    }
+    if (feeEl && s.isLastSession) {
+      feeEl.textContent = s.dayQualifies ? '$200' : '—';
+      feeEl.style.color = s.dayQualifies ? '#27ae60' : '#ccc';
+    }
+    if (card && !s.verified) {
+      const col = (s.isLastSession && s.dayQualifies) ? 'var(--red)' : 'var(--border)';
+      card.style.borderColor = col; card.style.borderLeftColor = col;
+    }
+  });
+
   updateVerifySummary(_verifyData);
   try {
     await fbUpdate(COL_OUTING, outingId, { [field]: value });
@@ -7224,7 +7258,7 @@ async function toggleVerifyConfirm(attendId, checked) {
   const card  = document.getElementById('vcard-' + attendId);
   const label = document.getElementById('vchklabel-' + attendId);
   if (card) {
-    const col = checked ? '#27ae60' : session.qualifies ? 'var(--red)' : 'var(--border)';
+    const col = checked ? '#27ae60' : (session.isLastSession && session.dayQualifies) ? 'var(--red)' : 'var(--border)';
     card.style.borderColor = col; card.style.borderLeftColor = col;
   }
   if (label) label.style.color = checked ? '#27ae60' : 'var(--text-light)';
