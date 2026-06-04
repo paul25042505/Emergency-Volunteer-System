@@ -7135,19 +7135,8 @@ function _verifyCardHTML(s) {
       確認
     </label>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid #f0f0f0;">
-    <div>
-      <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">備勤開始</div>
-      <input type="time" value="${s.checkinTime||''}" onchange="saveAttendVerifyEdit('${s.id}','checkinTime',this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
-    </div>
-    <div>
-      <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">備勤結束</div>
-      <input type="time" value="${s.checkoutTime||''}" onchange="saveAttendVerifyEdit('${s.id}','checkoutTime',this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
-    </div>
-    <div style="text-align:center;min-width:50px;">
-      <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">備勤時長</div>
-      <div style="font-size:0.88rem;color:var(--text-mid);">${sbText}</div>
-    </div>
+  <div style="font-size:0.75rem;color:var(--text-light);padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid #f0f0f0;">
+    備勤　${s.checkinTime||'--:--'} ～ ${s.checkoutTime||'--:--'}　<span style="color:var(--text-mid);">${sbText}</span>
   </div>
   <div>${outingsHTML}</div>
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
