@@ -4354,6 +4354,7 @@ function _positionAdminTabBar() { /* tab bar 已移除 */ }
 
 let _loadingCount = 0;
 let _loadingTimer = null;
+let _loadingSlowTimer = null;
 let _loadingWidth = 0;
 function showLoading() {
   _loadingCount++;
@@ -4362,6 +4363,7 @@ function showLoading() {
   const fill = document.getElementById('globalLoadingBarFill');
   if (!bar || !fill) return;
   clearInterval(_loadingTimer);
+  clearTimeout(_loadingSlowTimer);
   _loadingWidth = 0;
   fill.style.transition = 'none';
   fill.style.width = '0%';
@@ -4390,7 +4392,13 @@ function showLoading() {
     _loadingTimer = setInterval(() => {
       const remaining = 90 - _loadingWidth;
       _loadingWidth += Math.max(remaining * 0.1, 0.5);
-      if (_loadingWidth >= 90) { _loadingWidth = 90; clearInterval(_loadingTimer); }
+      if (_loadingWidth >= 90) {
+        _loadingWidth = 90;
+        clearInterval(_loadingTimer);
+        _loadingSlowTimer = setTimeout(() => {
+          if (_loadingLabel) _loadingLabel.textContent = '🚗 返隊途中塞車了，稍等一下…';
+        }, 5000);
+      }
       fill.style.width = _loadingWidth + '%';
       _updateUI();
     }, 150);
@@ -4400,6 +4408,7 @@ function hideLoading() {
   _loadingCount = Math.max(0, _loadingCount - 1);
   if (_loadingCount > 0) return;
   clearInterval(_loadingTimer);
+  clearTimeout(_loadingSlowTimer);
   const bar  = document.getElementById('globalLoadingBar');
   const fill = document.getElementById('globalLoadingBarFill');
   if (!bar || !fill) return;
