@@ -6996,9 +6996,8 @@ async function generateRpt3() {
 function jsonpRequest(baseUrl, scriptId) {
   return new Promise((resolve, reject) => {
     const cbName = 'jsonpCb_' + Date.now();
-    let done = false;
     window[cbName] = function(j) {
-      done = true; delete window[cbName];
+      delete window[cbName];
       document.getElementById(scriptId)?.remove();
       if (!j.success) reject(new Error(j.error || '後端產生失敗'));
       else resolve(j);
@@ -7007,9 +7006,6 @@ function jsonpRequest(baseUrl, scriptId) {
     script.id = scriptId;
     script.src = baseUrl + '&callback=' + cbName;
     document.head.appendChild(script);
-    setTimeout(() => {
-      if (!done) { delete window[cbName]; document.getElementById(scriptId)?.remove(); reject(new Error('請求逾時（120秒），請重試')); }
-    }, 120000);
   });
 }
 
