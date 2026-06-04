@@ -6993,7 +6993,9 @@ async function generateRpt3() {
   finally { btn.disabled = false; }
 }
 
-function jsonpRequest(baseUrl, scriptId, statusEl) {
+function jsonpRequest(baseUrl, scriptId, statusEl, _retryCount) {
+  _retryCount = _retryCount || 0;
+  const MAX_RETRY = 3;
   return new Promise((resolve, reject) => {
     const cbName = 'jsonpCb_' + Date.now();
     const startTime = Date.now();
@@ -7023,7 +7025,15 @@ function jsonpRequest(baseUrl, scriptId, statusEl) {
     script.id = scriptId;
     script.onerror = () => {
       cleanup(); delete window[cbName]; script.remove();
-      reject(new Error('無法連線至報表伺服器，請確認網路後重試'));
+      if (_retryCount < MAX_RETRY) {
+        const nextRetry = _retryCount + 1;
+        if (statusEl) { statusEl.style.color = 'var(--text-light)'; statusEl.textContent = `⏳ 連線失敗，第 ${nextRetry} 次重試中…`; }
+        setTimeout(() => {
+          jsonpRequest(baseUrl, scriptId, statusEl, nextRetry).then(resolve).catch(reject);
+        }, 3000 * nextRetry);
+      } else {
+        reject(new Error('連線失敗（已重試 ' + MAX_RETRY + ' 次），請確認網路後手動重試'));
+      }
     };
     script.src = baseUrl + '&callback=' + cbName;
     document.head.appendChild(script);
