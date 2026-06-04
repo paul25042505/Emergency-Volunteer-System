@@ -6955,7 +6955,7 @@ async function generateRpt1() {
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}&dutyType=${encodeURIComponent(dutyType)}`, 'jsonpRpt1Script');
+    const json = await jsonpRequest(BASE_URL + `?action=generateAttendanceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}&dutyType=${encodeURIComponent(dutyType)}`, 'jsonpRpt1Script', status);
     downloadDocx(json);
     status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
@@ -6970,7 +6970,7 @@ async function generateRpt2() {
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(BASE_URL + `?action=generateServiceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`, 'jsonpRpt2Script');
+    const json = await jsonpRequest(BASE_URL + `?action=generateServiceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`, 'jsonpRpt2Script', status);
     downloadDocx(json);
     status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
@@ -6986,24 +6986,45 @@ async function generateRpt3() {
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.textContent='⏳ 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(RPT3_URL + `?action=generateOutingReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt3Script');
+    const json = await jsonpRequest(RPT3_URL + `?action=generateOutingReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt3Script', status);
     downloadDocx(json);
     status.style.color='#1a6b35'; status.textContent=`✅ 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.textContent='❌ '+e.message; }
   finally { btn.disabled = false; }
 }
 
-function jsonpRequest(baseUrl, scriptId) {
+function jsonpRequest(baseUrl, scriptId, statusEl) {
   return new Promise((resolve, reject) => {
     const cbName = 'jsonpCb_' + Date.now();
+    const startTime = Date.now();
+    let ticker = null;
+    if (statusEl) {
+      ticker = setInterval(() => {
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+        const m = Math.floor(sec / 60), s = sec % 60;
+        const timeStr = m > 0 ? `${m} 分 ${s} 秒` : `${s} 秒`;
+        if (!navigator.onLine) {
+          statusEl.style.color = 'var(--red)';
+          statusEl.textContent = `⚠️ 網路已斷線（已等待 ${timeStr}），請確認連線後重試`;
+        } else {
+          statusEl.style.color = 'var(--text-light)';
+          statusEl.textContent = `⏳ 正在產生中… 已等待 ${timeStr}`;
+        }
+      }, 1000);
+    }
+    const cleanup = () => { if (ticker) clearInterval(ticker); };
     window[cbName] = function(j) {
-      delete window[cbName];
+      cleanup(); delete window[cbName];
       document.getElementById(scriptId)?.remove();
       if (!j.success) reject(new Error(j.error || '後端產生失敗'));
       else resolve(j);
     };
     const script = document.createElement('script');
     script.id = scriptId;
+    script.onerror = () => {
+      cleanup(); delete window[cbName]; script.remove();
+      reject(new Error('無法連線至報表伺服器，請確認網路後重試'));
+    };
     script.src = baseUrl + '&callback=' + cbName;
     document.head.appendChild(script);
   });
