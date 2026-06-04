@@ -7131,47 +7131,69 @@ function _verifyGroupCardHTML(g) {
   const borderCol   = allConfirmed ? '#27ae60' : g.dayQualifies ? 'var(--red)' : 'var(--border)';
   const feeColor    = g.dayQualifies ? '#27ae60' : '#ccc';
 
-  // 備勤時間列（每場備勤一行，附確認勾選）
+  // 備勤時間列：pill 按鈕確認，較大點擊區域
   const standbyRows = g.sessions.map(s => {
     const sv = s.verified || false;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;">
-      <span style="font-size:0.78rem;color:var(--text-light);">備勤　${s.checkinTime||'--:--'} ～ ${s.checkoutTime||'--:--'}</span>
-      <label id="vchklabel-${s.id}" style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.75rem;color:${sv?'#27ae60':'var(--text-light)'};">
-        <input type="checkbox" ${sv?'checked':''} onchange="toggleVerifyConfirm('${g.anchorId}','${s.id}',this.checked)" style="width:15px;height:15px;accent-color:#27ae60;cursor:pointer;">
-        確認
-      </label>
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;min-height:44px;">
+      <span style="font-size:0.82rem;color:var(--text-light);">備勤　${s.checkinTime||'--:--'} ～ ${s.checkoutTime||'--:--'}</span>
+      <button id="vchklabel-${s.id}" onclick="toggleVerifyConfirm('${g.anchorId}','${s.id}')"
+        style="min-width:80px;min-height:36px;padding:7px 16px;border-radius:20px;border:1.5px solid ${sv?'#27ae60':'#ddd'};background:${sv?'#27ae60':'white'};color:${sv?'white':'var(--text-light)'};font-size:0.82rem;font-weight:${sv?'600':'400'};font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:all 0.18s;">
+        ${sv?'✓ 已確認':'確認'}
+      </button>
     </div>`;
   }).join('');
 
-  // 出勤紀錄（所有備勤場次合併排序）
+  // 出勤紀錄：預設唯讀（防誤觸），點 ✏️ 才展開編輯，需按「儲存」才更新
   const outingsHTML = g.allOutings.length
     ? g.allOutings.map(o => {
         const parentId = g.sessions.find(s => s.outings.some(oo => oo.id === o.id))?.id || '';
         const om = _verifyMins(o.timeOut, o.timeBack);
         const caseInfo = [o.caseType, o.district].filter(Boolean).join('・');
-        return `<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #f0f0f0;">
-          <div>
-            <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">出動</div>
-            <input type="time" value="${o.timeOut||''}" onchange="saveOutingVerifyEdit('${o.id}','timeOut',this.value,'${parentId}','${g.anchorId}')" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
+        return `<div id="orow-${o.id}" style="border-top:1px solid #f0f0f0;">
+          <div id="oread-${o.id}" style="display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:6px 0;">
+            <div style="display:flex;align-items:center;gap:14px;flex:1;">
+              <div>
+                <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:1px;">出動</div>
+                <div id="otime-out-${o.id}" style="font-size:0.92rem;font-weight:600;color:var(--text);">${o.timeOut||'—'}</div>
+              </div>
+              <div style="color:#ccc;">→</div>
+              <div>
+                <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:1px;">返隊</div>
+                <div id="otime-back-${o.id}" style="font-size:0.92rem;font-weight:600;color:var(--text);">${o.timeBack||'—'}</div>
+              </div>
+              <div>
+                <div id="vomin-${o.id}" style="font-size:0.88rem;font-weight:600;color:${om>=0?'var(--text-mid)':'#ccc'};">${om>=0?om+'分':'—'}</div>
+                ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;">${caseInfo}</div>`:''}
+              </div>
+            </div>
+            <button onclick="toggleOutingEdit('${o.id}')" style="background:none;border:none;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:1rem;color:var(--text-light);">✏️</button>
           </div>
-          <div>
-            <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">返隊</div>
-            <input type="time" value="${o.timeBack||''}" onchange="saveOutingVerifyEdit('${o.id}','timeBack',this.value,'${parentId}','${g.anchorId}')" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
-          </div>
-          <div style="text-align:center;min-width:50px;">
-            <div id="vomin-${o.id}" style="font-size:0.88rem;font-weight:600;color:${om>=0?'var(--text-mid)':'#ccc'};">${om>=0?om+'分':'—'}</div>
-            ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;">${caseInfo}</div>`:''}
+          <div id="oedit-${o.id}" style="display:none;padding:8px 0 10px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div>
+                <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:4px;">出動時間</div>
+                <input id="oinput-out-${o.id}" type="time" value="${o.timeOut||''}" style="width:100%;border:1.5px solid var(--red);border-radius:8px;padding:9px 8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;">
+              </div>
+              <div>
+                <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:4px;">返隊時間</div>
+                <input id="oinput-back-${o.id}" type="time" value="${o.timeBack||''}" style="width:100%;border:1.5px solid var(--red);border-radius:8px;padding:9px 8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="cancelOutingEdit('${o.id}')" style="flex:1;padding:11px;border:1px solid #ddd;border-radius:10px;background:white;color:var(--text-mid);font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;cursor:pointer;">取消</button>
+              <button onclick="confirmOutingEdit('${o.id}','${parentId}','${g.anchorId}')" style="flex:2;padding:11px;border:none;border-radius:10px;background:var(--red);color:white;font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">儲存</button>
+            </div>
           </div>
         </div>`;
       }).join('')
-    : `<div style="font-size:0.8rem;color:var(--text-light);padding:6px 0;border-top:1px solid #f0f0f0;">本日無出勤紀錄</div>`;
+    : `<div style="font-size:0.8rem;color:var(--text-light);padding:8px 0;border-top:1px solid #f0f0f0;">本日無出勤紀錄</div>`;
 
   return `<div id="vcard-${g.anchorId}" style="background:white;border:1px solid ${borderCol};border-left:3px solid ${borderCol};border-radius:10px;padding:14px;margin-bottom:10px;">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
     <span style="font-weight:700;color:var(--text);font-size:0.95rem;">${dateStr}</span>
     <span style="font-size:0.82rem;color:var(--text-mid);">${g.title||''}${g.title&&g.memberName?' ':''}${g.memberName||''}</span>
   </div>
-  <div style="padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid #f0f0f0;">${standbyRows}</div>
+  <div style="padding-bottom:4px;margin-bottom:4px;border-bottom:1px solid #f0f0f0;">${standbyRows}</div>
   <div>${outingsHTML}</div>
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
     <span style="font-size:0.78rem;color:var(--text-light);">當日出勤合計 <strong id="vtotal-${g.anchorId}" style="color:${g.dayQualifies?'var(--red)':'var(--text-mid)'};">${g.dayTotal} 分鐘</strong></span>
@@ -7202,29 +7224,60 @@ function updateVerifySummary(groups) {
   document.getElementById('verifyProgressBar').style.width = pct + '%';
 }
 
-async function saveOutingVerifyEdit(outingId, field, value, sessionId, anchorId) {
+function toggleOutingEdit(outingId) {
+  document.getElementById('oread-' + outingId).style.display = 'none';
+  document.getElementById('oedit-' + outingId).style.display = 'block';
+}
+
+function cancelOutingEdit(outingId) {
+  const group = _verifyData.find(g => g.allOutings.some(o => o.id === outingId));
+  if (group) {
+    const outing = group.allOutings.find(o => o.id === outingId);
+    if (outing) {
+      const i1 = document.getElementById('oinput-out-'  + outingId);
+      const i2 = document.getElementById('oinput-back-' + outingId);
+      if (i1) i1.value = outing.timeOut  || '';
+      if (i2) i2.value = outing.timeBack || '';
+    }
+  }
+  document.getElementById('oread-' + outingId).style.display = '';
+  document.getElementById('oedit-' + outingId).style.display = 'none';
+}
+
+async function confirmOutingEdit(outingId, sessionId, anchorId) {
+  const newOut  = document.getElementById('oinput-out-'  + outingId)?.value || '';
+  const newBack = document.getElementById('oinput-back-' + outingId)?.value || '';
+
   const group = _verifyData.find(g => g.anchorId === anchorId);
   if (!group) return;
   const session = group.sessions.find(s => s.id === sessionId);
-  if (!session) return;
-  const outing  = session.outings.find(o => o.id === outingId);
+  const outing  = session?.outings.find(o => o.id === outingId);
   const aoEntry = group.allOutings.find(o => o.id === outingId);
-  if (outing)  outing[field]  = value;
-  if (aoEntry) aoEntry[field] = value;
+  if (outing)  { outing.timeOut  = newOut; outing.timeBack  = newBack; }
+  if (aoEntry) { aoEntry.timeOut = newOut; aoEntry.timeBack = newBack; }
 
-  // 更新出勤分鐘顯示
-  const ref = outing || aoEntry;
-  const om  = ref ? _verifyMins(ref.timeOut, ref.timeBack) : -1;
+  // 更新唯讀顯示
+  const outEl  = document.getElementById('otime-out-'  + outingId);
+  const backEl = document.getElementById('otime-back-' + outingId);
+  if (outEl)  outEl.textContent  = newOut  || '—';
+  if (backEl) backEl.textContent = newBack || '—';
+
+  // 更新分鐘
+  const om = _verifyMins(newOut, newBack);
   const ominEl = document.getElementById('vomin-' + outingId);
   if (ominEl) { ominEl.textContent = om >= 0 ? om + '分' : '—'; ominEl.style.color = om >= 0 ? 'var(--text-mid)' : '#ccc'; }
 
-  // 重算本場次和當日合計
-  session.totalOutingMins = session.outings.reduce((sum, o) => { const m = _verifyMins(o.timeOut, o.timeBack); return sum + (m > 0 ? m : 0); }, 0);
-  group.dayTotal    = group.sessions.reduce((sum, s) => sum + s.totalOutingMins, 0);
-  group.dayQualifies = group.dayTotal >= 60;
-  group.sessions.forEach(s => { s.dayTotal = group.dayTotal; s.dayQualifies = group.dayQualifies; });
+  // 關閉編輯區
+  document.getElementById('oread-' + outingId).style.display = '';
+  document.getElementById('oedit-' + outingId).style.display = 'none';
 
-  // 更新 UI
+  // 重算當日合計
+  if (session) {
+    session.totalOutingMins = session.outings.reduce((sum, o) => { const m = _verifyMins(o.timeOut, o.timeBack); return sum + (m > 0 ? m : 0); }, 0);
+    group.dayTotal    = group.sessions.reduce((sum, s) => sum + s.totalOutingMins, 0);
+    group.dayQualifies = group.dayTotal >= 60;
+    group.sessions.forEach(s => { s.dayTotal = group.dayTotal; s.dayQualifies = group.dayQualifies; });
+  }
   const totalEl = document.getElementById('vtotal-' + anchorId);
   const feeEl   = document.getElementById('vfee-'  + anchorId);
   const card    = document.getElementById('vcard-' + anchorId);
@@ -7236,20 +7289,26 @@ async function saveOutingVerifyEdit(outingId, field, value, sessionId, anchorId)
   }
   updateVerifySummary(_verifyData);
   try {
-    await fbUpdate(COL_OUTING, outingId, { [field]: value });
+    await fbUpdate(COL_OUTING, outingId, { timeOut: newOut, timeBack: newBack });
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 
-async function toggleVerifyConfirm(anchorId, sessionId, checked) {
+async function toggleVerifyConfirm(anchorId, sessionId) {
   const group = _verifyData.find(g => g.anchorId === anchorId);
   if (!group) return;
   const session = group.sessions.find(s => s.id === sessionId);
   if (!session) return;
-  session.verified = checked;
+  const newChecked = !session.verified;
+  session.verified = newChecked;
 
-  const label = document.getElementById('vchklabel-' + sessionId);
-  if (label) label.style.color = checked ? '#27ae60' : 'var(--text-light)';
-
+  const btn = document.getElementById('vchklabel-' + sessionId);
+  if (btn) {
+    btn.style.background  = newChecked ? '#27ae60' : 'white';
+    btn.style.borderColor = newChecked ? '#27ae60' : '#ddd';
+    btn.style.color       = newChecked ? 'white'   : 'var(--text-light)';
+    btn.style.fontWeight  = newChecked ? '600'     : '400';
+    btn.textContent       = newChecked ? '✓ 已確認' : '確認';
+  }
   const card = document.getElementById('vcard-' + anchorId);
   if (card) {
     const allConfirmed = group.sessions.every(s => s.verified);
@@ -7258,7 +7317,7 @@ async function toggleVerifyConfirm(anchorId, sessionId, checked) {
   }
   updateVerifySummary(_verifyData);
   try {
-    await fbUpdate(COL_ATTEND, sessionId, { verified: checked });
+    await fbUpdate(COL_ATTEND, sessionId, { verified: newChecked });
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 // ──────────────────────────────────────────
