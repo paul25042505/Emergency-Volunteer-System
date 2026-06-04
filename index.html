@@ -7062,6 +7062,7 @@ async function loadVerifyData() {
         if (!o.timeOut) return true;
         return o.timeOut >= a.checkinTime && o.timeOut <= a.checkoutTime;
       });
+      matchedOutings.sort((x, y) => (x.timeOut||'').localeCompare(y.timeOut||''));
       const totalMins = matchedOutings.reduce((sum, o) => {
         const m = _verifyMins(o.timeOut, o.timeBack);
         return sum + (m > 0 ? m : 0);
@@ -7071,7 +7072,9 @@ async function loadVerifyData() {
 
     sessions.sort((a, b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
-      return (a.checkinTime||'').localeCompare(b.checkinTime||'');
+      const aT = a.outings.length ? (a.outings[0].timeOut||a.checkinTime||'') : (a.checkinTime||'');
+      const bT = b.outings.length ? (b.outings[0].timeOut||b.checkinTime||'') : (b.checkinTime||'');
+      return aT.localeCompare(bT);
     });
 
     statusEl.style.display = 'none';
