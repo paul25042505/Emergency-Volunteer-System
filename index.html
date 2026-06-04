@@ -7027,13 +7027,31 @@ async function loadVerifyData() {
     const endDate   = `${gYear}-${mm}-31`;
     const all = await fbQuery(COL_OUTING,
       [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
+
+    // 診斷：顯示撈到幾筆、各自的 unit 值
+    if (all.length === 0) {
+      statusEl.style.display = 'block';
+      statusEl.style.color   = 'var(--red)';
+      statusEl.textContent   = `⚠️ 此期間在 outingRecords 中共 0 筆，請確認是否有登錄出勤案件。`;
+      resultsEl.style.display = 'block';
+      _verifyData = [];
+      renderVerifyList([]);
+      return;
+    }
+    const unitValues = [...new Set(all.map(r => JSON.stringify(r.unit||'')))].join('、');
     let records = unit ? all.filter(r => (r.unit||'') === unit) : all;
+    if (records.length === 0 && unit) {
+      statusEl.style.display = 'block';
+      statusEl.style.color   = 'var(--red)';
+      statusEl.textContent   = `⚠️ 共撈到 ${all.length} 筆但分隊篩選後為 0 筆。資料中的 unit 值：${unitValues}，目前篩選：「${unit}」`;
+    } else {
+      statusEl.style.display = 'none';
+    }
     records.sort((a,b) => {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
       return (a.timeOut||'').localeCompare(b.timeOut||'');
     });
     _verifyData = records;
-    statusEl.style.display = 'none';
     resultsEl.style.display = 'block';
     renderVerifyList(records);
   } catch(e) {
