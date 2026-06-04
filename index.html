@@ -7143,32 +7143,32 @@ function _verifyGroupCardHTML(g) {
     </div>`;
   }).join('');
 
-  // 出勤紀錄：預設唯讀（防誤觸），點 ✏️ 才展開編輯，需按「儲存」才更新
+  // 出勤紀錄：時間文字永遠顯示，鉛筆固定右側，點選後下方展開編輯區
   const outingsHTML = g.allOutings.length
     ? g.allOutings.map(o => {
         const parentId = g.sessions.find(s => s.outings.some(oo => oo.id === o.id))?.id || '';
         const om = _verifyMins(o.timeOut, o.timeBack);
         const caseInfo = [o.caseType, o.district].filter(Boolean).join('・');
-        return `<div id="orow-${o.id}" style="border-top:1px solid #f0f0f0;">
-          <div id="oread-${o.id}" style="display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:6px 0;">
-            <div style="display:flex;align-items:center;gap:14px;flex:1;">
-              <div>
-                <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:1px;">出動</div>
+        return `<div id="orow-${o.id}" style="border-top:1px solid #f0f0f0;padding:6px 0;">
+          <div style="display:flex;align-items:center;">
+            <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+              <div style="white-space:nowrap;">
+                <div style="font-size:0.6rem;color:var(--text-light);">出動</div>
                 <div id="otime-out-${o.id}" style="font-size:0.92rem;font-weight:600;color:var(--text);">${o.timeOut||'—'}</div>
               </div>
-              <div style="color:#ccc;">→</div>
-              <div>
-                <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:1px;">返隊</div>
+              <div style="color:#ccc;flex-shrink:0;">→</div>
+              <div style="white-space:nowrap;">
+                <div style="font-size:0.6rem;color:var(--text-light);">返隊</div>
                 <div id="otime-back-${o.id}" style="font-size:0.92rem;font-weight:600;color:var(--text);">${o.timeBack||'—'}</div>
               </div>
-              <div>
+              <div style="min-width:0;">
                 <div id="vomin-${o.id}" style="font-size:0.88rem;font-weight:600;color:${om>=0?'var(--text-mid)':'#ccc'};">${om>=0?om+'分':'—'}</div>
-                ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;">${caseInfo}</div>`:''}
+                ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${caseInfo}</div>`:''}
               </div>
             </div>
-            <button onclick="toggleOutingEdit('${o.id}')" style="background:none;border:none;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:1rem;color:var(--text-light);">✏️</button>
+            <button id="oeditbtn-${o.id}" onclick="toggleOutingEdit('${o.id}')" style="background:none;border:none;flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:1rem;">✏️</button>
           </div>
-          <div id="oedit-${o.id}" style="display:none;padding:8px 0 10px;">
+          <div id="oedit-${o.id}" style="display:none;margin-top:6px;background:#fafafa;border-radius:8px;padding:10px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
               <div>
                 <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:4px;">出動時間</div>
@@ -7180,8 +7180,8 @@ function _verifyGroupCardHTML(g) {
               </div>
             </div>
             <div style="display:flex;gap:8px;">
-              <button onclick="cancelOutingEdit('${o.id}')" style="flex:1;padding:11px;border:1px solid #ddd;border-radius:10px;background:white;color:var(--text-mid);font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;cursor:pointer;">取消</button>
-              <button onclick="confirmOutingEdit('${o.id}','${parentId}','${g.anchorId}')" style="flex:2;padding:11px;border:none;border-radius:10px;background:var(--red);color:white;font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">儲存</button>
+              <button onclick="cancelOutingEdit('${o.id}')" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:10px;background:white;color:var(--text-mid);font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;cursor:pointer;">取消</button>
+              <button onclick="confirmOutingEdit('${o.id}','${parentId}','${g.anchorId}')" style="flex:2;padding:10px;border:none;border-radius:10px;background:var(--red);color:white;font-family:'Noto Sans TC',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">儲存</button>
             </div>
           </div>
         </div>`;
@@ -7225,8 +7225,12 @@ function updateVerifySummary(groups) {
 }
 
 function toggleOutingEdit(outingId) {
-  document.getElementById('oread-' + outingId).style.display = 'none';
-  document.getElementById('oedit-' + outingId).style.display = 'block';
+  const editEl = document.getElementById('oedit-'    + outingId);
+  const btnEl  = document.getElementById('oeditbtn-' + outingId);
+  if (!editEl) return;
+  const opening = editEl.style.display === 'none';
+  editEl.style.display = opening ? 'block' : 'none';
+  if (btnEl) btnEl.textContent = opening ? '✕' : '✏️';
 }
 
 function cancelOutingEdit(outingId) {
@@ -7240,8 +7244,10 @@ function cancelOutingEdit(outingId) {
       if (i2) i2.value = outing.timeBack || '';
     }
   }
-  document.getElementById('oread-' + outingId).style.display = '';
-  document.getElementById('oedit-' + outingId).style.display = 'none';
+  const editEl = document.getElementById('oedit-'    + outingId);
+  const btnEl  = document.getElementById('oeditbtn-' + outingId);
+  if (editEl) editEl.style.display = 'none';
+  if (btnEl)  btnEl.textContent = '✏️';
 }
 
 async function confirmOutingEdit(outingId, sessionId, anchorId) {
@@ -7267,9 +7273,11 @@ async function confirmOutingEdit(outingId, sessionId, anchorId) {
   const ominEl = document.getElementById('vomin-' + outingId);
   if (ominEl) { ominEl.textContent = om >= 0 ? om + '分' : '—'; ominEl.style.color = om >= 0 ? 'var(--text-mid)' : '#ccc'; }
 
-  // 關閉編輯區
-  document.getElementById('oread-' + outingId).style.display = '';
-  document.getElementById('oedit-' + outingId).style.display = 'none';
+  // 關閉編輯區，恢復鉛筆圖示
+  const editEl2 = document.getElementById('oedit-'    + outingId);
+  const btnEl2  = document.getElementById('oeditbtn-' + outingId);
+  if (editEl2) editEl2.style.display = 'none';
+  if (btnEl2)  btnEl2.textContent = '✏️';
 
   // 重算當日合計
   if (session) {
