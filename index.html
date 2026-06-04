@@ -7058,22 +7058,23 @@ async function loadVerifyData() {
     const endDate   = `${gYear}-${mm}-31`;
 
     let unitNames = null;
+    const memberPromise = unit ? loadMembers() : Promise.resolve();
+
+    // 兩個查詢同時發出，不等第一個完成才發第二個
+    const [allAttend, allOutings] = await Promise.all([
+      fbQuery(COL_ATTEND,  [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc'),
+      fbQuery(COL_OUTING,  [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc'),
+      memberPromise,
+    ]);
+
     if (unit) {
-      await loadMembers();
       unitNames = new Set(members.filter(m => (m.unit||'') === unit).map(m => m.name));
     }
 
-    // 查備勤紀錄（COL_ATTEND，協勤類型）
-    const allAttend = await fbQuery(COL_ATTEND,
-      [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
     let attendRecs = allAttend.filter(r => (r.dutyType||'') === '協勤');
     if (unitNames) {
       attendRecs = attendRecs.filter(r => unitNames.has(r.memberName) || (r.unit||'') === unit);
     }
-
-    // 查同期出勤紀錄（COL_OUTING）
-    const allOutings = await fbQuery(COL_OUTING,
-      [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
 
     // 建立 memberName+date → outings 的對應表
     const outingMap = {};
