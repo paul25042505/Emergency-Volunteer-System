@@ -7005,6 +7005,7 @@ async function initReportPage() {
 }
 
 // ── 資料核對 ──────────────────────────────
+// _verifyData: 備勤場次陣列，每筆 = { ...COL_ATTEND record, outings:[...COL_OUTING], totalOutingMins, qualifies }
 let _verifyData = [];
 
 async function loadVerifyData() {
@@ -7025,23 +7026,58 @@ async function loadVerifyData() {
     const mm        = String(month).padStart(2, '0');
     const startDate = `${gYear}-${mm}-01`;
     const endDate   = `${gYear}-${mm}-31`;
-    const all = await fbQuery(COL_OUTING,
-      [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
 
-    let records = all;
+    let unitNames = null;
     if (unit) {
       await loadMembers();
-      const unitNames = new Set(members.filter(m => (m.unit||'') === unit).map(m => m.name));
-      records = all.filter(r => unitNames.has(r.memberName) || (r.unit||'') === unit);
+      unitNames = new Set(members.filter(m => (m.unit||'') === unit).map(m => m.name));
     }
-    statusEl.style.display = 'none';
-    records.sort((a,b) => {
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      return (a.timeOut||'').localeCompare(b.timeOut||'');
+
+    // 查備勤紀錄（COL_ATTEND，協勤類型）
+    const allAttend = await fbQuery(COL_ATTEND,
+      [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
+    let attendRecs = allAttend.filter(r => (r.dutyType||'') === '協勤');
+    if (unitNames) {
+      attendRecs = attendRecs.filter(r => unitNames.has(r.memberName) || (r.unit||'') === unit);
+    }
+
+    // 查同期出勤紀錄（COL_OUTING）
+    const allOutings = await fbQuery(COL_OUTING,
+      [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
+
+    // 建立 memberName+date → outings 的對應表
+    const outingMap = {};
+    allOutings.forEach(o => {
+      const key = (o.memberName||'') + '|' + (o.date||'');
+      if (!outingMap[key]) outingMap[key] = [];
+      outingMap[key].push(o);
     });
-    _verifyData = records;
+
+    // 將出勤紀錄對應到各備勤場次（依時間窗口匹配）
+    const sessions = attendRecs.map(a => {
+      const key = (a.memberName||'') + '|' + (a.date||'');
+      const dayOutings = outingMap[key] || [];
+      const matchedOutings = dayOutings.filter(o => {
+        if (!a.checkinTime || !a.checkoutTime) return true;
+        if (!o.timeOut) return true;
+        return o.timeOut >= a.checkinTime && o.timeOut <= a.checkoutTime;
+      });
+      const totalMins = matchedOutings.reduce((sum, o) => {
+        const m = _verifyMins(o.timeOut, o.timeBack);
+        return sum + (m > 0 ? m : 0);
+      }, 0);
+      return { ...a, outings: matchedOutings, totalOutingMins: totalMins, qualifies: totalMins >= 60 };
+    });
+
+    sessions.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.checkinTime||'').localeCompare(b.checkinTime||'');
+    });
+
+    statusEl.style.display = 'none';
+    _verifyData = sessions;
     resultsEl.style.display = 'block';
-    renderVerifyList(records);
+    renderVerifyList(sessions);
   } catch(e) {
     statusEl.style.color = 'var(--red)';
     statusEl.textContent = '❌ 載入失敗：' + e.message;
@@ -7055,106 +7091,154 @@ function _verifyMins(t1, t2) {
   return (h2*60+m2) - (h1*60+m1);
 }
 
-function _verifyCardHTML(r) {
-  const mins      = _verifyMins(r.timeOut, r.timeBack);
-  const qualifies = mins >= 60;
-  const verified  = r.verified || false;
-  const [,, dd]   = (r.date||'--').split('-');
-  const mo        = parseInt((r.date||'').split('-')[1]||'0');
-  const dateStr   = mo + '月' + parseInt(dd) + '日';
-  const borderCol = verified ? '#27ae60' : qualifies ? 'var(--red)' : 'var(--border)';
-  const minsText  = mins >= 0 ? mins + ' 分鐘' : '—';
-  const minsColor = mins >= 60 ? 'var(--red)' : mins >= 0 ? 'var(--text-light)' : '#ccc';
-  const feeText   = qualifies ? '$200' : '—';
-  const feeColor  = qualifies ? '#27ae60' : '#ccc';
-  const caseInfo  = [r.caseType, r.district].filter(Boolean).join('・');
-  return `<div id="vcard-${r.id}" style="background:white;border:1px solid ${borderCol};border-left:3px solid ${borderCol};border-radius:10px;padding:14px;margin-bottom:10px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+function _verifyCardHTML(s) {
+  const verified   = s.verified || false;
+  const [, mo, dd] = (s.date||'--').split('-');
+  const dateStr    = parseInt(mo) + '月' + parseInt(dd) + '日';
+  const totalMins  = s.totalOutingMins || 0;
+  const qualifies  = s.qualifies;
+  const borderCol  = verified ? '#27ae60' : qualifies ? 'var(--red)' : 'var(--border)';
+  const feeText    = qualifies ? '$200' : '—';
+  const feeColor   = qualifies ? '#27ae60' : '#ccc';
+  const sbMins     = _verifyMins(s.checkinTime, s.checkoutTime);
+  const sbText     = sbMins >= 0 ? sbMins + ' 分' : '—';
+
+  const outingsHTML = s.outings.length
+    ? s.outings.map(o => {
+        const om = _verifyMins(o.timeOut, o.timeBack);
+        const caseInfo = [o.caseType, o.district].filter(Boolean).join('・');
+        return `<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #f0f0f0;">
+          <div>
+            <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">出動</div>
+            <input type="time" value="${o.timeOut||''}" onchange="saveOutingVerifyEdit('${o.id}','timeOut',this.value,'${s.id}')" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
+          </div>
+          <div>
+            <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">返隊</div>
+            <input type="time" value="${o.timeBack||''}" onchange="saveOutingVerifyEdit('${o.id}','timeBack',this.value,'${s.id}')" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
+          </div>
+          <div style="text-align:center;min-width:50px;">
+            <div id="vomin-${o.id}" style="font-size:0.88rem;font-weight:600;color:${om>=0?'var(--text-mid)':'#ccc'};">${om>=0?om+'分':'—'}</div>
+            ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;">${caseInfo}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')
+    : `<div style="font-size:0.8rem;color:var(--text-light);padding:6px 0;border-top:1px solid #f0f0f0;">本次備勤無出勤紀錄</div>`;
+
+  return `<div id="vcard-${s.id}" style="background:white;border:1px solid ${borderCol};border-left:3px solid ${borderCol};border-radius:10px;padding:14px;margin-bottom:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <div style="display:flex;align-items:center;gap:8px;">
       <span style="font-weight:700;color:var(--text);font-size:0.95rem;">${dateStr}</span>
-      ${caseInfo ? `<span style="font-size:0.68rem;color:var(--text-light);">${caseInfo}</span>` : ''}
+      <span style="font-size:0.82rem;color:var(--text-mid);">${s.title||''}${s.title&&s.memberName?' ':''}${s.memberName||''}</span>
     </div>
-    <label id="vchklabel-${r.id}" style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.78rem;color:${verified?'#27ae60':'var(--text-light)'};">
-      <input type="checkbox" ${verified?'checked':''} onchange="toggleVerifyConfirm('${r.id}',this.checked)" style="width:16px;height:16px;accent-color:#27ae60;cursor:pointer;">
+    <label id="vchklabel-${s.id}" style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.78rem;color:${verified?'#27ae60':'var(--text-light)'};">
+      <input type="checkbox" ${verified?'checked':''} onchange="toggleVerifyConfirm('${s.id}',this.checked)" style="width:16px;height:16px;accent-color:#27ae60;cursor:pointer;">
       確認
     </label>
   </div>
-  <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:10px;">${r.title||''}${r.title&&r.memberName?' ':''}${r.memberName||''}</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;">
+  <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid #f0f0f0;">
     <div>
-      <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:3px;">出動時間</div>
-      <input type="time" value="${r.timeOut||''}" onchange="saveVerifyEdit('${r.id}','timeOut',this.value)" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;">
+      <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">備勤開始</div>
+      <input type="time" value="${s.checkinTime||''}" onchange="saveAttendVerifyEdit('${s.id}','checkinTime',this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
     </div>
     <div>
-      <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:3px;">返隊時間</div>
-      <input type="time" value="${r.timeBack||''}" onchange="saveVerifyEdit('${r.id}','timeBack',this.value)" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;">
+      <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">備勤結束</div>
+      <input type="time" value="${s.checkoutTime||''}" onchange="saveAttendVerifyEdit('${s.id}','checkoutTime',this.value)" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;">
     </div>
-    <div style="text-align:center;min-width:52px;">
-      <div id="vmin-${r.id}" style="font-size:0.95rem;font-weight:700;color:${minsColor};">${minsText}</div>
-      <div id="vfee-${r.id}" style="font-size:0.75rem;font-weight:600;margin-top:2px;color:${feeColor};">${feeText}</div>
+    <div style="text-align:center;min-width:50px;">
+      <div style="font-size:0.6rem;color:var(--text-light);margin-bottom:2px;">備勤時長</div>
+      <div style="font-size:0.88rem;color:var(--text-mid);">${sbText}</div>
     </div>
+  </div>
+  <div>${outingsHTML}</div>
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
+    <span style="font-size:0.78rem;color:var(--text-light);">出勤合計 <strong id="vtotal-${s.id}" style="color:${qualifies?'var(--red)':'var(--text-mid)'};">${totalMins} 分鐘</strong></span>
+    <span style="font-size:0.95rem;font-weight:700;color:${feeColor};" id="vfee-${s.id}">${feeText}</span>
   </div>
 </div>`;
 }
 
-function renderVerifyList(records) {
+function renderVerifyList(sessions) {
   const list = document.getElementById('verifyList');
-  if (!records.length) {
-    list.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:24px 0;font-size:0.85rem;">本月無出勤紀錄</div>';
+  if (!sessions.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:24px 0;font-size:0.85rem;">本月無備勤紀錄</div>';
   } else {
-    list.innerHTML = records.map(_verifyCardHTML).join('');
+    list.innerHTML = sessions.map(_verifyCardHTML).join('');
   }
-  updateVerifySummary(records);
+  updateVerifySummary(sessions);
 }
 
-function updateVerifySummary(records) {
+function updateVerifySummary(sessions) {
   let feeCount = 0, confirmed = 0;
-  records.forEach(r => {
-    if (_verifyMins(r.timeOut, r.timeBack) >= 60) feeCount++;
-    if (r.verified) confirmed++;
+  sessions.forEach(s => {
+    if (s.qualifies) feeCount++;
+    if (s.verified) confirmed++;
   });
   document.getElementById('verifyFeeTotal').textContent = '$' + (feeCount * 200).toLocaleString();
   document.getElementById('verifyFeeCount').textContent = feeCount + ' 筆';
-  document.getElementById('verifyProgress').textContent = confirmed + ' / ' + records.length + ' 筆已確認';
-  const pct = records.length ? Math.round(confirmed / records.length * 100) : 0;
+  document.getElementById('verifyProgress').textContent = confirmed + ' / ' + sessions.length + ' 筆已確認';
+  const pct = sessions.length ? Math.round(confirmed / sessions.length * 100) : 0;
   document.getElementById('verifyProgressBar').style.width = pct + '%';
 }
 
-async function saveVerifyEdit(docId, field, value) {
-  const rec = _verifyData.find(r => r.id === docId);
-  if (!rec) return;
-  rec[field] = value;
-  const newMins   = _verifyMins(rec.timeOut, rec.timeBack);
-  const qualifies = newMins >= 60;
-  const minEl = document.getElementById('vmin-' + docId);
-  const feeEl = document.getElementById('vfee-' + docId);
-  if (minEl) {
-    minEl.textContent = newMins >= 0 ? newMins + ' 分鐘' : '—';
-    minEl.style.color = newMins >= 60 ? 'var(--red)' : newMins >= 0 ? 'var(--text-light)' : '#ccc';
-  }
-  if (feeEl) { feeEl.textContent = qualifies ? '$200' : '—'; feeEl.style.color = qualifies ? '#27ae60' : '#ccc'; }
-  updateVerifySummary(_verifyData);
+async function saveAttendVerifyEdit(attendId, field, value) {
+  const session = _verifyData.find(s => s.id === attendId);
+  if (!session) return;
+  session[field] = value;
   try {
-    await fbUpdate(COL_OUTING, docId, { [field]: value });
+    const updates = { [field]: value };
+    const mins = _verifyMins(session.checkinTime, session.checkoutTime);
+    if (mins >= 0) updates.hours = +(mins / 60).toFixed(2);
+    await fbUpdate(COL_ATTEND, attendId, updates);
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 
-async function toggleVerifyConfirm(docId, checked) {
-  const rec = _verifyData.find(r => r.id === docId);
-  if (!rec) return;
-  rec.verified = checked;
-  const card  = document.getElementById('vcard-' + docId);
-  const label = document.getElementById('vchklabel-' + docId);
+async function saveOutingVerifyEdit(outingId, field, value, attendId) {
+  const session = _verifyData.find(s => s.id === attendId);
+  if (!session) return;
+  const outing = session.outings.find(o => o.id === outingId);
+  if (!outing) return;
+  outing[field] = value;
+
+  const om = _verifyMins(outing.timeOut, outing.timeBack);
+  const ominEl = document.getElementById('vomin-' + outingId);
+  if (ominEl) { ominEl.textContent = om >= 0 ? om + '分' : '—'; ominEl.style.color = om >= 0 ? 'var(--text-mid)' : '#ccc'; }
+
+  const totalMins = session.outings.reduce((sum, o) => {
+    const m = _verifyMins(o.timeOut, o.timeBack);
+    return sum + (m > 0 ? m : 0);
+  }, 0);
+  session.totalOutingMins = totalMins;
+  session.qualifies = totalMins >= 60;
+
+  const totalEl = document.getElementById('vtotal-' + attendId);
+  const feeEl   = document.getElementById('vfee-'  + attendId);
+  const card    = document.getElementById('vcard-' + attendId);
+  if (totalEl) { totalEl.textContent = totalMins + ' 分鐘'; totalEl.style.color = totalMins >= 60 ? 'var(--red)' : 'var(--text-mid)'; }
+  if (feeEl)   { feeEl.textContent = session.qualifies ? '$200' : '—'; feeEl.style.color = session.qualifies ? '#27ae60' : '#ccc'; }
+  if (card && !session.verified) {
+    const col = session.qualifies ? 'var(--red)' : 'var(--border)';
+    card.style.borderColor = col; card.style.borderLeftColor = col;
+  }
+  updateVerifySummary(_verifyData);
+  try {
+    await fbUpdate(COL_OUTING, outingId, { [field]: value });
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+async function toggleVerifyConfirm(attendId, checked) {
+  const session = _verifyData.find(s => s.id === attendId);
+  if (!session) return;
+  session.verified = checked;
+  const card  = document.getElementById('vcard-' + attendId);
+  const label = document.getElementById('vchklabel-' + attendId);
   if (card) {
-    const q   = _verifyMins(rec.timeOut, rec.timeBack) >= 60;
-    const col = checked ? '#27ae60' : q ? 'var(--red)' : 'var(--border)';
-    card.style.borderColor     = col;
-    card.style.borderLeftColor = col;
+    const col = checked ? '#27ae60' : session.qualifies ? 'var(--red)' : 'var(--border)';
+    card.style.borderColor = col; card.style.borderLeftColor = col;
   }
   if (label) label.style.color = checked ? '#27ae60' : 'var(--text-light)';
   updateVerifySummary(_verifyData);
   try {
-    await fbUpdate(COL_OUTING, docId, { verified: checked });
+    await fbUpdate(COL_ATTEND, attendId, { verified: checked });
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 // ──────────────────────────────────────────
