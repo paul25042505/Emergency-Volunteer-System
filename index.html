@@ -4396,7 +4396,7 @@ function showLoading() {
         _loadingWidth = 90;
         clearInterval(_loadingTimer);
         _loadingSlowTimer = setTimeout(() => {
-          if (_loadingLabel) _loadingLabel.textContent = '🛣️ 路途遙遠，網路有點慢，請稍候…';
+          if (_loadingLabel) _loadingLabel.textContent = '🚗 返隊途中塞車了，稍等一下…';
         }, 5000);
       }
       fill.style.width = _loadingWidth + '%';
