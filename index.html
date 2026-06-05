@@ -127,6 +127,10 @@ body {
   color: white !important; padding: 0; position: fixed; top: 0; left: 0; right: 0; z-index: 200; overflow: hidden;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
 }
+/* 首頁時隱藏 header，內頁才顯示 */
+body.page-home .header { display: none !important; }
+body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
+body.page-home #globalLoadingBar { top: 0 !important; }
 .header-inner {
   position: relative; z-index: 2; display: flex; align-items: center;
   padding: 14px 16px; min-height: 56px; gap: 10px;
@@ -895,14 +899,12 @@ function _dlCSV(content, filename) {
       <h1 id="pageTitle">救護義消系統</h1>
       <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
     </div>
-    <div id="headerUserCard" style="display:none;margin-left:auto;align-items:center;gap:8px;flex-shrink:0;">
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-        <span id="headerUserInfo" style="font-size:0.8rem;color:white;font-weight:600;letter-spacing:0.04em;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-        <span id="headerUserBadge" style="display:none;font-size:0.6rem;background:rgba(255,215,0,0.25);border:1px solid rgba(255,215,0,0.5);border-radius:10px;padding:1px 7px;color:rgba(255,235,150,1);letter-spacing:0.06em;">管理員</span>
-        <span id="headerSessionTimer" style="font-size:0.58rem;color:rgba(255,255,255,0.45);letter-spacing:0.03em;"></span>
-      </div>
-      <div id="headerAvatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:white;flex-shrink:0;"></div>
-      <button onclick="logout()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.85);font-size:0.7rem;padding:5px 10px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">登出</button>
+    <!-- 保留隱藏元素供 JS 更新（兼容舊邏輯） -->
+    <div id="headerUserCard" style="display:none;">
+      <span id="headerUserInfo"></span>
+      <span id="headerUserBadge"></span>
+      <span id="headerSessionTimer"></span>
+      <div id="headerAvatar"></div>
     </div>
   </div>
 </div>
@@ -924,7 +926,7 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <!-- 問候語 + 頭像 -->
+    <!-- 問候語 + 頭像 + 登出 -->
     <div class="dash-greeting">
       <div>
         <div class="dash-welcome">WELCOME BACK</div>
@@ -933,7 +935,10 @@ function _dlCSV(content, filename) {
           <span class="dash-role-tag" id="dashGreetRole" style="display:none;"></span>
         </div>
       </div>
-      <div class="dash-avatar" id="dashGreetAvatar" onclick="navTo('profilePage')">?</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="dash-avatar" id="dashGreetAvatar" onclick="navTo('profilePage')">?</div>
+        <button onclick="logout()" style="background:none;border:1px solid var(--border-dark);border-radius:20px;color:var(--text-light);font-size:0.58rem;padding:3px 10px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;letter-spacing:0.04em;white-space:nowrap;">登出</button>
+      </div>
     </div>
 
     <!-- 公告區（多則）-->
@@ -961,16 +966,16 @@ function _dlCSV(content, filename) {
       </div>
       <div class="dash-hero-row">
         <div class="dash-hero-cell">
-          <div class="dash-hero-cell-num" id="dashTodaySignin">—</div>
-          <div class="dash-hero-cell-lbl">目前在線人數</div>
+          <div class="dash-hero-cell-num" id="dashMyMonthAtt">—</div>
+          <div class="dash-hero-cell-lbl">我的本月出勤</div>
         </div>
         <div class="dash-hero-cell">
-          <div class="dash-hero-cell-num" id="dashMonthAtt">—</div>
-          <div class="dash-hero-cell-lbl">本月協勤筆數</div>
+          <div class="dash-hero-cell-num" id="dashMyMonthOut">—</div>
+          <div class="dash-hero-cell-lbl">我的協勤筆數</div>
         </div>
         <div class="dash-hero-cell">
-          <div class="dash-hero-cell-num" id="dashMonthService">—</div>
-          <div class="dash-hero-cell-lbl">本月服務人次</div>
+          <div class="dash-hero-cell-num" id="dashMyMonthSvc">—</div>
+          <div class="dash-hero-cell-lbl">我的服務人次</div>
         </div>
       </div>
     </div>
@@ -3784,18 +3789,11 @@ function showApp(name, email, isAdmin, isOfficer, role) {
     else if (isOfficer) { greetRole.textContent = '分隊承辦人'; greetRole.style.display = ''; }
     else { greetRole.style.display = 'none'; }
   }
-  const card = document.getElementById('headerUserCard');
-  if (card) card.style.display = 'flex';
+  // header userCard 已移除，保留隱藏 span 供兼容
   const userInfo = document.getElementById('headerUserInfo');
   if (userInfo) userInfo.textContent = name || email;
   const avatar = document.getElementById('headerAvatar');
   if (avatar) avatar.textContent = (name||email||'?').charAt(0).toUpperCase();
-  const badge = document.getElementById('headerUserBadge');
-  if (badge) {
-    if (isAdmin)        { badge.textContent='系統管理員'; badge.style.cssText='display:inline;font-size:0.62rem;background:rgba(255,200,0,0.9);border:1px solid rgba(200,150,0,0.8);border-radius:10px;padding:1px 8px;color:#5a3a00;letter-spacing:0.05em;font-weight:700;'; }
-    else if (isOfficer) { badge.textContent='分隊承辦人'; badge.style.cssText='display:inline;font-size:0.62rem;background:rgba(100,180,255,0.9);border:1px solid rgba(50,130,220,0.8);border-radius:10px;padding:1px 8px;color:#0a2a5a;letter-spacing:0.05em;font-weight:700;'; }
-    else                { badge.style.display='none'; }
-  }
   if (isAdmin || isOfficer) {
     const adminNav = document.getElementById('nav-admin');
     if (adminNav) adminNav.style.display = '';
@@ -4433,14 +4431,16 @@ function _syncTabBar(pageId) {
 
 function navTo(pageId, fromHistory) {
   showLoading();
-  syncHeaderHeight();
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
 
-  // 返回按鈕：首頁隱藏，其他頁面顯示
+  // 首頁：隱藏 header；其他頁：顯示 header + 返回按鈕
+  const isHome = pageId === 'dashboardPage';
+  document.body.classList.toggle('page-home', isHome);
   const backBtn = document.getElementById('headerBackBtn');
-  if (backBtn) backBtn.classList.toggle('visible', pageId !== 'dashboardPage');
+  if (backBtn) backBtn.classList.toggle('visible', !isHome);
+  syncHeaderHeight(); // header 顯示/隱藏後再同步高度
 
   // 同步底部 tab bar
   _syncTabBar(pageId);
@@ -4782,41 +4782,46 @@ async function loadDashboard() {
   }
 
   try {
+    // 取得當前使用者姓名（用於個人統計）
+    const _me = JSON.parse(sessionStorage.getItem('rescue_user')||'{}').name || '';
+
     const [attDocs, outDocs] = await Promise.all([
       fbList(COL_ATTEND, 'date', 'asc'),
       fbList(COL_OUTING, 'date', 'asc'),
     ]);
-    const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
-    const monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('dashTodayAtt', todayOut.length);
-    set('dashTodayOutCount', todayOut.length);
-    set('dashMonthAtt', monthOut.length);
 
+    // ── 全隊今日概況 ──
+    const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
     const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
-    const monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
     const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
-    set('dashTodayMembers', todaySigninSet.size);
-
     const onlineSet = new Set(
       attDocs.filter(r => r.checkinTime && !r.checkoutTime && (r.date||'') === todayStr)
              .map(r => r.memberName||'').filter(Boolean)
     );
+    set('dashTodayAtt', todayOut.length);
+    set('dashTodayOutCount', todayOut.length);
+    set('dashTodayMembers', todaySigninSet.size);
     set('dashTodaySignin', onlineSet.size);
 
-    const totalHours = monthAtt.reduce((sum, r) => sum + (parseFloat(r.hours)||0), 0);
-    set('dashMonthHours', totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1));
-    const totalService = monthAtt.reduce((sum, r) => sum + (parseInt(r.service)||0), 0);
-    set('dashMonthService', totalService);
+    // ── 個人本月統計（英雄卡片）──
+    const myMonthAtt  = attDocs.filter(r => (r.date||'').startsWith(monthStr) && (r.memberName||'') === _me);
+    const myMonthOut  = outDocs.filter(r => (r.date||'').startsWith(monthStr) && (r.memberName||'') === _me);
+    const myHours   = myMonthAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+    const mySvc     = myMonthAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0);
+    set('dashMonthHours', myHours % 1 === 0 ? myHours : myHours.toFixed(1));
+    set('dashMyMonthAtt', myMonthAtt.length);
+    set('dashMyMonthOut', myMonthOut.length);
+    set('dashMyMonthSvc', mySvc);
 
     // Hero card 日期輔助文字
     const hl = document.getElementById('dashHeroDateLine');
     if (hl) {
       const now = new Date();
-      hl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月累計';
+      hl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月（個人）';
     }
   } catch(e) {
-    ['dashTodayAtt','dashTodayMembers','dashMonthAtt','dashTodaySignin','dashMonthHours','dashMonthService'].forEach(id => {
+    ['dashTodayAtt','dashTodayMembers','dashTodaySignin','dashMonthHours','dashMyMonthAtt','dashMyMonthOut','dashMyMonthSvc'].forEach(id => {
       const el = document.getElementById(id); if (el) el.textContent = '—';
     });
   }
