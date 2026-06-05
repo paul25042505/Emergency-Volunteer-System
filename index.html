@@ -540,6 +540,113 @@ tr:hover td { background: #fdfcfb; }
 .ios-toggle input:checked + .ios-toggle-slider { background: #34c759; }
 .ios-toggle input:checked + .ios-toggle-slider::before { transform: translateX(20px); }
 
+/* ══ Banking-style bottom tab bar ══ */
+#appTabBar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white; border-top: 1px solid rgba(0,0,0,0.08);
+  z-index: 198; padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
+}
+.tab-grid { display: flex; height: 60px; }
+.app-tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; border: none; background: none; cursor: pointer; padding: 6px 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-tab-icon-wrap {
+  width: 36px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; transition: background 0.2s;
+}
+.app-tab-lbl {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 0.58rem; color: #aaa; font-weight: 500; transition: color 0.2s;
+}
+.app-tab-btn.active .app-tab-icon-wrap { background: var(--red-faint); }
+.app-tab-btn.active .app-tab-lbl { color: var(--red); font-weight: 700; }
+#appScroll { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+
+/* ══ Dashboard greeting ══ */
+.dash-greeting {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; padding-top: 2px;
+}
+.dash-welcome { font-size: 0.62rem; color: var(--text-light); letter-spacing: 0.12em; margin-bottom: 2px; }
+.dash-username { font-family: 'Noto Serif TC', serif; font-size: 1.2rem; font-weight: 700; color: var(--text); }
+.dash-role-tag {
+  display: inline-block; font-size: 0.58rem; background: var(--red-faint); color: var(--red);
+  border: 1px solid #f0bab4; border-radius: 20px; padding: 1px 7px;
+  margin-left: 5px; font-weight: 600; vertical-align: middle;
+}
+.dash-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, #C62828, #8E0000);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(198,40,40,0.3);
+}
+
+/* ══ Hero card ══ */
+.dash-hero {
+  background: linear-gradient(135deg, #C62828 0%, #B71C1C 55%, #8E0000 100%);
+  border-radius: 20px; padding: 22px 20px; color: white;
+  position: relative; overflow: hidden; margin-bottom: 22px;
+  box-shadow: 0 8px 28px rgba(198,40,40,0.32);
+}
+.dash-hero::before {
+  content: '✚'; position: absolute; right: -12px; top: -24px;
+  font-size: 130px; opacity: 0.06; line-height: 1; pointer-events: none;
+}
+.dash-hero-lbl { font-size: 0.66rem; opacity: 0.75; letter-spacing: 0.08em; margin-bottom: 2px; }
+.dash-hero-big {
+  font-family: 'Noto Serif TC', serif; font-size: 2.8rem; font-weight: 700;
+  line-height: 1; display: inline-flex; align-items: baseline; gap: 3px;
+}
+.dash-hero-unit { font-size: 0.9rem; opacity: 0.8; font-weight: 400; }
+.dash-hero-meta {
+  font-size: 0.65rem; opacity: 0.65; margin-top: 2px; letter-spacing: 0.05em;
+}
+.dash-hero-row {
+  display: flex; margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.18);
+}
+.dash-hero-cell { flex: 1; text-align: center; }
+.dash-hero-cell + .dash-hero-cell { border-left: 1px solid rgba(255,255,255,0.18); }
+.dash-hero-cell-num { font-size: 1.2rem; font-weight: 700; }
+.dash-hero-cell-lbl { font-size: 0.56rem; opacity: 0.7; margin-top: 2px; letter-spacing: 0.02em; }
+
+/* ══ Quick action scroll ══ */
+.quick-scroll {
+  display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 10px;
+  scrollbar-width: none; -ms-overflow-style: none; margin-bottom: 18px;
+}
+.quick-scroll::-webkit-scrollbar { display: none; }
+.qa-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex-shrink: 0; cursor: pointer; min-width: 54px;
+  -webkit-tap-highlight-color: transparent;
+}
+.qa-icon {
+  width: 54px; height: 54px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: transform 0.12s;
+}
+.qa-item:active .qa-icon { transform: scale(0.91); }
+.qa-lbl {
+  font-size: 0.58rem; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; text-align: center; line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ══ Section pill header ══ */
+.sec-pill {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.sec-pill-bar { width: 4px; height: 16px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
+.sec-pill-title { font-family: 'Noto Serif TC', serif; font-size: 0.9rem; font-weight: 700; color: var(--text); letter-spacing: 0.06em; }
+.sec-pill-line { flex: 1; height: 1px; background: var(--border); }
+
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer>
 // ════ 批次匯入工具 ════
@@ -748,6 +855,32 @@ function _dlCSV(content, filename) {
   <div id="globalLoadingCar" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%) scaleX(-1);font-size:1rem;z-index:3;transition:left 0.25s ease;pointer-events:none;">🚑</div>
   <div id="globalLoadingLabel" style="position:relative;z-index:2;color:white;font-size:0.72rem;text-align:center;padding:6px 0;letter-spacing:0.05em;font-family:'Noto Sans TC',sans-serif;font-weight:500;">🚨 接到勤務！資料整備中，請勿重新整理…</div>
 </div>
+<!-- ══════ BOTTOM TAB BAR ══════ -->
+<div id="appTabBar">
+  <div class="tab-grid">
+    <button class="app-tab-btn active" id="appTab-home" onclick="switchTab('home')">
+      <div class="app-tab-icon-wrap">🏠</div>
+      <span class="app-tab-lbl">首頁</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-attendance" onclick="switchTab('attendance')">
+      <div class="app-tab-icon-wrap">✍️</div>
+      <span class="app-tab-lbl">簽勤</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-query" onclick="switchTab('query')">
+      <div class="app-tab-icon-wrap">🔍</div>
+      <span class="app-tab-lbl">查詢</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-bulletin" onclick="switchTab('bulletin')">
+      <div class="app-tab-icon-wrap">📢</div>
+      <span class="app-tab-lbl">公告</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-me" onclick="switchTab('me')">
+      <div class="app-tab-icon-wrap">👤</div>
+      <span class="app-tab-lbl">我的</span>
+    </button>
+  </div>
+</div>
+
 <!-- ══════ SHARED HEADER ══════ -->
 <div class="header" onclick="scrollToPageTop(event)" style="cursor:pointer;">
   <div class="header-deco"></div>
@@ -779,88 +912,6 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE 0：儀表板 ══════ -->
 <div class="page active" id="dashboardPage">
   <div class="form-wrap">
-    <!-- 公告區（多則）-->
-    <div id="announcementBar" style="display:none;margin-bottom:12px;"></div>
-
-    <!-- 日期時間 + 天氣（手機: 上下, 桌面: 左右）-->
-    <div id="dashInfoGrid" style="display:grid;grid-template-columns:2fr 3fr;gap:10px;margin-bottom:14px;">
-    <style>
-      @media(max-width:480px){
-        #dashInfoGrid { grid-template-columns:1fr !important; }
-        #dashInfoGrid > div:first-child {
-          min-height:unset !important;
-          padding:14px !important;
-          flex-direction:row !important;
-          align-items:center !important;
-          justify-content:space-between !important;
-        }
-        #dashDateTimeWrap {
-          flex-direction:row !important;
-          align-items:center !important;
-          justify-content:space-between !important;
-          width:100% !important;
-        }
-        #dashDateTimeWrap > div:first-child { flex:1 !important; }
-        #dashInfoTime {
-          font-size:1.8rem !important;
-          margin-top:0 !important;
-          flex-shrink:0 !important;
-          margin-left:12px !important;
-        }
-      }
-    </style>
-      <!-- 左：日期時間 -->
-      <div style="background:white;border-radius:12px;padding:16px 14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:110px;">
-        <div id="dashDateTimeWrap" style="display:flex;flex-direction:column;width:100%;">
-          <div style="flex:1;">
-            <div id="dashInfoDate" style="font-size:0.82rem;font-weight:600;color:var(--text-light);font-family:'Noto Serif TC',serif;letter-spacing:0.02em;line-height:1.5;"></div>
-          </div>
-          <div id="dashInfoTime" style="font-size:2rem;font-weight:700;color:var(--text);letter-spacing:0.04em;font-variant-numeric:tabular-nums;line-height:1;margin-top:6px;"></div>
-        </div>
-      </div>
-      <!-- 右：天氣（詳細）-->
-      <div id="dashInfoWeather" style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);">
-        <!-- 標題列 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span id="dashWeatherIcon" style="font-size:1.8rem;line-height:1;"></span>
-            <div>
-              <div id="dashWeatherTemp" style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.1;"></div>
-              <div id="dashWeatherDesc" style="font-size:0.7rem;color:var(--text-light);"></div>
-            </div>
-          </div>
-          <div style="font-size:0.68rem;color:var(--text-light);text-align:right;line-height:1.4;">📍 臺中市｜潭子區</div>
-        </div>
-        <!-- 詳細資料格子（4項：濕度、體感、降雨、紫外線）-->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">💧 濕度</div>
-            <div id="dashWeatherHumidity" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">🌡 體感</div>
-            <div id="dashWeatherFeels" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">🌂 降雨機率</div>
-            <div id="dashWeatherRain" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">☀️ 紫外線</div>
-            <div id="dashWeatherUV" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 今日班表（公告下方） -->
-    <div id="todayScheduleSection" style="display:none;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:4px;height:18px;background:var(--red);border-radius:2px;flex-shrink:0;"></div>
-        <span style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);">今日班表</span>
-      </div>
-      <div id="todayScheduleList"></div>
-    </div>
     <!-- 緊急公告彈窗 -->
     <div id="urgentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;align-items:center;justify-content:center;padding:16px;">
       <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:80vh;overflow-y:auto;">
@@ -873,12 +924,100 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num" style="font-size:0.75rem;">今</div>
-        <div class="section-title">今日概況</div>
-        <div class="section-line"></div>
+    <!-- 問候語 + 頭像 -->
+    <div class="dash-greeting">
+      <div>
+        <div class="dash-welcome">WELCOME BACK</div>
+        <div>
+          <span class="dash-username" id="dashGreetName">—</span>
+          <span class="dash-role-tag" id="dashGreetRole" style="display:none;"></span>
+        </div>
       </div>
+      <div class="dash-avatar" id="dashGreetAvatar" onclick="navTo('profilePage')">?</div>
+    </div>
+
+    <!-- 公告區（多則）-->
+    <div id="announcementBar" style="display:none;margin-bottom:14px;"></div>
+
+    <!-- 英雄卡片 -->
+    <div class="dash-hero">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div class="dash-hero-lbl">本月協勤時數</div>
+          <div class="dash-hero-big">
+            <span id="dashMonthHours">—</span>
+            <span class="dash-hero-unit">小時</span>
+          </div>
+          <div class="dash-hero-meta" id="dashHeroDateLine"></div>
+        </div>
+        <div style="text-align:right;opacity:0.75;flex-shrink:0;margin-left:12px;">
+          <div style="font-size:0.62rem;letter-spacing:0.05em;" id="dashInfoDate"></div>
+          <div style="font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;" id="dashInfoTime"></div>
+          <div style="display:flex;align-items:center;gap:3px;margin-top:3px;justify-content:flex-end;">
+            <span id="dashWeatherIcon" style="font-size:1rem;"></span>
+            <span id="dashWeatherTemp" style="font-size:0.82rem;font-weight:600;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="dash-hero-row">
+        <div class="dash-hero-cell">
+          <div class="dash-hero-cell-num" id="dashTodaySignin">—</div>
+          <div class="dash-hero-cell-lbl">目前在線人數</div>
+        </div>
+        <div class="dash-hero-cell">
+          <div class="dash-hero-cell-num" id="dashMonthAtt">—</div>
+          <div class="dash-hero-cell-lbl">本月協勤筆數</div>
+        </div>
+        <div class="dash-hero-cell">
+          <div class="dash-hero-cell-num" id="dashMonthService">—</div>
+          <div class="dash-hero-cell-lbl">本月服務人次</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速操作橫滾列 -->
+    <div class="quick-scroll">
+      <div class="qa-item" id="quick-attendance" onclick="navTo('attendancePage')">
+        <div class="qa-icon" style="background:#FFEBEE;">✍️</div>
+        <div class="qa-lbl">簽到退</div>
+      </div>
+      <div class="qa-item" id="quick-form" onclick="navTo('formPage')">
+        <div class="qa-icon" style="background:#E8F5E9;">📋</div>
+        <div class="qa-lbl">協勤登錄</div>
+      </div>
+      <div class="qa-item" onclick="navTo('queryPage')">
+        <div class="qa-icon" style="background:#E3F2FD;">🔍</div>
+        <div class="qa-lbl">紀錄查詢</div>
+      </div>
+      <div class="qa-item" onclick="navTo('attQueryPage')">
+        <div class="qa-icon" style="background:#E1F5FE;">🕐</div>
+        <div class="qa-lbl">簽到退查詢</div>
+      </div>
+      <div class="qa-item" onclick="navTo('statsPage')">
+        <div class="qa-icon" style="background:#F3E5F5;">📈</div>
+        <div class="qa-lbl">協勤統計</div>
+      </div>
+      <div class="qa-item" onclick="navTo('gongchaPage')">
+        <div class="qa-icon" style="background:#FFF8E1;">🏅</div>
+        <div class="qa-lbl">公差英雄榜</div>
+      </div>
+      <div class="qa-item" onclick="navTo('dutyPage')">
+        <div class="qa-icon" style="background:#E8EAF6;">📅</div>
+        <div class="qa-lbl">備勤排班</div>
+      </div>
+      <div class="qa-item" onclick="navTo('meetingPage')">
+        <div class="qa-icon" style="background:#FFF3E0;">📒</div>
+        <div class="qa-lbl">定訓公告</div>
+      </div>
+      <div class="qa-item" onclick="navTo('reportPage')">
+        <div class="qa-icon" style="background:#F5F5F5;">📑</div>
+        <div class="qa-lbl">報表匯出</div>
+      </div>
+    </div>
+
+    <!-- 今日概況 -->
+    <div style="margin-bottom:20px;">
+      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日概況</div><div class="sec-pill-line"></div></div>
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
         <div class="stat-card">
           <div class="stat-num" id="dashTodayAtt">—</div>
@@ -889,117 +1028,33 @@ function _dlCSV(content, filename) {
           <div class="stat-label">今日簽到人數</div>
         </div>
         <div class="stat-card">
-          <div class="stat-num" id="dashTodaySignin">—</div>
-          <div class="stat-label">目前在線人數</div>
+          <div class="stat-num" id="dashTodayOutCount">—</div>
+          <div class="stat-label">今日出勤筆數</div>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num" style="font-size:0.75rem;">月</div>
-        <div class="section-title">本月累計</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthAtt">—</div>
-          <div class="stat-label">協勤總筆數</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthHours">—</div>
-          <div class="stat-label">協勤總時數</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthService">—</div>
-          <div class="stat-label">協勤總服務人次</div>
-        </div>
-      </div>
+    <!-- 今日班表 -->
+    <div id="todayScheduleSection" style="display:none;margin-bottom:20px;">
+      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日班表</div><div class="sec-pill-line"></div></div>
+      <div id="todayScheduleList"></div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num" style="font-size:0.75rem;">⚡</div>
-        <div class="section-title">快速入口</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="quick-entry-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人基本資料</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">聯絡資訊與證照</div>
-        </button>
-        <button onclick="navTo('myCorrectionsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">我的申請記錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">修正申請進度</div>
-        </button>
-        <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">分隊成員查詢</div>
-        </button>
-        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取簽名</div>
-        </button>
-        <button id="quick-attendance" onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">✍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤簽到</div>
-        </button>
-        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退查詢</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤紀錄查詢</div>
-        </button>
-        <button id="quick-form" onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤案件登錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤案件記錄</div>
-        </button>
-        <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤紀錄查詢</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤記錄查詢</div>
-        </button>
-        <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤統計</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤排行榜</div>
-        </button>
-        <button onclick="navTo('gongchaPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">🏅</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">公差統計</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">公差英雄榜</div>
-        </button>
-        <button onclick="navTo('feedbackPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">💬</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">意見回饋</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">建議與問題回報</div>
-        </button>
-        <button onclick="navTo('dutyPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📅</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">備勤排班</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">備勤時段排班</div>
-        </button>
-        <button onclick="navTo('meetingPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📒</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">定訓與公告</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">定訓記錄與公告</div>
-        </button>
-        <button onclick="navTo('changelogPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📝</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">版本修改紀錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">系統更新說明</div>
-        </button>
-      </div>
+    <!-- 天氣詳細（隱藏，保留 ID 供 JS 更新） -->
+    <div style="display:none;">
+      <span id="dashWeatherDesc"></span>
+      <span id="dashWeatherHumidity"></span>
+      <span id="dashWeatherFeels"></span>
+      <span id="dashWeatherRain"></span>
+      <span id="dashWeatherUV"></span>
+      <div id="dashInfoGrid"></div>
+      <div id="dashInfoWeather"></div>
+      <div id="dashDateTimeWrap"></div>
     </div>
+
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
-
 <!-- ══════ PAGE 1：協勤案件登錄 ══════ -->
 <div class="page" id="formPage">
   <div class="form-wrap">
@@ -3715,6 +3770,20 @@ async function handleGoogleLogin(response) {
 // ── 顯示主系統 ──
 function showApp(name, email, isAdmin, isOfficer, role) {
   document.getElementById('loginScreen').style.display = 'none';
+  // 顯示底部 tab bar
+  const tabBar = document.getElementById('appTabBar');
+  if (tabBar) tabBar.style.display = '';
+  // 填入首頁問候語
+  const greetName = document.getElementById('dashGreetName');
+  if (greetName) greetName.textContent = name || email || '—';
+  const greetAvatar = document.getElementById('dashGreetAvatar');
+  if (greetAvatar) greetAvatar.textContent = (name||email||'?').charAt(0).toUpperCase();
+  const greetRole = document.getElementById('dashGreetRole');
+  if (greetRole) {
+    if (isAdmin) { greetRole.textContent = '系統管理員'; greetRole.style.display = ''; }
+    else if (isOfficer) { greetRole.textContent = '分隊承辦人'; greetRole.style.display = ''; }
+    else { greetRole.style.display = 'none'; }
+  }
   const card = document.getElementById('headerUserCard');
   if (card) card.style.display = 'flex';
   const userInfo = document.getElementById('headerUserInfo');
@@ -4339,6 +4408,29 @@ function hideLoading() {
   }, 270);
 }
 
+// ── Tab 對應表 ──
+const _tabForPage = {
+  dashboardPage: 'home',
+  attendancePage: 'attendance', formPage: 'attendance',
+  queryPage: 'query', attQueryPage: 'query', statsPage: 'query', reportPage: 'query', gongchaPage: 'query',
+  meetingPage: 'bulletin', dutyPage: 'bulletin', itemsPage: 'bulletin',
+  profilePage: 'me', membersPage: 'me', myCorrectionsPage: 'me', feedbackPage: 'me', changelogPage: 'me', adminPage: 'me',
+};
+const _tabPageMap = { home: 'dashboardPage', attendance: 'attendancePage', query: 'queryPage', bulletin: 'meetingPage', me: 'profilePage' };
+
+function switchTab(tabId) {
+  navTo(_tabPageMap[tabId] || 'dashboardPage');
+}
+
+function _syncTabBar(pageId) {
+  const tabId = _tabForPage[pageId];
+  document.querySelectorAll('.app-tab-btn').forEach(b => b.classList.remove('active'));
+  if (tabId) {
+    const el = document.getElementById('appTab-' + tabId);
+    if (el) el.classList.add('active');
+  }
+}
+
 function navTo(pageId, fromHistory) {
   showLoading();
   syncHeaderHeight();
@@ -4349,6 +4441,9 @@ function navTo(pageId, fromHistory) {
   // 返回按鈕：首頁隱藏，其他頁面顯示
   const backBtn = document.getElementById('headerBackBtn');
   if (backBtn) backBtn.classList.toggle('visible', pageId !== 'dashboardPage');
+
+  // 同步底部 tab bar
+  _syncTabBar(pageId);
 
   // 推入瀏覽器歷史（上一頁/下一頁用）
   if (!fromHistory) {
@@ -4693,25 +4788,33 @@ async function loadDashboard() {
     ]);
     const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
     const monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
-    document.getElementById('dashTodayAtt').textContent  = todayOut.length;
-    document.getElementById('dashMonthAtt').textContent  = monthOut.length;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('dashTodayAtt', todayOut.length);
+    set('dashTodayOutCount', todayOut.length);
+    set('dashMonthAtt', monthOut.length);
 
     const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
     const monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
     const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
-    document.getElementById('dashTodayMembers').textContent = todaySigninSet.size;
+    set('dashTodayMembers', todaySigninSet.size);
 
     const onlineSet = new Set(
       attDocs.filter(r => r.checkinTime && !r.checkoutTime && (r.date||'') === todayStr)
              .map(r => r.memberName||'').filter(Boolean)
     );
-    document.getElementById('dashTodaySignin').textContent = onlineSet.size;
+    set('dashTodaySignin', onlineSet.size);
 
     const totalHours = monthAtt.reduce((sum, r) => sum + (parseFloat(r.hours)||0), 0);
-    document.getElementById('dashMonthHours').textContent =
-      totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    set('dashMonthHours', totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1));
     const totalService = monthAtt.reduce((sum, r) => sum + (parseInt(r.service)||0), 0);
-    document.getElementById('dashMonthService').textContent = totalService;
+    set('dashMonthService', totalService);
+
+    // Hero card 日期輔助文字
+    const hl = document.getElementById('dashHeroDateLine');
+    if (hl) {
+      const now = new Date();
+      hl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月累計';
+    }
   } catch(e) {
     ['dashTodayAtt','dashTodayMembers','dashMonthAtt','dashTodaySignin','dashMonthHours','dashMonthService'].forEach(id => {
       const el = document.getElementById(id); if (el) el.textContent = '—';
