@@ -578,8 +578,8 @@ tr:hover td { background: #fdfcfb; }
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 18px; padding-top: 2px;
 }
-.dash-welcome { font-size: 0.62rem; color: var(--text-light); letter-spacing: 0.12em; margin-bottom: 2px; }
-.dash-username { font-family: 'Noto Serif TC', serif; font-size: 1.2rem; font-weight: 700; color: var(--text); }
+.dash-username { font-family: 'Noto Serif TC', serif; font-size: 1.5rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+.dash-greet-role { font-size: 0.7rem; color: var(--text-light); margin-top: 3px; letter-spacing: 0.04em; }
 .dash-role-tag {
   display: inline-block; font-size: 0.58rem; background: var(--red-faint); color: var(--red);
   border: 1px solid #f0bab4; border-radius: 20px; padding: 1px 7px;
@@ -1022,11 +1022,8 @@ function _dlCSV(content, filename) {
       <div style="display:flex;align-items:center;gap:10px;">
         <div class="dash-avatar" id="dashGreetAvatar" onclick="navTo('profilePage')">?</div>
         <div>
-          <div class="dash-welcome">WELCOME BACK</div>
-          <div>
-            <span class="dash-username" id="dashGreetName">—</span>
-            <span class="dash-role-tag" id="dashGreetRole" style="display:none;"></span>
-          </div>
+          <div class="dash-username" id="dashGreetName">—</div>
+          <div class="dash-greet-role" id="dashGreetRole" style="display:none;"></div>
         </div>
       </div>
       <!-- 右：通知鈴 + 電源（登出） -->
