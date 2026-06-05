@@ -938,43 +938,43 @@ function _dlCSV(content, filename) {
   <div class="tab-grid">
     <button class="app-tab-btn active" id="appTab-home" onclick="switchTab('home')">
       <div class="app-tab-icon-wrap">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/>
         </svg>
       </div>
       <span class="app-tab-lbl">首頁</span>
     </button>
-    <button class="app-tab-btn" id="appTab-attendance" onclick="switchTab('attendance')">
+    <button class="app-tab-btn" id="appTab-duty" onclick="switchTab('duty')">
       <div class="app-tab-icon-wrap">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="4" rx="1"/><path d="M4 7h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
         </svg>
       </div>
-      <span class="app-tab-lbl">簽勤</span>
+      <span class="app-tab-lbl">勤務</span>
     </button>
-    <button class="app-tab-btn" id="appTab-query" onclick="switchTab('query')">
+    <button class="app-tab-btn" id="appTab-schedule" onclick="switchTab('schedule')">
       <div class="app-tab-icon-wrap">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
       </div>
-      <span class="app-tab-lbl">查詢</span>
+      <span class="app-tab-lbl">排班</span>
     </button>
-    <button class="app-tab-btn" id="appTab-bulletin" onclick="switchTab('bulletin')">
+    <button class="app-tab-btn" id="appTab-manage" onclick="switchTab('manage')">
       <div class="app-tab-icon-wrap">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
       </div>
-      <span class="app-tab-lbl">公告</span>
+      <span class="app-tab-lbl">管理</span>
     </button>
-    <button class="app-tab-btn" id="appTab-me" onclick="switchTab('me')">
+    <button class="app-tab-btn" id="appTab-more" onclick="switchTab('more')">
       <div class="app-tab-icon-wrap">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
         </svg>
       </div>
-      <span class="app-tab-lbl">我的</span>
+      <span class="app-tab-lbl">更多</span>
     </button>
   </div>
 </div>
@@ -4516,13 +4516,23 @@ function hideLoading() {
 
 // ── Tab 對應表 ──
 const _tabForPage = {
-  dashboardPage: 'home',
-  attendancePage: 'attendance', formPage: 'attendance',
-  queryPage: 'query', attQueryPage: 'query', statsPage: 'query', reportPage: 'query', gongchaPage: 'query',
-  meetingPage: 'bulletin', dutyPage: 'bulletin', itemsPage: 'bulletin',
-  profilePage: 'me', membersPage: 'me', myCorrectionsPage: 'me', feedbackPage: 'me', changelogPage: 'me', adminPage: 'me',
+  dashboardPage:      'home',
+  attendancePage:     'duty',   formPage:           'duty',
+  attQueryPage:       'duty',   queryPage:          'duty',
+  dutyPage:           'schedule',
+  myCorrectionsPage:  'manage', reportPage:         'manage',
+  statsPage:          'manage', gongchaPage:        'manage',
+  feedbackPage:       'more',   meetingPage:        'more',
+  changelogPage:      'more',   adminPage:          'more',
+  profilePage:        'more',   membersPage:        'more',   itemsPage: 'more',
 };
-const _tabPageMap = { home: 'dashboardPage', attendance: 'attendancePage', query: 'queryPage', bulletin: 'meetingPage', me: 'profilePage' };
+const _tabPageMap = {
+  home:     'dashboardPage',
+  duty:     'attendancePage',
+  schedule: 'dutyPage',
+  manage:   'myCorrectionsPage',
+  more:     'feedbackPage',
+};
 
 function switchTab(tabId) {
   navTo(_tabPageMap[tabId] || 'dashboardPage');
