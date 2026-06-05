@@ -651,10 +651,12 @@ tr:hover td { background: #fdfcfb; }
 }
 /* ══ Duty sub-nav cards ══ */
 .duty-sub-card {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex-shrink: 0;
+  width: 74px; height: 74px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   border: 1.5px solid var(--border); border-radius: 14px; background: var(--card-bg);
-  padding: 14px 8px; cursor: pointer; transition: all 0.18s;
-  font-family: 'Noto Sans TC', sans-serif; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.18s;
+  font-family: 'Noto Sans TC', sans-serif; font-size: 0.7rem; font-weight: 600;
   color: var(--text-mid); -webkit-tap-highlight-color: transparent;
 }
 .duty-sub-card.active { background: var(--red); border-color: var(--red); color: white; }
@@ -3247,7 +3249,7 @@ function _dlCSV(content, filename) {
   <div style="padding:0;max-width:100%;">
 
     <!-- ── 視圖切換（卡片式）── -->
-    <div style="display:flex;gap:12px;padding:16px 16px 12px;background:white;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <div style="display:flex;gap:10px;padding:12px 16px;background:white;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
       <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card active">
         <div class="duty-sub-card-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
@@ -3270,8 +3272,8 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- ── 月視圖 ── -->
-    <div id="dutyMonthView" style="padding:12px 16px;">
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:4px;">
+    <div id="dutyMonthView" style="padding:10px 10px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
         <div style="text-align:center;font-size:0.68rem;color:#c0392b;font-weight:600;padding:4px 0;">日</div>
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">一</div>
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">二</div>
@@ -3280,7 +3282,7 @@ function _dlCSV(content, filename) {
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">五</div>
         <div style="text-align:center;font-size:0.68rem;color:#3498db;padding:4px 0;">六</div>
       </div>
-      <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+      <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
       <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;font-size:0.7rem;color:var(--text-light);">
         <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#7f8c8d;"></div>額滿</div>
         <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#e67e22;"></div>部分已排</div>
@@ -13462,17 +13464,17 @@ function renderDutyCalendar() {
     const cellBg = !isAllowed ? '#f5f5f5' : isToday ? 'var(--red-faint)' : isHoliday ? '#fef9f0' : 'white';
 
     const cell = document.createElement('div');
-    cell.style.cssText = 'min-height:64px;border:1.5px solid ' + borderColor + ';border-radius:6px;padding:4px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
+    cell.style.cssText = 'min-height:78px;border:1.5px solid ' + borderColor + ';border-radius:8px;padding:5px 3px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
     if (isAllowed) cell.onclick = () => { dutyView('list'); setTimeout(()=>scrollToDutyDate(dateStr),100); };
 
     const num = document.createElement('div');
-    num.style.cssText = 'font-size:0.78rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:2px;';
+    num.style.cssText = 'font-size:0.88rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:3px;';
     num.textContent = d;
     cell.appendChild(num);
 
     if (isAllowed) {
       const tag = document.createElement('div');
-      tag.style.cssText = 'font-size:0.58rem;background:' + tagBg + ';color:white;border-radius:3px;padding:1px 3px;font-weight:600;';
+      tag.style.cssText = 'font-size:0.65rem;background:' + tagBg + ';color:white;border-radius:4px;padding:2px 4px;font-weight:600;';
       tag.textContent = totalLeft + '/' + totalCap;
       cell.appendChild(tag);
     }
