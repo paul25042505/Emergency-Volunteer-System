@@ -972,7 +972,7 @@ function _dlCSV(content, filename) {
       </div>
       <!-- 右：通知鈴 + 電源（登出） -->
       <div class="dash-actions">
-        <button class="dash-icon-btn" onclick="" title="通知" aria-label="通知">
+        <button class="dash-icon-btn" onclick="switchTab('bulletin')" title="通知" aria-label="通知">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         </button>
         <button class="dash-icon-btn dash-icon-btn--logout" onclick="logout()" title="登出" aria-label="登出">
@@ -980,9 +980,6 @@ function _dlCSV(content, filename) {
         </button>
       </div>
     </div>
-
-    <!-- 公告區（多則）-->
-    <div id="announcementBar" style="display:none;margin-bottom:14px;"></div>
 
     <!-- 英雄卡片 -->
     <div class="dash-hero">
