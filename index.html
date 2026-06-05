@@ -3716,7 +3716,7 @@ async function verifyWhitelist(email){
   const isAdminFlag = d.isAdmin === true || d.role === 'admin';
   const isOfficerFlag = d.isOfficer === true || d.role === 'officer';
   const role = isAdminFlag ? 'admin' : (isOfficerFlag ? 'officer' : (d.role || 'member'));
-  return{allowed:true,memberName:d.memberName||'',isAdmin:isAdminFlag,isOfficer:isOfficerFlag,role,unit:d.unit||''};
+  return{allowed:true,memberName:d.memberName||'',isAdmin:isAdminFlag,isOfficer:isOfficerFlag,role,unit:d.unit||'',title:d.title||''};
 }
 
 // ════════════════════════════════════════
