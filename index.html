@@ -3247,7 +3247,7 @@ function _dlCSV(content, filename) {
   <div style="padding:0;max-width:100%;">
 
     <!-- ── 視圖切換（卡片式）── -->
-    <div style="display:flex;gap:12px;padding:16px 16px 12px;background:var(--bg);position:sticky;top:0;z-index:10;">
+    <div style="display:flex;gap:12px;padding:16px 16px 12px;background:white;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
       <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card active">
         <div class="duty-sub-card-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
@@ -3263,7 +3263,7 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- ── 月份導覽 ── -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:white;border-bottom:1px solid var(--border);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:white;border-bottom:1px solid var(--border);position:sticky;top:112px;z-index:199;">
       <button onclick="dutyMonthNav(-1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
       <div id="dutyMonthLabel" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
       <button onclick="dutyMonthNav(1)"  style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
