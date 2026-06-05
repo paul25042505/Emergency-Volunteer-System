@@ -3248,15 +3248,15 @@ function _dlCSV(content, filename) {
 
     <!-- ── 視圖切換（卡片式）── -->
     <div style="display:flex;gap:12px;padding:16px 16px 12px;background:var(--bg);position:sticky;top:0;z-index:10;">
-      <button onclick="dutyView('month')" id="dutySub-month" class="duty-sub-card active">
+      <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card active">
         <div class="duty-sub-card-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
         </div>
         登記排班
       </button>
-      <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card">
+      <button onclick="dutyView('month')" id="dutySub-month" class="duty-sub-card">
         <div class="duty-sub-card-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
         </div>
         排班總覽
       </button>
@@ -13281,7 +13281,7 @@ function getDutySlotCount(dateStr, slotHour) {
 
 let _dutyYear  = new Date().getFullYear();
 let _dutyMonth = new Date().getMonth();
-let _dutyView  = 'month';
+let _dutyView  = 'list';
 let _dutyDocs  = [];
 
 async function initDutyPage() {
