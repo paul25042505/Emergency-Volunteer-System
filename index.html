@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>救護義消系統</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iI2MwMzkyYiIvPgogIDxyZWN0IHg9IjEwOCIgeT0iMjA2IiB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEwMCIgcng9IjE4IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjIwNiIgeT0iMTA4IiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjI5NiIgcng9IjE4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=">
 <link rel="manifest" href="/Emergency-Volunteer-System/manifest.json">
@@ -15,19 +15,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --red: #c0392b;
-  --red-dark: #922b21;
-  --red-mid: #e74c3c;
-  --red-faint: #fdf0ee;
-  --cream: #faf7f2;
-  --warm: #f4ede3;
-  --border: #e0d5c8;
-  --border-dark: #c8b9a8;
-  --text: #1e1a17;
-  --text-mid: #5a4f46;
-  --text-light: #9c8c80;
+  --red: #C62828;
+  --red-dark: #8E0000;
+  --red-mid: #EF5350;
+  --red-faint: #FFEBEE;
+  --cream: #F2F4F7;
+  --warm: #F8F9FA;
+  --border: #E8ECF0;
+  --border-dark: #CBD5E0;
+  --text: #1A202C;
+  --text-mid: #4A5568;
+  --text-light: #A0AEC0;
   --white: #ffffff;
   --section-gap: 24px;
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -41,6 +45,7 @@ body {
   color-scheme: light;
   display: flex;
   flex-direction: column;
+  -webkit-font-smoothing: antialiased;
 }
 /* 主捲動區 */
 #appScroll {
@@ -92,23 +97,6 @@ body {
 }
 .easy-service-btn.selected { border-color: var(--red); background: var(--red-faint); color: var(--red); font-weight: 600; }
 
-/* ── Overlay ── */
-.overlay {
-  display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4); z-index: 190;
-}
-.overlay.open { display: block; }
-
-/* ── Drawer ── */
-.drawer {
-  position: fixed; top: 56px; left: 0; height: calc(100% - 56px); width: 260px;
-  background: var(--text); z-index: 199;
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  display: flex; flex-direction: column;
-}
-.drawer.open { transform: translateX(0); }
-
 /* ── 手機首頁大按鈕 ── */
 @media (max-width: 899px) {
   #dashboardPage .stat-card { padding: 10px 8px; }
@@ -133,49 +121,38 @@ body {
   }
 }
 
-/* ── Desktop：側邊欄常駐 + 全版面 ── */
-@media (min-width: 900px) {
-  .drawer { transform: translateX(0) !important; transition: none !important; box-shadow: none; }
-  .menu-btn { display: none !important; }
-  .overlay { display: none !important; }
-  #appScroll { padding-left: 260px; }
-  #adminPage > .query-wrap.admin-full { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; }
-}
-
-.drawer nav { padding: 16px 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
-.drawer nav button {
-  display: flex; align-items: center; gap: 12px; padding: 14px 24px;
-  text-decoration: none; color: rgba(255,255,255,0.75); font-size: 0.9rem;
-  letter-spacing: 0.05em; border-left: 3px solid transparent;
-  transition: all 0.15s; cursor: pointer; background: none; width: 100%;
-  font-family: 'Noto Sans TC', sans-serif;
-  border-top: none; border-right: none; border-bottom: none;
-}
-.drawer nav button:hover, .drawer nav button.active-nav {
-  color: white; background: rgba(255,255,255,0.07); border-left-color: var(--red-mid);
-}
-.drawer nav button .icon { font-size: 1rem; width: 20px; text-align: center; }
-
 /* ── Header ── */
 .header {
-  background: var(--red) !important; color: white !important; padding: 0; position: fixed; top: 0; left: 0; right: 0; z-index: 200; overflow: hidden;
+  background: linear-gradient(135deg, #C62828 0%, #B71C1C 60%, #8E0000 100%) !important;
+  color: white !important; padding: 0; position: fixed; top: 0; left: 0; right: 0; z-index: 200; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
 }
+/* 首頁時隱藏 header，內頁才顯示 */
+body.page-home .header { display: none !important; }
+body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
+body.page-home #globalLoadingBar { top: 0 !important; }
+/* 備勤排班頁：隱藏標準 header，顯示自訂固定 header */
+body.page-duty .header { display: none !important; }
+body.page-duty #dutyCustomHeader { display: flex !important; }
+body.page-duty #globalLoadingBar { top: 58px !important; }
 .header-inner {
   position: relative; z-index: 2; display: flex; align-items: center;
-  padding: 14px 16px 14px 62px; min-height: 56px;
+  padding: 14px 16px; min-height: 56px; gap: 10px;
 }
 .header-deco { position: absolute; right: -20px; top: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.05); border-radius: 50%; z-index: 1; }
 .header-deco2 { position: absolute; right: 60px; bottom: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.04); border-radius: 50%; z-index: 1; }
 .header-cross { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 160px; opacity: 0.05; z-index: 1; pointer-events: none; line-height: 1; }
-.menu-btn {
-  position: absolute; top: 50%; left: 18px; transform: translateY(-50%);
+.back-btn {
   background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 4px; color: white; width: 38px; height: 38px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px; cursor: pointer; z-index: 5; transition: background 0.15s;
+  border-radius: 8px; color: white; height: 36px; padding: 0 12px;
+  display: none; align-items: center; gap: 5px;
+  cursor: pointer; z-index: 5; transition: background 0.15s;
+  font-family: 'Noto Sans TC', sans-serif; font-size: 0.82rem; font-weight: 500;
+  white-space: nowrap; flex-shrink: 0;
 }
-.menu-btn:hover { background: rgba(255,255,255,0.25); }
-.menu-btn span { display: block; width: 18px; height: 2px; background: white; border-radius: 2px; }
+.back-btn.visible { display: flex; }
+.back-btn:hover { background: rgba(255,255,255,0.25); }
+.back-btn svg { flex-shrink: 0; }
 .header-text h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1.2; white-space: nowrap; }
 .header-text p { margin-top: 2px; font-size: 0.68rem; opacity: 0.7; letter-spacing: 0.06em; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
 
@@ -195,7 +172,7 @@ body {
 .section-title { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.14em; color: var(--text); }
 .section-line { flex: 1; height: 1px; background: var(--border); }
 
-.card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.card { background: var(--white); border: none; border-radius: var(--radius-card); padding: 22px; box-shadow: var(--shadow-card); }
 .card-divider { height: 1px; background: var(--border); margin: 18px 0; }
 
 /* ── Fields ── */
@@ -204,14 +181,14 @@ body {
 label { display: block; font-size: 0.78rem; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.05em; }
 label .req { color: var(--red); margin-left: 2px; }
 
-/* 修復6：統一所有輸入元件高度 */
+/* 修復6：統一所有輸入元件高度；font-size≥16px 防止 iOS 自動縮放 */
 input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
-  width: 100%; border: 1px solid var(--border); border-radius: 4px;
-  padding: 10px 13px; font-size: 0.92rem; font-family: 'Noto Sans TC', sans-serif;
-  color: var(--text); background: white;
+  width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 11px 14px; font-size: 16px; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text); background: var(--warm);
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   appearance: none; -webkit-appearance: none;
-  min-height: 42px; line-height: 1.4; vertical-align: middle;
+  min-height: 44px; line-height: 1.4; vertical-align: middle;
 }
 select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239c8c80' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -219,7 +196,7 @@ select {
 }
 input:focus, select:focus, textarea:focus {
   outline: none; border-color: var(--red);
-  box-shadow: 0 0 0 3px rgba(192,57,43,0.1); background: white;
+  box-shadow: 0 0 0 3px rgba(198,40,40,0.12); background: white;
 }
 textarea { resize: vertical; min-height: 82px; }
 input[readonly], input.input-readonly {
@@ -257,9 +234,9 @@ input[readonly], input.input-readonly {
 .btn-submit {
   width: 100%; background: var(--red); color: white; border: none; padding: 16px;
   font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
-  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  letter-spacing: 0.14em; border-radius: var(--radius-btn); cursor: pointer;
   transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(192,57,43,0.25); position: relative; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(198,40,40,0.35); position: relative; overflow: hidden;
   min-height: unset;
 }
 .btn-submit::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
@@ -278,7 +255,7 @@ input[readonly], input.input-readonly {
 .form-footer { text-align: center; margin-top: 28px; font-size: 0.72rem; color: var(--text-light); letter-spacing: 0.04em; line-height: 1.8; }
 
 /* ── Members Page ── */
-.member-add-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.member-add-card { background: var(--white); border: none; border-radius: var(--radius-card); padding: 20px; box-shadow: var(--shadow-card); }
 .add-row { display: flex; gap: 10px; }
 .add-row input { flex: 1; }
 .btn-add {
@@ -289,7 +266,7 @@ input[readonly], input.input-readonly {
 }
 .btn-add:hover { background: var(--red-dark); }
 
-.member-list-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.member-list-card { background: var(--white); border: none; border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
 .member-list-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
 .member-list-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
 .member-count { background: var(--red-faint); color: var(--red-dark); border: 1px solid #f0bab4; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; }
@@ -320,7 +297,7 @@ input[readonly], input.input-readonly {
 /* ── Query Page ── */
 .query-wrap { max-width: 700px; margin: 0 auto; padding: 28px 16px 64px; }
 
-.filter-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
+.filter-card { background: var(--white); border: none; border-radius: var(--radius-card); padding: 20px; box-shadow: var(--shadow-card); margin-bottom: 20px; }
 .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .filter-actions { display: flex; gap: 10px; margin-top: 16px; }
 .btn-search {
@@ -340,12 +317,12 @@ input[readonly], input.input-readonly {
 
 /* Stats row */
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-card { background: var(--white); border: none; border-radius: var(--radius-card); padding: 16px; text-align: center; box-shadow: var(--shadow-card); }
 .stat-num { font-family: 'Noto Serif TC', serif; font-size: 1.8rem; font-weight: 700; color: var(--red); line-height: 1; }
 .stat-label { font-size: 0.72rem; color: var(--text-light); margin-top: 6px; letter-spacing: 0.06em; }
 
 /* Result table */
-.result-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.result-card { background: var(--white); border: none; border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
 .result-head { background: var(--warm); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
 .result-head h3 { font-family: 'Noto Serif TC', serif; font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.1em; }
 
@@ -363,23 +340,6 @@ tr:hover td { background: #fdfcfb; }
 .loading-msg { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85rem; }
 
 /* ── Admin Sub-Nav in Drawer ── */
-#adminSubNav {
-  border-left: 2px solid rgba(192,57,43,0.4);
-  margin: 0 0 4px 32px;
-}
-.admin-subnav-btn {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 16px;
-  color: rgba(255,255,255,0.55); font-size: 0.8rem;
-  letter-spacing: 0.04em; border-left: 2px solid transparent;
-  transition: all 0.15s; cursor: pointer; background: none; width: 100%;
-  font-family: 'Noto Sans TC', sans-serif;
-  border-top: none; border-right: none; border-bottom: none;
-}
-.admin-subnav-btn:hover, .admin-subnav-btn.active-subnav {
-  color: white; background: rgba(255,255,255,0.07); border-left-color: var(--red-mid);
-}
-
 
 .admin-tab {
   background: var(--white); border: 1px solid var(--border); border-radius: 20px;
@@ -404,19 +364,19 @@ tr:hover td { background: #fdfcfb; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 .btn-checkin {
-  width: 100%; background: #27ae60; color: white; border: none; padding: 16px;
+  width: 100%; background: #2E7D32; color: white; border: none; padding: 16px;
   font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
-  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  letter-spacing: 0.14em; border-radius: var(--radius-btn); cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(39,174,96,0.3); min-height: unset;
+  box-shadow: 0 4px 20px rgba(46,125,50,0.35); min-height: unset;
 }
-.btn-checkin:hover { background: #219a52; }
+.btn-checkin:hover { background: #1B5E20; }
 .btn-checkout {
   width: 100%; background: var(--red); color: white; border: none; padding: 16px;
   font-size: 1rem; font-family: 'Noto Sans TC', sans-serif; font-weight: 700;
-  letter-spacing: 0.18em; border-radius: 6px; cursor: pointer;
+  letter-spacing: 0.14em; border-radius: var(--radius-btn); cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(192,57,43,0.25); min-height: unset;
+  box-shadow: 0 4px 20px rgba(198,40,40,0.35); min-height: unset;
 }
 .btn-checkout:hover { background: var(--red-dark); }
 .time-badge {
@@ -506,10 +466,11 @@ tr:hover td { background: #fdfcfb; }
 .bar-fill { height:100%; background:var(--red); border-radius:3px; transition:width 0.4s ease; }
 
 
+
 /* ── Profile Page ── */
-.profile-select-card { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.04); margin-bottom:20px; }
+.profile-select-card { background:var(--white); border:none; border-radius:var(--radius-card); padding:20px; box-shadow:var(--shadow-card); margin-bottom:20px; }
 .profile-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
-.profile-stat { background:var(--white); border:1px solid var(--border); border-radius:6px; padding:16px; text-align:center; }
+.profile-stat { background:var(--white); border:none; border-radius:var(--radius-card); padding:16px; text-align:center; box-shadow:var(--shadow-card); }
 .profile-stat .num { font-family:'Noto Serif TC',serif; font-size:1.6rem; font-weight:700; color:var(--red); line-height:1; }
 .profile-stat .lbl { font-size:0.7rem; color:var(--text-light); margin-top:6px; letter-spacing:0.05em; }
 .timeline { position:relative; padding-left:20px; }
@@ -529,8 +490,9 @@ tr:hover td { background: #fdfcfb; }
   padding: 32px 24px;
 }
 .login-card {
-  background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+  background: var(--white); border: none; border-radius: 24px;
   padding: 40px 32px; max-width: 360px; width: 100%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
   box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center;
 }
 .login-logo {
@@ -585,6 +547,197 @@ tr:hover td { background: #fdfcfb; }
 }
 .ios-toggle input:checked + .ios-toggle-slider { background: #34c759; }
 .ios-toggle input:checked + .ios-toggle-slider::before { transform: translateX(20px); }
+
+/* ══ Banking-style bottom tab bar ══ */
+#appTabBar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white; border-top: 1px solid rgba(0,0,0,0.08);
+  z-index: 198; padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
+}
+.tab-grid { display: flex; height: 70px; }
+.app-tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; border: none; background: none; cursor: pointer; padding: 8px 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-tab-icon-wrap {
+  width: 42px; height: 30px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.app-tab-icon-wrap svg { stroke: #bbb; transition: stroke 0.2s; width: 24px; height: 24px; }
+.app-tab-lbl {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 0.65rem; color: #bbb; font-weight: 500; transition: color 0.2s;
+}
+.app-tab-btn.active .app-tab-icon-wrap { background: var(--red-faint); }
+.app-tab-btn.active .app-tab-icon-wrap svg { stroke: var(--red); }
+.app-tab-btn.active .app-tab-lbl { color: var(--red); font-weight: 700; }
+#appScroll { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+
+/* ══ Dashboard greeting ══ */
+.dash-greeting {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; padding-top: 2px;
+}
+.dash-username { font-family: 'Noto Serif TC', serif; font-size: 1.5rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+.dash-greet-role { font-size: 0.7rem; color: var(--text-light); margin-top: 3px; letter-spacing: 0.04em; }
+.dash-title-tag {
+  display: inline-block; font-size: 0.95rem; color: var(--text-mid);
+  font-weight: 500; vertical-align: middle; white-space: nowrap;
+}
+.dash-role-tag {
+  display: inline-block; font-size: 0.58rem; background: var(--red-faint); color: var(--red);
+  border: 1px solid #f0bab4; border-radius: 20px; padding: 1px 7px;
+  margin-left: 5px; font-weight: 600; vertical-align: middle;
+}
+.dash-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, #C62828, #8E0000);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(198,40,40,0.3);
+}
+.dash-actions { display: flex; align-items: center; gap: 6px; }
+.dash-icon-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card-bg); box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  color: var(--text-mid); transition: background 0.15s;
+}
+.dash-icon-btn:active { background: var(--red-faint); }
+.dash-icon-btn--logout { color: var(--red); }
+
+/* ══ Hero card ══ */
+.dash-hero {
+  background: linear-gradient(135deg, #C62828 0%, #B71C1C 55%, #8E0000 100%);
+  border-radius: 20px; padding: 22px 20px; color: white;
+  position: relative; overflow: hidden; margin-bottom: 22px;
+  box-shadow: 0 8px 28px rgba(198,40,40,0.32);
+}
+.dash-hero::before {
+  content: '✚'; position: absolute; right: -12px; top: -24px;
+  font-size: 130px; opacity: 0.06; line-height: 1; pointer-events: none;
+}
+.dash-hero-lbl { font-size: 0.66rem; opacity: 0.75; letter-spacing: 0.08em; margin-bottom: 2px; }
+.dash-hero-big {
+  font-family: 'Noto Serif TC', serif; font-size: 2.8rem; font-weight: 700;
+  line-height: 1; display: inline-flex; align-items: baseline; gap: 3px;
+}
+.dash-hero-unit { font-size: 0.9rem; opacity: 0.8; font-weight: 400; }
+.dash-hero-meta {
+  font-size: 0.65rem; opacity: 0.65; margin-top: 2px; letter-spacing: 0.05em;
+}
+.dash-hero-row {
+  display: flex; margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.18);
+}
+.dash-hero-cell { flex: 1; text-align: center; }
+.dash-hero-cell + .dash-hero-cell { border-left: 1px solid rgba(255,255,255,0.18); }
+.dash-hero-cell-num { font-size: 1.2rem; font-weight: 700; }
+.dash-hero-cell-lbl { font-size: 0.56rem; opacity: 0.7; margin-top: 2px; letter-spacing: 0.02em; }
+
+/* ══ Quick action scroll ══ */
+.quick-scroll {
+  display: flex; gap: 12px; overflow-x: auto; padding: 12px 16px 14px;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.quick-scroll::-webkit-scrollbar { display: none; }
+.dash-quick-sticky {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 50;
+  background: var(--bg);
+  margin: 0 -16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+/* ══ Duty sub-nav cards ══ */
+.duty-sub-card {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  border: none; background: none; padding: 4px 6px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font-family: 'Noto Sans TC', sans-serif; font-size: 0.65rem; font-weight: 600;
+  color: var(--text-light);
+}
+.duty-sub-card-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: #f0f0f0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.18s;
+}
+.duty-sub-card svg { stroke: #aaa; transition: stroke 0.18s; }
+.duty-sub-card.active .duty-sub-card-icon { background: var(--red); }
+.duty-sub-card.active svg { stroke: white; }
+.duty-sub-card.active { color: var(--red); }
+.qa-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex-shrink: 0; cursor: pointer; min-width: 54px;
+  -webkit-tap-highlight-color: transparent;
+}
+.qa-icon {
+  width: 54px; height: 54px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: transform 0.12s;
+}
+.qa-item:active .qa-icon { transform: scale(0.91); }
+.qa-lbl {
+  font-size: 0.58rem; color: var(--text-mid);
+  font-family: 'Noto Sans TC', sans-serif; text-align: center; line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ══ Section pill header ══ */
+.sec-pill {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.sec-pill-bar { width: 4px; height: 16px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
+.sec-pill-title { font-family: 'Noto Serif TC', serif; font-size: 0.9rem; font-weight: 700; color: var(--text); letter-spacing: 0.06em; }
+.sec-pill-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ══ 通知面板 ══ */
+#noticePanel { position: fixed; inset: 0; z-index: 999; display: none; }
+#noticePanelBg { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+#noticePanelCard {
+  position: absolute; top: 0; left: 0; right: 0;
+  background: #ffffff; border-radius: 0 0 24px 24px;
+  max-height: 82vh; display: flex; flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  animation: noticePanelDown 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes noticePanelDown {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(0); }
+}
+#noticePanelHead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 14px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#noticePanelList { overflow-y: auto; flex: 1; }
+.notice-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.notice-card-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+}
+.notice-card-body { flex: 1; min-width: 0; }
+.notice-card-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 3px; color: var(--text); }
+.notice-card-preview {
+  font-size: 0.76rem; color: var(--text-mid); white-space: pre-wrap;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.notice-card-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.notice-tag {
+  font-size: 0.6rem; border-radius: 10px; padding: 1px 7px; font-weight: 600;
+}
 
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer>
@@ -794,47 +947,67 @@ function _dlCSV(content, filename) {
   <div id="globalLoadingCar" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%) scaleX(-1);font-size:1rem;z-index:3;transition:left 0.25s ease;pointer-events:none;">🚑</div>
   <div id="globalLoadingLabel" style="position:relative;z-index:2;color:white;font-size:0.72rem;text-align:center;padding:6px 0;letter-spacing:0.05em;font-family:'Noto Sans TC',sans-serif;font-weight:500;">🚨 接到勤務！資料整備中，請勿重新整理…</div>
 </div>
-<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
-
-<!-- Drawer -->
-<div class="drawer" id="drawer">
-
-  <nav>
-    <button id="nav-dashboard" class="active-nav" onclick="navTo('dashboardPage')"><span class="icon">🏠</span>首頁</button>
-    <button id="nav-profile" onclick="navTo('profilePage')"><span class="icon">👤</span>個人基本資料</button>
-    <button id="nav-mycorrections" onclick="navTo('myCorrectionsPage')"><span class="icon">📋</span>我的申請記錄</button>
-    <button id="nav-members" onclick="navTo('membersPage')"><span class="icon">👥</span>成員管理</button>
-    <button id="nav-items" onclick="navTo('itemsPage')"><span class="icon">📦</span>待領物品</button>
-    <button id="nav-attendance" onclick="navTo('attendancePage')"><span class="icon">✍</span>簽到簽退登錄</button>
-    <button id="nav-attquery" onclick="navTo('attQueryPage')"><span class="icon">🔍</span>簽到簽退記錄查詢</button>
-    <button id="nav-form" onclick="navTo('formPage')"><span class="icon">📋</span>協勤案件登錄</button>
-    <button id="nav-query" onclick="navTo('queryPage')"><span class="icon">🔍</span>協勤紀錄查詢</button>
-    <button id="nav-report" onclick="navTo('reportPage')"><span class="icon">📑</span>報表匯出</button>
-    <button id="nav-stats" onclick="navTo('statsPage')"><span class="icon">📈</span>協勤統計</button>
-    <button id="nav-gongcha" onclick="navTo('gongchaPage')"><span class="icon">🏅</span>公差統計</button>
-    <button id="nav-feedback" onclick="navTo('feedbackPage')"><span class="icon">💬</span>意見回饋</button>
-    <button id="nav-duty" onclick="navTo('dutyPage')"><span class="icon">📅</span>備勤排班</button>
-    <button id="nav-meeting" onclick="navTo('meetingPage')"><span class="icon">📒</span>定訓與公告</button>
-    <button id="nav-changelog" onclick="navTo('changelogPage')"><span class="icon">📝</span>版本修改紀錄</button>
-    <button id="nav-admin" onclick="navTo('adminPage')" style="display:none;border-top:1px solid rgba(255,255,255,0.15);margin-top:8px;padding-top:12px;"><span class="icon">⚙️</span>管理員後台</button>
-    <!-- 後台子導覽（管理員才顯示，進入 adminPage 後展開）-->
-    <div id="adminSubNav" style="display:none;">
-      <button onclick="adminNavTo('adminSec-units')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🏢</span>分隊管理</button>
-      <button onclick="adminNavTo('adminSec-wl')"       class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">👤</span>成員帳號</button>
-      <button onclick="adminNavTo('adminSec-casetypes')" class="admin-subnav-btn" id="adminSubNav-casetypes"><span class="icon" style="font-size:0.75rem;">🏷</span>案由</button>
-      <button onclick="adminNavTo('adminSec-items')"    class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📦</span>物品領用</button>
-      <button id="adminSubNav-announce" onclick="adminNavTo('adminSec-announce')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📢</span>公告管理</button>
-      <button onclick="adminNavTo('adminSec-feedback')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">💬</span>意見回饋</button>
-      <button onclick="adminNavTo('adminSec-correction')" class="admin-subnav-btn" id="adminSubNav-correction"><span class="icon" style="font-size:0.75rem;">📝</span>修正申請</button>
-      <button onclick="adminNavTo('adminSec-schedule')" class="admin-subnav-btn" id="adminSubNav-schedule"><span class="icon" style="font-size:0.75rem;">📅</span>定訓行事曆</button>
-      <button onclick="adminNavTo('adminSec-changelog')"class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📝</span>版本紀錄</button>
-      <button id="adminSubNav-loginlog" onclick="adminNavTo('adminSec-loginlog')" class="admin-subnav-btn" style="display:none;"><span class="icon" style="font-size:0.75rem;">🔐</span>登入紀錄</button>
-      <button onclick="adminNavTo('adminSec-temppass')" class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">🔑</span>臨時密碼</button>
-      <button onclick="adminNavTo('adminSec-import')"   class="admin-subnav-btn"><span class="icon" style="font-size:0.75rem;">📥</span>批次匯入</button>
-      <button onclick="adminNavTo('adminSec-repair')"   class="admin-subnav-btn" id="adminSubNav-repair"><span class="icon" style="font-size:0.75rem;">🔧</span>資料修復</button>
-      <button onclick="adminNavTo('adminSec-confirm')"  class="admin-subnav-btn" id="adminSubNav-confirm"><span class="icon" style="font-size:0.75rem;">✅</span>確認任務</button>
+<!-- ══════ 通知面板 ══════ -->
+<div id="noticePanel">
+  <div id="noticePanelBg" onclick="closeNoticePanel()"></div>
+  <div id="noticePanelCard">
+    <div id="noticePanelHead">
+      <div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);">最新消息</div>
+        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.12em;margin-top:1px;">SYSTEM NOTICES</div>
+      </div>
+      <button onclick="closeNoticePanel()" style="background:var(--card-bg);border:none;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
-  </nav>
+    <div id="noticePanelList">
+      <div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ BOTTOM TAB BAR ══════ -->
+<div id="appTabBar">
+  <div class="tab-grid">
+    <button class="app-tab-btn active" id="appTab-home" onclick="switchTab('home')">
+      <div class="app-tab-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/>
+        </svg>
+      </div>
+      <span class="app-tab-lbl">首頁</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-duty" onclick="switchTab('duty')">
+      <div class="app-tab-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="4" rx="1"/><path d="M4 7h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
+        </svg>
+      </div>
+      <span class="app-tab-lbl">勤務</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-schedule" onclick="switchTab('schedule')">
+      <div class="app-tab-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <span class="app-tab-lbl">排班</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-manage" onclick="switchTab('manage')">
+      <div class="app-tab-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+      </div>
+      <span class="app-tab-lbl">管理</span>
+    </button>
+    <button class="app-tab-btn" id="appTab-more" onclick="switchTab('more')">
+      <div class="app-tab-icon-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
+        </svg>
+      </div>
+      <span class="app-tab-lbl">更多</span>
+    </button>
+  </div>
 </div>
 
 <!-- ══════ SHARED HEADER ══════ -->
@@ -843,23 +1016,60 @@ function _dlCSV(content, filename) {
   <div class="header-deco2"></div>
   <div class="header-cross">✚</div>
   <div class="header-inner">
-    <button class="menu-btn" onclick="openDrawer()" aria-label="選單">
-      <span></span><span></span><span></span>
+    <button id="headerBackBtn" class="back-btn" onclick="navTo('dashboardPage')" aria-label="返回首頁">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      返回
     </button>
     <div class="header-text">
       <h1 id="pageTitle">救護義消系統</h1>
       <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
     </div>
-    <div id="headerUserCard" style="display:none;margin-left:auto;align-items:center;gap:8px;flex-shrink:0;">
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-        <span id="headerUserInfo" style="font-size:0.8rem;color:white;font-weight:600;letter-spacing:0.04em;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-        <span id="headerUserBadge" style="display:none;font-size:0.6rem;background:rgba(255,215,0,0.25);border:1px solid rgba(255,215,0,0.5);border-radius:10px;padding:1px 7px;color:rgba(255,235,150,1);letter-spacing:0.06em;">管理員</span>
-        <span id="headerSessionTimer" style="font-size:0.58rem;color:rgba(255,255,255,0.45);letter-spacing:0.03em;"></span>
-      </div>
-      <div id="headerAvatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:white;flex-shrink:0;"></div>
-
-      <button onclick="logout()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.85);font-size:0.7rem;padding:5px 10px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">登出</button>
+    <!-- 保留隱藏元素供 JS 更新（兼容舊邏輯） -->
+    <div id="headerUserCard" style="display:none;">
+      <span id="headerUserInfo"></span>
+      <span id="headerUserBadge"></span>
+      <span id="headerSessionTimer"></span>
+      <div id="headerAvatar"></div>
     </div>
+  </div>
+</div>
+
+<!-- ══════ 備勤排班 自訂固定 HEADER（position:fixed，避免 iOS sticky 失效）══════ -->
+<div id="dutyCustomHeader" style="display:none;position:fixed;top:0;left:0;right:0;z-index:200;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+  <div class="dash-greeting" style="padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;margin-bottom:0;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="dash-avatar" id="dutyGreetAvatar" onclick="navTo('profilePage')" style="cursor:pointer;">?</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <div class="dash-username" id="dutyGreetName">—</div>
+          <span class="dash-title-tag" id="dutyGreetTitle" style="display:none;"></span>
+        </div>
+        <div class="dash-role-tag" id="dutyGreetRole" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="dash-actions">
+      <button class="dash-icon-btn" onclick="openNoticePanel()" title="最新消息" aria-label="最新消息">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="dash-icon-btn dash-icon-btn--logout" onclick="logout()" title="登出" aria-label="登出">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- ── 視圖切換（子選單，固定在 header 內）── -->
+  <div id="dutySubNav" style="display:flex;gap:10px;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
+    <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card active">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+      </div>
+      登記排班
+    </button>
+    <button onclick="dutyView('month')" id="dutySub-month" class="duty-sub-card">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/></svg>
+      </div>
+      排班總覽
+    </button>
   </div>
 </div>
 
@@ -868,88 +1078,6 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE 0：儀表板 ══════ -->
 <div class="page active" id="dashboardPage">
   <div class="form-wrap">
-    <!-- 公告區（多則）-->
-    <div id="announcementBar" style="display:none;margin-bottom:12px;"></div>
-
-    <!-- 日期時間 + 天氣（手機: 上下, 桌面: 左右）-->
-    <div id="dashInfoGrid" style="display:grid;grid-template-columns:2fr 3fr;gap:10px;margin-bottom:14px;">
-    <style>
-      @media(max-width:480px){
-        #dashInfoGrid { grid-template-columns:1fr !important; }
-        #dashInfoGrid > div:first-child {
-          min-height:unset !important;
-          padding:14px !important;
-          flex-direction:row !important;
-          align-items:center !important;
-          justify-content:space-between !important;
-        }
-        #dashDateTimeWrap {
-          flex-direction:row !important;
-          align-items:center !important;
-          justify-content:space-between !important;
-          width:100% !important;
-        }
-        #dashDateTimeWrap > div:first-child { flex:1 !important; }
-        #dashInfoTime {
-          font-size:1.8rem !important;
-          margin-top:0 !important;
-          flex-shrink:0 !important;
-          margin-left:12px !important;
-        }
-      }
-    </style>
-      <!-- 左：日期時間 -->
-      <div style="background:white;border-radius:12px;padding:16px 14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:110px;">
-        <div id="dashDateTimeWrap" style="display:flex;flex-direction:column;width:100%;">
-          <div style="flex:1;">
-            <div id="dashInfoDate" style="font-size:0.82rem;font-weight:600;color:var(--text-light);font-family:'Noto Serif TC',serif;letter-spacing:0.02em;line-height:1.5;"></div>
-          </div>
-          <div id="dashInfoTime" style="font-size:2rem;font-weight:700;color:var(--text);letter-spacing:0.04em;font-variant-numeric:tabular-nums;line-height:1;margin-top:6px;"></div>
-        </div>
-      </div>
-      <!-- 右：天氣（詳細）-->
-      <div id="dashInfoWeather" style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);">
-        <!-- 標題列 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span id="dashWeatherIcon" style="font-size:1.8rem;line-height:1;"></span>
-            <div>
-              <div id="dashWeatherTemp" style="font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.1;"></div>
-              <div id="dashWeatherDesc" style="font-size:0.7rem;color:var(--text-light);"></div>
-            </div>
-          </div>
-          <div style="font-size:0.68rem;color:var(--text-light);text-align:right;line-height:1.4;">📍 臺中市｜潭子區</div>
-        </div>
-        <!-- 詳細資料格子（4項：濕度、體感、降雨、紫外線）-->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">💧 濕度</div>
-            <div id="dashWeatherHumidity" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">🌡 體感</div>
-            <div id="dashWeatherFeels" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">🌂 降雨機率</div>
-            <div id="dashWeatherRain" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-          <div style="background:var(--warm);border-radius:7px;padding:7px 6px;text-align:center;">
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:2px;">☀️ 紫外線</div>
-            <div id="dashWeatherUV" style="font-size:0.88rem;font-weight:700;color:var(--text);"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 今日班表（公告下方） -->
-    <div id="todayScheduleSection" style="display:none;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:4px;height:18px;background:var(--red);border-radius:2px;flex-shrink:0;"></div>
-        <span style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);">今日班表</span>
-      </div>
-      <div id="todayScheduleList"></div>
-    </div>
     <!-- 緊急公告彈窗 -->
     <div id="urgentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;align-items:center;justify-content:center;padding:16px;">
       <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:80vh;overflow-y:auto;">
@@ -962,12 +1090,129 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num" style="font-size:0.75rem;">今</div>
-        <div class="section-title">今日概況</div>
-        <div class="section-line"></div>
+    <!-- 問候語 + 頭像 + 通知 + 登出 -->
+    <div class="dash-greeting">
+      <!-- 左：頭像 + 姓名 -->
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="dash-avatar" id="dashGreetAvatar" onclick="navTo('profilePage')">?</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="dash-username" id="dashGreetName">—</div>
+            <span class="dash-title-tag" id="dashGreetTitle" style="display:none;"></span>
+          </div>
+          <div class="dash-role-tag" id="dashGreetRole" style="display:none;"></div>
+        </div>
       </div>
+      <!-- 右：通知鈴 + 電源（登出） -->
+      <div class="dash-actions">
+        <button class="dash-icon-btn" onclick="openNoticePanel()" title="最新消息" aria-label="最新消息">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button class="dash-icon-btn dash-icon-btn--logout" onclick="logout()" title="登出" aria-label="登出">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 英雄卡片 -->
+    <div class="dash-hero">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div class="dash-hero-lbl">年度累計備勤</div>
+          <div class="dash-hero-big">
+            <span id="dashMonthHours">—</span>
+            <span class="dash-hero-unit">小時</span>
+          </div>
+          <div class="dash-hero-meta" id="dashHeroDateLine"></div>
+        </div>
+        <div style="text-align:right;opacity:0.75;flex-shrink:0;margin-left:12px;">
+          <div style="font-size:0.62rem;letter-spacing:0.05em;" id="dashInfoDate"></div>
+          <div style="font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;" id="dashInfoTime"></div>
+          <div style="display:flex;align-items:center;gap:3px;margin-top:3px;justify-content:flex-end;">
+            <span id="dashWeatherIcon" style="font-size:1rem;"></span>
+            <span id="dashWeatherTemp" style="font-size:0.82rem;font-weight:600;"></span>
+          </div>
+        </div>
+      </div>
+      <div class="dash-hero-row">
+        <div class="dash-hero-cell">
+          <div class="dash-hero-cell-num" id="dashMyMonthAtt">—</div>
+          <div class="dash-hero-cell-lbl">出勤次數</div>
+        </div>
+        <div class="dash-hero-cell">
+          <div class="dash-hero-cell-num" id="dashMyMonthOut">—</div>
+          <div class="dash-hero-cell-lbl">出勤時數</div>
+        </div>
+        <div class="dash-hero-cell">
+          <div class="dash-hero-cell-num" id="dashMyMonthSvc">—</div>
+          <div class="dash-hero-cell-lbl">服務人次</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速操作橫滾列（sticky，滾動時固定頂部）-->
+    <div class="dash-quick-sticky">
+    <div class="quick-scroll">
+      <div class="qa-item" id="quick-attendance" onclick="navTo('attendancePage')">
+        <div class="qa-icon" style="background:#FFEBEE;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div class="qa-lbl">簽到退</div>
+      </div>
+      <div class="qa-item" id="quick-form" onclick="navTo('formPage')">
+        <div class="qa-icon" style="background:#E8F5E9;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M4 7h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        </div>
+        <div class="qa-lbl">協勤登錄</div>
+      </div>
+      <div class="qa-item" onclick="navTo('queryPage')">
+        <div class="qa-icon" style="background:#E3F2FD;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="qa-lbl">紀錄查詢</div>
+      </div>
+      <div class="qa-item" onclick="navTo('attQueryPage')">
+        <div class="qa-icon" style="background:#E1F5FE;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0277BD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+        </div>
+        <div class="qa-lbl">簽到退查詢</div>
+      </div>
+      <div class="qa-item" onclick="navTo('statsPage')">
+        <div class="qa-icon" style="background:#F3E5F5;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6A1B9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="qa-lbl">協勤統計</div>
+      </div>
+      <div class="qa-item" onclick="navTo('gongchaPage')">
+        <div class="qa-icon" style="background:#FFF8E1;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F57F17" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+        </div>
+        <div class="qa-lbl">公差英雄榜</div>
+      </div>
+      <div class="qa-item" onclick="navTo('dutyPage')">
+        <div class="qa-icon" style="background:#E8EAF6;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#283593" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="qa-lbl">備勤排班</div>
+      </div>
+      <div class="qa-item" onclick="navTo('meetingPage')">
+        <div class="qa-icon" style="background:#FFF3E0;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div class="qa-lbl">定訓公告</div>
+      </div>
+      <div class="qa-item" onclick="navTo('reportPage')">
+        <div class="qa-icon" style="background:#F5F5F5;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#616161" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        </div>
+        <div class="qa-lbl">報表匯出</div>
+      </div>
+    </div>
+    </div><!-- /.dash-quick-sticky -->
+
+    <!-- 今日概況 -->
+    <div style="margin-bottom:20px;">
+      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日概況</div><div class="sec-pill-line"></div></div>
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
         <div class="stat-card">
           <div class="stat-num" id="dashTodayAtt">—</div>
@@ -978,117 +1223,33 @@ function _dlCSV(content, filename) {
           <div class="stat-label">今日簽到人數</div>
         </div>
         <div class="stat-card">
-          <div class="stat-num" id="dashTodaySignin">—</div>
-          <div class="stat-label">目前在線人數</div>
+          <div class="stat-num" id="dashTodayOutCount">—</div>
+          <div class="stat-label">今日出勤筆數</div>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num" style="font-size:0.75rem;">月</div>
-        <div class="section-title">本月累計</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthAtt">—</div>
-          <div class="stat-label">協勤總筆數</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthHours">—</div>
-          <div class="stat-label">協勤總時數</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthService">—</div>
-          <div class="stat-label">協勤總服務人次</div>
-        </div>
-      </div>
+    <!-- 今日班表 -->
+    <div id="todayScheduleSection" style="display:none;margin-bottom:20px;">
+      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日班表</div><div class="sec-pill-line"></div></div>
+      <div id="todayScheduleList"></div>
     </div>
 
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num" style="font-size:0.75rem;">⚡</div>
-        <div class="section-title">快速入口</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="quick-entry-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <button onclick="navTo('profilePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">👤</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">個人基本資料</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">聯絡資訊與證照</div>
-        </button>
-        <button onclick="navTo('myCorrectionsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">我的申請記錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">修正申請進度</div>
-        </button>
-        <button onclick="navTo('membersPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">👥</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">成員管理</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">分隊成員查詢</div>
-        </button>
-        <button onclick="navTo('itemsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📦</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">待領物品</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">領取簽名</div>
-        </button>
-        <button id="quick-attendance" onclick="navTo('attendancePage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">✍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退登錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤簽到</div>
-        </button>
-        <button onclick="navTo('attQueryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">簽到簽退查詢</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤紀錄查詢</div>
-        </button>
-        <button id="quick-form" onclick="navTo('formPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📋</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤案件登錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤案件記錄</div>
-        </button>
-        <button onclick="navTo('queryPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">🔍</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤紀錄查詢</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤記錄查詢</div>
-        </button>
-        <button onclick="navTo('statsPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📈</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">協勤統計</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">協勤排行榜</div>
-        </button>
-        <button onclick="navTo('gongchaPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">🏅</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">公差統計</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">公差英雄榜</div>
-        </button>
-        <button onclick="navTo('feedbackPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">💬</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">意見回饋</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">建議與問題回報</div>
-        </button>
-        <button onclick="navTo('dutyPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📅</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">備勤排班</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">備勤時段排班</div>
-        </button>
-        <button onclick="navTo('meetingPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📒</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">定訓與公告</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">定訓記錄與公告</div>
-        </button>
-        <button onclick="navTo('changelogPage')" style="background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:20px 16px;cursor:pointer;text-align:center;transition:all 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-height:unset;" onmouseover="this.style.borderColor='var(--red)';this.style.background='var(--red-faint)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
-          <div style="font-size:1.6rem;margin-bottom:8px;">📝</div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.85rem;font-weight:600;color:var(--text);letter-spacing:0.04em;">版本修改紀錄</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:4px;">系統更新說明</div>
-        </button>
-      </div>
+    <!-- 天氣詳細（隱藏，保留 ID 供 JS 更新） -->
+    <div style="display:none;">
+      <span id="dashWeatherDesc"></span>
+      <span id="dashWeatherHumidity"></span>
+      <span id="dashWeatherFeels"></span>
+      <span id="dashWeatherRain"></span>
+      <span id="dashWeatherUV"></span>
+      <div id="dashInfoGrid"></div>
+      <div id="dashInfoWeather"></div>
+      <div id="dashDateTimeWrap"></div>
     </div>
+
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
-
 <!-- ══════ PAGE 1：協勤案件登錄 ══════ -->
 <div class="page" id="formPage">
   <div class="form-wrap">
@@ -3130,22 +3291,16 @@ function _dlCSV(content, filename) {
 <div class="page" id="dutyPage">
   <div style="padding:0;max-width:100%;">
 
-    <!-- ── 視圖切換 Tab ── -->
-    <div id="dutyTabBar" style="display:flex;border-bottom:2px solid var(--border);background:white;position:sticky;top:0;z-index:10;">
-      <button onclick="dutyView('month')" id="dutyTab-month" class="duty-view-tab duty-view-tab-active">📅 月視圖</button>
-      <button onclick="dutyView('list')"  id="dutyTab-list"  class="duty-view-tab">📋 班表明細</button>
-    </div>
-
     <!-- ── 月份導覽 ── -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:white;border-bottom:1px solid var(--border);">
+    <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:white;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:199;">
       <button onclick="dutyMonthNav(-1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
       <div id="dutyMonthLabel" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
       <button onclick="dutyMonthNav(1)"  style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
     </div>
 
     <!-- ── 月視圖 ── -->
-    <div id="dutyMonthView" style="padding:12px 16px;">
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:4px;">
+    <div id="dutyMonthView" style="padding:10px 10px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
         <div style="text-align:center;font-size:0.68rem;color:#c0392b;font-weight:600;padding:4px 0;">日</div>
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">一</div>
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">二</div>
@@ -3154,7 +3309,7 @@ function _dlCSV(content, filename) {
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">五</div>
         <div style="text-align:center;font-size:0.68rem;color:#3498db;padding:4px 0;">六</div>
       </div>
-      <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+      <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
       <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;font-size:0.7rem;color:var(--text-light);">
         <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#7f8c8d;"></div>額滿</div>
         <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#e67e22;"></div>部分已排</div>
@@ -3630,10 +3785,49 @@ async function fbQuery(col, conditions, orderByField, orderDir) {
   const s = await q.get();
   return s.docs.map(d=>({id:d.id,...d.data()}));
 }
-async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
-async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});}
-async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);}
-async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();}
+async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});_C.invalidate(col);return r.id;}
+async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});_C.invalidate(col);}
+async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);_C.invalidate(col);}
+
+// ── 本地快取（stale-while-revalidate）──
+const _C = {
+  TTL: { attendance:180, outingRecords:180, dutySchedule:600, announcements:600, members:1800, whitelist:1800 },
+  _k: col => '_fc2_' + col,
+  peek(col) {
+    try { const r = localStorage.getItem(this._k(col)); return r ? JSON.parse(r).d : null; } catch(e) { return null; }
+  },
+  fresh(col) {
+    try {
+      const r = localStorage.getItem(this._k(col)); if (!r) return false;
+      return (Date.now() - JSON.parse(r).t) < (this.TTL[col]||300) * 1000;
+    } catch(e) { return false; }
+  },
+  set(col, data) {
+    try { localStorage.setItem(this._k(col), JSON.stringify({t: Date.now(), d: data})); } catch(e) {}
+  },
+  invalidate(col) { try { localStorage.removeItem(this._k(col)); } catch(e) {} },
+};
+
+// 快取版 fbList：先回傳快取，背景更新
+async function fbListCached(col, orderBy, dir) {
+  if (_C.fresh(col)) return _C.peek(col);
+  const data = await fbList(col, orderBy, dir);
+  _C.set(col, data); return data;
+}
+
+// 登入後預熱（靜默背景拉取，不阻塞 UI）
+function _prefetchCaches() {
+  [
+    [COL_ATTEND,   'date', 'asc'],
+    [COL_OUTING,   'date', 'asc'],
+    ['dutySchedule'],
+    [COL_ANNOUNCE],
+    [COL_MEMBERS],
+  ].forEach(([col, ...args]) => {
+    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(()=>{});
+  });
+}
+async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);}
 async function verifyWhitelist(email){
   await ensureFirebase();
   const em = email.toLowerCase().trim();
@@ -3644,7 +3838,7 @@ async function verifyWhitelist(email){
   const isAdminFlag = d.isAdmin === true || d.role === 'admin';
   const isOfficerFlag = d.isOfficer === true || d.role === 'officer';
   const role = isAdminFlag ? 'admin' : (isOfficerFlag ? 'officer' : (d.role || 'member'));
-  return{allowed:true,memberName:d.memberName||'',isAdmin:isAdminFlag,isOfficer:isOfficerFlag,role,unit:d.unit||''};
+  return{allowed:true,memberName:d.memberName||'',isAdmin:isAdminFlag,isOfficer:isOfficerFlag,role,unit:d.unit||'',title:d.title||''};
 }
 
 // ════════════════════════════════════════
@@ -3776,8 +3970,9 @@ async function handleGoogleLogin(response) {
       const isOfficer  = (fbResult && fbResult.isOfficer)  || false;
       const role       = (fbResult && fbResult.role)       || 'member';
       const unit       = (fbResult && fbResult.unit)       || '';
+      const title      = (fbResult && fbResult.title)      || '';
       sessionStorage.setItem('rescue_user', JSON.stringify({
-        email, name, memberName, isAdmin, isOfficer, role, unit, loginAt: Date.now()
+        email, name, memberName, isAdmin, isOfficer, role, unit, title, loginAt: Date.now()
       }));
       // 寫入登入紀錄
       fbAdd(COL_LOGINLOG, {
@@ -3785,7 +3980,7 @@ async function handleGoogleLogin(response) {
         loginAt: new Date().toLocaleString('sv').replace('T', ' '),
         ua: navigator.userAgent.substring(0, 120),
       }).catch(() => {});
-      showApp(memberName, email, isAdmin, isOfficer, role);
+      showApp(memberName, email, isAdmin, isOfficer, role, title);
     } else {
       spinner.classList.remove('show');
       errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
@@ -3802,20 +3997,29 @@ async function handleGoogleLogin(response) {
 }
 
 // ── 顯示主系統 ──
-function showApp(name, email, isAdmin, isOfficer, role) {
+function showApp(name, email, isAdmin, isOfficer, role, title) {
   document.getElementById('loginScreen').style.display = 'none';
-  const card = document.getElementById('headerUserCard');
-  if (card) card.style.display = 'flex';
+  // 顯示底部 tab bar
+  const tabBar = document.getElementById('appTabBar');
+  if (tabBar) tabBar.style.display = 'block';
+  // 填入首頁 & 勤務頁問候語
+  const _initials = (name||email||'?').charAt(0).toUpperCase();
+  const _roleTxt = isAdmin ? '系統管理員' : isOfficer ? '分隊承辦人' : '';
+  ['dash', 'duty'].forEach(prefix => {
+    const gName = document.getElementById(prefix + 'GreetName');
+    if (gName) gName.textContent = name || email || '—';
+    const gAvatar = document.getElementById(prefix + 'GreetAvatar');
+    if (gAvatar) gAvatar.textContent = _initials;
+    const gTitle = document.getElementById(prefix + 'GreetTitle');
+    if (gTitle) { if (title) { gTitle.textContent = title; gTitle.style.display = ''; } else { gTitle.style.display = 'none'; } }
+    const gRole = document.getElementById(prefix + 'GreetRole');
+    if (gRole) { if (_roleTxt) { gRole.textContent = _roleTxt; gRole.style.display = ''; } else { gRole.style.display = 'none'; } }
+  });
+  // header userCard 已移除，保留隱藏 span 供兼容
   const userInfo = document.getElementById('headerUserInfo');
   if (userInfo) userInfo.textContent = name || email;
   const avatar = document.getElementById('headerAvatar');
   if (avatar) avatar.textContent = (name||email||'?').charAt(0).toUpperCase();
-  const badge = document.getElementById('headerUserBadge');
-  if (badge) {
-    if (isAdmin)        { badge.textContent='系統管理員'; badge.style.cssText='display:inline;font-size:0.62rem;background:rgba(255,200,0,0.9);border:1px solid rgba(200,150,0,0.8);border-radius:10px;padding:1px 8px;color:#5a3a00;letter-spacing:0.05em;font-weight:700;'; }
-    else if (isOfficer) { badge.textContent='分隊承辦人'; badge.style.cssText='display:inline;font-size:0.62rem;background:rgba(100,180,255,0.9);border:1px solid rgba(50,130,220,0.8);border-radius:10px;padding:1px 8px;color:#0a2a5a;letter-spacing:0.05em;font-weight:700;'; }
-    else                { badge.style.display='none'; }
-  }
   if (isAdmin || isOfficer) {
     const adminNav = document.getElementById('nav-admin');
     if (adminNav) adminNav.style.display = '';
@@ -3845,6 +4049,7 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
   // 登入後 4 秒檢查確認任務
   setTimeout(() => checkConfirmTask().catch(() => {}), 4000);
+  _prefetchCaches(); // 預熱快取，讓後續頁面秒開
 
   setTimeout(async () => {
     if (!allItems || allItems.length === 0) {
@@ -3882,7 +4087,7 @@ function checkSession() {
       sessionStorage.removeItem('rescue_user');
       return false;
     }
-    showApp(user.memberName || user.name, user.email, user.isAdmin || false, user.isOfficer || false, user.role || 'member');
+    showApp(user.memberName || user.name, user.email, user.isAdmin || false, user.isOfficer || false, user.role || 'member', user.title || '');
     return true;
   } catch(e) { return false; }
 }
@@ -4328,24 +4533,37 @@ async function refreshCurrentPage() {
 
 function syncHeaderHeight() {
   requestAnimationFrame(() => {
-    const header    = document.querySelector('.header');
     const scroller  = document.getElementById('appScroll');
     const adminBar  = document.getElementById('adminTabBar');
+    if (!scroller) return;
+
+    // 備勤排班頁使用獨立固定 header，動態量高
+    if (document.body.classList.contains('page-duty')) {
+      const dh = document.getElementById('dutyCustomHeader');
+      const h  = dh ? Math.round(dh.getBoundingClientRect().height) : 58;
+      scroller.style.setProperty('padding-top', h + 'px', 'important');
+      const lb = document.getElementById('globalLoadingBar');
+      if (lb) lb.style.setProperty('top', h + 'px', 'important');
+      const mn = document.getElementById('dutyMonthNav');
+      if (mn) mn.style.setProperty('top', h + 'px', 'important');
+      return;
+    }
+
+    const header = document.querySelector('.header');
     if (!header) return;
     const headerH = Math.round(header.getBoundingClientRect().height);
     // adminPage 開啟時，paddingTop = header + tabbar 高度
-    const adminPage = document.getElementById('adminPage');
+    const adminPage   = document.getElementById('adminPage');
     const adminActive = adminPage && adminPage.classList.contains('active');
     if (adminActive && adminBar && adminBar.style.display !== 'none') {
       adminBar.style.top = headerH + 'px';
-      // 需要再等一幀讓 bar 位置確定後量高度
       requestAnimationFrame(() => {
         const barH = Math.round(adminBar.getBoundingClientRect().height);
         if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
       });
     } else {
       if (adminBar) adminBar.style.top = headerH + 'px';
-      if (scroller) scroller.style.paddingTop = headerH + 'px';
+      scroller.style.paddingTop = headerH + 'px';
     }
   });
 }
@@ -4428,13 +4646,56 @@ function hideLoading() {
   }, 270);
 }
 
+// ── Tab 對應表 ──
+const _tabForPage = {
+  dashboardPage:      'home',
+  attendancePage:     'duty',   formPage:           'duty',
+  attQueryPage:       'duty',   queryPage:          'duty',
+  dutyPage:           'schedule',
+  myCorrectionsPage:  'manage', reportPage:         'manage',
+  statsPage:          'manage', gongchaPage:        'manage',
+  feedbackPage:       'more',   meetingPage:        'more',
+  changelogPage:      'more',   adminPage:          'more',
+  profilePage:        'more',   membersPage:        'more',   itemsPage: 'more',
+};
+const _tabPageMap = {
+  home:     'dashboardPage',
+  duty:     'attendancePage',
+  schedule: 'dutyPage',
+  manage:   'myCorrectionsPage',
+  more:     'feedbackPage',
+};
+
+function switchTab(tabId) {
+  navTo(_tabPageMap[tabId] || 'dashboardPage');
+}
+
+function _syncTabBar(pageId) {
+  const tabId = _tabForPage[pageId];
+  document.querySelectorAll('.app-tab-btn').forEach(b => b.classList.remove('active'));
+  if (tabId) {
+    const el = document.getElementById('appTab-' + tabId);
+    if (el) el.classList.add('active');
+  }
+}
+
 function navTo(pageId, fromHistory) {
   showLoading();
-  syncHeaderHeight();
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
-  document.querySelectorAll('.drawer nav button').forEach(btn => btn.classList.remove('active-nav'));
+
+  // 首頁：隱藏 header；勤務頁：隱藏 header；其他頁：顯示 header + 返回按鈕
+  const isHome = pageId === 'dashboardPage';
+  const isDuty = pageId === 'dutyPage';
+  document.body.classList.toggle('page-home', isHome);
+  document.body.classList.toggle('page-duty', isDuty);
+  const backBtn = document.getElementById('headerBackBtn');
+  if (backBtn) backBtn.classList.toggle('visible', !isHome && !isDuty);
+  syncHeaderHeight(); // header 顯示/隱藏後再同步高度
+
+  // 同步底部 tab bar
+  _syncTabBar(pageId);
 
   // 推入瀏覽器歷史（上一頁/下一頁用）
   if (!fromHistory) {
@@ -4445,29 +4706,28 @@ function navTo(pageId, fromHistory) {
   }
 
   const titles = {
-    dashboardPage:  ['救護義消系統', 'Emergency Volunteer System', 'nav-dashboard'],
-    formPage:       ['協勤案件登錄', 'Outing Record', 'nav-form'],
-    profilePage:    ['個人基本資料', 'My Profile', 'nav-profile'],
-    membersPage:    ['成員管理', 'Member Management', 'nav-members'],
-    queryPage:      ['協勤紀錄查詢', 'Attendance Query', 'nav-query'],
-    attendancePage: ['簽到簽退登錄', 'Sign In / Sign Out', 'nav-attendance'],
-    statsPage:      ['協勤統計', 'Attendance Statistics', 'nav-stats'],
-    reportPage:     ['報表匯出', 'Reports', 'nav-report'],
-    attQueryPage:   ['簽到/退記錄查詢', 'Attendance Log', 'nav-attquery'],
-    itemsPage:      ['物品領用', 'Item Pickup', 'nav-items'],
-    dutyPage:       ['備勤排班', 'Duty Schedule', 'nav-duty'],
-  meetingPage:    ['定訓與公告', 'Training & Announcements', 'nav-meeting'],
-    myCorrectionsPage: ['我的申請記錄', 'My Requests', 'nav-mycorrections'],
-    gongchaPage:    ['公差英雄榜', 'Merit Leaderboard', 'nav-gongcha'],
-    changelogPage:  ['版本修改紀錄', 'Version History', 'nav-changelog'],
-    feedbackPage:   ['意見回饋', 'Feedback', 'nav-feedback'],
-    adminPage:      ['管理員後台', 'Admin Panel', 'nav-admin'],
+    dashboardPage:  ['救護義消系統', 'Emergency Volunteer System'],
+    formPage:       ['協勤案件登錄', 'Outing Record'],
+    profilePage:    ['個人基本資料', 'My Profile'],
+    membersPage:    ['成員管理', 'Member Management'],
+    queryPage:      ['協勤紀錄查詢', 'Attendance Query'],
+    attendancePage: ['簽到簽退登錄', 'Sign In / Sign Out'],
+    statsPage:      ['協勤統計', 'Attendance Statistics'],
+    reportPage:     ['報表匯出', 'Reports'],
+    attQueryPage:   ['簽到/退記錄查詢', 'Attendance Log'],
+    itemsPage:      ['物品領用', 'Item Pickup'],
+    dutyPage:       ['備勤排班', 'Duty Schedule'],
+    meetingPage:    ['定訓與公告', 'Training & Announcements'],
+    myCorrectionsPage: ['我的申請記錄', 'My Requests'],
+    gongchaPage:    ['公差英雄榜', 'Merit Leaderboard'],
+    changelogPage:  ['版本修改紀錄', 'Version History'],
+    feedbackPage:   ['意見回饋', 'Feedback'],
+    adminPage:      ['管理員後台', 'Admin Panel'],
   };
   const t = titles[pageId];
   if (t) {
     document.getElementById('pageTitle').textContent = t[0];
     document.getElementById('pageSubEn').textContent = t[1];
-    document.getElementById(t[2]).classList.add('active-nav');
   }
 
   const _nav = fn => Promise.resolve(fn()).finally(() => hideLoading());
@@ -4494,37 +4754,20 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'changelogPage') _nav(loadChangelog);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
 
-  // 進入後台時展開子導覽，離開時收起；tab bar 顯示/隱藏由 initAdminPage 控制
-  const adminSubNav = document.getElementById('adminSubNav');
-  if (adminSubNav) adminSubNav.style.display = pageId === 'adminPage' ? '' : 'none';
   if (pageId !== 'adminPage') {
     const bar = document.getElementById('adminTabBar');
     const spacer = document.getElementById('adminTabBarSpacer');
     if (bar)    { bar.style.display = 'none'; }
     if (spacer) { spacer.style.display = 'none'; spacer.style.height = '0'; }
     if (_adminTabObserver) { _adminTabObserver.disconnect(); _adminTabObserver = null; }
-    // 恢復 appScroll paddingTop 為只有 header 高度
     syncHeaderHeight();
   }
 
-  closeDrawer();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ════════════════════════════════════════
-// Drawer
-// ════════════════════════════════════════
-function openDrawer() {
-  document.getElementById('drawer').classList.add('open');
-  document.getElementById('overlay').classList.add('open');
-  // 每次開側邊欄都從頂部開始
-  const nav = document.querySelector('.drawer nav');
-  if (nav) nav.scrollTop = 0;
-}
-function closeDrawer() {
-  document.getElementById('drawer').classList.remove('open');
-  document.getElementById('overlay').classList.remove('open');
-}
+function openDrawer() {}
+function closeDrawer() {}
 
 // ════════════════════════════════════════
 // Dashboard（修復2：日期比對）
@@ -4753,75 +4996,90 @@ async function loadDashboard() {
   startDashClock();
   loadDashWeather();
 
-  // 載入今日班表（直接用 where 查詢今日）
+  // 補抓 title（跟 profilePage 一樣：先查 members，再查 whitelist）
   try {
-    await ensureFirebase();
-    const dutySnap = await _fbDB.collection('dutySchedule')
-      .where('date', '==', todayStr)
-      .get();
-    const todayDuty = dutySnap.docs
-      .map(d => ({id: d.id, ...d.data()}))
-      .sort((a, b) => (a.start||'').localeCompare(b.start||''));
+    const _su = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (_su.email) {
+      await ensureFirebase();
+      const memberName = _su.memberName || _su.name || '';
+      // 從 members collection 查職稱
+      let freshTitle = '';
+      const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
+      if (!mSnap.empty) freshTitle = mSnap.docs[0].data().title || '';
+      // 備用：從 whitelist 查
+      if (!freshTitle) {
+        const wSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',_su.email.toLowerCase().trim()).get();
+        if (!wSnap.empty) freshTitle = wSnap.docs[0].data().title || '';
+      }
+      if (freshTitle && freshTitle !== _su.title) {
+        _su.title = freshTitle;
+        sessionStorage.setItem('rescue_user', JSON.stringify(_su));
+      }
+      const el = document.getElementById('dashGreetTitle');
+      if (el && freshTitle) { el.textContent = freshTitle; el.style.display = ''; }
+    }
+  } catch(e) {}
 
-    const sec  = document.getElementById('todayScheduleSection');
-    const list = document.getElementById('todayScheduleList');
+  const _me = JSON.parse(sessionStorage.getItem('rescue_user')||'{}').memberName || '';
 
-    sec.style.display = '';
-    if (todayDuty.length > 0) {
-      list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
-        ${todayDuty.map(d => `
+  // ── 先顯示快取資料（零等待）──
+  const staleAtt  = _C.peek(COL_ATTEND);
+  const staleOut  = _C.peek(COL_OUTING);
+  const staleDuty = _C.peek('dutySchedule');
+  if (staleAtt && staleOut) _applyDashStats(staleAtt, staleOut, todayStr, monthStr, _me);
+  if (staleDuty)            _applyDashDuty(staleDuty, todayStr);
+
+  // ── 背景拉取最新資料（快取新鮮則直接回傳，不發 Firestore 請求）──
+  Promise.all([
+    fbListCached(COL_ATTEND,      'date', 'asc'),
+    fbListCached(COL_OUTING,      'date', 'asc'),
+    fbListCached('dutySchedule'),
+  ]).then(([attDocs, outDocs, dutyDocs]) => {
+    _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
+    _applyDashDuty(dutyDocs, todayStr);
+    updateItemsBadge();
+  }).catch(() => {});
+}
+
+function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
+  const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
+  const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
+  set('dashTodayAtt',     todayOut.length);
+  set('dashTodayOutCount',todayOut.length);
+  set('dashTodayMembers', todaySigninSet.size);
+  set('dashTodaySignin',  new Set(attDocs.filter(r => r.checkinTime && !r.checkoutTime && r.date === todayStr).map(r => r.memberName||'').filter(Boolean)).size);
+
+  const yearStr = todayStr.substring(0, 4);
+  const myYearAtt = attDocs.filter(r => (r.date||'').startsWith(yearStr) && r.memberName === me);
+  const myYearHours = myYearAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+  const myYearSvc   = myYearAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0);
+  set('dashMonthHours', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
+  set('dashMyMonthAtt', myYearAtt.length);
+  set('dashMyMonthOut', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
+  set('dashMyMonthSvc', myYearSvc);
+
+  const hl = document.getElementById('dashHeroDateLine');
+  if (hl) { const n = new Date(); hl.textContent = n.getFullYear() + ' 年（個人年度統計）'; }
+}
+
+function _applyDashDuty(dutyDocs, todayStr) {
+  const todayDuty = (dutyDocs||[]).filter(d => d.date === todayStr).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const sec  = document.getElementById('todayScheduleSection');
+  const list = document.getElementById('todayScheduleList');
+  if (!sec || !list) return;
+  sec.style.display = '';
+  list.innerHTML = todayDuty.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">${todayDuty.map(d=>`
         <div style="background:white;border-radius:10px;padding:14px 12px;box-shadow:0 1px 6px rgba(0,0,0,0.08);border:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.88rem;flex-shrink:0;">${(d.memberName||'?').charAt(0)}</div>
-            <div style="min-width:0;">
-              <div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div>
-              <div style="font-size:0.7rem;color:var(--text-light);">${d.unit||''}</div>
-            </div>
+            <div style="min-width:0;"><div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div><div style="font-size:0.7rem;color:var(--text-light);">${d.unit||''}</div></div>
           </div>
-          <div style="background:var(--warm);border-radius:6px;padding:5px 8px;text-align:center;">
-            <span style="font-size:0.8rem;font-weight:600;color:var(--red);">${d.start||'?'} － ${d.end||'?'}</span>
-          </div>
-        </div>`).join('')}
-      </div>`;
-    } else {
-      list.innerHTML = '<div style="background:white;border-radius:10px;padding:18px;text-align:center;color:var(--text-light);font-size:0.85rem;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border);">今日無排班人員</div>';
-    }
-  } catch(e) {
-    document.getElementById('todayScheduleSection').style.display = 'none';
-  }
-
-  try {
-    const [attDocs, outDocs] = await Promise.all([
-      fbList(COL_ATTEND, 'date', 'asc'),
-      fbList(COL_OUTING, 'date', 'asc'),
-    ]);
-    const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
-    const monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
-    document.getElementById('dashTodayAtt').textContent  = todayOut.length;
-    document.getElementById('dashMonthAtt').textContent  = monthOut.length;
-
-    const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
-    const monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
-    const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
-    document.getElementById('dashTodayMembers').textContent = todaySigninSet.size;
-
-    const onlineSet = new Set(
-      attDocs.filter(r => r.checkinTime && !r.checkoutTime && (r.date||'') === todayStr)
-             .map(r => r.memberName||'').filter(Boolean)
-    );
-    document.getElementById('dashTodaySignin').textContent = onlineSet.size;
-
-    const totalHours = monthAtt.reduce((sum, r) => sum + (parseFloat(r.hours)||0), 0);
-    document.getElementById('dashMonthHours').textContent =
-      totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
-    const totalService = monthAtt.reduce((sum, r) => sum + (parseInt(r.service)||0), 0);
-    document.getElementById('dashMonthService').textContent = totalService;
-  } catch(e) {
-    ['dashTodayAtt','dashTodayMembers','dashMonthAtt','dashTodaySignin','dashMonthHours','dashMonthService'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.textContent = '—';
-    });
-  }
-  updateItemsBadge();
+          <div style="background:var(--warm);border-radius:6px;padding:5px 8px;text-align:center;"><span style="font-size:0.8rem;font-weight:600;color:var(--red);">${d.start||'?'} － ${d.end||'?'}</span></div>
+        </div>`).join('')}</div>`
+    : '<div style="background:white;border-radius:10px;padding:18px;text-align:center;color:var(--text-light);font-size:0.85rem;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border);">今日無排班人員</div>';
 }
 
 // 計算尚未全部領取的物品數，更新角標
@@ -9134,6 +9392,56 @@ function filterMembersByUnit() {
 // ════════════════════════════════════════
 const COL_ANNOUNCE = 'announcements';
 
+// ── 通知面板開關 ──
+async function openNoticePanel() {
+  const panel = document.getElementById('noticePanel');
+  panel.style.display = 'block';
+  const list = document.getElementById('noticePanelList');
+  list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>';
+  try {
+    const today = new Date().toLocaleDateString('sv');
+    const docs  = await fbList(COL_ANNOUNCE);
+    const active = docs
+      .filter(d => d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today)
+      .sort((a,b) => {
+        const p = (b.pinned?1:0) - (a.pinned?1:0);
+        return p !== 0 ? p : ((b.startDate||'') > (a.startDate||'') ? 1 : -1);
+      });
+    if (!active.length) {
+      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">目前沒有公告</div>';
+      return;
+    }
+    list.innerHTML = active.map(d => {
+      const lines   = (d.text||'').split('\n');
+      const title   = lines[0] || '公告';
+      const preview = lines.slice(1).join('\n').trim();
+      const tag     = d.urgent ? '🚨 緊急' : d.pinned ? '📌 置頂' : '系統公告';
+      const tagBg   = d.urgent ? '#ffebee' : d.pinned ? '#fff3e0' : '#e8f5e9';
+      const tagClr  = d.urgent ? '#c62828' : d.pinned ? '#e65100' : '#2e7d32';
+      const iconBg  = d.urgent ? '#ffebee' : '#fce4ec';
+      const icon    = d.urgent ? '🚨' : '📢';
+      const date    = (d.startDate||'').replace(/-/g,'/');
+      return `<div class="notice-card">
+        <div class="notice-card-icon" style="background:${iconBg};">${icon}</div>
+        <div class="notice-card-body">
+          <div class="notice-card-title">${title}</div>
+          ${preview ? `<div class="notice-card-preview">${preview}</div>` : ''}
+          <div class="notice-card-meta">
+            <span class="notice-tag" style="background:${tagBg};color:${tagClr};">${tag}</span>
+            <span style="font-size:0.6rem;color:var(--text-light);">${date}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入失敗</div>';
+  }
+}
+
+function closeNoticePanel() {
+  document.getElementById('noticePanel').style.display = 'none';
+}
+
 // ── 首頁：載入並顯示目前有效的公告 ──
 async function loadAnnouncement() {
   try {
@@ -10286,7 +10594,7 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
-    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role, sessionUser.title || '');
   } catch(e) {
     spinner.style.display = 'none';
     showTempPassErr('驗證失敗：' + e.message);
@@ -10620,7 +10928,7 @@ function devLoginAs(role) {
     email: p.email, memberName: p.name, name: p.name,
     role: p.role, isAdmin: p.isAdmin, isOfficer: p.isOfficer, unit: p.unit,
   }));
-  showApp(p.name, p.email, p.isAdmin, p.isOfficer, p.role);
+  showApp(p.name, p.email, p.isAdmin, p.isOfficer, p.role, p.title || '');
   navTo('dashboardPage');
 }
 
@@ -13012,7 +13320,7 @@ function getDutySlotCount(dateStr, slotHour) {
 
 let _dutyYear  = new Date().getFullYear();
 let _dutyMonth = new Date().getMonth();
-let _dutyView  = 'month';
+let _dutyView  = 'list';
 let _dutyDocs  = [];
 
 async function initDutyPage() {
@@ -13146,10 +13454,10 @@ function toggleDutyForm() {
 function dutyView(v) {
   _dutyView = v;
   ['month','list'].forEach(t => {
-    const btn = document.getElementById('dutyTab-'+t);
+    const btn = document.getElementById('dutySub-'+t);
     if (!btn) return;
-    if (v===t) btn.classList.add('duty-view-tab-active');
-    else        btn.classList.remove('duty-view-tab-active');
+    if (v===t) btn.classList.add('active');
+    else        btn.classList.remove('active');
   });
   renderDutyView();
 }
@@ -13193,17 +13501,17 @@ function renderDutyCalendar() {
     const cellBg = !isAllowed ? '#f5f5f5' : isToday ? 'var(--red-faint)' : isHoliday ? '#fef9f0' : 'white';
 
     const cell = document.createElement('div');
-    cell.style.cssText = 'min-height:64px;border:1.5px solid ' + borderColor + ';border-radius:6px;padding:4px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
+    cell.style.cssText = 'min-height:96px;border:1.5px solid ' + borderColor + ';border-radius:8px;padding:5px 3px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
     if (isAllowed) cell.onclick = () => { dutyView('list'); setTimeout(()=>scrollToDutyDate(dateStr),100); };
 
     const num = document.createElement('div');
-    num.style.cssText = 'font-size:0.78rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:2px;';
+    num.style.cssText = 'font-size:0.88rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:3px;';
     num.textContent = d;
     cell.appendChild(num);
 
     if (isAllowed) {
       const tag = document.createElement('div');
-      tag.style.cssText = 'font-size:0.58rem;background:' + tagBg + ';color:white;border-radius:3px;padding:1px 3px;font-weight:600;';
+      tag.style.cssText = 'font-size:0.65rem;background:' + tagBg + ';color:white;border-radius:4px;padding:2px 4px;font-weight:600;';
       tag.textContent = totalLeft + '/' + totalCap;
       cell.appendChild(tag);
     }
@@ -13229,6 +13537,26 @@ function renderDutyCalendar() {
         const dot = document.createElement('div');
         dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:#c0392b;margin-top:2px;';
         cell.appendChild(dot);
+      }
+    }
+
+    // 當天已排人員姓名
+    if (isAllowed) {
+      const dayNames = [...new Set(
+        _dutyDocs.filter(doc => doc.date === dateStr)
+                 .map(doc => (doc.memberName||'').trim())
+                 .filter(Boolean)
+      )];
+      if (dayNames.length > 0) {
+        const nm = document.createElement('div');
+        nm.style.cssText = 'margin-top:4px;width:100%;display:flex;flex-direction:column;gap:1px;align-items:center;';
+        dayNames.forEach(name => {
+          const chip = document.createElement('div');
+          chip.style.cssText = 'font-size:0.5rem;color:var(--text-mid);background:rgba(0,0,0,0.06);border-radius:3px;padding:1px 3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.5;';
+          chip.textContent = name;
+          nm.appendChild(chip);
+        });
+        cell.appendChild(nm);
       }
     }
 
@@ -13979,7 +14307,7 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
-    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role, sessionUser.title || '');
   } catch(e) {
     spinner.style.display = 'none';
     showTempPassErr('驗證失敗：' + e.message);
