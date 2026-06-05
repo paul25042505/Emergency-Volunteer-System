@@ -1,0 +1,57 @@
+name: Deploy Preview
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get branch slug
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          SLUG="${BRANCH#claude/}"
+          SLUG="${SLUG//\//-}"
+          echo "SLUG=$SLUG" >> $GITHUB_ENV
+
+      - name: Save preview files
+        run: |
+          cp index.html /tmp/preview-index.html
+          cp icon-192.png /tmp/preview-icon-192.png 2>/dev/null || true
+          cp icon-512.png /tmp/preview-icon-512.png 2>/dev/null || true
+
+      - name: Deploy to gh-pages preview folder
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin gh-pages 2>/dev/null || true
+
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git checkout gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . --quiet
+            git checkout main -- index.html icon-192.png icon-512.png 2>/dev/null || git checkout main -- index.html
+          fi
+
+          mkdir -p "preview/$SLUG"
+          cp /tmp/preview-index.html "preview/$SLUG/index.html"
+
+          git add "preview/$SLUG/index.html"
+          git diff --staged --quiet && echo "No changes" && exit 0
+          git commit -m "preview: ${{ github.ref_name }}"
+          git push origin gh-pages
+
+      - name: Print preview URL
+        run: echo "🔗 預覽網址：https://paul25042505.github.io/Emergency-Volunteer-System/preview/$SLUG/"
