@@ -9237,7 +9237,7 @@ const COL_ANNOUNCE = 'announcements';
 // ── 通知面板開關 ──
 async function openNoticePanel() {
   const panel = document.getElementById('noticePanel');
-  panel.style.display = '';
+  panel.style.display = 'block';
   const list = document.getElementById('noticePanelList');
   list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>';
   try {
