@@ -1048,7 +1048,7 @@ function _dlCSV(content, filename) {
     <div class="dash-hero">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;">
         <div>
-          <div class="dash-hero-lbl">本月協勤時數</div>
+          <div class="dash-hero-lbl">年度累計備勤</div>
           <div class="dash-hero-big">
             <span id="dashMonthHours">—</span>
             <span class="dash-hero-unit">小時</span>
@@ -1067,15 +1067,15 @@ function _dlCSV(content, filename) {
       <div class="dash-hero-row">
         <div class="dash-hero-cell">
           <div class="dash-hero-cell-num" id="dashMyMonthAtt">—</div>
-          <div class="dash-hero-cell-lbl">我的本月出勤</div>
+          <div class="dash-hero-cell-lbl">出勤次數</div>
         </div>
         <div class="dash-hero-cell">
           <div class="dash-hero-cell-num" id="dashMyMonthOut">—</div>
-          <div class="dash-hero-cell-lbl">我的協勤筆數</div>
+          <div class="dash-hero-cell-lbl">出勤時數</div>
         </div>
         <div class="dash-hero-cell">
           <div class="dash-hero-cell-num" id="dashMyMonthSvc">—</div>
-          <div class="dash-hero-cell-lbl">我的服務人次</div>
+          <div class="dash-hero-cell-lbl">服務人次</div>
         </div>
       </div>
     </div>
@@ -4975,16 +4975,17 @@ function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
   set('dashTodayMembers', todaySigninSet.size);
   set('dashTodaySignin',  new Set(attDocs.filter(r => r.checkinTime && !r.checkoutTime && r.date === todayStr).map(r => r.memberName||'').filter(Boolean)).size);
 
-  const myMonthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr) && r.memberName === me);
-  const myMonthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr) && r.memberName === me);
-  const myHours = myMonthAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
-  set('dashMonthHours',  myHours % 1 === 0 ? myHours : myHours.toFixed(1));
-  set('dashMyMonthAtt',  myMonthAtt.length);
-  set('dashMyMonthOut',  myMonthOut.length);
-  set('dashMyMonthSvc',  myMonthAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0));
+  const yearStr = todayStr.substring(0, 4);
+  const myYearAtt = attDocs.filter(r => (r.date||'').startsWith(yearStr) && r.memberName === me);
+  const myYearHours = myYearAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+  const myYearSvc   = myYearAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0);
+  set('dashMonthHours', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
+  set('dashMyMonthAtt', myYearAtt.length);
+  set('dashMyMonthOut', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
+  set('dashMyMonthSvc', myYearSvc);
 
   const hl = document.getElementById('dashHeroDateLine');
-  if (hl) { const n = new Date(); hl.textContent = n.getFullYear() + ' 年 ' + (n.getMonth()+1) + ' 月（個人）'; }
+  if (hl) { const n = new Date(); hl.textContent = n.getFullYear() + ' 年（個人年度統計）'; }
 }
 
 function _applyDashDuty(dutyDocs, todayStr) {
