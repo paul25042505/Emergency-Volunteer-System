@@ -1071,6 +1071,12 @@ function _dlCSV(content, filename) {
       排班總覽
     </button>
   </div>
+  <!-- ── 月份導覽（固定在 header 內，子選單下方）── -->
+  <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+    <button onclick="dutyMonthNav(-1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
+    <div id="dutyMonthLabel" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
+    <button onclick="dutyMonthNav(1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
+  </div>
 </div>
 
 <div id="appScroll">
@@ -3291,13 +3297,6 @@ function _dlCSV(content, filename) {
 <div class="page" id="dutyPage">
   <div style="padding:0;max-width:100%;">
 
-    <!-- ── 月份導覽 ── -->
-    <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:white;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:199;">
-      <button onclick="dutyMonthNav(-1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
-      <div id="dutyMonthLabel" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
-      <button onclick="dutyMonthNav(1)"  style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
-    </div>
-
     <!-- ── 月視圖 ── -->
     <div id="dutyMonthView" style="padding:10px 10px;">
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
@@ -4544,8 +4543,6 @@ function syncHeaderHeight() {
       scroller.style.setProperty('padding-top', h + 'px', 'important');
       const lb = document.getElementById('globalLoadingBar');
       if (lb) lb.style.setProperty('top', h + 'px', 'important');
-      const mn = document.getElementById('dutyMonthNav');
-      if (mn) mn.style.setProperty('top', h + 'px', 'important');
       return;
     }
 
