@@ -345,6 +345,55 @@ tr:hover td { background: #fdfcfb; }
 .query-empty .empty-icon { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
 .loading-msg { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85rem; }
 
+/* ══ Mobile Query Cards (富邦銀行 style) ══ */
+.mq-filter { background:#fff; padding:12px 16px; border-bottom:1px solid var(--border); }
+.mq-chips { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; margin-bottom:10px; }
+.mq-chips::-webkit-scrollbar { display:none; }
+.mq-chip { flex-shrink:0; padding:6px 16px; border-radius:50px; border:1.5px solid var(--border); font-size:0.8rem; background:#fff; color:var(--text-mid); cursor:pointer; font-family:'Noto Sans TC',sans-serif; font-weight:500; white-space:nowrap; transition:all 0.15s; }
+.mq-chip.active { background:var(--red); color:#fff; border-color:var(--red); }
+.mq-filter-more { display:none; flex-direction:column; gap:8px; padding-top:10px; }
+.mq-filter-more.open { display:flex; }
+.mq-filter-more select { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:0.88rem; background:#fff; color:var(--text); font-family:'Noto Sans TC',sans-serif; }
+.mq-filter-row { display:flex; gap:8px; }
+.mq-filter-row select { flex:1; min-width:0; }
+.mq-search-row { display:flex; gap:8px; margin-top:10px; }
+.mq-btn-query { flex:1; background:var(--red); color:#fff; border:none; border-radius:8px; padding:11px; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
+.mq-btn-reset { background:none; border:1.5px solid var(--border); border-radius:8px; padding:11px 16px; font-size:0.88rem; color:var(--text-mid); cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
+.mq-more-toggle { display:flex; align-items:center; justify-content:center; gap:4px; background:none; border:none; color:var(--text-light); font-size:0.78rem; cursor:pointer; padding:2px 0; font-family:'Noto Sans TC',sans-serif; width:100%; }
+.mq-more-toggle svg { transition:transform 0.2s; }
+.mq-stats { display:flex; background:#fff; border-bottom:1px solid var(--border); }
+.mq-stat { flex:1; text-align:center; padding:10px 4px; }
+.mq-stat+.mq-stat { border-left:1px solid var(--border); }
+.mq-stat-num { font-size:1.3rem; font-weight:700; color:var(--red); font-family:'Noto Serif TC',serif; line-height:1.2; }
+.mq-stat-lbl { font-size:0.62rem; color:var(--text-light); margin-top:2px; letter-spacing:0.04em; }
+.mq-sort-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:#fafafa; border-bottom:1px solid var(--border); }
+.mq-result-count { font-size:0.78rem; color:var(--text-light); }
+.mq-sort-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:0.75rem; color:var(--text-mid); cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
+.mq-list { padding:10px 16px 80px; display:flex; flex-direction:column; gap:10px; }
+.mq-card { background:#fff; border-radius:14px; box-shadow:0 1px 8px rgba(0,0,0,0.07); overflow:hidden; }
+.mq-card-head { padding:10px 14px 8px; border-bottom:1px solid #f5f5f5; display:flex; align-items:center; justify-content:space-between; }
+.mq-card-date { font-size:0.82rem; font-weight:700; color:var(--text); }
+.mq-badge { font-size:0.65rem; font-weight:600; padding:2px 10px; border-radius:50px; }
+.mq-badge-coop { background:#fff0f0; color:#c62828; }
+.mq-badge-pub { background:#e3f2fd; color:#1565c0; }
+.mq-badge-district { background:#e8f5e9; color:#2e7d32; }
+.mq-card-body { padding:10px 14px; }
+.mq-card-name { font-size:0.95rem; font-weight:600; color:var(--text); }
+.mq-card-sub { font-size:0.75rem; color:var(--text-light); margin-top:2px; }
+.mq-card-addr { font-size:0.78rem; color:var(--text-mid); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mq-card-time { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:0.82rem; color:var(--text-mid); }
+.mq-card-time svg { flex-shrink:0; opacity:0.5; }
+.mq-card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.mq-tag { background:#f5f5f5; color:var(--text-mid); font-size:0.68rem; padding:2px 8px; border-radius:50px; }
+.mq-card-foot { padding:8px 14px; border-top:1px solid #f5f5f5; display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+.mq-act-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:0.75rem; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
+.mq-act-btn.danger { border-color:#f5c6c6; color:#b94a3a; }
+.mq-act-btn.blue { border-color:#9ec5fe; color:#084298; }
+.mq-empty-state { text-align:center; padding:60px 20px; color:var(--text-light); }
+.mq-empty-state .mq-empty-icon { font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.35; }
+.mq-empty-state .mq-empty-txt { font-size:0.88rem; }
+.mq-adjust-banner { margin:8px 16px 0; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#856404; line-height:1.5; }
+
 /* ── Admin Sub-Nav in Drawer ── */
 
 .admin-tab {
@@ -987,7 +1036,7 @@ function _dlCSV(content, filename) {
           <rect x="9" y="2" width="6" height="4" rx="1"/><path d="M4 7h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
         </svg>
       </div>
-      <span class="app-tab-lbl">勤務</span>
+      <span class="app-tab-lbl">協勤</span>
     </button>
     <button class="app-tab-btn" id="appTab-schedule" onclick="switchTab('schedule')">
       <div class="app-tab-icon-wrap">
@@ -1067,7 +1116,7 @@ function _dlCSV(content, filename) {
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
-      簽到/退
+      打卡
     </button>
     <button onclick="navTo('formPage')" id="opsSub-form" class="duty-sub-card">
       <div class="duty-sub-card-icon">
@@ -1079,7 +1128,13 @@ function _dlCSV(content, filename) {
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </div>
-      紀錄查詢
+      打卡查詢
+    </button>
+    <button onclick="navTo('queryPage')" id="opsSub-query" class="duty-sub-card">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      案件查詢
     </button>
   </div>
 </div>
@@ -1651,124 +1706,86 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ PAGE 3：協勤查詢 ══════ -->
-<div class="page" id="queryPage">
-  <div class="query-wrap">
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">🔍</div>
-        <div class="section-title">篩選條件</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="filter-card">
-        <div class="filter-grid">
-          <div class="field">
-            <label for="qDateFrom">日期（起）</label>
-            <input type="date" id="qDateFrom">
-          </div>
-          <div class="field">
-            <label for="qDateTo">日期（迄）</label>
-            <input type="date" id="qDateTo">
-          </div>
-          <div class="field">
-            <label for="qUnit">分隊別</label>
-            <select id="qUnit" onchange="filterQueryMembers()">
-              <option value="">— 全部分隊 —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="qMember">義消姓名</label>
-            <select id="qMember">
-              <option value="">— 全部成員 —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="qDistrict">行政區</label>
-            <select id="qDistrict">
-              <option value="">— 全部區域 —</option>
-              <option value="臺中市潭子區">臺中市潭子區</option>
-              <option value="臺中市豐原區">臺中市豐原區</option>
-              <option value="臺中市神岡區">臺中市神岡區</option>
-              <option value="臺中市大雅區">臺中市大雅區</option>
-              <option value="臺中市北屯區">臺中市北屯區</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="qCaseType">案由</label>
-            <select id="qCaseType">
-              <option value="">— 全部類型 —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="qService">服務項目</label>
-            <select id="qService">
-              <option value="">— 全部項目 —</option>
-              <option value="保暖">保暖</option>
-              <option value="心理支持">心理支持</option>
-              <option value="生命徵象量測">生命徵象量測</option>
-              <option value="心肺復甦術（CPR）">心肺復甦術（CPR）</option>
-              <option value="協助操作AED">協助操作AED</option>
-              <option value="協助給氧">協助給氧</option>
-              <option value="協助抽吸">協助抽吸</option>
-              <option value="協助使用LUCAS">協助使用LUCAS</option>
-              <option value="協助止血">協助止血</option>
-              <option value="包紮傷口">包紮傷口</option>
-              <option value="使用止血帶">使用止血帶</option>
-              <option value="骨折固定">骨折固定</option>
-              <option value="頸圈固定">頸圈固定</option>
-              <option value="拒絕送醫">拒絕送醫</option>
-              <option value="空跑">空跑</option>
-            </select>
-          </div>
-        </div>
-        <div class="filter-actions">
-          <button class="btn-search" onclick="doQuery()">查　詢</button>
-          <button class="btn-reset" onclick="resetQuery()">清除條件</button>
-        </div>
-      </div>
+<div class="page" id="queryPage" style="padding:0;">
+  <!-- 篩選面板 -->
+  <div class="mq-filter">
+    <div class="mq-chips" id="qDateChips">
+      <button class="mq-chip active" onclick="qSetDateChip('today',this)">今天</button>
+      <button class="mq-chip" onclick="qSetDateChip('week',this)">本週</button>
+      <button class="mq-chip" onclick="qSetDateChip('month',this)">本月</button>
+      <button class="mq-chip" onclick="qSetDateChip('custom',this)">自訂日期</button>
     </div>
-
-    <div class="stats-row" id="statsRow" style="display:none;">
-      <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">協勤總筆數</div></div>
-      <div class="stat-card"><div class="stat-num" id="statMembers">0</div><div class="stat-label">協勤人數</div></div>
-      <div class="stat-card"><div class="stat-num" id="statDays">0</div><div class="stat-label">協勤天數</div></div>
+    <div id="qCustomDateRow" style="display:none;flex-direction:row;gap:8px;margin-bottom:10px;align-items:center;">
+      <input type="date" id="qDateFrom" style="flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;">
+      <span style="color:var(--text-light);font-size:0.9rem;">—</span>
+      <input type="date" id="qDateTo" style="flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;">
     </div>
-
-    <div class="result-card" id="resultCard" style="display:none;">
-      <div class="result-head">
-        <h3>查詢結果</h3>
-        <button id="qSortBtn" onclick="toggleQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
+    <button class="mq-more-toggle" id="qMoreToggle" onclick="qToggleMore()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      更多篩選
+    </button>
+    <div class="mq-filter-more" id="qMoreFilters">
+      <div class="mq-filter-row">
+        <select id="qUnit" onchange="filterQueryMembers()"><option value="">全部分隊</option></select>
+        <select id="qMember"><option value="">全部成員</option></select>
       </div>
-      <div class="result-table-wrap">
-        <table id="resultTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>日期</th>
-              <th>出動時間</th>
-              <th>行政區</th>
-              <th>地址</th>
-              <th>案由</th>
-              <th>服務項目</th>
-              <th>服務人次</th>
-              <th>義消姓名</th>
-              <th>備註</th>
-              <th>簽名</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="resultBody"></tbody>
-        </table>
+      <div class="mq-filter-row">
+        <select id="qDistrict">
+          <option value="">全部行政區</option>
+          <option value="臺中市潭子區">潭子區</option>
+          <option value="臺中市豐原區">豐原區</option>
+          <option value="臺中市神岡區">神岡區</option>
+          <option value="臺中市大雅區">大雅區</option>
+          <option value="臺中市北屯區">北屯區</option>
+        </select>
+        <select id="qCaseType"><option value="">全部案由</option></select>
       </div>
+      <select id="qService">
+        <option value="">全部服務項目</option>
+        <option value="保暖">保暖</option>
+        <option value="心理支持">心理支持</option>
+        <option value="生命徵象量測">生命徵象量測</option>
+        <option value="心肺復甦術（CPR）">心肺復甦術（CPR）</option>
+        <option value="協助操作AED">協助操作AED</option>
+        <option value="協助給氧">協助給氧</option>
+        <option value="協助抽吸">協助抽吸</option>
+        <option value="協助使用LUCAS">協助使用LUCAS</option>
+        <option value="協助止血">協助止血</option>
+        <option value="包紮傷口">包紮傷口</option>
+        <option value="使用止血帶">使用止血帶</option>
+        <option value="骨折固定">骨折固定</option>
+        <option value="頸圈固定">頸圈固定</option>
+        <option value="拒絕送醫">拒絕送醫</option>
+        <option value="空跑">空跑</option>
+      </select>
     </div>
-
-
-    <div id="queryInitMsg" class="query-empty">
-      <span class="empty-icon">🔍</span>
-      請設定篩選條件後按「查詢」
+    <div class="mq-search-row">
+      <button class="mq-btn-reset" onclick="resetQuery()">清除</button>
+      <button class="mq-btn-query" onclick="doQuery()">查詢</button>
     </div>
-    <div class="site-footer-placeholder"></div>
   </div>
+  <!-- 統計列 -->
+  <div class="mq-stats" id="qStatsBar" style="display:none;">
+    <div class="mq-stat"><div class="mq-stat-num" id="statTotal">0</div><div class="mq-stat-lbl">協勤總筆數</div></div>
+    <div class="mq-stat"><div class="mq-stat-num" id="statMembers">0</div><div class="mq-stat-lbl">協勤人數</div></div>
+    <div class="mq-stat"><div class="mq-stat-num" id="statDays">0</div><div class="mq-stat-lbl">協勤天數</div></div>
+  </div>
+  <!-- 排序列 -->
+  <div class="mq-sort-bar" id="qSortBar" style="display:none;">
+    <span class="mq-result-count" id="qResultCount"></span>
+    <button class="mq-sort-btn" id="qSortBtn" onclick="toggleQuerySort()">📅 日期 ↑</button>
+  </div>
+  <!-- 卡片清單 -->
+  <div class="mq-list" id="qCardList"></div>
+  <!-- 初始狀態 -->
+  <div id="queryInitMsg" class="mq-empty-state">
+    <span class="mq-empty-icon">🔍</span>
+    <span class="mq-empty-txt">選擇日期後按「查詢」</span>
+  </div>
+  <!-- 相容舊程式碼（隱藏） -->
+  <div id="statsRow" style="display:none;"></div>
+  <div id="resultCard" style="display:none;"><table><tbody id="resultBody"></tbody></table></div>
+  <div class="site-footer-placeholder"></div>
 </div>
 
 <!-- ══════ PAGE 4：簽到簽退 ══════ -->
@@ -2060,80 +2077,68 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ PAGE 5：簽到簽退查詢 ══════ -->
-<div class="page" id="attQueryPage">
-  <div class="query-wrap">
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">🔍</div>
-        <div class="section-title">篩選條件</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="filter-card">
-        <div class="filter-grid">
-          <div class="field">
-            <label for="aqDateFrom">日期（起）</label>
-            <input type="date" id="aqDateFrom">
-          </div>
-          <div class="field">
-            <label for="aqDateTo">日期（迄）</label>
-            <input type="date" id="aqDateTo">
-          </div>
-          <div class="field">
-            <label for="aqUnit">分隊別</label>
-            <select id="aqUnit" onchange="filterAqMembers()">
-              <option value="">— 全部分隊 —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="aqMember">義消姓名</label>
-            <select id="aqMember">
-              <option value="">— 全部成員 —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="aqDutyType">類別</label>
-            <select id="aqDutyType">
-              <option value="">— 全部類別 —</option>
-              <option value="協勤">協勤</option>
-              <option value="公差">公差</option>
-            </select>
-          </div>
-        </div>
-        <div class="filter-actions">
-          <button class="btn-search" onclick="doAttQuery()">查　詢</button>
-          <button class="btn-reset" onclick="resetAttQuery()">清除條件</button>
-        </div>
+<div class="page" id="attQueryPage" style="padding:0;">
+  <!-- 篩選面板 -->
+  <div class="mq-filter">
+    <div class="mq-chips" id="aqDateChips">
+      <button class="mq-chip active" onclick="aqSetDateChip('today',this)">今天</button>
+      <button class="mq-chip" onclick="aqSetDateChip('week',this)">本週</button>
+      <button class="mq-chip" onclick="aqSetDateChip('month',this)">本月</button>
+      <button class="mq-chip" onclick="aqSetDateChip('custom',this)">自訂日期</button>
+    </div>
+    <div id="aqCustomDateRow" style="display:none;flex-direction:row;gap:8px;margin-bottom:10px;align-items:center;">
+      <input type="date" id="aqDateFrom" style="flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;">
+      <span style="color:var(--text-light);font-size:0.9rem;">—</span>
+      <input type="date" id="aqDateTo" style="flex:1;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;">
+    </div>
+    <div class="mq-chips" id="aqTypeChips">
+      <button class="mq-chip active" onclick="aqSetType('',this)">全部類別</button>
+      <button class="mq-chip" onclick="aqSetType('協勤',this)">協勤</button>
+      <button class="mq-chip" onclick="aqSetType('公差',this)">公差</button>
+    </div>
+    <button class="mq-more-toggle" id="aqMoreToggle" onclick="aqToggleMore()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      更多篩選
+    </button>
+    <div class="mq-filter-more" id="aqMoreFilters">
+      <div class="mq-filter-row">
+        <select id="aqUnit" onchange="filterAqMembers()"><option value="">全部分隊</option></select>
+        <select id="aqMember"><option value="">全部成員</option></select>
       </div>
     </div>
-
-    <div class="result-card" id="aqResultCard" style="display:none;">
-      <div id="aqAdjustBanner" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:0.82rem;color:#856404;line-height:1.5;"></div>
-      <div class="result-head">
-        <h3>查詢結果</h3>
-        <button id="aqSortBtn" onclick="toggleAttQuerySort()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">📅 日期 ↑</button>
-      </div>
-      <div class="result-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>日期</th><th>類別</th><th>姓名</th><th>職稱</th>
-              <th>簽到</th><th>簽退</th><th>簽到簽名</th><th>簽退簽名</th><th>備勤時數</th>
-              <th>出勤次數</th><th>服務人次</th><th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="aqResultBody"></tbody>
-        </table>
-      </div>
+    <select id="aqDutyType" style="display:none;"><option value="">全部</option><option value="協勤">協勤</option><option value="公差">公差</option></select>
+    <div class="mq-search-row">
+      <button class="mq-btn-reset" onclick="resetAttQuery()">清除</button>
+      <button class="mq-btn-query" onclick="doAttQuery()">查詢</button>
     </div>
-
-    <div id="aqInitMsg" class="query-empty">
-      <span class="empty-icon">📊</span>請設定篩選條件後按「查詢」
-    </div>
-    <div id="aqLoadingMsg" class="query-empty" style="display:none;">
-      <span class="empty-icon">⏳</span>資料讀取中，請稍等...
-    </div>
-    <div class="site-footer-placeholder"></div>
   </div>
+  <!-- 統計列 -->
+  <div class="mq-stats" id="aqStatsBar" style="display:none;">
+    <div class="mq-stat"><div class="mq-stat-num" id="aqStatCount">0</div><div class="mq-stat-lbl">打卡筆數</div></div>
+    <div class="mq-stat"><div class="mq-stat-num" id="aqStatHours">0</div><div class="mq-stat-lbl">備勤時數</div></div>
+    <div class="mq-stat"><div class="mq-stat-num" id="aqStatSvc">0</div><div class="mq-stat-lbl">服務人次</div></div>
+  </div>
+  <!-- 排序列 -->
+  <div class="mq-sort-bar" id="aqSortBar" style="display:none;">
+    <span class="mq-result-count" id="aqResultCount"></span>
+    <button class="mq-sort-btn" id="aqSortBtn" onclick="toggleAttQuerySort()">📅 日期 ↑</button>
+  </div>
+  <!-- 時間異常橫幅 -->
+  <div id="aqAdjustBanner" class="mq-adjust-banner" style="display:none;"></div>
+  <!-- 卡片清單 -->
+  <div class="mq-list" id="aqCardList"></div>
+  <!-- 初始/空狀態 -->
+  <div id="aqInitMsg" class="mq-empty-state">
+    <span class="mq-empty-icon">🕐</span>
+    <span class="mq-empty-txt">選擇日期後按「查詢」</span>
+  </div>
+  <div id="aqLoadingMsg" class="mq-empty-state" style="display:none;">
+    <span class="mq-empty-icon">⏳</span>
+    <span class="mq-empty-txt">資料讀取中…</span>
+  </div>
+  <!-- 相容舊程式碼（隱藏） -->
+  <div id="aqResultCard" style="display:none;"><tbody id="aqResultBody"></tbody></div>
+  <div class="site-footer-placeholder"></div>
 </div>
 
 <!-- 編輯 Modal -->
@@ -4803,7 +4808,7 @@ function navTo(pageId, fromHistory) {
   // 同步各 header 的子選單 active 狀態
   if (isOps) {
     document.querySelectorAll('#opsCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const opsBtnMap = { attendancePage:'opsSub-attendance', formPage:'opsSub-form', attQueryPage:'opsSub-attquery', queryPage:'opsSub-attquery' };
+    const opsBtnMap = { attendancePage:'opsSub-attendance', formPage:'opsSub-form', attQueryPage:'opsSub-attquery', queryPage:'opsSub-query' };
     const ob = document.getElementById(opsBtnMap[pageId]);
     if (ob) ob.classList.add('active');
   }
@@ -6342,74 +6347,90 @@ async function doQuery() {
 }
 
 function renderQueryResults(records) {
+  filteredRecords = records;
+  _applyQuerySort();
+
+  const list     = document.getElementById('qCardList');
+  const statsBar = document.getElementById('qStatsBar');
+  const sortBar  = document.getElementById('qSortBar');
+  const initMsg  = document.getElementById('queryInitMsg');
+  if (initMsg) initMsg.style.display = 'none';
+
   const uniqueMembers = new Set(records.map(r => r.memberName)).size;
   const uniqueDays    = new Set(records.map(r => r.date)).size;
-  document.getElementById('statTotal').textContent   = records.length;
-  document.getElementById('statMembers').textContent = uniqueMembers;
-  document.getElementById('statDays').textContent    = uniqueDays;
-  document.getElementById('statsRow').style.display  = 'grid';
+  const el = id => document.getElementById(id);
+  if (el('statTotal'))   el('statTotal').textContent   = records.length;
+  if (el('statMembers')) el('statMembers').textContent = uniqueMembers;
+  if (el('statDays'))    el('statDays').textContent    = uniqueDays;
+  if (statsBar) statsBar.style.display = 'flex';
 
-  // 在 map 外取得登入者資訊，避免 template literal 巢狀問題
+  if (!filteredRecords.length) {
+    if (list) list.innerHTML = '<div class="mq-empty-state"><span class="mq-empty-icon">📭</span><span class="mq-empty-txt">查無符合的協勤紀錄</span></div>';
+    if (sortBar) sortBar.style.display = 'none';
+    return;
+  }
+
+  if (sortBar) {
+    const rc = el('qResultCount');
+    if (rc) rc.textContent = '共 '+filteredRecords.length+' 筆';
+    sortBar.style.display = 'flex';
+  }
+
   const _usrQ = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   const _isAdminQ = _usrQ.isAdmin||false, _isOfficerQ = _usrQ.isOfficer||false;
-  const _myNameQ = _usrQ.memberName||_usrQ.name||'';
+  const _myNameQ  = _usrQ.memberName||_usrQ.name||'';
 
-  const tbody = document.getElementById('resultBody');
-  if (records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-light);padding:30px;">查無符合條件的紀錄</td></tr>';
-  } else {
-    tbody.innerHTML = records.map((r, i) => {
-      const seqNum = i + 1;
-      const tags = (r.services || '').split('、').filter(Boolean)
-        .map(s => '<span class="tag">'+s+'</span>').join('');
-      const timeStr = r.timeOut && r.timeBack ? r.timeOut+' — '+r.timeBack : (r.timeOut || '');
-      const sigCell = r.signature
-        ? '<img src="'+r.signature+'" style="height:36px;max-width:80px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="viewSig(filteredRecords['+i+'].signature)" title="點擊查看簽名">'
-        : '—';
-      const isOwnerQ = r.memberName === _myNameQ;
-      // 24小時判斷：以勤務日期(r.date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
-      const recTimeQ = r.date ? new Date(r.date+'T00:00').getTime() : 0;
-      const within24Q = recTimeQ && (Date.now()-recTimeQ < 86400000);
-      let actionCell = '';
-      if (_isAdminQ || _isOfficerQ) {
-        // 管理員/承辦人：直接編輯 + 刪除
-        const _idQ2 = r.id||'';
-        actionCell = '<button onclick="adminEditOut(&quot;'+_idQ2+'&quot;)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;margin-right:4px;">✏️ 編輯</button>'
-          + '<button onclick="adminDelQueryOut(&quot;'+_idQ2+'&quot;,&quot;'+(r.memberName||'')+'&quot;,&quot;'+(r.date||'')+'&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 刪除</button>';
-      } else if (isOwnerQ && within24Q) {
-        actionCell = '<button onclick="openOutingEdit('+i+')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;margin-right:4px;">✏️ 編輯</button>'
-          +'<button onclick="deleteOwnOut('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 刪除</button>';
-      } else if (isOwnerQ) {
-        actionCell = '<button data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;margin-right:4px;">📝 申請修正</button>'
-          +'<button onclick="requestDeleteOut('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#b94a3a;white-space:nowrap;">🗑️ 申請刪除</button>';
-      }
-      return '<tr>' +
-        '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+seqNum+'</td>' +
-        '<td style="white-space:nowrap;">'+(r.date||'')+'</td>' +
-        '<td style="white-space:nowrap;">'+timeStr+'</td>' +
-        '<td style="white-space:nowrap;">'+(r.district||'')+'</td>' +
-        '<td style="min-width:10em;">'+(r.address||'')+'</td>' +
-        '<td style="white-space:nowrap;">'+(r.caseType||'—')+'</td>' +
-        '<td>'+tags+'</td>' +
-        '<td style="text-align:center;white-space:nowrap;">'+(r.serviceCount !== undefined ? r.serviceCount : '—')+'</td>' +
-        '<td style="white-space:nowrap;">'+(r.memberName||'')+'</td>' +
-        '<td>'+(r.note||'')+'</td>' +
-        '<td>'+sigCell+'</td>' +
-        '<td>'+actionCell+'</td>' +
-        '</tr>';
-    }).join('');
+  if (list) list.innerHTML = filteredRecords.map((r, i) => {
+    const districtShort = (r.district||'').replace('臺中市','');
+    const districtBadge = districtShort ? '<span class="mq-badge mq-badge-district">'+districtShort+'</span>' : '';
+    const timeStr = r.timeOut && r.timeBack ? r.timeOut+' → '+r.timeBack : r.timeOut || '—';
+    const services = typeof r.services === 'string' ? r.services.split('、').filter(Boolean) : (Array.isArray(r.services) ? r.services : []);
+    const tagsHtml = services.map(s => '<span class="mq-tag">'+s+'</span>').join('');
 
-  }
-  document.getElementById('resultCard').style.display = 'block';
+    const isOwnerQ  = r.memberName === _myNameQ;
+    const recTimeQ  = r.date ? new Date(r.date+'T00:00').getTime() : 0;
+    const within24Q = recTimeQ && (Date.now()-recTimeQ < 86400000);
+    const _idQ = r.id||'';
+    let actions = '';
+    if (_isAdminQ || _isOfficerQ) {
+      actions = '<button class="mq-act-btn" onclick="adminEditOut(&quot;'+_idQ+'&quot;)">✏️ 編輯</button>'
+        +'<button class="mq-act-btn danger" onclick="adminDelQueryOut(&quot;'+_idQ+'&quot;,&quot;'+(r.memberName||'')+'&quot;,&quot;'+(r.date||'')+'&quot;)">🗑 刪除</button>';
+    } else if (isOwnerQ && within24Q) {
+      actions = '<button class="mq-act-btn" onclick="openOutingEdit('+i+')">✏️ 編輯</button>'
+        +'<button class="mq-act-btn danger" onclick="deleteOwnOut('+i+')">🗑 刪除</button>';
+    } else if (isOwnerQ) {
+      actions = '<button class="mq-act-btn blue" data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)">📝 申請修正</button>'
+        +'<button class="mq-act-btn danger" onclick="requestDeleteOut('+i+')">申請刪除</button>';
+    }
+
+    return '<div class="mq-card">'
+      +'<div class="mq-card-head"><span class="mq-card-date">'+(r.date||'—')+'</span>'+districtBadge+'</div>'
+      +'<div class="mq-card-body">'
+        +'<div class="mq-card-name">'+(r.caseType||'—')+'</div>'
+        +(r.address ? '<div class="mq-card-addr">'+(r.address||'')+'</div>' : '')
+        +'<div class="mq-card-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+          +timeStr
+          +(r.serviceCount !== undefined ? '<span style="margin-left:auto;font-size:0.75rem;color:var(--text-light);">服務 '+r.serviceCount+' 人</span>' : '')
+        +'</div>'
+        +(tagsHtml ? '<div class="mq-card-tags">'+tagsHtml+'</div>' : '')
+        +'<div style="margin-top:8px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.note ? '　'+r.note : '')+'</div>'
+      +'</div>'
+      +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
+    +'</div>';
+  }).join('');
 }
 
 function resetQuery() {
   ['qDateFrom','qDateTo','qUnit','qCaseType','qMember','qDistrict','qService','qDuty'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  document.getElementById('statsRow')?.style && (document.getElementById('statsRow').style.display = 'none');
-  document.getElementById('resultCard')?.style && (document.getElementById('resultCard').style.display = 'none');
-  const qi = document.getElementById('queryInitMsg'); if (qi) qi.style.display = 'block';
+  // Reset date chips
+  document.querySelectorAll('#qDateChips .mq-chip').forEach((b,i) => b.classList.toggle('active', i===0));
+  qSetDateChip('today');
+  const qs = document.getElementById('qStatsBar'); if (qs) qs.style.display = 'none';
+  const qr = document.getElementById('qSortBar');  if (qr) qr.style.display = 'none';
+  const ql = document.getElementById('qCardList'); if (ql) ql.innerHTML = '';
+  const qi = document.getElementById('queryInitMsg'); if (qi) qi.style.display = '';
   filteredRecords = [];
 }
 
@@ -7128,6 +7149,72 @@ async function doAttQuery() {
   btn.textContent = '查　詢'; btn.disabled = false;
 }
 
+// ── 打卡查詢：日期 chip 與類別 chip ──
+function aqSetDateChip(type, btn) {
+  if (btn) {
+    document.querySelectorAll('#aqDateChips .mq-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const cr = document.getElementById('aqCustomDateRow');
+  if (cr) cr.style.display = type === 'custom' ? 'flex' : 'none';
+  if (type === 'custom') return;
+  const today = new Date();
+  const fmt   = d => d.toISOString().slice(0,10);
+  let from = fmt(today), to = fmt(today);
+  if (type === 'week') {
+    const d = new Date(today); d.setDate(d.getDate() - d.getDay());
+    from = fmt(d); to = fmt(today);
+  } else if (type === 'month') {
+    from = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); to = fmt(today);
+  }
+  const df = document.getElementById('aqDateFrom'); if (df) df.value = from;
+  const dt = document.getElementById('aqDateTo');   if (dt) dt.value = to;
+}
+function aqSetType(val, btn) {
+  if (btn) {
+    document.querySelectorAll('#aqTypeChips .mq-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const sel = document.getElementById('aqDutyType'); if (sel) sel.value = val;
+}
+function aqToggleMore() {
+  const panel = document.getElementById('aqMoreFilters');
+  const btn   = document.getElementById('aqMoreToggle');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  const svg  = btn ? btn.querySelector('svg') : null;
+  if (svg) svg.style.transform = open ? 'rotate(180deg)' : '';
+}
+// ── 案件查詢：日期 chip ──
+function qSetDateChip(type, btn) {
+  if (btn) {
+    document.querySelectorAll('#qDateChips .mq-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const cr = document.getElementById('qCustomDateRow');
+  if (cr) cr.style.display = type === 'custom' ? 'flex' : 'none';
+  if (type === 'custom') return;
+  const today = new Date();
+  const fmt   = d => d.toISOString().slice(0,10);
+  let from = fmt(today), to = fmt(today);
+  if (type === 'week') {
+    const d = new Date(today); d.setDate(d.getDate() - d.getDay());
+    from = fmt(d); to = fmt(today);
+  } else if (type === 'month') {
+    from = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); to = fmt(today);
+  }
+  const df = document.getElementById('qDateFrom'); if (df) df.value = from;
+  const dt = document.getElementById('qDateTo');   if (dt) dt.value = to;
+}
+function qToggleMore() {
+  const panel = document.getElementById('qMoreFilters');
+  const btn   = document.getElementById('qMoreToggle');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  const svg  = btn ? btn.querySelector('svg') : null;
+  if (svg) svg.style.transform = open ? 'rotate(180deg)' : '';
+}
+
 function fmtAqDate(v) {
   if (!v) return '';
   return normDate(v);
@@ -7138,76 +7225,96 @@ function fmtAqTime(v) {
 }
 
 function renderAttQueryResults() {
-  const tbody = document.getElementById('aqResultBody');
-  if (aqFiltered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-light);padding:30px;">查無紀錄</td></tr>';
-  } else {
-    const _usrAq = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-    const _isAdminAq = _usrAq.isAdmin||false, _isOfficerAq = _usrAq.isOfficer||false;
-    const _myNameAq = _usrAq.memberName||_usrAq.name||'';
-    tbody.innerHTML = aqFiltered.map((r, i) => {
-      const date  = r.date || fmtAqDate(r['日期'] || '');
-      const duty  = r.dutyType || r['類別'] || '';
-      const name  = r.memberName || r['姓名'] || '';
-      const title = r.title || r['職稱'] || '';
-      const cin   = r.checkinTime  || fmtAqTime(r['簽到時間'] || '');
-      const cout  = r.checkoutTime || fmtAqTime(r['簽退時間'] || '');
-      const hrs   = r.hours  !== undefined ? r.hours  : (r['協勤時數'] !== undefined ? r['協勤時數'] : 0);
-      const cnt   = r.count   !== undefined ? r.count   : (r['出勤次數'] !== undefined ? r['出勤次數'] : 0);
-      const svc   = r.service !== undefined ? r.service : (r['服務人次'] !== undefined ? r['服務人次'] : 0);
-      const cinSig  = r.checkinSig  || '';
-      const coutSig = r.checkoutSig || '';
-      const sigCell = (sig, idx, field) => sig
-        ? `<img src="${sig}" style="height:36px;max-width:80px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="viewSig(aqFiltered[${idx}].${field})" title="點擊查看簽名">`
-        : `<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
-      // 操作按鈕
-      const isOwnerAq = name === _myNameAq;
-      // 24小時判斷：以勤務日期(date)為準，不用_t(資料建立時間)，避免匯入舊資料時_t是今天導致誤判
-      const recTimeAq = date ? new Date(date+'T00:00').getTime() : 0;
-      const within24Aq = recTimeAq && (Date.now()-recTimeAq < 86400000);
-      let aqActionBtn = '';
-      if (_isAdminAq || _isOfficerAq) {
-        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')" style="margin-right:4px;">✏️ 編輯</button>'
-          + '<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
-      } else if (isOwnerAq && within24Aq) {
-        aqActionBtn = '<button class="att-member-btn" onclick="openAttEdit('+i+')" style="margin-right:4px;">✏️ 編輯</button>'
-          +'<button class="att-member-btn" onclick="deleteOwnAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 刪除</button>';
-      } else if (isOwnerAq) {
-        aqActionBtn = '<button data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)" style="background:none;border:1px solid #9ec5fe;border-radius:4px;padding:3px 8px;font-size:0.72rem;cursor:pointer;color:#084298;white-space:nowrap;margin-right:4px;">📝 申請修正</button>'
-          +'<button class="att-member-btn" onclick="requestDeleteAtt('+i+')" style="border-color:#f5c6c6;color:#b94a3a;">🗑️ 申請刪除</button>';
-      }
-      return '<tr>' +
-        '<td style="text-align:center;color:var(--text-light);font-size:0.8rem;">'+(i+1)+'</td>' +
-        '<td style="white-space:nowrap;">'+date+'</td>' +
-        '<td style="white-space:nowrap;">'+duty+'</td>' +
-        '<td style="white-space:nowrap;">'+name+'</td>' +
-        '<td style="white-space:nowrap;">'+title+'</td>' +
-        '<td style="white-space:nowrap;">'+cin+(r.timeAdjusted ? '&nbsp;<button onclick="showTimeAdjustInfo('+i+')" style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:1px 7px;font-size:0.72rem;cursor:pointer;color:#856404;font-family:inherit;">⚠️ 時間異常</button>' : '')+'</td>' +
-        '<td style="white-space:nowrap;">'+cout+(r.checkoutTimeAdjusted ? '&nbsp;<button onclick="showCheckoutTimeAdjustInfo('+i+')" style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:1px 7px;font-size:0.72rem;cursor:pointer;color:#856404;font-family:inherit;">⚠️ 時間異常</button>' : '')+'</td>' +
-        '<td style="text-align:center;padding:4px;">'+sigCell(cinSig,i,'checkinSig')+'</td>' +
-        '<td style="text-align:center;padding:4px;">'+sigCell(coutSig,i,'checkoutSig')+'</td>' +
-        '<td style="text-align:center;">'+hrs+'</td>' +
-        '<td style="text-align:center;">'+cnt+'</td>' +
-        '<td style="text-align:center;">'+svc+'</td>' +
-        '<td>'+aqActionBtn+'</td>' +
-        '</tr>';
-    }).join('');
+  const list    = document.getElementById('aqCardList');
+  const statsBar = document.getElementById('aqStatsBar');
+  const sortBar  = document.getElementById('aqSortBar');
+  const initMsg  = document.getElementById('aqInitMsg');
+  const loadMsg  = document.getElementById('aqLoadingMsg');
+  const banner   = document.getElementById('aqAdjustBanner');
+  if (initMsg) initMsg.style.display = 'none';
+  if (loadMsg) loadMsg.style.display = 'none';
 
-    // 若成員本人有 ⚠️ 紀錄，在表格上方顯示警示橫幅
-    if (!_isAdminAq && !_isOfficerAq) {
-      const flagged   = aqFiltered.filter(r => r.timeAdjusted || r.checkoutTimeAdjusted);
-      const bannerEl = document.getElementById('aqAdjustBanner');
-      if (bannerEl) {
-        if (flagged.length > 0) {
-          bannerEl.style.display = 'block';
-          bannerEl.innerHTML = `<span style="font-size:1rem;">⚠️</span>&nbsp;您有 <strong>${flagged.length}</strong> 筆紀錄被系統標記「時間異常」，填報時間與實際送出時間不符。此資訊已對分隊承辦人及管理員公開，點擊各筆紀錄的 ⚠️ 按鈕查看詳情。`;
-        } else {
-          bannerEl.style.display = 'none';
-        }
-      }
-    }
+  if (!aqFiltered.length) {
+    if (list) list.innerHTML = '<div class="mq-empty-state"><span class="mq-empty-icon">📭</span><span class="mq-empty-txt">查無符合的打卡紀錄</span></div>';
+    if (statsBar) statsBar.style.display = 'none';
+    if (sortBar)  sortBar.style.display  = 'none';
+    if (banner)   banner.style.display   = 'none';
+    return;
   }
-  document.getElementById('aqResultCard').style.display = 'block';
+
+  const _usrAq = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _isAdminAq = _usrAq.isAdmin||false, _isOfficerAq = _usrAq.isOfficer||false;
+  const _myNameAq  = _usrAq.memberName||_usrAq.name||'';
+
+  // 統計
+  const totalHours = aqFiltered.reduce((s,r) => s+(parseFloat(r.hours)||0), 0);
+  const totalSvc   = aqFiltered.reduce((s,r) => s+(parseInt(r.service)||0), 0);
+  if (statsBar) {
+    const el = id => document.getElementById(id);
+    if (el('aqStatCount')) el('aqStatCount').textContent = aqFiltered.length;
+    if (el('aqStatHours')) el('aqStatHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    if (el('aqStatSvc'))   el('aqStatSvc').textContent   = totalSvc;
+    statsBar.style.display = 'flex';
+  }
+  if (sortBar) {
+    const rc = document.getElementById('aqResultCount');
+    if (rc) rc.textContent = '共 '+aqFiltered.length+' 筆';
+    sortBar.style.display = 'flex';
+  }
+
+  // 時間異常橫幅
+  if (!_isAdminAq && !_isOfficerAq && banner) {
+    const flagged = aqFiltered.filter(r => r.timeAdjusted || r.checkoutTimeAdjusted);
+    if (flagged.length > 0) {
+      banner.style.display = '';
+      banner.innerHTML = '<span style="font-size:1rem;">⚠️</span>&nbsp;您有 <strong>'+flagged.length+'</strong> 筆紀錄被系統標記「時間異常」，填報時間與實際送出時間不符。點擊各筆的 ⚠️ 查看詳情。';
+    } else { banner.style.display = 'none'; }
+  } else if (banner) { banner.style.display = 'none'; }
+
+  // 卡片
+  if (list) list.innerHTML = aqFiltered.map((r, i) => {
+    const date  = r.date || '';
+    const duty  = r.dutyType || '';
+    const name  = r.memberName || '—';
+    const title = r.title || '';
+    const cin   = r.checkinTime  || '';
+    const cout  = r.checkoutTime || '';
+    const hrs   = r.hours  !== undefined ? r.hours  : 0;
+    const svc   = r.service !== undefined ? r.service : 0;
+    const adjIn  = r.timeAdjusted         ? '<button onclick="showTimeAdjustInfo('+i+')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;padding:0 2px;vertical-align:middle;">⚠️</button>' : '';
+    const adjOut = r.checkoutTimeAdjusted  ? '<button onclick="showCheckoutTimeAdjustInfo('+i+')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;padding:0 2px;vertical-align:middle;">⚠️</button>' : '';
+
+    const badge = duty === '公差'
+      ? '<span class="mq-badge mq-badge-pub">公差</span>'
+      : '<span class="mq-badge mq-badge-coop">協勤</span>';
+
+    const timeStr = cin && cout ? cin+' → '+cout : cin ? cin+' 已打卡' : '未記錄';
+    const hrsStr  = hrs ? '<span style="margin-left:auto;font-weight:600;color:var(--red);">'+hrs+'h</span>' : '';
+
+    const isOwnerAq = name === _myNameAq;
+    const recTimeAq = date ? new Date(date+'T00:00').getTime() : 0;
+    const within24Aq = recTimeAq && (Date.now()-recTimeAq < 86400000);
+    let actions = '';
+    if (_isAdminAq || _isOfficerAq) {
+      actions = '<button class="mq-act-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button><button class="mq-act-btn danger" onclick="deleteOwnAtt('+i+')">🗑 刪除</button>';
+    } else if (isOwnerAq && within24Aq) {
+      actions = '<button class="mq-act-btn" onclick="openAttEdit('+i+')">✏️ 編輯</button><button class="mq-act-btn danger" onclick="deleteOwnAtt('+i+')">🗑 刪除</button>';
+    } else if (isOwnerAq) {
+      actions = '<button class="mq-act-btn blue" data-idx="'+i+'" data-type="attendance" onclick="corrModalFromBtn(this)">📝 申請修正</button><button class="mq-act-btn danger" onclick="requestDeleteAtt('+i+')">申請刪除</button>';
+    }
+
+    return '<div class="mq-card">'
+      +'<div class="mq-card-head"><span class="mq-card-date">'+date+'</span>'+badge+'</div>'
+      +'<div class="mq-card-body">'
+        +'<div class="mq-card-name">'+name+'</div>'
+        +(title ? '<div class="mq-card-sub">'+title+'</div>' : '')
+        +'<div class="mq-card-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+          +timeStr+adjIn+adjOut+hrsStr+'</div>'
+        +(svc ? '<div style="margin-top:6px;font-size:0.75rem;color:var(--text-light);">服務人次：'+svc+'</div>' : '')
+      +'</div>'
+      +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
+    +'</div>';
+  }).join('');
 }
 
 function showTimeAdjustInfo(idx) {
@@ -7454,12 +7561,19 @@ async function saveAttEdit() {
 
 function resetAttQuery() {
   ['aqDateFrom','aqDateTo','aqUnit','aqMember','aqDutyType'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+    const el = document.getElementById(id); if (el) el.value = '';
   });
-  filterAqMembers(); // 重置成員選單為全部
-  document.getElementById('aqResultCard').style.display = 'none';
-  document.getElementById('aqInitMsg').style.display = 'block';
+  filterAqMembers();
+  // Reset chips
+  document.querySelectorAll('#aqDateChips .mq-chip').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('#aqTypeChips .mq-chip').forEach((b,i) => b.classList.toggle('active', i===0));
+  aqSetDateChip('today');
+  const ss = document.getElementById('aqStatsBar'); if (ss) ss.style.display = 'none';
+  const sb = document.getElementById('aqSortBar');  if (sb) sb.style.display = 'none';
+  const cl = document.getElementById('aqCardList'); if (cl) cl.innerHTML = '';
+  const bn = document.getElementById('aqAdjustBanner'); if (bn) bn.style.display = 'none';
+  const im = document.getElementById('aqInitMsg');  if (im) im.style.display = '';
+  aqFiltered = [];
 }
 
 // ════════════════════════════════════════
