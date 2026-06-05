@@ -4853,17 +4853,27 @@ async function loadDashboard() {
   startDashClock();
   loadDashWeather();
 
-  // 補抓 title（舊 session 沒有 / Firestore 更新後同步）
+  // 補抓 title（跟 profilePage 一樣：先查 members，再查 whitelist）
   try {
     const _su = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    if (_su.email && !_su.title) {
-      const fresh = await verifyWhitelist(_su.email);
-      if (fresh && fresh.title) {
-        _su.title = fresh.title;
-        sessionStorage.setItem('rescue_user', JSON.stringify(_su));
-        const el = document.getElementById('dashGreetTitle');
-        if (el) { el.textContent = fresh.title; el.style.display = ''; }
+    if (_su.email) {
+      await ensureFirebase();
+      const memberName = _su.memberName || _su.name || '';
+      // 從 members collection 查職稱
+      let freshTitle = '';
+      const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
+      if (!mSnap.empty) freshTitle = mSnap.docs[0].data().title || '';
+      // 備用：從 whitelist 查
+      if (!freshTitle) {
+        const wSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',_su.email.toLowerCase().trim()).get();
+        if (!wSnap.empty) freshTitle = wSnap.docs[0].data().title || '';
       }
+      if (freshTitle && freshTitle !== _su.title) {
+        _su.title = freshTitle;
+        sessionStorage.setItem('rescue_user', JSON.stringify(_su));
+      }
+      const el = document.getElementById('dashGreetTitle');
+      if (el && freshTitle) { el.textContent = freshTitle; el.style.display = ''; }
     }
   } catch(e) {}
 
