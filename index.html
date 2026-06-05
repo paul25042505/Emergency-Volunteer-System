@@ -3719,10 +3719,49 @@ async function fbQuery(col, conditions, orderByField, orderDir) {
   const s = await q.get();
   return s.docs.map(d=>({id:d.id,...d.data()}));
 }
-async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
-async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});}
-async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);}
-async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();}
+async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});_C.invalidate(col);return r.id;}
+async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});_C.invalidate(col);}
+async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);_C.invalidate(col);}
+
+// ── 本地快取（stale-while-revalidate）──
+const _C = {
+  TTL: { attendance:180, outingRecords:180, dutySchedule:600, announcements:600, members:1800, whitelist:1800 },
+  _k: col => '_fc2_' + col,
+  peek(col) {
+    try { const r = localStorage.getItem(this._k(col)); return r ? JSON.parse(r).d : null; } catch(e) { return null; }
+  },
+  fresh(col) {
+    try {
+      const r = localStorage.getItem(this._k(col)); if (!r) return false;
+      return (Date.now() - JSON.parse(r).t) < (this.TTL[col]||300) * 1000;
+    } catch(e) { return false; }
+  },
+  set(col, data) {
+    try { localStorage.setItem(this._k(col), JSON.stringify({t: Date.now(), d: data})); } catch(e) {}
+  },
+  invalidate(col) { try { localStorage.removeItem(this._k(col)); } catch(e) {} },
+};
+
+// 快取版 fbList：先回傳快取，背景更新
+async function fbListCached(col, orderBy, dir) {
+  if (_C.fresh(col)) return _C.peek(col);
+  const data = await fbList(col, orderBy, dir);
+  _C.set(col, data); return data;
+}
+
+// 登入後預熱（靜默背景拉取，不阻塞 UI）
+function _prefetchCaches() {
+  [
+    [COL_ATTEND,   'date', 'asc'],
+    [COL_OUTING,   'date', 'asc'],
+    ['dutySchedule'],
+    [COL_ANNOUNCE],
+    [COL_MEMBERS],
+  ].forEach(([col, ...args]) => {
+    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(()=>{});
+  });
+}
+async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);}
 async function verifyWhitelist(email){
   await ensureFirebase();
   const em = email.toLowerCase().trim();
@@ -3949,6 +3988,7 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
   // 登入後 4 秒檢查確認任務
   setTimeout(() => checkConfirmTask().catch(() => {}), 4000);
+  _prefetchCaches(); // 預熱快取，讓後續頁面秒開
 
   setTimeout(async () => {
     if (!allItems || allItems.length === 0) {
@@ -4904,88 +4944,65 @@ async function loadDashboard() {
     }
   } catch(e) {}
 
-  // 載入今日班表（直接用 where 查詢今日）
-  try {
-    await ensureFirebase();
-    const dutySnap = await _fbDB.collection('dutySchedule')
-      .where('date', '==', todayStr)
-      .get();
-    const todayDuty = dutySnap.docs
-      .map(d => ({id: d.id, ...d.data()}))
-      .sort((a, b) => (a.start||'').localeCompare(b.start||''));
+  const _me = JSON.parse(sessionStorage.getItem('rescue_user')||'{}').memberName || '';
 
-    const sec  = document.getElementById('todayScheduleSection');
-    const list = document.getElementById('todayScheduleList');
+  // ── 先顯示快取資料（零等待）──
+  const staleAtt  = _C.peek(COL_ATTEND);
+  const staleOut  = _C.peek(COL_OUTING);
+  const staleDuty = _C.peek('dutySchedule');
+  if (staleAtt && staleOut) _applyDashStats(staleAtt, staleOut, todayStr, monthStr, _me);
+  if (staleDuty)            _applyDashDuty(staleDuty, todayStr);
 
-    sec.style.display = '';
-    if (todayDuty.length > 0) {
-      list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
-        ${todayDuty.map(d => `
+  // ── 背景拉取最新資料（快取新鮮則直接回傳，不發 Firestore 請求）──
+  Promise.all([
+    fbListCached(COL_ATTEND,      'date', 'asc'),
+    fbListCached(COL_OUTING,      'date', 'asc'),
+    fbListCached('dutySchedule'),
+  ]).then(([attDocs, outDocs, dutyDocs]) => {
+    _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
+    _applyDashDuty(dutyDocs, todayStr);
+    updateItemsBadge();
+  }).catch(() => {});
+}
+
+function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
+  const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
+  const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
+  set('dashTodayAtt',     todayOut.length);
+  set('dashTodayOutCount',todayOut.length);
+  set('dashTodayMembers', todaySigninSet.size);
+  set('dashTodaySignin',  new Set(attDocs.filter(r => r.checkinTime && !r.checkoutTime && r.date === todayStr).map(r => r.memberName||'').filter(Boolean)).size);
+
+  const myMonthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr) && r.memberName === me);
+  const myMonthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr) && r.memberName === me);
+  const myHours = myMonthAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+  set('dashMonthHours',  myHours % 1 === 0 ? myHours : myHours.toFixed(1));
+  set('dashMyMonthAtt',  myMonthAtt.length);
+  set('dashMyMonthOut',  myMonthOut.length);
+  set('dashMyMonthSvc',  myMonthAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0));
+
+  const hl = document.getElementById('dashHeroDateLine');
+  if (hl) { const n = new Date(); hl.textContent = n.getFullYear() + ' 年 ' + (n.getMonth()+1) + ' 月（個人）'; }
+}
+
+function _applyDashDuty(dutyDocs, todayStr) {
+  const todayDuty = (dutyDocs||[]).filter(d => d.date === todayStr).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const sec  = document.getElementById('todayScheduleSection');
+  const list = document.getElementById('todayScheduleList');
+  if (!sec || !list) return;
+  sec.style.display = '';
+  list.innerHTML = todayDuty.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">${todayDuty.map(d=>`
         <div style="background:white;border-radius:10px;padding:14px 12px;box-shadow:0 1px 6px rgba(0,0,0,0.08);border:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.88rem;flex-shrink:0;">${(d.memberName||'?').charAt(0)}</div>
-            <div style="min-width:0;">
-              <div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div>
-              <div style="font-size:0.7rem;color:var(--text-light);">${d.unit||''}</div>
-            </div>
+            <div style="min-width:0;"><div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div><div style="font-size:0.7rem;color:var(--text-light);">${d.unit||''}</div></div>
           </div>
-          <div style="background:var(--warm);border-radius:6px;padding:5px 8px;text-align:center;">
-            <span style="font-size:0.8rem;font-weight:600;color:var(--red);">${d.start||'?'} － ${d.end||'?'}</span>
-          </div>
-        </div>`).join('')}
-      </div>`;
-    } else {
-      list.innerHTML = '<div style="background:white;border-radius:10px;padding:18px;text-align:center;color:var(--text-light);font-size:0.85rem;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border);">今日無排班人員</div>';
-    }
-  } catch(e) {
-    document.getElementById('todayScheduleSection').style.display = 'none';
-  }
-
-  try {
-    // 取得當前使用者姓名（用於個人統計）
-    const _me = JSON.parse(sessionStorage.getItem('rescue_user')||'{}').name || '';
-
-    const [attDocs, outDocs] = await Promise.all([
-      fbList(COL_ATTEND, 'date', 'asc'),
-      fbList(COL_OUTING, 'date', 'asc'),
-    ]);
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-
-    // ── 全隊今日概況 ──
-    const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
-    const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
-    const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
-    const onlineSet = new Set(
-      attDocs.filter(r => r.checkinTime && !r.checkoutTime && (r.date||'') === todayStr)
-             .map(r => r.memberName||'').filter(Boolean)
-    );
-    set('dashTodayAtt', todayOut.length);
-    set('dashTodayOutCount', todayOut.length);
-    set('dashTodayMembers', todaySigninSet.size);
-    set('dashTodaySignin', onlineSet.size);
-
-    // ── 個人本月統計（英雄卡片）──
-    const myMonthAtt  = attDocs.filter(r => (r.date||'').startsWith(monthStr) && (r.memberName||'') === _me);
-    const myMonthOut  = outDocs.filter(r => (r.date||'').startsWith(monthStr) && (r.memberName||'') === _me);
-    const myHours   = myMonthAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
-    const mySvc     = myMonthAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0);
-    set('dashMonthHours', myHours % 1 === 0 ? myHours : myHours.toFixed(1));
-    set('dashMyMonthAtt', myMonthAtt.length);
-    set('dashMyMonthOut', myMonthOut.length);
-    set('dashMyMonthSvc', mySvc);
-
-    // Hero card 日期輔助文字
-    const hl = document.getElementById('dashHeroDateLine');
-    if (hl) {
-      const now = new Date();
-      hl.textContent = now.getFullYear() + ' 年 ' + (now.getMonth()+1) + ' 月（個人）';
-    }
-  } catch(e) {
-    ['dashTodayAtt','dashTodayMembers','dashTodaySignin','dashMonthHours','dashMyMonthAtt','dashMyMonthOut','dashMyMonthSvc'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.textContent = '—';
-    });
-  }
-  updateItemsBadge();
+          <div style="background:var(--warm);border-radius:6px;padding:5px 8px;text-align:center;"><span style="font-size:0.8rem;font-weight:600;color:var(--red);">${d.start||'?'} － ${d.end||'?'}</span></div>
+        </div>`).join('')}</div>`
+    : '<div style="background:white;border-radius:10px;padding:18px;text-align:center;color:var(--text-light);font-size:0.85rem;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border);">今日無排班人員</div>';
 }
 
 // 計算尚未全部領取的物品數，更新角標
