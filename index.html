@@ -134,8 +134,7 @@ body.page-home #globalLoadingBar { top: 0 !important; }
 /* 備勤排班頁：隱藏標準 header，顯示自訂固定 header */
 body.page-duty .header { display: none !important; }
 body.page-duty #dutyCustomHeader { display: flex !important; }
-body.page-duty #appScroll { padding-top: calc(env(safe-area-inset-top, 0px) + 58px) !important; }
-body.page-duty #globalLoadingBar { top: calc(env(safe-area-inset-top, 0px) + 58px) !important; }
+body.page-duty #globalLoadingBar { top: 58px !important; }
 .header-inner {
   position: relative; z-index: 2; display: flex; align-items: center;
   padding: 14px 16px; min-height: 56px; gap: 10px;
@@ -4535,24 +4534,35 @@ async function refreshCurrentPage() {
 
 function syncHeaderHeight() {
   requestAnimationFrame(() => {
-    const header    = document.querySelector('.header');
     const scroller  = document.getElementById('appScroll');
     const adminBar  = document.getElementById('adminTabBar');
+    if (!scroller) return;
+
+    // 備勤排班頁使用獨立固定 header，動態量高
+    if (document.body.classList.contains('page-duty')) {
+      const dh = document.getElementById('dutyCustomHeader');
+      const h  = dh ? Math.round(dh.getBoundingClientRect().height) : 58;
+      scroller.style.setProperty('padding-top', h + 'px', 'important');
+      const lb = document.getElementById('globalLoadingBar');
+      if (lb) lb.style.setProperty('top', h + 'px', 'important');
+      return;
+    }
+
+    const header = document.querySelector('.header');
     if (!header) return;
     const headerH = Math.round(header.getBoundingClientRect().height);
     // adminPage 開啟時，paddingTop = header + tabbar 高度
-    const adminPage = document.getElementById('adminPage');
+    const adminPage   = document.getElementById('adminPage');
     const adminActive = adminPage && adminPage.classList.contains('active');
     if (adminActive && adminBar && adminBar.style.display !== 'none') {
       adminBar.style.top = headerH + 'px';
-      // 需要再等一幀讓 bar 位置確定後量高度
       requestAnimationFrame(() => {
         const barH = Math.round(adminBar.getBoundingClientRect().height);
         if (scroller) scroller.style.paddingTop = (headerH + barH) + 'px';
       });
     } else {
       if (adminBar) adminBar.style.top = headerH + 'px';
-      if (scroller) scroller.style.paddingTop = headerH + 'px';
+      scroller.style.paddingTop = headerH + 'px';
     }
   });
 }
