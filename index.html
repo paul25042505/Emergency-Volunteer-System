@@ -552,26 +552,26 @@ tr:hover td { background: #fdfcfb; }
   z-index: 198; padding-bottom: env(safe-area-inset-bottom, 0px);
   box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
 }
-.tab-grid { display: flex; height: 60px; }
+.tab-grid { display: flex; height: 70px; }
 .app-tab-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; border: none; background: none; cursor: pointer; padding: 6px 2px;
+  gap: 4px; border: none; background: none; cursor: pointer; padding: 8px 2px;
   -webkit-tap-highlight-color: transparent;
 }
 .app-tab-icon-wrap {
-  width: 36px; height: 26px; border-radius: 8px;
+  width: 42px; height: 30px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.2s;
 }
-.app-tab-icon-wrap svg { stroke: #bbb; transition: stroke 0.2s; }
+.app-tab-icon-wrap svg { stroke: #bbb; transition: stroke 0.2s; width: 24px; height: 24px; }
 .app-tab-lbl {
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 0.58rem; color: #bbb; font-weight: 500; transition: color 0.2s;
+  font-size: 0.65rem; color: #bbb; font-weight: 500; transition: color 0.2s;
 }
 .app-tab-btn.active .app-tab-icon-wrap { background: var(--red-faint); }
 .app-tab-btn.active .app-tab-icon-wrap svg { stroke: var(--red); }
 .app-tab-btn.active .app-tab-lbl { color: var(--red); font-weight: 700; }
-#appScroll { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+#appScroll { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 
 /* ══ Dashboard greeting ══ */
 .dash-greeting {
