@@ -580,6 +580,11 @@ tr:hover td { background: #fdfcfb; }
 }
 .dash-username { font-family: 'Noto Serif TC', serif; font-size: 1.5rem; font-weight: 700; color: var(--text); line-height: 1.2; }
 .dash-greet-role { font-size: 0.7rem; color: var(--text-light); margin-top: 3px; letter-spacing: 0.04em; }
+.dash-title-tag {
+  display: inline-block; font-size: 0.58rem; background: #fff3e0; color: #e65100;
+  border: 1px solid #ffcc80; border-radius: 20px; padding: 1px 8px;
+  font-weight: 600; vertical-align: middle; white-space: nowrap;
+}
 .dash-role-tag {
   display: inline-block; font-size: 0.58rem; background: var(--red-faint); color: var(--red);
   border: 1px solid #f0bab4; border-radius: 20px; padding: 1px 7px;
@@ -1022,8 +1027,11 @@ function _dlCSV(content, filename) {
       <div style="display:flex;align-items:center;gap:10px;">
         <div class="dash-avatar" id="dashGreetAvatar" onclick="navTo('profilePage')">?</div>
         <div>
-          <div class="dash-username" id="dashGreetName">—</div>
-          <div class="dash-greet-role" id="dashGreetRole" style="display:none;"></div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="dash-username" id="dashGreetName">—</div>
+            <span class="dash-title-tag" id="dashGreetTitle" style="display:none;"></span>
+          </div>
+          <div class="dash-role-tag" id="dashGreetRole" style="display:none;"></div>
         </div>
       </div>
       <!-- 右：通知鈴 + 電源（登出） -->
@@ -3840,8 +3848,9 @@ async function handleGoogleLogin(response) {
       const isOfficer  = (fbResult && fbResult.isOfficer)  || false;
       const role       = (fbResult && fbResult.role)       || 'member';
       const unit       = (fbResult && fbResult.unit)       || '';
+      const title      = (fbResult && fbResult.title)      || '';
       sessionStorage.setItem('rescue_user', JSON.stringify({
-        email, name, memberName, isAdmin, isOfficer, role, unit, loginAt: Date.now()
+        email, name, memberName, isAdmin, isOfficer, role, unit, title, loginAt: Date.now()
       }));
       // 寫入登入紀錄
       fbAdd(COL_LOGINLOG, {
@@ -3849,7 +3858,7 @@ async function handleGoogleLogin(response) {
         loginAt: new Date().toLocaleString('sv').replace('T', ' '),
         ua: navigator.userAgent.substring(0, 120),
       }).catch(() => {});
-      showApp(memberName, email, isAdmin, isOfficer, role);
+      showApp(memberName, email, isAdmin, isOfficer, role, title);
     } else {
       spinner.classList.remove('show');
       errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
@@ -3866,7 +3875,7 @@ async function handleGoogleLogin(response) {
 }
 
 // ── 顯示主系統 ──
-function showApp(name, email, isAdmin, isOfficer, role) {
+function showApp(name, email, isAdmin, isOfficer, role, title) {
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
@@ -3876,6 +3885,13 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   if (greetName) greetName.textContent = name || email || '—';
   const greetAvatar = document.getElementById('dashGreetAvatar');
   if (greetAvatar) greetAvatar.textContent = (name||email||'?').charAt(0).toUpperCase();
+  // 職稱 badge（分隊長/隊員 等）
+  const greetTitle = document.getElementById('dashGreetTitle');
+  if (greetTitle) {
+    if (title) { greetTitle.textContent = title; greetTitle.style.display = ''; }
+    else { greetTitle.style.display = 'none'; }
+  }
+  // 系統角色 badge（系統管理員/分隊承辦人）
   const greetRole = document.getElementById('dashGreetRole');
   if (greetRole) {
     if (isAdmin) { greetRole.textContent = '系統管理員'; greetRole.style.display = ''; }
@@ -3953,7 +3969,7 @@ function checkSession() {
       sessionStorage.removeItem('rescue_user');
       return false;
     }
-    showApp(user.memberName || user.name, user.email, user.isAdmin || false, user.isOfficer || false, user.role || 'member');
+    showApp(user.memberName || user.name, user.email, user.isAdmin || false, user.isOfficer || false, user.role || 'member', user.title || '');
     return true;
   } catch(e) { return false; }
 }
@@ -10433,7 +10449,7 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
-    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role, sessionUser.title || '');
   } catch(e) {
     spinner.style.display = 'none';
     showTempPassErr('驗證失敗：' + e.message);
@@ -10767,7 +10783,7 @@ function devLoginAs(role) {
     email: p.email, memberName: p.name, name: p.name,
     role: p.role, isAdmin: p.isAdmin, isOfficer: p.isOfficer, unit: p.unit,
   }));
-  showApp(p.name, p.email, p.isAdmin, p.isOfficer, p.role);
+  showApp(p.name, p.email, p.isAdmin, p.isOfficer, p.role, p.title || '');
   navTo('dashboardPage');
 }
 
@@ -14126,7 +14142,7 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
-    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role);
+    showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role, sessionUser.title || '');
   } catch(e) {
     spinner.style.display = 'none';
     showTempPassErr('驗證失敗：' + e.message);
