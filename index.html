@@ -3795,7 +3795,7 @@ function showApp(name, email, isAdmin, isOfficer, role) {
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
-  if (tabBar) tabBar.style.display = '';
+  if (tabBar) tabBar.style.display = 'block';
   // 填入首頁問候語
   const greetName = document.getElementById('dashGreetName');
   if (greetName) greetName.textContent = name || email || '—';
