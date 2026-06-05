@@ -4853,6 +4853,20 @@ async function loadDashboard() {
   startDashClock();
   loadDashWeather();
 
+  // 補抓 title（舊 session 沒有 / Firestore 更新後同步）
+  try {
+    const _su = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (_su.email && !_su.title) {
+      const fresh = await verifyWhitelist(_su.email);
+      if (fresh && fresh.title) {
+        _su.title = fresh.title;
+        sessionStorage.setItem('rescue_user', JSON.stringify(_su));
+        const el = document.getElementById('dashGreetTitle');
+        if (el) { el.textContent = fresh.title; el.style.display = ''; }
+      }
+    }
+  } catch(e) {}
+
   // 載入今日班表（直接用 where 查詢今日）
   try {
     await ensureFirebase();
