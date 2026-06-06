@@ -5052,6 +5052,12 @@ function navTo(pageId, fromHistory) {
   document.body.classList.toggle('page-duty',   isDuty);
   document.body.classList.toggle('page-ops',    isOps);
   document.body.classList.toggle('page-manage', isManage);
+  // 立即計算並設定 ops/manage 頁的 padding-top（不依賴 getBoundingClientRect 時序）
+  if (isOps || isManage) {
+    const _sat = (() => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; })();
+    const _scr = document.getElementById('appScroll');
+    if (_scr) _scr.style.setProperty('padding-top', (_sat + 162) + 'px', 'important');
+  }
   // 同步各 header 的子選單 active 狀態
   if (isOps) {
     document.querySelectorAll('#opsCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
