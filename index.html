@@ -4411,6 +4411,12 @@ function quickLoginAs(idx) {
   const u = stored[idx];
   if (!u) return;
   try {
+    google.accounts.id.initialize({
+      client_id: '280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com',
+      callback: handleGoogleLogin,
+      auto_select: true,
+      hint: u.email
+    });
     google.accounts.id.prompt(notification => {
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
         showGoogleLogin();
