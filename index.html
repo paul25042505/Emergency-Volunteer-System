@@ -5140,7 +5140,8 @@ function navTo(pageId, fromHistory) {
     syncHeaderHeight();
   }
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const _scr = document.getElementById('appScroll');
+  if (_scr) _scr.scrollTop = 0;
 }
 
 function openDrawer() {}
