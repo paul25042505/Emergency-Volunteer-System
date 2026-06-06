@@ -3881,12 +3881,20 @@ function ensureFirebase() {
 }
 
 async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;}
+// 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
+const _fbInflight = {};
 async function fbList(col, orderByField, orderDir) {
   await ensureFirebase();
-  let q = _fbDB.collection(col).limit(1000);
-  if (orderByField) q = q.orderBy(orderByField, orderDir || 'asc');
-  const s = await q.get();
-  return s.docs.map(d=>({id:d.id,...d.data()}));
+  const key = col + '|' + (orderByField||'') + '|' + (orderDir||'');
+  if (_fbInflight[key]) return _fbInflight[key]; // 共用進行中的請求
+  _fbInflight[key] = (async () => {
+    let q = _fbDB.collection(col).limit(1000);
+    if (orderByField) q = q.orderBy(orderByField, orderDir || 'asc');
+    const s = await q.get();
+    return s.docs.map(d=>({id:d.id,...d.data()}));
+  })();
+  _fbInflight[key].finally(() => delete _fbInflight[key]).catch(()=>{});
+  return _fbInflight[key];
 }
 async function fbQuery(col, conditions, orderByField, orderDir) {
   await ensureFirebase();
@@ -3927,22 +3935,36 @@ async function fbListCached(col, orderBy, dir) {
   _C.set(col, data); return data;
 }
 
-// 登入後預熱（平行背景拉取，不阻塞 UI）
+// 登入後預熱（平行背景拉取，完成後更新 dashboard）
 function _prefetchCaches() {
-  const targets = [
+  const mainTargets = [
     [COL_ATTEND,   'date', 'asc'],
     [COL_OUTING,   'date', 'asc'],
     ['dutySchedule'],
+  ];
+  const sideTargets = [
     [COL_ANNOUNCE],
     [COL_MEMBERS],
     [COL_WHITELIST],
   ];
-  // 快取未新鮮的全部並行拉取
+  // 主要資料：拉完後立刻更新首頁（與 loadDashboard 背景更新共用同一 Promise，不重複請求）
   Promise.all(
-    targets.map(([col, ...args]) =>
-      _C.fresh(col) ? Promise.resolve() : fbList(col, ...args).then(d => _C.set(col, d)).catch(() => {})
+    mainTargets.map(([col, ...args]) =>
+      _C.fresh(col) ? Promise.resolve(_C.peek(col)) : fbList(col, ...args).then(d => { _C.set(col, d); return d; }).catch(() => null)
     )
-  ).catch(() => {});
+  ).then(([attDocs, outDocs, dutyDocs]) => {
+    if (attDocs && outDocs) {
+      const today = new Date(), todayStr = today.toLocaleDateString('sv'), monthStr = todayStr.substring(0,7);
+      const _me = (JSON.parse(sessionStorage.getItem('rescue_user')||'{}').memberName)||'';
+      if (typeof _applyDashStats === 'function') _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
+      if (typeof _applyDashDuty  === 'function' && dutyDocs) _applyDashDuty(dutyDocs, todayStr);
+      if (typeof updateItemsBadge === 'function') updateItemsBadge();
+    }
+  }).catch(() => {});
+  // 次要資料：靜默背景拉取
+  sideTargets.forEach(([col, ...args]) => {
+    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(() => {});
+  });
 }
 async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);}
 async function verifyWhitelist(email){
@@ -5141,16 +5163,7 @@ async function loadDashboard() {
   if (staleAtt && staleOut) _applyDashStats(staleAtt, staleOut, todayStr, monthStr, _me);
   if (staleDuty)            _applyDashDuty(staleDuty, todayStr);
 
-  // ② 背景更新資料（快取新鮮直接回傳，不阻塞渲染）
-  Promise.all([
-    fbListCached(COL_ATTEND,    'date', 'asc'),
-    fbListCached(COL_OUTING,    'date', 'asc'),
-    fbListCached('dutySchedule'),
-  ]).then(([attDocs, outDocs, dutyDocs]) => {
-    _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
-    _applyDashDuty(dutyDocs, todayStr);
-    updateItemsBadge();
-  }).catch(() => {});
+  // ② 背景更新由 _prefetchCaches() 負責，這裡不重複發請求
 
   // ③ 背景同步職稱（不阻塞任何渲染）
   _bgSyncTitle(_su).catch(() => {});
