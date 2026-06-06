@@ -6787,7 +6787,14 @@ async function initAttendancePage() {
 
     const sel = document.getElementById('attMemberSel');
     if (sel) sel.innerHTML = '<option value="">— 請先選擇分隊 —</option>';
-    if (_userUnit) { unitSel.value = _userUnit; filterAttMembers(); }
+    if (_userUnit) {
+      unitSel.value = _userUnit;
+      filterAttMembers();
+      // 預設選登入者
+      const _memberSel = document.getElementById('attMemberSel');
+      const _userName  = _u.memberName || '';
+      if (_memberSel && _userName) _memberSel.value = _userName;
+    }
   }
 
   attCheckinHasSig = false;
