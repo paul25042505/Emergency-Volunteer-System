@@ -6414,6 +6414,10 @@ function renderQueryResults(records) {
         +'</div>'
         +(tagsHtml ? '<div class="mq-card-tags">'+tagsHtml+'</div>' : '')
         +'<div style="margin-top:8px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.note ? '　'+r.note : '')+'</div>'
+        +(r.signature ? '<div style="margin-top:8px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;">'
+            +'<img src="'+r.signature+'" onclick="viewSig(\''+r.signature+'\')" style="height:38px;max-width:100px;border:1px solid var(--border);border-radius:4px;background:#fafaf8;object-fit:contain;cursor:pointer;" title="點擊查看簽名">'
+            +'<span style="font-size:0.68rem;color:var(--text-light);">簽名</span>'
+          +'</div>' : '')
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
     +'</div>';
@@ -7311,6 +7315,18 @@ function renderAttQueryResults() {
         +'<div class="mq-card-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
           +timeStr+adjIn+adjOut+hrsStr+'</div>'
         +(svc ? '<div style="margin-top:6px;font-size:0.75rem;color:var(--text-light);">服務人次：'+svc+'</div>' : '')
+        +(() => {
+          const cin  = r.checkinSig  || '';
+          const cout = r.checkoutSig || '';
+          if (!cin && !cout) return '';
+          const mkThumb = (sig, lbl) => '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;margin-right:10px;">'
+            +'<img src="'+sig+'" onclick="viewSig(\''+sig+'\')" style="height:38px;max-width:80px;border:1px solid var(--border);border-radius:4px;background:#fafaf8;object-fit:contain;cursor:pointer;" title="點擊查看簽名">'
+            +'<span style="font-size:0.68rem;color:var(--text-light);">'+lbl+'</span></div>';
+          return '<div style="margin-top:8px;display:flex;align-items:flex-end;">'
+            +(cin  ? mkThumb(cin,'簽到') : '')
+            +(cout ? mkThumb(cout,'簽退') : '')
+          +'</div>';
+        })()
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
     +'</div>';
