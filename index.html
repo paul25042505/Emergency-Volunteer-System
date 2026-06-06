@@ -13914,12 +13914,13 @@ async function initDutyPage() {
     if (_userUnit) { unitSel.value = _userUnit; filterDutyMembers(); }
   }
 
-  // 預設顯示當月（不自動跳到次月）
+  // 預設顯示當月，並捲動到今天
   const now = new Date();
   _dutyYear  = now.getFullYear();
   _dutyMonth = now.getMonth();
   await loadDutyData();
   onDutyTimeChange();
+  setTimeout(() => scrollToDutyDate(now.toLocaleDateString('sv')), 150);
 }
 function onDutyDateChange() { onDutyTimeChange(); }
 
