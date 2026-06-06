@@ -612,10 +612,10 @@ tr:hover td { background: #fdfcfb; }
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
   background: white; border-top: 1px solid rgba(0,0,0,0.08);
-  z-index: 198; padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 198; padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   box-shadow: 0 -2px 20px rgba(0,0,0,0.06);
 }
-.tab-grid { display: flex; height: 70px; }
+.tab-grid { display: flex; height: 76px; }
 .app-tab-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4px; border: none; background: none; cursor: pointer; padding: 8px 2px;
@@ -634,7 +634,7 @@ tr:hover td { background: #fdfcfb; }
 .app-tab-btn.active .app-tab-icon-wrap { background: var(--red-faint); }
 .app-tab-btn.active .app-tab-icon-wrap svg { stroke: var(--red); }
 .app-tab-btn.active .app-tab-lbl { color: var(--red); font-weight: 700; }
-#appScroll { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+#appScroll { padding-bottom: calc(76px + max(env(safe-area-inset-bottom, 0px), 8px)); }
 
 /* ══ Dashboard greeting ══ */
 .dash-greeting {
@@ -4691,6 +4691,7 @@ function _positionAdminTabBar() { /* tab bar 已移除 */ }
 let _loadingCount = 0;
 let _loadingTimer = null;
 let _loadingSlowTimer = null;
+let _loadingMaxTimer = null;
 let _loadingWidth = 0;
 function showLoading() {
   _loadingCount++;
@@ -4700,11 +4701,14 @@ function showLoading() {
   if (!bar || !fill) return;
   clearInterval(_loadingTimer);
   clearTimeout(_loadingSlowTimer);
+  clearTimeout(_loadingMaxTimer);
   _loadingWidth = 0;
   fill.style.transition = 'none';
   fill.style.width = '0%';
   bar.style.opacity = '1';
   bar.style.display = 'block';
+  // 最多顯示 6 秒，強制結束避免卡住
+  _loadingMaxTimer = setTimeout(() => { _loadingCount = 1; hideLoading(); }, 6000);
   const _loadingMsgs = [
     [0,  '🚨 接到勤務！資料整備中，請勿重新整理…'],
     [18, '🚑 出動救護車，全速前進中…'],
@@ -4745,6 +4749,7 @@ function hideLoading() {
   if (_loadingCount > 0) return;
   clearInterval(_loadingTimer);
   clearTimeout(_loadingSlowTimer);
+  clearTimeout(_loadingMaxTimer);
   const bar  = document.getElementById('globalLoadingBar');
   const fill = document.getElementById('globalLoadingBarFill');
   if (!bar || !fill) return;
