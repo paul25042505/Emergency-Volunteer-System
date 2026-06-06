@@ -7134,6 +7134,7 @@ function autoCalcHours() {
   const outTime = document.getElementById('attCheckoutTime').value;
   if (!inTime || !outTime) return;
   document.getElementById('attHours').value = calcHours(inTime, outTime);
+  _attStatSync();
   if (attCheckoutTarget) {
     const session = attSessions[attCheckoutTarget] || {};
     const memberName = session.memberName || attCheckoutTarget;
@@ -7156,6 +7157,7 @@ async function loadTodayCount(memberName) {
   const checkinT  = session.checkinTime || '';
   const checkoutT = document.getElementById('attCheckoutTime').value || '';
   document.getElementById('attCount').value = 0;
+  _attStatSync();
   if (!checkinT || !checkoutT) return;
 
   function toMins(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
