@@ -7602,7 +7602,7 @@ function renderAttQueryResults() {
       : '<span class="mq-badge mq-badge-coop">協勤</span>';
 
     const timeStr = cin && cout ? cin+' → '+cout : cin ? cin+' 已打卡' : '未記錄';
-    const hrsStr  = hrs ? '<span style="margin-left:auto;font-weight:600;color:var(--red);">'+hrs+'h</span>' : '';
+    const hrsStr  = hrs ? '<span style="display:inline-flex;align-items:center;background:var(--red-faint);color:var(--red);font-size:0.82rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid rgba(224,49,49,0.15);letter-spacing:0.02em;white-space:nowrap;flex-shrink:0;">'+hrs+'h</span>' : '';
 
     const isOwnerAq = name === _myNameAq;
     const recTimeAq = date ? new Date(date+'T00:00').getTime() : 0;
@@ -7621,9 +7621,10 @@ function renderAttQueryResults() {
       +'<div class="mq-card-body">'
         +'<div class="mq-card-name">'+name+'</div>'
         +(title ? '<div class="mq-card-sub">'+title+'</div>' : '')
-        +'<div class="mq-card-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
-          +timeStr+adjIn+adjOut+hrsStr+'</div>'
-        +(svc ? '<div style="margin-top:6px;font-size:0.75rem;color:var(--text-light);">服務人次：'+svc+'</div>' : '')
+        +'<div class="mq-card-time" style="justify-content:space-between;">'
+          +'<span style="display:flex;align-items:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'+timeStr+adjIn+adjOut+'</span>'
+          +hrsStr+'</div>'
+        +(svc ? '<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:3px;background:#F0FDF4;color:#16A34A;font-size:0.72rem;font-weight:600;padding:2px 9px;border-radius:20px;border:1.5px solid rgba(22,163,74,0.15);">服務 '+svc+' 人</span></div>' : '')
         +(() => {
           const cin  = r.checkinSig  || '';
           const cout = r.checkoutSig || '';
