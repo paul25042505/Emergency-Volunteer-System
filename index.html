@@ -7619,8 +7619,10 @@ function renderAttQueryResults() {
     return '<div class="mq-card">'
       +'<div class="mq-card-head"><span class="mq-card-date">'+date+'</span>'+badge+'</div>'
       +'<div class="mq-card-body">'
-        +'<div class="mq-card-name">'+name+'</div>'
-        +(title ? '<div class="mq-card-sub">'+title+'</div>' : '')
+        +'<div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;">'
+          +'<div class="mq-card-name">'+name+'</div>'
+          +(title ? '<div class="mq-card-sub" style="margin-top:0;">'+title+'</div>' : '')
+        +"</div>"
         +'<div class="mq-card-time" style="justify-content:space-between;">'
           +'<span style="display:flex;align-items:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'+timeStr+adjIn+adjOut+'</span>'
           +hrsStr+'</div>'
@@ -7629,10 +7631,10 @@ function renderAttQueryResults() {
           const cin  = r.checkinSig  || '';
           const cout = r.checkoutSig || '';
           if (!cin && !cout) return '';
-          const mkThumb = (sig, lbl) => '<div class="mq-card-sig-item">'
-            +'<img src="'+sig+'" onclick="viewSig(\''+sig+'\')" title="點擊查看簽名">'
+          const mkThumb = (sig, lbl) => '<div class="mq-card-sig-item" style="flex:1;max-width:none;">'
+            +'<img src="'+sig+'" onclick="viewSig(\''+sig+'\')" title="點擊查看簽名" style="height:56px;">'
             +'<span>'+lbl+'</span></div>';
-          return '<div class="mq-card-sigs">'
+          return '<div class="mq-card-sigs" style="gap:10px;">'
             +(cin  ? mkThumb(cin,'簽到') : '')
             +(cout ? mkThumb(cout,'簽退') : '')
           +'</div>';
