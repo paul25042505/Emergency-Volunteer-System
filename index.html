@@ -4885,7 +4885,8 @@ async function refreshCurrentPage() {
 }
 
 function syncHeaderHeight() {
-  requestAnimationFrame(() => {
+  // double rAF：確保 CSS class 變更觸發 layout 後再量高度
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     const scroller  = document.getElementById('appScroll');
     const adminBar  = document.getElementById('adminTabBar');
     if (!scroller) return;
@@ -4921,7 +4922,7 @@ function syncHeaderHeight() {
       if (adminBar) adminBar.style.top = headerH + 'px';
       scroller.style.paddingTop = headerH + 'px';
     }
-  });
+  }));
 }
 
 function _positionAdminTabBar() { /* tab bar 已移除 */ }
