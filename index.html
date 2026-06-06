@@ -237,8 +237,9 @@ input[readonly], input.input-readonly {
 /* ── Signature ── */
 .sig-wrap { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; background: #fafaf8; }
 .sig-wrap canvas { display: block; width: 100%; height: 200px; cursor: crosshair; touch-action: none; }
-.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--warm); border-top: 1px solid var(--border); }
+.sig-footer { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: var(--warm); border-top: 1px solid var(--border); }
 .sig-footer span { font-size: 0.7rem; color: var(--text-light); letter-spacing: 0.03em; }
+.sig-footer-btns { display: flex; gap: 8px; }
 .sig-fullscreen-btn { background:none; border:1px solid var(--border); border-radius:5px; padding:3px 9px; font-size:0.72rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; display:flex; align-items:center; gap:4px; }
 /* ── 全螢幕簽名 ── */
 #sigFullscreenModal { position:fixed; inset:0; z-index:10000; background:#fff; display:none; flex-direction:column; }
@@ -1581,9 +1582,9 @@ function _dlCSV(content, filename) {
             <canvas id="easyOutingCanvas"></canvas>
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
-              <div style="display:flex;gap:6px;">
-                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyOutingCanvas',_sigEasyOutingSetHasSig)">⛶ 全螢幕</button>
-                <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
+              <div class="sig-footer-btns">
+                <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('easyOutingCanvas',_sigEasyOutingSetHasSig)">⛶ 全螢幕</button>
+                <button type="button" class="btn-clear" style="flex:1;" onclick="easyClearOutingCanvas()">清除重簽</button>
               </div>
             </div>
           </div>
@@ -1744,9 +1745,9 @@ function _dlCSV(content, filename) {
               <canvas id="sigCanvas"></canvas>
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
-                <div style="display:flex;gap:6px;">
-                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('sigCanvas',_sigFormSetHasSig)">⛶ 全螢幕</button>
-                  <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+                <div class="sig-footer-btns">
+                  <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('sigCanvas',_sigFormSetHasSig)">⛶ 全螢幕</button>
+                  <button type="button" class="btn-clear" style="flex:1;" onclick="clearSig()">清除重簽</button>
                 </div>
               </div>
             </div>
@@ -1945,10 +1946,10 @@ function _dlCSV(content, filename) {
             <canvas id="easyCheckinCanvas"></canvas>
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
-              <div style="display:flex;gap:6px;">
-                <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckinCanvas',_sigEasyCheckinSetHasSig)">⛶ 全螢幕</button>
-                <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
+              <div class="sig-footer-btns">
+                <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('easyCheckinCanvas',_sigEasyCheckinSetHasSig)">⛶ 全螢幕</button>
+                <button type="button" class="btn-clear" style="flex:1;" onclick="easyClearCanvas()">清除重簽</button>
               </div>
             </div>
           </div>
@@ -1996,10 +1997,10 @@ function _dlCSV(content, filename) {
             <canvas id="easyCheckoutCanvas"></canvas>
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
-              <div style="display:flex;gap:6px;">
-                <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckoutCanvas',_sigEasyCheckoutSetHasSig)">⛶ 全螢幕</button>
-                <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
+              <div class="sig-footer-btns">
+                <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('easyCheckoutCanvas',_sigEasyCheckoutSetHasSig)">⛶ 全螢幕</button>
+                <button type="button" class="btn-clear" style="flex:1;" onclick="easyClearCheckoutCanvas()">清除重簽</button>
               </div>
             </div>
           </div>
@@ -2062,10 +2063,10 @@ function _dlCSV(content, filename) {
               <canvas id="attCheckinCanvas"></canvas>
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
-                <div style="display:flex;gap:6px;">
-                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckinCanvas',_sigCheckinSetHasSig)">⛶ 全螢幕</button>
-                  <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
+                <div class="sig-footer-btns">
+                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                  <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckinCanvas',_sigCheckinSetHasSig)">⛶ 全螢幕</button>
+                  <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkin')">清除重簽</button>
                 </div>
               </div>
             </div>
@@ -2125,10 +2126,10 @@ function _dlCSV(content, filename) {
               <canvas id="attCheckoutCanvas"></canvas>
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
-                <div style="display:flex;gap:6px;">
-                  <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckoutCanvas',_sigCheckoutSetHasSig)">⛶ 全螢幕</button>
-                  <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
+                <div class="sig-footer-btns">
+                  <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                  <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckoutCanvas',_sigCheckoutSetHasSig)">⛶ 全螢幕</button>
+                  <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkout')">清除重簽</button>
                 </div>
               </div>
             </div>
@@ -2690,7 +2691,9 @@ function _dlCSV(content, filename) {
         <canvas id="claimSigCanvas"></canvas>
         <div class="sig-footer">
           <span>請用滑鼠或手指於上方簽名</span>
-          <button type="button" class="btn-clear" onclick="clearClaimSig()">清除重簽</button>
+          <div class="sig-footer-btns">
+            <button type="button" class="btn-clear" style="flex:1;" onclick="clearClaimSig()">清除重簽</button>
+          </div>
         </div>
       </div>
     </div>
