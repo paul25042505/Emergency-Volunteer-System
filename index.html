@@ -674,15 +674,29 @@ tr:hover td { background: #fdfcfb; }
 
 /* ══ Hero card ══ */
 .dash-hero {
-  background: linear-gradient(135deg, #C62828 0%, #B71C1C 55%, #8E0000 100%);
+  background: linear-gradient(145deg, #1565C0 0%, #0D47A1 50%, #01579B 100%);
   border-radius: 20px; padding: 22px 20px; color: white;
   position: relative; overflow: hidden; margin-bottom: 22px;
-  box-shadow: 0 8px 28px rgba(198,40,40,0.32);
+  box-shadow: 0 8px 28px rgba(13,71,161,0.38);
 }
 .dash-hero::before {
-  content: '✚'; position: absolute; right: -12px; top: -24px;
-  font-size: 130px; opacity: 0.06; line-height: 1; pointer-events: none;
+  content: ''; position: absolute; right: -30px; top: -30px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); pointer-events: none;
 }
+.dash-hero::after {
+  content: ''; position: absolute; right: 30px; top: -60px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255,255,255,0.04); pointer-events: none;
+}
+.dash-wth-cell {
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px; padding: 8px 4px;
+  text-align: center; backdrop-filter: blur(4px);
+}
+.dash-wth-icon { font-size: 1.1rem; line-height: 1; margin-bottom: 3px; }
+.dash-wth-val { font-size: 0.82rem; font-weight: 700; line-height: 1.2; }
+.dash-wth-lbl { font-size: 0.55rem; opacity: 0.72; margin-top: 2px; letter-spacing: 0.02em; }
 .dash-hero-lbl { font-size: 0.66rem; opacity: 0.75; letter-spacing: 0.08em; margin-bottom: 2px; }
 .dash-hero-big {
   font-family: 'Noto Serif TC', serif; font-size: 2.8rem; font-weight: 700;
@@ -1284,40 +1298,54 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <!-- 英雄卡片 -->
-    <div class="dash-hero">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div>
-          <div class="dash-hero-lbl">年度累計備勤</div>
-          <div class="dash-hero-big">
-            <span id="dashMonthHours">—</span>
-            <span class="dash-hero-unit">小時</span>
-          </div>
-          <div class="dash-hero-meta" id="dashHeroDateLine"></div>
-        </div>
-        <div style="text-align:right;opacity:0.75;flex-shrink:0;margin-left:12px;">
-          <div style="font-size:0.62rem;letter-spacing:0.05em;" id="dashInfoDate"></div>
-          <div style="font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;" id="dashInfoTime"></div>
-          <div style="display:flex;align-items:center;gap:3px;margin-top:3px;justify-content:flex-end;">
-            <span id="dashWeatherIcon" style="font-size:1rem;"></span>
-            <span id="dashWeatherTemp" style="font-size:0.82rem;font-weight:600;"></span>
+    <!-- 天氣卡片 -->
+    <div class="dash-hero" id="dashWeatherCard">
+      <!-- 日期 & 時間列 -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div id="dashInfoDate" style="font-size:0.75rem;opacity:0.82;letter-spacing:0.04em;line-height:1.5;"></div>
+        <div id="dashInfoTime" style="font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:0.03em;line-height:1;"></div>
+      </div>
+      <!-- 主天氣區 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="dashWeatherIcon" style="font-size:3rem;line-height:1;"></span>
+          <div>
+            <div style="font-size:2.6rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;" id="dashWeatherTemp">—</div>
+            <div style="font-size:0.72rem;opacity:0.78;margin-top:3px;" id="dashWeatherDesc">載入中…</div>
           </div>
         </div>
-      </div>
-      <div class="dash-hero-row">
-        <div class="dash-hero-cell">
-          <div class="dash-hero-cell-num" id="dashMyMonthAtt">—</div>
-          <div class="dash-hero-cell-lbl">出勤次數</div>
-        </div>
-        <div class="dash-hero-cell">
-          <div class="dash-hero-cell-num" id="dashMyMonthOut">—</div>
-          <div class="dash-hero-cell-lbl">出勤時數</div>
-        </div>
-        <div class="dash-hero-cell">
-          <div class="dash-hero-cell-num" id="dashMyMonthSvc">—</div>
-          <div class="dash-hero-cell-lbl">服務人次</div>
+        <div style="text-align:right;opacity:0.82;font-size:0.7rem;line-height:1.9;">
+          <div>臺中市潭子區</div>
         </div>
       </div>
+      <!-- 天氣指標格 -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        <div class="dash-wth-cell">
+          <div class="dash-wth-icon">🌡</div>
+          <div class="dash-wth-val" id="dashWeatherFeels">—</div>
+          <div class="dash-wth-lbl">體感</div>
+        </div>
+        <div class="dash-wth-cell">
+          <div class="dash-wth-icon">💧</div>
+          <div class="dash-wth-val" id="dashWeatherHumidity">—</div>
+          <div class="dash-wth-lbl">濕度</div>
+        </div>
+        <div class="dash-wth-cell">
+          <div class="dash-wth-icon">🌂</div>
+          <div class="dash-wth-val" id="dashWeatherRain">—</div>
+          <div class="dash-wth-lbl">降雨機率</div>
+        </div>
+        <div class="dash-wth-cell">
+          <div class="dash-wth-icon">☀️</div>
+          <div class="dash-wth-val" id="dashWeatherUV">—</div>
+          <div class="dash-wth-lbl">紫外線</div>
+        </div>
+      </div>
+    </div>
+    <!-- 備勤統計（保留 IDs，隱藏） -->
+    <div style="display:none;">
+      <span id="dashMonthHours"></span><span id="dashHeroDateLine"></span>
+      <span id="dashMyMonthAtt"></span><span id="dashMyMonthOut"></span><span id="dashMyMonthSvc"></span>
     </div>
 
     <!-- 快速操作橫滾列（sticky，滾動時固定頂部）-->
@@ -1405,13 +1433,8 @@ function _dlCSV(content, filename) {
       <div id="todayScheduleList"></div>
     </div>
 
-    <!-- 天氣詳細（隱藏，保留 ID 供 JS 更新） -->
+    <!-- 保留舊容器 ID 供 JS 相容 -->
     <div style="display:none;">
-      <span id="dashWeatherDesc"></span>
-      <span id="dashWeatherHumidity"></span>
-      <span id="dashWeatherFeels"></span>
-      <span id="dashWeatherRain"></span>
-      <span id="dashWeatherUV"></span>
       <div id="dashInfoGrid"></div>
       <div id="dashInfoWeather"></div>
       <div id="dashDateTimeWrap"></div>
