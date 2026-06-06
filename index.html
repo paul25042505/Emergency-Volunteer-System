@@ -14250,14 +14250,9 @@ function scrollToDutyDate(dateStr) {
   if (!el) return;
   const scroller = document.getElementById('appScroll');
   if (!scroller) { el.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
-  // 補償 header + tabBar + 月份導覽 的高度
-  const header = document.querySelector('.header');
-  const tabBar = document.getElementById('dutyTabBar');
-  const monthNav = tabBar ? tabBar.nextElementSibling : null;
-  const offset = (header ? header.getBoundingClientRect().height : 56)
-               + (tabBar ? tabBar.getBoundingClientRect().height : 44)
-               + (monthNav ? monthNav.getBoundingClientRect().height : 56)
-               + 8;
+  // 補償固定 header（含子選單＋月份導覽）高度
+  const dutyHeader = document.getElementById('dutyCustomHeader');
+  const offset = (dutyHeader ? dutyHeader.getBoundingClientRect().height : 160) + 12;
   const elTop = el.getBoundingClientRect().top;
   const scrollerTop = scroller.getBoundingClientRect().top;
   scroller.scrollBy({ top: elTop - scrollerTop - offset, behavior: 'smooth' });
