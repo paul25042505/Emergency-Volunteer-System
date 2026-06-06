@@ -7634,9 +7634,15 @@ function renderAttQueryResults() {
           const mkThumb = (sig, lbl) => '<div class="mq-card-sig-item" style="flex:1;max-width:none;">'
             +'<img src="'+sig+'" onclick="viewSig(\''+sig+'\')" title="點擊查看簽名" style="height:56px;">'
             +'<span>'+lbl+'</span></div>';
+          const mkEmpty = (lbl) => '<div class="mq-card-sig-item" style="flex:1;max-width:none;">'
+            +'<div style="width:100%;height:56px;border:1.5px dashed #f5a0a0;border-radius:6px;background:#fff8f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">'
+              +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e57373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+              +'<span style="font-size:0.62rem;color:#e57373;font-weight:600;letter-spacing:0.04em;">未簽退</span>'
+            +'</div>'
+            +'<span>'+lbl+'</span></div>';
           return '<div class="mq-card-sigs" style="gap:10px;">'
             +(cin  ? mkThumb(cin,'簽到') : '')
-            +(cout ? mkThumb(cout,'簽退') : '')
+            +(cout ? mkThumb(cout,'簽退') : (cin ? mkEmpty('簽退') : ''))
           +'</div>';
         })()
       +'</div>'
