@@ -235,10 +235,22 @@ input[readonly], input.input-readonly {
 .cb-item.checked { border-color: var(--red); background: var(--red-faint); color: var(--text); box-shadow: 0 0 0 3px rgba(192,57,43,0.08); }
 
 /* ── Signature ── */
-.sig-wrap { border: 1.5px solid var(--border); border-radius: 5px; overflow: hidden; background: #fafaf8; }
-.sig-wrap canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
-.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: var(--warm); border-top: 1px solid var(--border); }
-.sig-footer span { font-size: 0.73rem; color: var(--text-light); letter-spacing: 0.04em; }
+.sig-wrap { border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; background: #fafaf8; }
+.sig-wrap canvas { display: block; width: 100%; height: 200px; cursor: crosshair; touch-action: none; }
+.sig-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--warm); border-top: 1px solid var(--border); }
+.sig-footer span { font-size: 0.7rem; color: var(--text-light); letter-spacing: 0.03em; }
+.sig-fullscreen-btn { background:none; border:1px solid var(--border); border-radius:5px; padding:3px 9px; font-size:0.72rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; display:flex; align-items:center; gap:4px; }
+/* ── 全螢幕簽名 ── */
+#sigFullscreenModal { position:fixed; inset:0; z-index:10000; background:#fff; display:none; flex-direction:column; }
+#sigFullscreenModal.open { display:flex; }
+#sigFullscreenTopBar { display:flex; align-items:center; justify-content:space-between; padding:env(safe-area-inset-top,0px) 16px 0; min-height:52px; border-bottom:1px solid var(--border); background:#fff; flex-shrink:0; }
+#sigFullscreenTopBar h3 { font-size:1rem; font-weight:700; margin:0; }
+#sigFullscreenCanvasWrap { flex:1; position:relative; background:#fafaf8; overflow:hidden; }
+#sigFullscreenCanvas { position:absolute; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+#sigFullscreenHint { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); font-size:0.7rem; color:#bbb; pointer-events:none; white-space:nowrap; }
+#sigFullscreenBar { display:flex; gap:10px; padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--border); background:#fff; flex-shrink:0; }
+#sigFullscreenClear { flex:1; background:none; border:1.5px solid var(--border); border-radius:10px; padding:13px; font-size:0.9rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; }
+#sigFullscreenConfirm { flex:2; background:var(--red); color:#fff; border:none; border-radius:10px; padding:13px; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
 .btn-clear { background: none; border: 1px solid var(--border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(--text-mid); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; min-height: unset; }
 .btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
 
@@ -376,28 +388,29 @@ tr:hover td { background: #fdfcfb; }
 .mq-sort-bar { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background:#fafafa; border-bottom:1px solid var(--border); }
 .mq-result-count { font-size:0.78rem; color:var(--text-light); }
 .mq-sort-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:0.75rem; color:var(--text-mid); cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
-.mq-list { padding:8px 12px 80px; display:flex; flex-direction:column; gap:7px; }
-.mq-card { background:#fff; border-radius:12px; box-shadow:0 1px 5px rgba(0,0,0,0.07); overflow:hidden; }
-.mq-card-head { padding:8px 12px 6px; border-bottom:1px solid #f5f5f5; display:flex; align-items:center; justify-content:space-between; }
-.mq-card-date { font-size:0.76rem; font-weight:700; color:var(--text); }
-.mq-badge { font-size:0.58rem; font-weight:600; padding:2px 8px; border-radius:50px; }
+.mq-list { padding:8px 12px 80px; display:flex; flex-direction:column; gap:10px; }
+.mq-card { background:#fff; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:hidden; }
+.mq-card-head { padding:10px 14px 8px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; }
+.mq-card-date { font-size:0.78rem; font-weight:700; color:var(--text); }
+.mq-badge { font-size:0.6rem; font-weight:600; padding:3px 9px; border-radius:50px; }
 .mq-badge-coop { background:#fff0f0; color:#c62828; }
 .mq-badge-pub { background:#e3f2fd; color:#1565c0; }
 .mq-badge-district { background:#e8f5e9; color:#2e7d32; }
-.mq-card-body { padding:7px 12px 8px; }
-.mq-card-name { font-size:0.86rem; font-weight:600; color:var(--text); }
-.mq-card-sub { font-size:0.66rem; color:var(--text-light); margin-top:1px; }
-.mq-card-addr { font-size:0.7rem; color:var(--text-mid); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.mq-card-time { display:flex; align-items:center; gap:5px; margin-top:5px; font-size:0.75rem; color:var(--text-mid); }
-.mq-card-time svg { flex-shrink:0; opacity:0.5; width:12px; height:12px; }
-.mq-card-tags { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
-.mq-tag { background:#f5f5f5; color:var(--text-mid); font-size:0.62rem; padding:2px 7px; border-radius:50px; }
-.mq-card-sigs { display:inline-flex; gap:8px; margin-top:5px; align-items:flex-end; }
-.mq-card-sig-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
-.mq-card-sig-item img { height:24px; max-width:56px; border:1px solid var(--border); border-radius:3px; background:#fafaf8; object-fit:contain; cursor:pointer; }
-.mq-card-sig-item span { font-size:0.58rem; color:var(--text-light); }
-.mq-card-foot { padding:5px 12px; border-top:1px solid #f5f5f5; display:flex; align-items:center; justify-content:flex-end; gap:5px; }
-.mq-act-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:3px 9px; cursor:pointer; font-size:0.68rem; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
+.mq-card-body { padding:10px 14px 10px; }
+.mq-card-name { font-size:0.92rem; font-weight:700; color:var(--text); }
+.mq-card-sub { font-size:0.7rem; color:var(--text-light); margin-top:2px; }
+.mq-card-addr { font-size:0.72rem; color:var(--text-mid); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mq-card-time { display:flex; align-items:center; gap:6px; margin-top:6px; font-size:0.78rem; color:var(--text-mid); }
+.mq-card-time svg { flex-shrink:0; opacity:0.45; width:13px; height:13px; }
+.mq-card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.mq-tag { background:#f5f5f5; color:var(--text-mid); font-size:0.64rem; padding:2px 8px; border-radius:50px; }
+.mq-card-sigs { display:flex; gap:10px; margin-top:10px; }
+.mq-card-sig-item { display:flex; flex-direction:column; align-items:center; gap:3px; flex:1; max-width:120px; }
+.mq-card-sig-item img { width:100%; height:48px; border:1px solid var(--border); border-radius:6px; background:#fafaf8; object-fit:contain; cursor:pointer; transition:opacity 0.15s; }
+.mq-card-sig-item img:active { opacity:0.7; }
+.mq-card-sig-item span { font-size:0.62rem; color:var(--text-light); }
+.mq-card-foot { padding:8px 14px; border-top:1px solid #f0f0f0; display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+.mq-act-btn { background:none; border:1px solid var(--border); border-radius:7px; padding:5px 12px; cursor:pointer; font-size:0.72rem; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
 .mq-act-btn.danger { border-color:#f5c6c6; color:#b94a3a; }
 .mq-act-btn.blue { border-color:#9ec5fe; color:#084298; }
 .mq-empty-state { text-align:center; padding:60px 20px; color:var(--text-light); }
@@ -1029,6 +1042,21 @@ function _dlCSV(content, filename) {
     <div id="globalLoadingLabel" style="color:rgba(255,255,255,0.88);font-size:0.75rem;letter-spacing:0.06em;font-family:'Noto Sans TC',sans-serif;font-weight:500;white-space:nowrap;">載入中</div>
   </div>
 </div>
+<!-- ══════ 全螢幕簽名 Modal ══════ -->
+<div id="sigFullscreenModal">
+  <div id="sigFullscreenTopBar">
+    <h3>全螢幕簽名</h3>
+    <button onclick="closeSigFullscreen()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-mid);padding:4px 8px;">✕</button>
+  </div>
+  <div id="sigFullscreenCanvasWrap">
+    <canvas id="sigFullscreenCanvas"></canvas>
+    <div id="sigFullscreenHint">請在此區域簽名</div>
+  </div>
+  <div id="sigFullscreenBar">
+    <button id="sigFullscreenClear" onclick="clearSigFullscreen()">清除重簽</button>
+    <button id="sigFullscreenConfirm" onclick="confirmSigFullscreen()">確認簽名</button>
+  </div>
+</div>
 <!-- ══════ 通知面板 ══════ -->
 <div id="noticePanel">
   <div id="noticePanelBg" onclick="closeNoticePanel()"></div>
@@ -1553,7 +1581,10 @@ function _dlCSV(content, filename) {
             <canvas id="easyOutingCanvas"></canvas>
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
-              <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyOutingCanvas',()=>{ _easyOutingHasSig=true; })">⛶ 全螢幕</button>
+                <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1713,7 +1744,10 @@ function _dlCSV(content, filename) {
               <canvas id="sigCanvas"></canvas>
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
-                <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('sigCanvas',()=>{ hasSig=true; })">⛶ 全螢幕</button>
+                  <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1913,6 +1947,7 @@ function _dlCSV(content, filename) {
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
                 <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckinCanvas',()=>{ _easyCheckinHasSig=true; })">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
               </div>
             </div>
@@ -1963,6 +1998,7 @@ function _dlCSV(content, filename) {
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
                 <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckoutCanvas',()=>{ _easyCheckoutHasSig=true; })">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
               </div>
             </div>
@@ -2028,6 +2064,7 @@ function _dlCSV(content, filename) {
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
                   <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckinCanvas',()=>{ attCheckinHasSig=true; })">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
                 </div>
               </div>
@@ -2090,6 +2127,7 @@ function _dlCSV(content, filename) {
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
                   <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
+                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckoutCanvas',()=>{ attCheckoutHasSig=true; })">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
                 </div>
               </div>
@@ -5641,6 +5679,103 @@ function fillAdminSig(type) {
   setSig();
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
+
+// ── 全螢幕簽名 Modal ──
+let _sfTargetCanvasId = null;
+let _sfOnConfirm = null;
+let _sfCtx = null;
+let _sfDrawing = false;
+let _sfLastX = 0, _sfLastY = 0;
+
+function openSigFullscreen(targetCanvasId, onConfirm) {
+  _sfTargetCanvasId = targetCanvasId;
+  _sfOnConfirm = onConfirm || null;
+  const modal = document.getElementById('sigFullscreenModal');
+  const fsCanvas = document.getElementById('sigFullscreenCanvas');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // size canvas to its display size
+  requestAnimationFrame(() => {
+    fsCanvas.width  = fsCanvas.offsetWidth  || window.innerWidth;
+    fsCanvas.height = fsCanvas.offsetHeight || (window.innerHeight - 120);
+    _sfCtx = fsCanvas.getContext('2d');
+    _sfCtx.strokeStyle = '#1a1a1a';
+    _sfCtx.lineWidth   = 2.5;
+    _sfCtx.lineCap     = 'round';
+    _sfCtx.lineJoin    = 'round';
+    // copy existing drawing if any
+    const src = document.getElementById(targetCanvasId);
+    if (src && src.width && src.height) _sfCtx.drawImage(src, 0, 0, fsCanvas.width, fsCanvas.height);
+    const hint = document.getElementById('sigFullscreenHint');
+    if (hint) hint.style.display = 'block';
+  });
+}
+
+function closeSigFullscreen() {
+  document.getElementById('sigFullscreenModal').classList.remove('open');
+  document.body.style.overflow = '';
+  _sfTargetCanvasId = null; _sfOnConfirm = null; _sfCtx = null;
+}
+
+function clearSigFullscreen() {
+  if (!_sfCtx) return;
+  const c = document.getElementById('sigFullscreenCanvas');
+  _sfCtx.clearRect(0, 0, c.width, c.height);
+  const hint = document.getElementById('sigFullscreenHint');
+  if (hint) hint.style.display = 'block';
+}
+
+function confirmSigFullscreen() {
+  const fsCanvas = document.getElementById('sigFullscreenCanvas');
+  if (!fsCanvas || !_sfTargetCanvasId) { closeSigFullscreen(); return; }
+  const target = document.getElementById(_sfTargetCanvasId);
+  if (target) {
+    const tc = target.getContext('2d');
+    tc.clearRect(0, 0, target.width, target.height);
+    tc.drawImage(fsCanvas, 0, 0, target.width, target.height);
+  }
+  if (_sfOnConfirm) _sfOnConfirm();
+  closeSigFullscreen();
+}
+
+(function() {
+  function _sfPos(e) {
+    const c = document.getElementById('sigFullscreenCanvas');
+    const rect = c.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return [t.clientX - rect.left, t.clientY - rect.top];
+  }
+  function _sfStart(e) {
+    if (!_sfCtx) return;
+    e.preventDefault();
+    _sfDrawing = true;
+    [_sfLastX, _sfLastY] = _sfPos(e);
+    const hint = document.getElementById('sigFullscreenHint');
+    if (hint) hint.style.display = 'none';
+  }
+  function _sfMove(e) {
+    if (!_sfDrawing || !_sfCtx) return;
+    e.preventDefault();
+    const [x, y] = _sfPos(e);
+    _sfCtx.beginPath();
+    _sfCtx.moveTo(_sfLastX, _sfLastY);
+    _sfCtx.lineTo(x, y);
+    _sfCtx.stroke();
+    _sfLastX = x; _sfLastY = y;
+  }
+  function _sfEnd(e) { _sfDrawing = false; }
+  document.addEventListener('DOMContentLoaded', () => {
+    const c = document.getElementById('sigFullscreenCanvas');
+    if (!c) return;
+    c.addEventListener('mousedown',  _sfStart, { passive: false });
+    c.addEventListener('mousemove',  _sfMove,  { passive: false });
+    c.addEventListener('mouseup',    _sfEnd);
+    c.addEventListener('mouseleave', _sfEnd);
+    c.addEventListener('touchstart', _sfStart, { passive: false });
+    c.addEventListener('touchmove',  _sfMove,  { passive: false });
+    c.addEventListener('touchend',   _sfEnd);
+  });
+})();
 
 // ── 後台/查詢頁編輯簽名板共用工具 ──
 const _aeCtxMap = {};
