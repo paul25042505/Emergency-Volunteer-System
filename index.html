@@ -1948,7 +1948,7 @@ function _dlCSV(content, filename) {
               <option value="">— 請選擇或新增事由 —</option>
             </select>
             <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:52px;height:52px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.4rem;cursor:pointer;line-height:1;">＋</button>
-            <button type="button" onclick="deleteOutingReason('easyOutingReasonSel')" style="flex-shrink:0;width:52px;height:52px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.2rem;cursor:pointer;line-height:1;">🗑</button>
+            <button type="button" onclick="deleteOutingReason('easyOutingReasonSel')" style="flex-shrink:0;width:52px;height:52px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.2rem;cursor:pointer;line-height:1;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
           </div>
         </div>
         <div class="field">
@@ -2053,7 +2053,7 @@ function _dlCSV(content, filename) {
                 <option value="">— 請選擇或新增事由 —</option>
               </select>
               <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:44px;height:44px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.3rem;cursor:pointer;line-height:1;">＋</button>
-              <button type="button" onclick="deleteOutingReason('attOutingReasonSel')" style="flex-shrink:0;width:44px;height:44px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.1rem;cursor:pointer;line-height:1;">🗑</button>
+              <button type="button" onclick="deleteOutingReason('attOutingReasonSel')" style="flex-shrink:0;width:44px;height:44px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.1rem;cursor:pointer;line-height:1;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
             </div>
           </div>
           <div class="field">
@@ -2868,7 +2868,7 @@ function _dlCSV(content, filename) {
         <option value="adminSec-correction"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/><path d="M11 9l1.5-1.5L14 9l-2 2-1.5-1.5z"/></svg>修正申請</option>
         <option value="adminSec-schedule">📅 定訓行事曆</option>
         <option value="adminSec-temppass">🔑 臨時密碼</option>
-        <option value="adminSec-changelog"  id="adminSelOpt-changelog">📝 版本紀錄</option>
+        <option value="adminSec-changelog"  id="adminSelOpt-changelog"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg> 版本紀錄</option>
         <option value="adminSec-loginlog"   id="adminSelOpt-loginlog" style="display:none;">🔐 登入紀錄</option>
         <option value="adminSec-import">📥 批次匯入</option>
         <option value="adminSec-repair">🔧 資料修復</option>
@@ -3022,7 +3022,7 @@ function _dlCSV(content, filename) {
 
     <div class="section" id="adminSec-correction" style="display:none;">
       <div class="section-head">
-        <div class="section-num">📝</div>
+        <div class="section-num"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></div>
         <div class="section-title">修正申請</div>
         <div class="section-line"></div>
         <button onclick="batchDelChecked('corrChk',COL_CORRECTION,loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>批次刪除</button>
@@ -3128,7 +3128,7 @@ function _dlCSV(content, filename) {
 
     <div class="section" id="adminSec-changelog" style="display:none;">
       <div class="section-head">
-        <div class="section-num">📝</div>
+        <div class="section-num"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></div>
         <div class="section-title">版本修改紀錄管理</div>
         <div class="section-line"></div>
         <button onclick="showChangelogForm(null)" class="btn-search" style="min-height:unset;padding:4px 14px;font-size:0.78rem;">＋ 新增版本</button>
@@ -3698,13 +3698,13 @@ function _dlCSV(content, filename) {
   <div class="query-wrap">
     <div class="section">
       <div class="section-head">
-        <div class="section-num">📝</div>
+        <div class="section-num"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></div>
         <div class="section-title">版本修改紀錄</div>
         <div class="section-line"></div>
       </div>
     </div>
     <div id="changelogList">
-      <div class="query-empty"><span class="empty-icon">📝</span>載入中...</div>
+      <div class="query-empty"><span class="empty-icon"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></span>載入中...</div>
     </div>
     <div class="site-footer-placeholder"></div>
   </div>
@@ -6063,7 +6063,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
         <td style="padding:6px 8px;">${caseDisplay}</td>
         <td style="padding:6px 8px;text-align:center;">${o.serviceCount ?? '—'}</td>
         <td style="padding:6px 8px;text-align:center;">${badge}</td>
-        <td style="padding:6px 8px;text-align:center;"><button onclick="rdEditOut(${o._i})" style="${eBtnS}">✏️</button></td>
+        <td style="padding:6px 8px;text-align:center;"><button onclick="rdEditOut(${o._i})" style="${eBtnS}"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg></button></td>
       </tr>`;
     };
 
@@ -8100,7 +8100,7 @@ function _verifyGroupCardHTML(g) {
                 ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${caseInfo}</div>`:''}
               </div>
             </div>
-            <button id="oeditbtn-${o.id}" onclick="toggleOutingEdit('${o.id}')" style="background:none;border:none;flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:1rem;">✏️</button>
+            <button id="oeditbtn-${o.id}" onclick="toggleOutingEdit('${o.id}')" style="background:none;border:none;flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:1rem;"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg></button>
           </div>
           <div id="oedit-${o.id}" style="display:none;margin-top:6px;background:#fafafa;border-radius:8px;padding:10px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -8164,7 +8164,7 @@ function toggleOutingEdit(outingId) {
   if (!editEl) return;
   const opening = editEl.style.display === 'none';
   editEl.style.display = opening ? 'block' : 'none';
-  if (btnEl) btnEl.textContent = opening ? '✕' : '✏️';
+  if (btnEl) btnEl.innerHTML = opening ? '✕' : '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>';
 }
 
 function cancelOutingEdit(outingId) {
@@ -8181,7 +8181,7 @@ function cancelOutingEdit(outingId) {
   const editEl = document.getElementById('oedit-'    + outingId);
   const btnEl  = document.getElementById('oeditbtn-' + outingId);
   if (editEl) editEl.style.display = 'none';
-  if (btnEl)  btnEl.textContent = '✏️';
+  if (btnEl)  btnEl.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>';
 }
 
 async function confirmOutingEdit(outingId, sessionId, anchorId) {
@@ -8211,7 +8211,7 @@ async function confirmOutingEdit(outingId, sessionId, anchorId) {
   const editEl2 = document.getElementById('oedit-'    + outingId);
   const btnEl2  = document.getElementById('oeditbtn-' + outingId);
   if (editEl2) editEl2.style.display = 'none';
-  if (btnEl2)  btnEl2.textContent = '✏️';
+  if (btnEl2)  btnEl2.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>';
 
   // 重算當日合計
   if (session) {
@@ -9059,7 +9059,7 @@ async function loadAdminWhitelist(filterUnit) {
 
       var delBtn = document.createElement('button');
       delBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:6px 10px;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
-      delBtn.textContent = '🗑️';
+      delBtn.textContent = '<svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>';
       delBtn.onclick = function(){
         adminDel(COL_WHITELIST, d.id, '帳號 '+(d.memberName||d.email), loadAdminWhitelist);
       };
@@ -9293,7 +9293,7 @@ async function loadAdminAttendance() {
         <td style="${tds}text-align:center;padding:6px 8px;">${sigA(d.checkoutSig||'')}</td>
         <td style="${tds}white-space:nowrap;">
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯</button>
-          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}" data-label="簽到 ${(d.memberName||'')} ${(d.date||'')}">🗑️</button>
+          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}" data-label="簽到 ${(d.memberName||'')} ${(d.date||'')}"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
         </td>`;
       tr.querySelector('[data-id]').addEventListener('click', () => adminEditAtt(d.id));
       tr.querySelector('[data-del]').addEventListener('click', () => adminDel(COL_ATTEND, d.id, `簽到 ${d.memberName||''} ${d.date||''}`, loadAdminAttendance));
@@ -9421,7 +9421,7 @@ async function loadAdminOuting() {
         <td style="${tds2}text-align:center;padding:6px 8px;">${sigB(d.signature||'')}</td>
         <td style="${tds2}white-space:nowrap;">
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯</button>
-          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}">🗑️</button>
+          <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
         </td>`;
       tr.querySelector('[data-id]').addEventListener('click', () => adminEditOut(d.id));
       tr.querySelector('[data-del]').addEventListener('click', () => adminDel(COL_OUTING, d.id, `協勤 ${d.memberName||''} ${d.date||''}`, loadAdminOuting));
@@ -9741,7 +9741,7 @@ async function loadLoginLog() {
                 </td>
                 <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.78rem;color:var(--text-light);">${d.email||''}</td>
                 <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">
-                  <button onclick="adminDel('${COL_LOGINLOG}','${d.id}','登入紀錄',loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button>
+                  <button onclick="adminDel('${COL_LOGINLOG}','${d.id}','登入紀錄',loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
                 </td>
               </tr>`;
             }).join('')}
@@ -10396,7 +10396,7 @@ async function loadAdminFeedback() {
           ${d.unit?`<span style="font-size:0.72rem;color:#1a6b9a;">${d.unit}</span>`:''}
           <span style="font-weight:500;font-size:0.88rem;">${d.name||'匿名'}</span>
           <span style="font-size:0.75rem;color:var(--text-light);margin-left:auto;">${(d.time||'').substring(0,16)}</span>
-          <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 8px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button>
+          <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 8px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
         </div>
         <div style="font-size:0.85rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">${d.content||''}</div>
       </div>`).join(''));
@@ -10410,7 +10410,7 @@ async function loadAdminFeedback() {
 async function loadChangelog() {
   const el = document.getElementById('changelogList');
   if (!el) return;
-  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📝</span>載入中...</div>';
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></span>載入中...</div>';
   try {
     let docs = await fbList(COL_CHANGELOG);
     // 跟後台一樣：先依 order 排，order 相同再依日期倒序
@@ -10421,7 +10421,7 @@ async function loadChangelog() {
       return (b.date||'') > (a.date||'') ? 1 : (b.date||'') < (a.date||'') ? -1 : 0;
     });
     if (!docs.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📝</span>尚無版本紀錄</div>';
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></span>尚無版本紀錄</div>';
       return;
     }
     var html = '';
@@ -11236,12 +11236,12 @@ async function loadTempPassList() {
         +'<span style="font-size:0.82rem;font-weight:600;color:var(--text);">'+d.memberName+'</span></div>'
         +'<div style="display:flex;align-items:center;gap:6px;">'
         +'<span style="font-size:0.72rem;padding:2px 8px;border-radius:10px;background:'+(inactive?'#f0f0f0':'#eafaf1')+';color:'+(inactive?'#999':'#1a6b35')+';"> '+(inactive?'已失效':'使用中')+'</span>'
-        +'<button class="tpSingleDel" data-col="'+COL_TEMP_PASS+'" data-id="'+d.id+'" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button>'
+        +'<button class="tpSingleDel" data-col="'+COL_TEMP_PASS+'" data-id="'+d.id+'" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>'
         +'</div></div>'
         +'<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
         +'<span>⏰ '+expStr+'</span>'
         +'<span>📊 '+d.usedCount+'/'+(d.maxUses===0?'∞':d.maxUses)+'</span>'
-        +(d.note?'<span>📝 '+d.note+'</span>':'')+'</div>'
+        +(d.note?'<span><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg> '+d.note+'</span>':'')+'</div>'
         +(!inactive?'<div style="margin-top:6px;"><button onclick="revokeTempPass(&quot;'+d.id+'&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">撤銷</button></div>':'');
       el.appendChild(row);
     });
@@ -13497,7 +13497,7 @@ async function loadAdminCorrections() {
           <span style="font-size:0.78rem;color:var(--text-light);">${d.date||''}</span>
           ${d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">簽到 ${d.checkinTime}</span>` : ''}
           ${d.timeOut && !d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">出勤 ${d.timeOut}</span>` : ''}
-          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">${submittedBy}<button onclick="adminDel('${COL_CORRECTION}','${d.id}','修正申請',loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">🗑️</button></span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">${submittedBy}<button onclick="adminDel('${COL_CORRECTION}','${d.id}','修正申請',loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button></span>
         </div>
         ${reasonTags || reasonNote ? `<div style="margin-bottom:10px;">${reasonTags}${reasonNote}</div>` : ''}
         <div style="background:var(--warm);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
@@ -13572,7 +13572,7 @@ async function handleCorrection(corrId, docId, type, action) {
               }
             });
             if (fields.signature) drawSigToCanvas('aeOSigCanvas', fields.signature);
-            document.getElementById('adminEditTitle').textContent = '✏️ 核准修正－協勤紀錄（請確認後儲存）';
+            document.getElementById('adminEditTitle').textContent = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－協勤紀錄（請確認後儲存）';
           } else {
             const map = {
               aeAIn: fields.checkinTime, aeAOut: fields.checkoutTime,
@@ -13588,7 +13588,7 @@ async function handleCorrection(corrId, docId, type, action) {
             });
             if (fields.checkinSig)  drawSigToCanvas('aeACheckinCanvas',  fields.checkinSig);
             if (fields.checkoutSig) drawSigToCanvas('aeACheckoutCanvas', fields.checkoutSig);
-            document.getElementById('adminEditTitle').textContent = '✏️ 核准修正－簽到退紀錄（請確認後儲存）';
+            document.getElementById('adminEditTitle').textContent = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－簽到退紀錄（請確認後儲存）';
           }
         } catch(fillErr) { console.error('fillFields error:', fillErr); }
       }, 500);
@@ -14185,8 +14185,8 @@ function renderDutyList() {
         html += '</div>';
         if (canEdit) {
           html += '<div style="display:flex;gap:4px;flex-shrink:0;">';
-          html += '<button onclick="openDutyEdit(&quot;' + doc.id + '&quot;,&quot;' + dateStr + '&quot;,&quot;' + (doc.memberName||'') + '&quot;,&quot;' + (doc.start||'') + '&quot;,&quot;' + (doc.end||'') + '&quot;)" style="background:#eaf2ff;border:none;border-radius:6px;padding:5px 8px;font-size:0.72rem;color:#1a3a6b;cursor:pointer;">✏️</button>';
-          html += '<button onclick="deleteDuty(&quot;' + doc.id + '&quot;)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 8px;font-size:0.72rem;color:#c0392b;cursor:pointer;">✕</button>';
+          html += '<button onclick="openDutyEdit(&quot;' + doc.id + '&quot;,&quot;' + dateStr + '&quot;,&quot;' + (doc.memberName||'') + '&quot;,&quot;' + (doc.start||'') + '&quot;,&quot;' + (doc.end||'') + '&quot;)" style="background:#eaf2ff;border:none;border-radius:6px;padding:5px 8px;font-size:0.72rem;color:#1a3a6b;cursor:pointer;display:flex;align-items:center;"><svg style="width:12px;height:12px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg></button>';
+          html += '<button onclick="deleteDuty(&quot;' + doc.id + '&quot;)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 8px;font-size:0.72rem;color:#c0392b;cursor:pointer;display:flex;align-items:center;"><svg style="width:12px;height:12px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>';
           html += '</div>';
         }
         html += '</div>';
