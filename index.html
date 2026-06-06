@@ -242,16 +242,18 @@ input[readonly], input.input-readonly {
 .sig-footer-btns { display: flex; gap: 8px; }
 .sig-footer-btns button { white-space: nowrap; }
 .sig-fullscreen-btn { background:none; border:1px solid var(--border); border-radius:5px; padding:5px 12px; font-size:0.76rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
-/* ── 全螢幕簽名（強制橫向）── */
+/* ── 全螢幕簽名 ── */
 #sigFullscreenModal {
-  position:fixed; z-index:10000; background:#fff; display:none; flex-direction:column;
-  /* 橫向：寬=螢幕高度，高=螢幕寬度，旋轉後填滿 */
-  width:100vh; height:100vw;
+  position:fixed; inset:0; z-index:10000; background:#fff; display:none; flex-direction:column;
+}
+#sigFullscreenModal.open { display:flex; }
+/* 直向時旋轉成橫向 */
+#sigFullscreenModal.sig-fs-rotated {
+  width:100vh; height:100vw; inset:unset;
   top:50%; left:50%;
   transform:translate(-50%,-50%) rotate(90deg);
   transform-origin:center center;
 }
-#sigFullscreenModal.open { display:flex; }
 #sigFullscreenTopBar { display:flex; align-items:center; justify-content:space-between; padding:0 16px; height:48px; border-bottom:1px solid var(--border); background:#fff; flex-shrink:0; }
 #sigFullscreenTopBar h3 { font-size:1rem; font-weight:700; margin:0; }
 #sigFullscreenCanvasWrap { flex:1; position:relative; background:#fafaf8; overflow:hidden; }
@@ -5702,6 +5704,26 @@ let _sfCtx = null;
 let _sfDrawing = false;
 let _sfLastX = 0, _sfLastY = 0;
 
+function _sfApplyOrientation() {
+  const modal = document.getElementById('sigFullscreenModal');
+  if (!modal) return;
+  const isPortrait = window.innerHeight > window.innerWidth;
+  modal.classList.toggle('sig-fs-rotated', isPortrait);
+  // resize canvas after orientation class applied
+  requestAnimationFrame(() => {
+    const fsCanvas = document.getElementById('sigFullscreenCanvas');
+    if (!fsCanvas || !_sfCtx) return;
+    const prev = fsCanvas.toDataURL();
+    fsCanvas.width  = fsCanvas.offsetWidth  || window.innerWidth;
+    fsCanvas.height = fsCanvas.offsetHeight || (window.innerHeight - 120);
+    _sfCtx = fsCanvas.getContext('2d');
+    _sfCtx.strokeStyle = '#1a1a1a'; _sfCtx.lineWidth = 2.5;
+    _sfCtx.lineCap = 'round'; _sfCtx.lineJoin = 'round';
+    const img = new Image(); img.src = prev;
+    img.onload = () => _sfCtx.drawImage(img, 0, 0, fsCanvas.width, fsCanvas.height);
+  });
+}
+
 function openSigFullscreen(targetCanvasId, onConfirm) {
   _sfTargetCanvasId = targetCanvasId;
   _sfOnConfirm = onConfirm || null;
@@ -5709,16 +5731,14 @@ function openSigFullscreen(targetCanvasId, onConfirm) {
   const fsCanvas = document.getElementById('sigFullscreenCanvas');
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
-  // size canvas to its display size
+  _sfApplyOrientation();
+  window.addEventListener('resize', _sfApplyOrientation);
   requestAnimationFrame(() => {
     fsCanvas.width  = fsCanvas.offsetWidth  || window.innerWidth;
     fsCanvas.height = fsCanvas.offsetHeight || (window.innerHeight - 120);
     _sfCtx = fsCanvas.getContext('2d');
-    _sfCtx.strokeStyle = '#1a1a1a';
-    _sfCtx.lineWidth   = 2.5;
-    _sfCtx.lineCap     = 'round';
-    _sfCtx.lineJoin    = 'round';
-    // copy existing drawing if any
+    _sfCtx.strokeStyle = '#1a1a1a'; _sfCtx.lineWidth = 2.5;
+    _sfCtx.lineCap = 'round'; _sfCtx.lineJoin = 'round';
     const src = document.getElementById(targetCanvasId);
     if (src && src.width && src.height) _sfCtx.drawImage(src, 0, 0, fsCanvas.width, fsCanvas.height);
     const hint = document.getElementById('sigFullscreenHint');
@@ -5727,7 +5747,9 @@ function openSigFullscreen(targetCanvasId, onConfirm) {
 }
 
 function closeSigFullscreen() {
-  document.getElementById('sigFullscreenModal').classList.remove('open');
+  window.removeEventListener('resize', _sfApplyOrientation);
+  const modal = document.getElementById('sigFullscreenModal');
+  modal.classList.remove('open', 'sig-fs-rotated');
   document.body.style.overflow = '';
   _sfTargetCanvasId = null; _sfOnConfirm = null; _sfCtx = null;
 }
@@ -5760,10 +5782,14 @@ function confirmSigFullscreen() {
     const t = e.touches ? e.touches[0] : e;
     const vx = t.clientX - rect.left;
     const vy = t.clientY - rect.top;
-    // Modal is rotated -90deg (CCW): convert visual → canvas coords
-    const cx = (rect.height - vy) * c.width  / rect.height;
-    const cy = vx * c.height / rect.width;
-    return [cx, cy];
+    const rotated = document.getElementById('sigFullscreenModal').classList.contains('sig-fs-rotated');
+    if (rotated) {
+      // CW 90deg: convert visual → canvas coords
+      const cx = (rect.height - vy) * c.width  / rect.height;
+      const cy = vx * c.height / rect.width;
+      return [cx, cy];
+    }
+    return [vx * c.width / rect.width, vy * c.height / rect.height];
   }
   function _sfStart(e) {
     if (!_sfCtx) return;
