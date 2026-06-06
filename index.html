@@ -3899,7 +3899,7 @@ async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collecti
 
 // ── 本地快取（stale-while-revalidate）──
 const _C = {
-  TTL: { attendance:180, outingRecords:180, dutySchedule:600, announcements:600, members:1800, whitelist:1800 },
+  TTL: { attendance:600, outingRecords:600, dutySchedule:600, announcements:600, members:1800, whitelist:1800 },
   _k: col => '_fc2_' + col,
   peek(col) {
     try { const r = localStorage.getItem(this._k(col)); return r ? JSON.parse(r).d : null; } catch(e) { return null; }
@@ -3923,17 +3923,22 @@ async function fbListCached(col, orderBy, dir) {
   _C.set(col, data); return data;
 }
 
-// 登入後預熱（靜默背景拉取，不阻塞 UI）
+// 登入後預熱（平行背景拉取，不阻塞 UI）
 function _prefetchCaches() {
-  [
+  const targets = [
     [COL_ATTEND,   'date', 'asc'],
     [COL_OUTING,   'date', 'asc'],
     ['dutySchedule'],
     [COL_ANNOUNCE],
     [COL_MEMBERS],
-  ].forEach(([col, ...args]) => {
-    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(()=>{});
-  });
+    [COL_WHITELIST],
+  ];
+  // 快取未新鮮的全部並行拉取
+  Promise.all(
+    targets.map(([col, ...args]) =>
+      _C.fresh(col) ? Promise.resolve() : fbList(col, ...args).then(d => _C.set(col, d)).catch(() => {})
+    )
+  ).catch(() => {});
 }
 async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);}
 async function verifyWhitelist(email){
@@ -4106,6 +4111,7 @@ async function handleGoogleLogin(response) {
 
 // ── 顯示主系統 ──
 function showApp(name, email, isAdmin, isOfficer, role, title) {
+  _prefetchCaches(); // 第一件事：預熱快取，讓首頁資料秒到
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
@@ -4157,7 +4163,6 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
   // 登入後 4 秒檢查確認任務
   setTimeout(() => checkConfirmTask().catch(() => {}), 4000);
-  _prefetchCaches(); // 預熱快取，讓後續頁面秒開
 
   setTimeout(async () => {
     if (!allItems || allItems.length === 0) {
@@ -5142,53 +5147,52 @@ async function loadDashboard() {
   const todayStr = today.toLocaleDateString('sv');
   const monthStr = todayStr.substring(0, 7);
 
-  // 啟動時鐘和天氣（公告下方資訊列）
   startDashClock();
   loadDashWeather();
 
-  // 補抓 title（跟 profilePage 一樣：先查 members，再查 whitelist）
-  try {
-    const _su = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    if (_su.email) {
-      await ensureFirebase();
-      const memberName = _su.memberName || _su.name || '';
-      // 從 members collection 查職稱
-      let freshTitle = '';
-      const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
-      if (!mSnap.empty) freshTitle = mSnap.docs[0].data().title || '';
-      // 備用：從 whitelist 查
-      if (!freshTitle) {
-        const wSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',_su.email.toLowerCase().trim()).get();
-        if (!wSnap.empty) freshTitle = wSnap.docs[0].data().title || '';
-      }
-      if (freshTitle && freshTitle !== _su.title) {
-        _su.title = freshTitle;
-        sessionStorage.setItem('rescue_user', JSON.stringify(_su));
-      }
-      const el = document.getElementById('dashGreetTitle');
-      if (el && freshTitle) { el.textContent = freshTitle; el.style.display = ''; }
-    }
-  } catch(e) {}
-
-  const _me = JSON.parse(sessionStorage.getItem('rescue_user')||'{}').memberName || '';
-
-  // ── 先顯示快取資料（零等待）──
+  // ① 立即顯示快取資料（零等待，localStorage 不需網路）
+  const _su = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _me = _su.memberName || _su.name || '';
   const staleAtt  = _C.peek(COL_ATTEND);
   const staleOut  = _C.peek(COL_OUTING);
   const staleDuty = _C.peek('dutySchedule');
   if (staleAtt && staleOut) _applyDashStats(staleAtt, staleOut, todayStr, monthStr, _me);
   if (staleDuty)            _applyDashDuty(staleDuty, todayStr);
 
-  // ── 背景拉取最新資料（快取新鮮則直接回傳，不發 Firestore 請求）──
+  // ② 背景更新資料（快取新鮮直接回傳，不阻塞渲染）
   Promise.all([
-    fbListCached(COL_ATTEND,      'date', 'asc'),
-    fbListCached(COL_OUTING,      'date', 'asc'),
+    fbListCached(COL_ATTEND,    'date', 'asc'),
+    fbListCached(COL_OUTING,    'date', 'asc'),
     fbListCached('dutySchedule'),
   ]).then(([attDocs, outDocs, dutyDocs]) => {
     _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
     _applyDashDuty(dutyDocs, todayStr);
     updateItemsBadge();
   }).catch(() => {});
+
+  // ③ 背景同步職稱（不阻塞任何渲染）
+  _bgSyncTitle(_su).catch(() => {});
+}
+
+async function _bgSyncTitle(_su) {
+  if (!_su?.email) return;
+  await ensureFirebase();
+  const memberName = _su.memberName || _su.name || '';
+  let freshTitle = '';
+  const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
+  if (!mSnap.empty) freshTitle = mSnap.docs[0].data().title || '';
+  if (!freshTitle) {
+    const wSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',_su.email.toLowerCase().trim()).get();
+    if (!wSnap.empty) freshTitle = wSnap.docs[0].data().title || '';
+  }
+  if (!freshTitle || freshTitle === _su.title) return;
+  _su.title = freshTitle;
+  sessionStorage.setItem('rescue_user', JSON.stringify(_su));
+  // 更新所有 header 職稱顯示
+  ['dash','duty','ops','manage'].forEach(prefix => {
+    const el = document.getElementById(prefix + 'GreetTitle');
+    if (el) { el.textContent = freshTitle; el.style.display = ''; }
+  });
 }
 
 function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
