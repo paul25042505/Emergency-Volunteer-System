@@ -971,7 +971,8 @@ function _dlCSV(content, filename) {
     <div id="g_id_onload"
       data-client_id="280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com"
       data-callback="handleGoogleLogin"
-      data-auto_prompt="false">
+      data-auto_prompt="false"
+      data-auto_select="true">
     </div>
     <div class="g_id_signin"
       data-type="standard"
@@ -994,7 +995,7 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- 臨時密碼登入 -->
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+    <div id="loginAltSection" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
       <div style="font-size:0.78rem;color:var(--text-light);text-align:center;margin-bottom:10px;">無法用 Google 登入？</div>
       <div style="display:flex;gap:8px;">
         <input type="text" id="tempPassInput" placeholder="輸入臨時密碼" maxlength="20"
@@ -4396,11 +4397,15 @@ function initQuickLogin() {
   if (other) other.style.display = '';
   const gs = document.getElementById('googleLoginSection');
   if (gs) gs.style.display = 'none';
+  const alt = document.getElementById('loginAltSection');
+  if (alt) alt.style.display = 'none';
 }
 
 function showGoogleLogin() {
   const gs = document.getElementById('googleLoginSection');
   if (gs) gs.style.display = '';
+  const alt = document.getElementById('loginAltSection');
+  if (alt) alt.style.display = '';
   const other = document.getElementById('quickLoginOther');
   if (other) other.style.display = 'none';
 }
