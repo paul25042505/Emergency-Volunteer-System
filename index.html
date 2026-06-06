@@ -138,7 +138,9 @@ body {
 /* 首頁時隱藏 header，內頁才顯示 */
 body.page-home .header { display: none !important; }
 body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
-body.page-ops #appScroll { padding-top: calc(env(safe-area-inset-top, 0px) + 158px) !important; }
+body.page-ops #appScroll    { padding-top: calc(env(safe-area-inset-top, 0px) + 162px) !important; }
+body.page-duty #appScroll   { padding-top: calc(env(safe-area-inset-top, 0px) + 100px) !important; }
+body.page-manage #appScroll { padding-top: calc(env(safe-area-inset-top, 0px) + 162px) !important; }
 /* body.page-home #globalLoadingBar — removed, loading is now a full-screen overlay */
 /* 勤務頁：隱藏標準 header，顯示自訂固定 header */
 body.page-ops .header { display: none !important; }
@@ -4900,10 +4902,7 @@ function syncHeaderHeight() {
     };
     for (const [cls, id] of Object.entries(customHeaderMap)) {
       if (document.body.classList.contains(cls)) {
-        const dh = document.getElementById(id);
-        const h  = dh ? Math.round(dh.getBoundingClientRect().height) : 0;
-        if (h > 0) scroller.style.setProperty('padding-top', h + 'px', 'important');
-        else scroller.style.removeProperty('padding-top');
+        scroller.style.removeProperty('padding-top'); // CSS calc(env(safe-area-inset-top)+offset) handles it
         return;
       }
     }
