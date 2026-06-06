@@ -6718,7 +6718,7 @@ function renderQueryResults(records) {
         +(tagsHtml ? '<div class="mq-card-tags">'+tagsHtml+'</div>' : '')
         +'<div style="margin-top:7px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.title ? ' <span style="color:var(--text-light);">'+r.title+'</span>' : '')+'</div>'
         +(r.note ? '<div style="margin-top:6px;padding:7px 10px;background:#FFFBEB;border:1.5px solid rgba(217,119,6,0.18);border-radius:8px;font-size:0.75rem;color:#92400E;line-height:1.5;"><span style="font-weight:600;margin-right:4px;">備註</span>'+r.note+'</div>' : '')
-        +(r.signature ? '<div class="mq-card-sigs" style="margin-top:8px;"><div class="mq-card-sig-item" style="flex:1;max-width:none;"><img src="'+r.signature+'" onclick="viewSig(''+r.signature+'')" title="點擊查看簽名" style="height:52px;"><span>簽名</span></div></div>' : '')
+        +(r.signature ? '<div class="mq-card-sigs" style="margin-top:8px;"><div class="mq-card-sig-item" style="flex:1;max-width:none;"><img src="'+r.signature+'" onclick="viewSig(\'' + r.signature + '\')" title="點擊查看簽名" style="height:52px;"><span>簽名</span></div></div>' : '')
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
     +'</div>';
