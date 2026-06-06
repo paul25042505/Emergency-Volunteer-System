@@ -846,6 +846,19 @@ tr:hover td { background: #fdfcfb; }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer>
 // ════ 批次匯入工具 ════
+
+function _attStatSync() {
+  const h = document.getElementById('attHours');
+  const cnt = document.getElementById('attCount');
+  const svc = document.getElementById('attService');
+  const hd = document.getElementById('attHoursDisplay');
+  const cd = document.getElementById('attCountDisplay');
+  const sd = document.getElementById('attServiceDisplay');
+  if (hd) hd.textContent = (h && h.value !== '' && h.value !== null) ? h.value : '—';
+  if (cd) cd.textContent = (cnt && cnt.value !== '') ? cnt.value : '0';
+  if (sd) sd.textContent = (svc && svc.value !== '') ? svc.value : '0';
+}
+
 function parseImportCSV(text) {
   text = text.replace(/^﻿/, '').replace(/
 /g,'
@@ -1987,19 +2000,19 @@ function _dlCSV(content, filename) {
           <label>簽退時間</label>
           <select id="easyCheckoutTime" onchange="easyAutoCalcHours()"></select>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="easyCountGrid">
-          <div class="field" style="margin-bottom:0;">
-            <label>備勤時數</label>
-            <div id="easyHoursDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">—</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;" id="easyCountGrid">
+          <div style="background:var(--red-faint);border:1.5px solid rgba(224,49,49,0.15);border-radius:14px;padding:14px 8px;text-align:center;">
+            <div style="font-size:0.65rem;font-weight:600;color:var(--red);letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">備勤時數</div>
+            <div id="easyHoursDisplay" style="font-size:1.6rem;font-weight:700;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
           </div>
-          <div class="field" style="margin-bottom:0;" id="easyCountField">
-            <label>出勤次數</label>
-            <div id="easyCountDisplay" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">1</div>
+          <div id="easyCountField" style="background:#EFF6FF;border:1.5px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
+            <div style="font-size:0.65rem;font-weight:600;color:#1D4ED8;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">出勤次數</div>
+            <div id="easyCountDisplay" style="font-size:1.6rem;font-weight:700;color:#1D4ED8;font-family:'Noto Serif TC',serif;line-height:1;">1</div>
           </div>
-        </div>
-        <div class="field" style="margin-bottom:0;" id="easyServiceField">
-          <label>服務人次</label>
-          <div id="easyServiceCount" style="font-size:1rem;padding:10px 13px;background:#f5f5f5;border-radius:8px;color:var(--text-mid);text-align:center;">0</div>
+          <div id="easyServiceField" style="background:#F0FDF4;border:1.5px solid rgba(22,163,74,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
+            <div style="font-size:0.65rem;font-weight:600;color:#16A34A;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">服務人次</div>
+            <div id="easyServiceCount" style="font-size:1.6rem;font-weight:700;color:#16A34A;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
+          </div>
         </div>
         <div class="field">
           <label>簽退簽名</label>
@@ -2146,18 +2159,21 @@ function _dlCSV(content, filename) {
           </div>
           <div class="card-divider"></div>
           <div class="field">
+            <input type="number" id="attHours" style="display:none;" min="0" step="0.5">
+            <input type="number" id="attCount" style="display:none;" min="0" step="1">
+            <input type="number" id="attService" style="display:none;" min="0" step="1" value="0">
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-              <div style="background:var(--red-faint);border:1px solid rgba(224,49,49,0.12);border-radius:12px;padding:12px 8px;text-align:center;">
-                <div style="font-size:0.68rem;color:var(--text-light);letter-spacing:0.06em;margin-bottom:4px;">備勤時數</div>
-                <input type="number" id="attHours" min="0" step="0.5" readonly tabindex="-1" style="border:none;background:transparent;font-size:1.4rem;font-weight:700;color:var(--red);font-family:'Noto Serif TC',serif;text-align:center;width:100%;padding:0;min-height:unset;box-shadow:none;outline:none;">
+              <div style="background:var(--red-faint);border:1.5px solid rgba(224,49,49,0.15);border-radius:14px;padding:14px 8px;text-align:center;">
+                <div style="font-size:0.65rem;font-weight:600;color:var(--red);letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">備勤時數</div>
+                <div id="attHoursDisplay" style="font-size:1.6rem;font-weight:700;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
               </div>
-              <div id="attCountField" style="background:#EFF6FF;border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:12px 8px;text-align:center;">
-                <div style="font-size:0.68rem;color:var(--text-light);letter-spacing:0.06em;margin-bottom:4px;">出勤次數</div>
-                <input type="number" id="attCount" min="0" step="1" readonly tabindex="-1" style="border:none;background:transparent;font-size:1.4rem;font-weight:700;color:#1D4ED8;font-family:'Noto Serif TC',serif;text-align:center;width:100%;padding:0;min-height:unset;box-shadow:none;outline:none;" placeholder="0">
+              <div id="attCountField" style="background:#EFF6FF;border:1.5px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
+                <div style="font-size:0.65rem;font-weight:600;color:#1D4ED8;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">出勤次數</div>
+                <div id="attCountDisplay" style="font-size:1.6rem;font-weight:700;color:#1D4ED8;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
               </div>
-              <div id="attServiceField" style="background:#F0FDF4;border:1px solid rgba(22,163,74,0.15);border-radius:12px;padding:12px 8px;text-align:center;">
-                <div style="font-size:0.68rem;color:var(--text-light);letter-spacing:0.06em;margin-bottom:4px;">服務人次</div>
-                <input type="number" id="attService" min="0" step="1" value="0" readonly tabindex="-1" style="border:none;background:transparent;font-size:1.4rem;font-weight:700;color:#16A34A;font-family:'Noto Serif TC',serif;text-align:center;width:100%;padding:0;min-height:unset;box-shadow:none;outline:none;" placeholder="0">
+              <div id="attServiceField" style="background:#F0FDF4;border:1.5px solid rgba(22,163,74,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
+                <div style="font-size:0.65rem;font-weight:600;color:#16A34A;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">服務人次</div>
+                <div id="attServiceDisplay" style="font-size:1.6rem;font-weight:700;color:#16A34A;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
               </div>
             </div>
           </div>
