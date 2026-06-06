@@ -1421,8 +1421,27 @@ function _dlCSV(content, filename) {
           <div class="stat-label">今日簽到人數</div>
         </div>
         <div class="stat-card">
-          <div class="stat-num" id="dashTodayOutCount">—</div>
-          <div class="stat-label">今日出勤筆數</div>
+          <div class="stat-num" style="color:var(--red);" id="dashTodaySignin">—</div>
+          <div class="stat-label">目前在線人數</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 本月累積 -->
+    <div style="margin-bottom:20px;">
+      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">本月累積</div><div class="sec-pill-line"></div></div>
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthTotalOut">—</div>
+          <div class="stat-label">協勤總筆數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthTotalHours">—</div>
+          <div class="stat-label">備勤總時數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="dashMonthTotalSvc">—</div>
+          <div class="stat-label">服務總人次</div>
         </div>
       </div>
     </div>
@@ -5239,25 +5258,31 @@ async function _bgSyncTitle(_su) {
 
 function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+  // 今日概況
   const todayOut = outDocs.filter(r => (r.date||'') === todayStr);
   const todayAtt = attDocs.filter(r => (r.date||'') === todayStr);
-  const todaySigninSet = new Set(todayAtt.map(r => r.memberName||'').filter(Boolean));
   set('dashTodayAtt',     todayOut.length);
   set('dashTodayOutCount',todayOut.length);
-  set('dashTodayMembers', todaySigninSet.size);
+  set('dashTodayMembers', new Set(todayAtt.map(r => r.memberName||'').filter(Boolean)).size);
   set('dashTodaySignin',  new Set(attDocs.filter(r => r.checkinTime && !r.checkoutTime && r.date === todayStr).map(r => r.memberName||'').filter(Boolean)).size);
 
+  // 本月累積（全隊）
+  const monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
+  const monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
+  const monthHours = monthAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+  const monthSvc   = monthAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0);
+  set('dashMonthTotalOut',   monthOut.length);
+  set('dashMonthTotalHours', monthHours % 1 === 0 ? monthHours : monthHours.toFixed(1));
+  set('dashMonthTotalSvc',   monthSvc);
+
+  // 隱藏用（個人年度，保留 ID 相容）
   const yearStr = todayStr.substring(0, 4);
   const myYearAtt = attDocs.filter(r => (r.date||'').startsWith(yearStr) && r.memberName === me);
   const myYearHours = myYearAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
-  const myYearSvc   = myYearAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0);
   set('dashMonthHours', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
   set('dashMyMonthAtt', myYearAtt.length);
-  set('dashMyMonthOut', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
-  set('dashMyMonthSvc', myYearSvc);
-
-  const hl = document.getElementById('dashHeroDateLine');
-  if (hl) { const n = new Date(); hl.textContent = n.getFullYear() + ' 年（個人年度統計）'; }
+  set('dashMyMonthSvc', myYearAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0));
 }
 
 function _applyDashDuty(dutyDocs, todayStr) {
