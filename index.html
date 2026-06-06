@@ -378,7 +378,7 @@ tr:hover td { background: #fdfcfb; }
 .loading-msg { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85rem; }
 
 /* ══ Mobile Query Cards (富邦銀行 style) ══ */
-.mq-filter { background:#fff; padding:12px 16px; border-bottom:1px solid var(--border); }
+.mq-filter { background:#fff; padding:12px 16px; border-bottom:1px solid var(--border); position:sticky; top:var(--ops-h,0px); z-index:50; }
 .mq-chips { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; margin-bottom:10px; }
 .mq-chips::-webkit-scrollbar { display:none; }
 .mq-chip { flex-shrink:0; padding:6px 16px; border-radius:50px; border:1.5px solid var(--border); font-size:0.8rem; background:#fff; color:var(--text-mid); cursor:pointer; font-family:'Noto Sans TC',sans-serif; font-weight:500; white-space:nowrap; transition:all 0.15s; }
@@ -4900,8 +4900,9 @@ function syncHeaderHeight() {
     for (const [cls, id] of Object.entries(customHeaderMap)) {
       if (document.body.classList.contains(cls)) {
         const dh = document.getElementById(id);
-        const h  = dh ? Math.round(dh.getBoundingClientRect().height) : 58;
+        const h  = (dh ? Math.round(dh.getBoundingClientRect().height) : 0) || 130;
         scroller.style.setProperty('padding-top', h + 'px', 'important');
+        document.documentElement.style.setProperty('--ops-h', h + 'px');
         return;
       }
     }
@@ -5067,6 +5068,8 @@ function navTo(pageId, fromHistory) {
   const backBtn = document.getElementById('headerBackBtn');
   if (backBtn) backBtn.classList.toggle('visible', !isHome && !isDuty && !isOps && !isManage);
   syncHeaderHeight(); // header 顯示/隱藏後再同步高度
+  setTimeout(syncHeaderHeight, 80);
+  setTimeout(syncHeaderHeight, 250);
 
   // 同步底部 tab bar
   _syncTabBar(pageId);
