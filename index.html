@@ -7349,12 +7349,8 @@ let _attQueryInited = false;
 async function initAttQuery() {
   await Promise.all([loadMembers(), loadUnits()]);
   if (_attQueryInited) return; _attQueryInited = true;
-  const _now = new Date();
-  const _m1 = new Date(_now.getFullYear(), _now.getMonth(), 1).toLocaleDateString('sv');
-  const _m2 = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toLocaleDateString('sv');
-  const _df = document.getElementById('aqDateFrom'), _dt = document.getElementById('aqDateTo');
-  if (_df && !_df.value) _df.value = _m1;
-  if (_dt && !_dt.value) _dt.value = _m2;
+  // 初始化日期設為「今天」與 chip 保持一致
+  aqSetDateChip('today');
 
   // 填分隊選單
   const unitSel = document.getElementById('aqUnit');
