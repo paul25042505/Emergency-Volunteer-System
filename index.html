@@ -61,6 +61,7 @@ body {
 .page { display: none; }
 .page.active { display: block; }
 @keyframes _slideFromRight { from { transform: translateX(40%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes _dotFade { 0%,100% { opacity:0.15; } 50% { opacity:1; } }
 @keyframes _slideFromLeft  { from { transform: translateX(-40%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .page.slide-from-right { animation: _slideFromRight 0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
 .page.slide-from-left  { animation: _slideFromLeft  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
@@ -134,7 +135,7 @@ body {
 /* 首頁時隱藏 header，內頁才顯示 */
 body.page-home .header { display: none !important; }
 body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
-body.page-home #globalLoadingBar { top: 0 !important; }
+/* body.page-home #globalLoadingBar — removed, loading is now a full-screen overlay */
 /* 勤務頁：隱藏標準 header，顯示自訂固定 header */
 body.page-ops .header { display: none !important; }
 body.page-ops #opsCustomHeader { display: block !important; }
@@ -144,7 +145,7 @@ body.page-manage #manageCustomHeader { display: block !important; }
 /* 備勤排班頁：隱藏標準 header，顯示自訂固定 header */
 body.page-duty .header { display: none !important; }
 body.page-duty #dutyCustomHeader { display: block !important; }
-body.page-duty #globalLoadingBar { top: 58px !important; }
+/* body.page-duty #globalLoadingBar — removed, loading is now a full-screen overlay */
 .header-inner {
   position: relative; z-index: 2; display: flex; align-items: center;
   padding: 14px 16px; min-height: 56px; gap: 10px;
@@ -1001,10 +1002,12 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<div id="globalLoadingBar" style="position:fixed;top:56px;left:0;right:0;z-index:9999;display:none;background:rgba(139,26,14,0.88);overflow:hidden;">
-  <div id="globalLoadingBarFill" style="position:absolute;top:0;left:0;height:100%;width:0%;background:rgba(255,255,255,0.18);transition:width 0.25s ease;"></div>
-  <div id="globalLoadingCar" style="position:absolute;top:50%;left:0%;transform:translate(-50%,-50%) scaleX(-1);font-size:1rem;z-index:3;transition:left 0.25s ease;pointer-events:none;">🚑</div>
-  <div id="globalLoadingLabel" style="position:relative;z-index:2;color:white;font-size:0.72rem;text-align:center;padding:6px 0;letter-spacing:0.05em;font-family:'Noto Sans TC',sans-serif;font-weight:500;">🚨 接到勤務！資料整備中，請勿重新整理…</div>
+<div id="globalLoadingBar" style="position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.25);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);">
+  <div style="background:rgba(30,30,30,0.82);border-radius:20px;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:16px;min-width:110px;">
+    <div id="globalLoadingSpinner" style="position:relative;width:48px;height:48px;">
+    </div>
+    <div id="globalLoadingLabel" style="color:rgba(255,255,255,0.88);font-size:0.75rem;letter-spacing:0.06em;font-family:'Noto Sans TC',sans-serif;font-weight:500;white-space:nowrap;">載入中</div>
+  </div>
 </div>
 <!-- ══════ 通知面板 ══════ -->
 <div id="noticePanel">
@@ -4661,8 +4664,6 @@ function syncHeaderHeight() {
         const dh = document.getElementById(id);
         const h  = dh ? Math.round(dh.getBoundingClientRect().height) : 58;
         scroller.style.setProperty('padding-top', h + 'px', 'important');
-        const lb = document.getElementById('globalLoadingBar');
-        if (lb) lb.style.setProperty('top', h + 'px', 'important');
         return;
       }
     }
@@ -4690,83 +4691,52 @@ function _positionAdminTabBar() { /* tab bar 已移除 */ }
 
 let _loadingCount = 0;
 let _loadingTimer = null;
-let _loadingSlowTimer = null;
 let _loadingMaxTimer = null;
-let _loadingWidth = 0;
 function showLoading() {
   _loadingCount++;
   if (_loadingCount > 1) return;
-  const bar  = document.getElementById('globalLoadingBar');
-  const fill = document.getElementById('globalLoadingBarFill');
-  if (!bar || !fill) return;
-  clearInterval(_loadingTimer);
-  clearTimeout(_loadingSlowTimer);
+  const bar = document.getElementById('globalLoadingBar');
+  if (!bar) return;
   clearTimeout(_loadingMaxTimer);
-  _loadingWidth = 0;
-  fill.style.transition = 'none';
-  fill.style.width = '0%';
-  bar.style.opacity = '1';
-  bar.style.display = 'block';
+  // 建立 12 顆圓點繞圈
+  const spinner = document.getElementById('globalLoadingSpinner');
+  if (spinner && !spinner.hasChildNodes()) {
+    const N = 12, R = 18, r = 3.2;
+    for (let i = 0; i < N; i++) {
+      const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
+      const x = R * Math.cos(angle) + R + r;
+      const y = R * Math.sin(angle) + R + r;
+      const dot = document.createElement('div');
+      dot.style.cssText = `position:absolute;width:${r*2}px;height:${r*2}px;border-radius:50%;background:#fff;`
+        + `left:${x - r}px;top:${y - r}px;`
+        + `animation:_dotFade 1.1s ease-in-out ${(i/N*1.1).toFixed(2)}s infinite;`;
+      spinner.appendChild(dot);
+    }
+    spinner.style.width  = (R*2 + r*2) + 'px';
+    spinner.style.height = (R*2 + r*2) + 'px';
+  }
+  bar.style.display = 'flex';
+  bar.style.opacity = '0';
+  requestAnimationFrame(() => {
+    bar.style.transition = 'opacity 0.15s ease';
+    bar.style.opacity = '1';
+  });
   // 最多顯示 6 秒，強制結束避免卡住
   _loadingMaxTimer = setTimeout(() => { _loadingCount = 1; hideLoading(); }, 6000);
-  const _loadingMsgs = [
-    [0,  '🚨 接到勤務！資料整備中，請勿重新整理…'],
-    [18, '🚑 出動救護車，全速前進中…'],
-    [36, '📍 抵達現場，評估狀況中…'],
-    [54, '🩺 救治傷病患，緊張處置中…'],
-    [72, '🏥 送醫途中，快到了！'],
-    [88, '🏠 任務完成，返隊中…馬上好！'],
-  ];
-  const _loadingLabel = document.getElementById('globalLoadingLabel');
-  const _loadingCar   = document.getElementById('globalLoadingCar');
-  const _updateUI = () => {
-    if (_loadingLabel) {
-      const msg = [..._loadingMsgs].reverse().find(([t]) => _loadingWidth >= t);
-      if (msg) _loadingLabel.textContent = msg[1];
-    }
-    if (_loadingCar) _loadingCar.style.left = _loadingWidth + '%';
-  };
-  _updateUI();
-  requestAnimationFrame(() => {
-    fill.style.transition = 'width 0.25s ease';
-    _loadingTimer = setInterval(() => {
-      const remaining = 90 - _loadingWidth;
-      _loadingWidth += Math.max(remaining * 0.1, 0.5);
-      if (_loadingWidth >= 90) {
-        _loadingWidth = 90;
-        clearInterval(_loadingTimer);
-        _loadingSlowTimer = setTimeout(() => {
-          if (_loadingLabel) _loadingLabel.textContent = '🚗 返隊途中塞車了，稍等一下…';
-        }, 5000);
-      }
-      fill.style.width = _loadingWidth + '%';
-      _updateUI();
-    }, 150);
-  });
 }
 function hideLoading() {
   _loadingCount = Math.max(0, _loadingCount - 1);
   if (_loadingCount > 0) return;
-  clearInterval(_loadingTimer);
-  clearTimeout(_loadingSlowTimer);
   clearTimeout(_loadingMaxTimer);
-  const bar  = document.getElementById('globalLoadingBar');
-  const fill = document.getElementById('globalLoadingBarFill');
-  if (!bar || !fill) return;
-  fill.style.transition = 'width 0.25s ease';
-  fill.style.width = '100%';
-  const _car = document.getElementById('globalLoadingCar');
-  if (_car) _car.style.left = '100%';
+  const bar = document.getElementById('globalLoadingBar');
+  if (!bar) return;
+  bar.style.transition = 'opacity 0.2s ease';
+  bar.style.opacity = '0';
   setTimeout(() => {
-    bar.style.transition = 'opacity 0.3s ease';
-    bar.style.opacity = '0';
-    setTimeout(() => {
-      bar.style.display = 'none';
-      bar.style.opacity = '1';
-      bar.style.transition = '';
-      fill.style.width = '0%';
-    }, 320);
-  }, 270);
+    bar.style.display = 'none';
+    bar.style.transition = '';
+    bar.style.opacity = '1';
+  }, 220);
 }
 
 // ── Tab 對應表 ──
