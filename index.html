@@ -248,7 +248,7 @@ input[readonly], input.input-readonly {
   /* 橫向：寬=螢幕高度，高=螢幕寬度，旋轉後填滿 */
   width:100vh; height:100vw;
   top:50%; left:50%;
-  transform:translate(-50%,-50%) rotate(-90deg);
+  transform:translate(-50%,-50%) rotate(90deg);
   transform-origin:center center;
 }
 #sigFullscreenModal.open { display:flex; }
@@ -5761,8 +5761,8 @@ function confirmSigFullscreen() {
     const vx = t.clientX - rect.left;
     const vy = t.clientY - rect.top;
     // Modal is rotated -90deg (CCW): convert visual → canvas coords
-    const cx = vy * c.width  / rect.height;
-    const cy = (rect.width - vx) * c.height / rect.width;
+    const cx = (rect.height - vy) * c.width  / rect.height;
+    const cy = vx * c.height / rect.width;
     return [cx, cy];
   }
   function _sfStart(e) {
