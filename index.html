@@ -6,6 +6,8 @@
 <title>救護義消系統</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iI2MwMzkyYiIvPgogIDxyZWN0IHg9IjEwOCIgeT0iMjA2IiB3aWR0aD0iMjk2IiBoZWlnaHQ9IjEwMCIgcng9IjE4IiBmaWxsPSJ3aGl0ZSIvPgogIDxyZWN0IHg9IjIwNiIgeT0iMTA4IiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjI5NiIgcng9IjE4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=">
 <link rel="manifest" href="/Emergency-Volunteer-System/manifest.json">
+<link rel="preload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" as="script">
+<link rel="preload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" as="script">
 <link rel="apple-touch-icon" href="/Emergency-Volunteer-System/icon-192.png">
 <meta name="theme-color" content="#c0392b">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -886,9 +888,9 @@ function _dlCSV(content, filename) {
 
 </script>
   <!-- Firebase SDK -->
-  <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script async src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -3928,9 +3930,31 @@ const _C = {
   invalidate(col) { try { localStorage.removeItem(this._k(col)); } catch(e) {} },
 };
 
-// 快取版 fbList：先回傳快取，背景更新
+// 三層快取策略：localStorage → Firestore IndexedDB → 網路
 async function fbListCached(col, orderBy, dir) {
+  // 第一層：localStorage 新鮮快取，零等待
   if (_C.fresh(col)) return _C.peek(col);
+
+  await ensureFirebase();
+  let q = _fbDB.collection(col).limit(1000);
+  if (orderBy) q = q.orderBy(orderBy, dir || 'asc');
+
+  // 第二層：Firestore IndexedDB 離線快取（persistence 開啟時，毫秒級）
+  try {
+    const snap = await q.get({ source: 'cache' });
+    if (!snap.empty) {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      _C.set(col, data);
+      // 背景從 server 更新（不阻塞）
+      q.get({ source: 'server' }).then(s => {
+        const fresh = s.docs.map(d => ({ id: d.id, ...d.data() }));
+        _C.set(col, fresh);
+      }).catch(() => {});
+      return data;
+    }
+  } catch(e) { /* 快取無資料，繼續走網路 */ }
+
+  // 第三層：直接從網路讀（首次使用）
   const data = await fbList(col, orderBy, dir);
   _C.set(col, data); return data;
 }
