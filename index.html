@@ -6702,21 +6702,25 @@ function renderQueryResults(records) {
       actions = '<button class="mq-act-btn blue" data-idx="'+i+'" data-type="outing" onclick="corrModalFromBtn(this)"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/><path d="M11 9l1.5-1.5L14 9l-2 2-1.5-1.5z"/></svg>申請修正</button>'
         +'<button class="mq-act-btn danger" onclick="requestDeleteOut('+i+')">申請刪除</button>';
     }
-
+    const svcBadge = r.serviceCount !== undefined && r.serviceCount !== null
+      ? '<span style="display:inline-flex;align-items:center;background:#F0FDF4;color:#16A34A;font-size:0.72rem;font-weight:600;padding:2px 9px;border-radius:20px;border:1.5px solid rgba(22,163,74,0.15);flex-shrink:0;">服務 '+r.serviceCount+' 人</span>'
+      : '';
     return '<div class="mq-card">'
       +'<div class="mq-card-head"><span class="mq-card-date">'+(r.date||'—')+'</span>'+districtBadge+'</div>'
       +'<div class="mq-card-body">'
         +'<div class="mq-card-name">'+(r.caseType||'—')+'</div>'
         +(r.address ? '<div class="mq-card-addr">'+(r.address||'')+'</div>' : '')
-        +'<div class="mq-card-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
-          +timeStr
-          +(r.serviceCount !== undefined ? '<span style="margin-left:auto;font-size:0.75rem;color:var(--text-light);">服務 '+r.serviceCount+' 人</span>' : '')
+        +'<div class="mq-card-time" style="justify-content:space-between;">'
+          +'<span style="display:flex;align-items:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'+timeStr+'</span>'
+          +svcBadge
         +'</div>'
         +(tagsHtml ? '<div class="mq-card-tags">'+tagsHtml+'</div>' : '')
-        +'<div style="margin-top:8px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.note ? '　'+r.note : '')+'</div>'
-        +(r.signature ? '<div class="mq-card-sigs"><div class="mq-card-sig-item"><img src="'+r.signature+'" onclick="viewSig(\''+r.signature+'\')" title="點擊查看簽名"><span>簽名</span></div></div>' : '')
+        +'<div style="margin-top:7px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.title ? ' <span style="color:var(--text-light);">'+r.title+'</span>' : '')+'</div>'
+        +(r.note ? '<div style="margin-top:6px;padding:7px 10px;background:#FFFBEB;border:1.5px solid rgba(217,119,6,0.18);border-radius:8px;font-size:0.75rem;color:#92400E;line-height:1.5;"><span style="font-weight:600;margin-right:4px;">備註</span>'+r.note+'</div>' : '')
+        +(r.signature ? '<div class="mq-card-sigs" style="margin-top:8px;"><div class="mq-card-sig-item" style="flex:1;max-width:none;"><img src="'+r.signature+'" onclick="viewSig(''+r.signature+'')" title="點擊查看簽名" style="height:52px;"><span>簽名</span></div></div>' : '')
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
+    +'</div>';
     +'</div>';
   }).join('');
 }
