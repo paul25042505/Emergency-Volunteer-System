@@ -3831,6 +3831,7 @@ var COL_CASETYPES = 'caseTypes';
 var _fbReady = false;
 var _unitsList = []; // 分隊列表快取
 async function loadUnits() {
+  if (_unitsList.length) return _unitsList; // 已載入，直接回傳
   try {
     const docs = await fbList(COL_UNITS);
     _unitsList = docs.map(d => d.name||'').filter(Boolean).sort();
@@ -5233,6 +5234,7 @@ let members     = [];
 let allItems    = [];
 
 async function loadMembers() {
+  if (members.length) return members; // 已載入，直接回傳
   try {
     // 從 whitelist 讀取（整合帳號與成員資料，unit 一定有）
     const wlDocs = await fbList(COL_WHITELIST);
@@ -6219,8 +6221,10 @@ function toggleAttQuerySort() {
   renderAttQueryResults();
 }
 
+let _queryPageInited = false;
 async function updateQueryMemberSelect() {
   try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) {}
+  if (_queryPageInited) return; _queryPageInited = true;
   const _now = new Date();
   const _m1 = new Date(_now.getFullYear(), _now.getMonth(), 1).toLocaleDateString('sv');
   const _m2 = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toLocaleDateString('sv');
@@ -6478,6 +6482,7 @@ function roundTo15(date) {
   return `${String(adjH).padStart(2,'0')}:${String(adjM).padStart(2,'0')}`;
 }
 
+let _attPageInited = false;
 async function initAttendancePage() {
   if (!attCheckoutTarget) {
     document.getElementById('attMain').style.display = 'block';
@@ -6486,11 +6491,14 @@ async function initAttendancePage() {
   try {
 
   const now = new Date();
-  document.getElementById('attDate').value = now.toLocaleDateString('sv');
-  buildCheckinTimeOptions('attCheckinTime');
-  buildTimeOptions('attCheckoutTime', roundTo15(now));
-
   try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) { console.warn('loadMembers/Units:', e); }
+
+  // 靜態 UI 只建一次
+  if (!_attPageInited) {
+    _attPageInited = true;
+    document.getElementById('attDate').value = now.toLocaleDateString('sv');
+    buildCheckinTimeOptions('attCheckinTime');
+    buildTimeOptions('attCheckoutTime', roundTo15(now));
   // 填分隊選單
   const unitSel = document.getElementById('attUnitSel');
   if (unitSel) {
@@ -6519,8 +6527,9 @@ async function initAttendancePage() {
   document.getElementById('attSuccessMsg')?.classList.remove('show');
   setTimeout(() => initAttCanvas('checkin'), 100);
   loadOutingReasons();
+  } // end if (!_attPageInited)
 
-  // 從 Firestore 讀取今日在線名單，還原 attSessions
+  // 每次進入都更新今日在線名單（即時資料）
   await loadTodayCheckins();
   // 只在沒有進行簽退時才重置顯示（避免覆蓋使用者已點的簽退畫面）
   if (!attCheckoutTarget) {
@@ -7041,8 +7050,10 @@ async function doCheckout() {
 let aqAllRecords = [];
 let aqFiltered = [];
 
+let _attQueryInited = false;
 async function initAttQuery() {
   await Promise.all([loadMembers(), loadUnits()]);
+  if (_attQueryInited) return; _attQueryInited = true;
   const _now = new Date();
   const _m1 = new Date(_now.getFullYear(), _now.getMonth(), 1).toLocaleDateString('sv');
   const _m2 = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toLocaleDateString('sv');
@@ -11111,8 +11122,10 @@ function hideChangelogForm() {
 // ════════════════════════════════════════
 // 協勤案件登錄：分隊篩選成員
 // ════════════════════════════════════════
+let _formPageInited = false;
 async function initFormPage() {
   await Promise.all([loadMembers(), loadUnits(), loadCaseTypes()]);
+  if (_formPageInited) return; _formPageInited = true;
   renderCaseTypeGrid();
   setSvcBtnByVal('serviceCount', 1);
   const unitSel = document.getElementById('formUnitSel');
@@ -12160,6 +12173,7 @@ let _caseTypesList = [];
 
 let _caseTypeDocs = []; // 儲存完整 doc 含 id
 async function loadCaseTypes() {
+  if (_caseTypesList.length) return _caseTypesList; // 已載入，直接回傳
   try {
     const docs = await fbList(COL_CASETYPES);
     if (docs.length) {
