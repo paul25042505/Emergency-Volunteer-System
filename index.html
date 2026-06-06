@@ -240,20 +240,29 @@ input[readonly], input.input-readonly {
 .sig-footer { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: var(--warm); border-top: 1px solid var(--border); }
 .sig-footer span { font-size: 0.7rem; color: var(--text-light); letter-spacing: 0.03em; }
 .sig-footer-btns { display: flex; gap: 8px; }
-.sig-fullscreen-btn { background:none; border:1px solid var(--border); border-radius:5px; padding:3px 9px; font-size:0.72rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; display:flex; align-items:center; gap:4px; }
-/* ── 全螢幕簽名 ── */
-#sigFullscreenModal { position:fixed; inset:0; z-index:10000; background:#fff; display:none; flex-direction:column; }
+.sig-footer-btns button { white-space: nowrap; }
+.sig-fullscreen-btn { background:none; border:1px solid var(--border); border-radius:5px; padding:5px 12px; font-size:0.76rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
+/* ── 全螢幕簽名（強制橫向）── */
+#sigFullscreenModal {
+  position:fixed; z-index:10000; background:#fff; display:none; flex-direction:column;
+  /* 橫向：寬=螢幕高度，高=螢幕寬度，旋轉後填滿 */
+  width:100vh; height:100vw;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%) rotate(-90deg);
+  transform-origin:center center;
+}
 #sigFullscreenModal.open { display:flex; }
-#sigFullscreenTopBar { display:flex; align-items:center; justify-content:space-between; padding:env(safe-area-inset-top,0px) 16px 0; min-height:52px; border-bottom:1px solid var(--border); background:#fff; flex-shrink:0; }
+#sigFullscreenTopBar { display:flex; align-items:center; justify-content:space-between; padding:0 16px; height:48px; border-bottom:1px solid var(--border); background:#fff; flex-shrink:0; }
 #sigFullscreenTopBar h3 { font-size:1rem; font-weight:700; margin:0; }
 #sigFullscreenCanvasWrap { flex:1; position:relative; background:#fafaf8; overflow:hidden; }
 #sigFullscreenCanvas { position:absolute; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
-#sigFullscreenHint { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); font-size:0.7rem; color:#bbb; pointer-events:none; white-space:nowrap; }
-#sigFullscreenBar { display:flex; gap:10px; padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--border); background:#fff; flex-shrink:0; }
-#sigFullscreenClear { flex:1; background:none; border:1.5px solid var(--border); border-radius:10px; padding:13px; font-size:0.9rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; }
-#sigFullscreenConfirm { flex:2; background:var(--red); color:#fff; border:none; border-radius:10px; padding:13px; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
-.btn-clear { background: none; border: 1px solid var(--border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(--text-mid); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; min-height: unset; }
+#sigFullscreenHint { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:0.8rem; color:#bbb; pointer-events:none; white-space:nowrap; }
+#sigFullscreenBar { display:flex; gap:10px; padding:10px 16px; border-top:1px solid var(--border); background:#fff; flex-shrink:0; }
+#sigFullscreenClear { flex:1; background:none; border:1.5px solid var(--border); border-radius:10px; padding:11px; font-size:0.9rem; cursor:pointer; color:var(--text-mid); font-family:'Noto Sans TC',sans-serif; }
+#sigFullscreenConfirm { flex:2; background:var(--red); color:#fff; border:none; border-radius:10px; padding:11px; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
+.btn-clear { background: none; border: 1px solid var(--border-dark); border-radius: 4px; padding: 5px 14px; font-size: 0.76rem; cursor: pointer; color: var(--text-mid); font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s; min-height: unset; white-space: nowrap; }
 .btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
+.admin-fill-btn { background:none; border:1px solid #b0c4de; border-radius:4px; padding:5px 10px; font-size:0.76rem; cursor:pointer; color:#1a5276; font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
 
 /* ── Submit ── */
 .submit-section { margin-top: 8px; }
@@ -1947,7 +1956,7 @@ function _dlCSV(content, filename) {
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
               <div class="sig-footer-btns">
-                <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;flex:1;">🖊 管理員代填</button>
                 <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('easyCheckinCanvas',_sigEasyCheckinSetHasSig)">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" style="flex:1;" onclick="easyClearCanvas()">清除重簽</button>
               </div>
@@ -1998,7 +2007,7 @@ function _dlCSV(content, filename) {
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
               <div class="sig-footer-btns">
-                <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;flex:1;">🖊 管理員代填</button>
                 <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('easyCheckoutCanvas',_sigEasyCheckoutSetHasSig)">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" style="flex:1;" onclick="easyClearCheckoutCanvas()">清除重簽</button>
               </div>
@@ -2064,7 +2073,7 @@ function _dlCSV(content, filename) {
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div class="sig-footer-btns">
-                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;flex:1;">🖊 管理員代填</button>
                   <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckinCanvas',_sigCheckinSetHasSig)">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkin')">清除重簽</button>
                 </div>
@@ -2127,7 +2136,7 @@ function _dlCSV(content, filename) {
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div class="sig-footer-btns">
-                  <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;flex:1;background:none;border:1px solid #b0c4de;border-radius:4px;padding:8px;font-size:0.76rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">🖊 管理員代填</button>
+                  <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;flex:1;">🖊 管理員代填</button>
                   <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckoutCanvas',_sigCheckoutSetHasSig)">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkout')">清除重簽</button>
                 </div>
@@ -5749,7 +5758,12 @@ function confirmSigFullscreen() {
     const c = document.getElementById('sigFullscreenCanvas');
     const rect = c.getBoundingClientRect();
     const t = e.touches ? e.touches[0] : e;
-    return [t.clientX - rect.left, t.clientY - rect.top];
+    const vx = t.clientX - rect.left;
+    const vy = t.clientY - rect.top;
+    // Modal is rotated -90deg (CCW): convert visual → canvas coords
+    const cx = vy * c.width  / rect.height;
+    const cy = (rect.width - vx) * c.height / rect.width;
+    return [cx, cy];
   }
   function _sfStart(e) {
     if (!_sfCtx) return;
