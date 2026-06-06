@@ -4691,42 +4691,48 @@ function _positionAdminTabBar() { /* tab bar 已移除 */ }
 
 let _loadingCount = 0;
 let _loadingTimer = null;
+let _loadingShowTimer = null;
 let _loadingMaxTimer = null;
 function showLoading() {
   _loadingCount++;
   if (_loadingCount > 1) return;
-  const bar = document.getElementById('globalLoadingBar');
-  if (!bar) return;
+  clearTimeout(_loadingShowTimer);
   clearTimeout(_loadingMaxTimer);
-  // 建立 12 顆圓點繞圈
-  const spinner = document.getElementById('globalLoadingSpinner');
-  if (spinner && !spinner.querySelector('div')) {
-    const N = 12, R = 18, r = 3.2;
-    for (let i = 0; i < N; i++) {
-      const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
-      const x = R * Math.cos(angle) + R + r;
-      const y = R * Math.sin(angle) + R + r;
-      const dot = document.createElement('div');
-      dot.style.cssText = `position:absolute;width:${r*2}px;height:${r*2}px;border-radius:50%;background:#fff;`
-        + `left:${x - r}px;top:${y - r}px;`
-        + `animation:_dotFade 1.1s ease-in-out ${(i/N*1.1).toFixed(2)}s infinite;`;
-      spinner.appendChild(dot);
+  // 延遲 300ms 才顯示，快頁面不閃 spinner
+  _loadingShowTimer = setTimeout(() => {
+    if (_loadingCount === 0) return;
+    const bar = document.getElementById('globalLoadingBar');
+    if (!bar) return;
+    const spinner = document.getElementById('globalLoadingSpinner');
+    if (spinner && !spinner.querySelector('div')) {
+      const N = 12, R = 18, r = 3.2;
+      for (let i = 0; i < N; i++) {
+        const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
+        const x = R * Math.cos(angle) + R + r;
+        const y = R * Math.sin(angle) + R + r;
+        const dot = document.createElement('div');
+        dot.style.cssText = `position:absolute;width:${r*2}px;height:${r*2}px;border-radius:50%;background:#fff;`
+          + `left:${x - r}px;top:${y - r}px;`
+          + `animation:_dotFade 1.1s ease-in-out ${(i/N*1.1).toFixed(2)}s infinite;`;
+        spinner.appendChild(dot);
+      }
+      spinner.style.width  = (R*2 + r*2) + 'px';
+      spinner.style.height = (R*2 + r*2) + 'px';
     }
-    spinner.style.width  = (R*2 + r*2) + 'px';
-    spinner.style.height = (R*2 + r*2) + 'px';
-  }
-  bar.style.display = 'flex';
-  bar.style.opacity = '0';
-  requestAnimationFrame(() => {
-    bar.style.transition = 'opacity 0.15s ease';
-    bar.style.opacity = '1';
-  });
-  // 最多顯示 6 秒，強制結束避免卡住
-  _loadingMaxTimer = setTimeout(() => { _loadingCount = 1; hideLoading(); }, 6000);
+    bar.style.display = 'flex';
+    bar.style.opacity = '0';
+    requestAnimationFrame(() => {
+      bar.style.transition = 'opacity 0.15s ease';
+      bar.style.opacity = '1';
+    });
+    // 最多顯示 6 秒，強制結束避免卡住
+    _loadingMaxTimer = setTimeout(() => { _loadingCount = 1; hideLoading(); }, 6000);
+  }, 300);
 }
 function hideLoading() {
   _loadingCount = Math.max(0, _loadingCount - 1);
   if (_loadingCount > 0) return;
+  clearTimeout(_loadingShowTimer); // 若頁面已快速完成，取消尚未出現的 spinner
   clearTimeout(_loadingMaxTimer);
   const bar = document.getElementById('globalLoadingBar');
   if (!bar) return;
