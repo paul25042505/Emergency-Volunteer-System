@@ -962,8 +962,12 @@ function _dlCSV(content, filename) {
     </div>
     <div class="login-divider"></div>
     <!-- ── 快速登入頭像 ── -->
-    <div id="quickLoginAvatars" style="display:none;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:14px;"></div>
+    <div id="quickLoginAvatars" style="display:none;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:6px;"></div>
+    <div id="quickLoginOther" style="display:none;text-align:center;margin-bottom:14px;">
+      <button onclick="showGoogleLogin()" style="background:none;border:none;color:var(--text-light);font-size:0.73rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:0;">不是你？使用其他帳號</button>
+    </div>
     <!-- Google 登入按鈕 -->
+    <div id="googleLoginSection">
     <div id="g_id_onload"
       data-client_id="280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com"
       data-callback="handleGoogleLogin"
@@ -980,6 +984,7 @@ function _dlCSV(content, filename) {
     </div>
     <div id="loginSpinner">⏳ 驗證中，請稍候...</div>
     <div class="login-error" id="loginError"></div>
+    </div><!-- /googleLoginSection -->
 
     <!-- LINE 瀏覽器警告 -->
     <div id="lineWarning" style="display:none;margin-bottom:0;margin-top:14px;padding:12px 14px;background:#edfbe4;border:1px solid #6fcf55;border-radius:8px;font-size:0.8rem;color:#2d6a1f;line-height:1.6;">
@@ -4376,7 +4381,7 @@ function initQuickLogin() {
   if (!container) return;
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]'); } catch(e) {}
-  if (stored.length === 0) { container.style.display = 'none'; return; }
+  if (stored.length === 0) return;
   const colors = ['linear-gradient(135deg,#E03131,#C62828)', 'linear-gradient(135deg,#1D4ED8,#1E40AF)', 'linear-gradient(135deg,#16A34A,#15803D)'];
   container.innerHTML = stored.map((u, i) => {
     const initials = (u.name || u.email || '?').charAt(0).toUpperCase();
@@ -4387,6 +4392,17 @@ function initQuickLogin() {
     </div>`;
   }).join('');
   container.style.display = 'flex';
+  const other = document.getElementById('quickLoginOther');
+  if (other) other.style.display = '';
+  const gs = document.getElementById('googleLoginSection');
+  if (gs) gs.style.display = 'none';
+}
+
+function showGoogleLogin() {
+  const gs = document.getElementById('googleLoginSection');
+  if (gs) gs.style.display = '';
+  const other = document.getElementById('quickLoginOther');
+  if (other) other.style.display = 'none';
 }
 
 function quickLoginAs(idx) {
@@ -4396,9 +4412,11 @@ function quickLoginAs(idx) {
   if (!u) return;
   try {
     google.accounts.id.prompt(notification => {
-      // 若 silent 失敗，保持正常登入畫面讓使用者手動登入
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        showGoogleLogin();
+      }
     });
-  } catch(e) {}
+  } catch(e) { showGoogleLogin(); }
 }
 
 function checkSession() {
