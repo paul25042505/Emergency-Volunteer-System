@@ -60,6 +60,10 @@ body {
 /* ── Pages ── */
 .page { display: none; }
 .page.active { display: block; }
+@keyframes _slideFromRight { from { transform: translateX(40%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes _slideFromLeft  { from { transform: translateX(-40%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.page.slide-from-right { animation: _slideFromRight 0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.page.slide-from-left  { animation: _slideFromLeft  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
 
 
 /* ── 簡易模式樣式（in-page，內嵌於各頁面）── */
@@ -4790,9 +4794,27 @@ function _syncTabBar(pageId) {
 
 function navTo(pageId, fromHistory) {
   showLoading();
+  const _prevPageId = window._currentPageId || '';
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(pageId).classList.add('active');
+  const _newPage = document.getElementById(pageId);
+  _newPage.classList.add('active');
+  // 子選單滑動動畫
+  (function() {
+    const groups = [
+      ['attendancePage','formPage','attQueryPage','queryPage'],
+      ['myCorrectionsPage','statsPage','gongchaPage','reportPage'],
+    ];
+    for (const g of groups) {
+      const pi = g.indexOf(_prevPageId), ni = g.indexOf(pageId);
+      if (pi >= 0 && ni >= 0 && pi !== ni) {
+        const dir = ni > pi ? 'slide-from-right' : 'slide-from-left';
+        _newPage.classList.add(dir);
+        _newPage.addEventListener('animationend', () => _newPage.classList.remove(dir), { once: true });
+        break;
+      }
+    }
+  })();
 
   // 首頁：隱藏 header；勤務頁：隱藏 header；其他頁：顯示 header + 返回按鈕
   const isHome   = pageId === 'dashboardPage';
@@ -13705,6 +13727,7 @@ function toggleDutyForm() {
 }
 
 function dutyView(v) {
+  const prevDutyView = _dutyView;
   _dutyView = v;
   ['month','list'].forEach(t => {
     const btn = document.getElementById('dutySub-'+t);
@@ -13713,6 +13736,17 @@ function dutyView(v) {
     else        btn.classList.remove('active');
   });
   renderDutyView();
+  // 子選單滑動動畫
+  if (prevDutyView && prevDutyView !== v) {
+    const order = ['list','month'];
+    const pi = order.indexOf(prevDutyView), ni = order.indexOf(v);
+    const dir = ni > pi ? 'slide-from-right' : 'slide-from-left';
+    const el = document.getElementById(v === 'month' ? 'dutyMonthView' : 'dutyListView');
+    if (el) {
+      el.classList.add(dir);
+      el.addEventListener('animationend', () => el.classList.remove(dir), { once: true });
+    }
+  }
 }
 
 function renderDutyView() {
