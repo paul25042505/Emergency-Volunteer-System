@@ -1582,7 +1582,7 @@ function _dlCSV(content, filename) {
             <div class="sig-footer">
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
-                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyOutingCanvas',()=>{ _easyOutingHasSig=true; })">⛶ 全螢幕</button>
+                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyOutingCanvas',_sigEasyOutingSetHasSig)">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" onclick="easyClearOutingCanvas()">清除重簽</button>
               </div>
             </div>
@@ -1745,7 +1745,7 @@ function _dlCSV(content, filename) {
               <div class="sig-footer">
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
-                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('sigCanvas',()=>{ hasSig=true; })">⛶ 全螢幕</button>
+                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('sigCanvas',_sigFormSetHasSig)">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" onclick="clearSig()">清除重簽</button>
                 </div>
               </div>
@@ -1947,7 +1947,7 @@ function _dlCSV(content, filename) {
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
                 <button type="button" onclick="fillAdminSig('easyCheckin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckinCanvas',()=>{ _easyCheckinHasSig=true; })">⛶ 全螢幕</button>
+                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckinCanvas',_sigEasyCheckinSetHasSig)">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" onclick="easyClearCanvas()">清除重簽</button>
               </div>
             </div>
@@ -1998,7 +1998,7 @@ function _dlCSV(content, filename) {
               <span>請用手指在上方簽名</span>
               <div style="display:flex;gap:6px;">
                 <button type="button" onclick="fillAdminSig('easyCheckout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckoutCanvas',()=>{ _easyCheckoutHasSig=true; })">⛶ 全螢幕</button>
+                <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('easyCheckoutCanvas',_sigEasyCheckoutSetHasSig)">⛶ 全螢幕</button>
                 <button type="button" class="btn-clear" onclick="easyClearCheckoutCanvas()">清除重簽</button>
               </div>
             </div>
@@ -2064,7 +2064,7 @@ function _dlCSV(content, filename) {
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
                   <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckinCanvas',()=>{ attCheckinHasSig=true; })">⛶ 全螢幕</button>
+                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckinCanvas',_sigCheckinSetHasSig)">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" onclick="clearAttCanvas('checkin')">清除重簽</button>
                 </div>
               </div>
@@ -2127,7 +2127,7 @@ function _dlCSV(content, filename) {
                 <span>請用滑鼠或手指於上方簽名</span>
                 <div style="display:flex;gap:6px;">
                   <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🖊 管理員代填</button>
-                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckoutCanvas',()=>{ attCheckoutHasSig=true; })">⛶ 全螢幕</button>
+                  <button type="button" class="sig-fullscreen-btn" onclick="openSigFullscreen('attCheckoutCanvas',_sigCheckoutSetHasSig)">⛶ 全螢幕</button>
                   <button type="button" class="btn-clear" onclick="clearAttCanvas('checkout')">清除重簽</button>
                 </div>
               </div>
@@ -5679,6 +5679,9 @@ function fillAdminSig(type) {
   setSig();
 }
 function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig = false; }
+function _sigFormSetHasSig()     { hasSig = true; }
+function _sigCheckinSetHasSig()  { attCheckinHasSig = true; }
+function _sigCheckoutSetHasSig() { attCheckoutHasSig = true; }
 
 // ── 全螢幕簽名 Modal ──
 let _sfTargetCanvasId = null;
@@ -11447,6 +11450,8 @@ let _easyCheckoutCtx = null;
 let _easyCheckinHasSig = false;
 let _easyCheckoutHasSig = false;
 let _easyCheckoutTarget = null;
+function _sigEasyCheckinSetHasSig()  { _easyCheckinHasSig  = true; }
+function _sigEasyCheckoutSetHasSig() { _easyCheckoutHasSig = true; }
 
 // ── 簽到退頁面的簡易模式切換 ──
 function toggleAttEasyMode() {
@@ -11797,6 +11802,7 @@ async function easyDoCheckout() {
 // ── 簡易協勤登錄 ──
 let _easyOutingCtx = null;
 let _easyOutingHasSig = false;
+function _sigEasyOutingSetHasSig() { _easyOutingHasSig = true; }
 const _easyServices = [
   '保暖','心理支持','生命徵象量測','CPR','協助操作AED',
   '協助給氧','協助抽吸','協助使用LUCAS','協助使用心電圖',
