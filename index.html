@@ -4445,21 +4445,28 @@ function showGoogleLogin() {
   if (other) other.style.display = 'none';
 }
 
-function quickLoginAs(idx) {
+async function quickLoginAs(idx) {
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]'); } catch(e) {}
   const u = stored[idx];
   if (!u || !u.email) return;
-  // 舊格式資料沒有 isAdmin 欄位時，清除快取並要求重新登入以取得正確權限
-  if (typeof u.isAdmin === 'undefined' && typeof u.isOfficer === 'undefined') {
-    stored.splice(idx, 1);
-    localStorage.setItem('evs_recent_users', JSON.stringify(stored));
-    alert('請重新使用 Google 登入一次，以更新您的帳號權限資料。');
-    return;
-  }
   const container = document.getElementById('quickLoginAvatars');
   const targetDiv = container ? container.querySelector('[data-idx="'+idx+'"]') : null;
   if (targetDiv) targetDiv.style.opacity = '0.5';
+  // 舊格式（沒有 isAdmin 欄位）→ 查 Firestore 白名單取得正確權限
+  if (typeof u.isAdmin === 'undefined' && typeof u.isOfficer === 'undefined') {
+    try {
+      const wl = await verifyWhitelist(u.email);
+      if (wl && wl.allowed) {
+        u.isAdmin    = wl.isAdmin    || false;
+        u.isOfficer  = wl.isOfficer  || false;
+        u.role       = wl.role       || 'member';
+        u.title      = wl.title      || '';
+        stored[idx] = u;
+        localStorage.setItem('evs_recent_users', JSON.stringify(stored));
+      }
+    } catch(e) { console.warn('quickLoginAs whitelist refresh failed', e); }
+  }
   sessionStorage.setItem('rescue_user', JSON.stringify({
     email: u.email, name: u.name, memberName: u.name,
     isAdmin: u.isAdmin || false, isOfficer: u.isOfficer || false,
