@@ -1188,7 +1188,7 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ 勤務 自訂固定 HEADER ══════ -->
-<div id="opsCustomHeader" style="display:none;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+<div id="opsCustomHeader" style="display:none;width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
   <div class="dash-greeting" style="padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;margin-bottom:0;">
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="dash-avatar" id="opsGreetAvatar" onclick="navTo('profilePage')" style="cursor:pointer;">?</div>
@@ -1238,7 +1238,7 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ 管理 自訂固定 HEADER ══════ -->
-<div id="manageCustomHeader" style="display:none;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+<div id="manageCustomHeader" style="display:none;width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
   <div class="dash-greeting" style="padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;margin-bottom:0;">
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="dash-avatar" id="manageGreetAvatar" onclick="navTo('profilePage')" style="cursor:pointer;">?</div>
@@ -1288,7 +1288,7 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ 備勤排班 自訂 HEADER（flex 流，不需 position:fixed）══════ -->
-<div id="dutyCustomHeader" style="display:none;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+<div id="dutyCustomHeader" style="display:none;width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
   <div class="dash-greeting" style="padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;margin-bottom:0;">
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="dash-avatar" id="dutyGreetAvatar" onclick="navTo('profilePage')" style="cursor:pointer;">?</div>
@@ -14802,6 +14802,7 @@ function renderDutyList() {
 }
 
 function scrollToDutyDate(dateStr) {
+  if (typeof _dutyView !== 'undefined' && _dutyView !== 'list') return;
   const el = document.getElementById('duty-day-' + dateStr);
   if (!el) return;
   const scroller = document.getElementById('appScroll');
