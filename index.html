@@ -4122,6 +4122,7 @@ async function fbListCached(col, orderBy, dir) {
 }
 
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
+// 回傳 Promise，等主要資料載入完畢才 resolve
 function _prefetchCaches() {
   const mainTargets = [
     [COL_ATTEND,   'date', 'asc'],
@@ -4140,8 +4141,12 @@ function _prefetchCaches() {
     [COL_CASETYPES],
     [COL_SETTINGS],
   ];
-  // 主要資料：拉完後立刻更新首頁（與 loadDashboard 背景更新共用同一 Promise，不重複請求）
-  Promise.all(
+  // 次要資料：靜默背景拉取（不阻塞）
+  sideTargets.forEach(([col, ...args]) => {
+    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(() => {});
+  });
+  // 主要資料：等待完成後更新首頁，並回傳 Promise
+  return Promise.all(
     mainTargets.map(([col, ...args]) =>
       _C.fresh(col) ? Promise.resolve(_C.peek(col)) : fbList(col, ...args).then(d => { _C.set(col, d); return d; }).catch(() => null)
     )
@@ -4154,10 +4159,6 @@ function _prefetchCaches() {
       if (typeof updateItemsBadge === 'function') updateItemsBadge();
     }
   }).catch(() => {});
-  // 次要資料：靜默背景拉取
-  sideTargets.forEach(([col, ...args]) => {
-    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(() => {});
-  });
 }
 async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);}
 async function verifyWhitelist(email){
@@ -4549,18 +4550,17 @@ async function quickLoginAs(idx) {
     loginAt: Date.now()
   }));
 
-  // 預載所有資料
-  await new Promise(resolve => {
-    _prefetchCaches();
-    // 進度動畫：35% → 90% 在 1.5 秒內
-    let pct = 35;
-    const iv = setInterval(() => {
-      pct = Math.min(90, pct + 4);
-      if (ltBar) ltBar.style.width = pct + '%';
-    }, 80);
-    // 最少展示 1.2 秒，讓資料有機會載入
-    setTimeout(() => { clearInterval(iv); resolve(); }, 1200);
-  });
+  // 預載所有資料，進度條跟著跑
+  let pct = 35;
+  const iv = setInterval(() => {
+    pct = Math.min(88, pct + 3);
+    if (ltBar) ltBar.style.width = pct + '%';
+  }, 80);
+  await Promise.race([
+    _prefetchCaches(),
+    new Promise(r => setTimeout(r, 5000)), // 最多等 5 秒
+  ]);
+  clearInterval(iv);
 
   if (ltBar)   ltBar.style.width   = '100%';
   if (ltLabel) ltLabel.textContent = '完成！';
