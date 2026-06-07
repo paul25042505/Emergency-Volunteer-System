@@ -977,15 +977,11 @@ function _dlCSV(content, filename) {
       data-auto_prompt="false"
       data-auto_select="true">
     </div>
-    <div class="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="outline"
-      data-text="sign_in_with"
-      data-shape="rectangular"
-      data-logo_alignment="left"
-      data-width="280">
-    </div>
+    <!-- 自訂 Google 登入按鈕（比 g_id_signin iframe 更可靠） -->
+    <button id="googleSignInBtn" onclick="triggerGoogleSignIn()" style="width:100%;max-width:280px;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 16px;border:1.5px solid #dadce0;border-radius:8px;background:#fff;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:0.95rem;font-weight:500;color:#3c4043;box-shadow:0 1px 3px rgba(0,0,0,0.08);transition:box-shadow 0.15s;" onmousedown="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'" onmouseup="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)'">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.4 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.2 2 9.5 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.9 0 10.9-2 14.6-5.4l-6.7-5.5C29.9 36.8 27.1 38 24 38c-6 0-11.1-4-12.9-9.5l-7.1 5.5C7.6 42 15.3 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1 2.9-2.9 5.3-5.4 6.9l6.7 5.5C41.4 37.1 45 31 45 24c0-1.3-.2-2.7-.5-4z"/></svg>
+      使用 Google 帳戶登入
+    </button>
     <div id="loginSpinner">⏳ 驗證中，請稍候...</div>
     <div class="login-error" id="loginError"></div>
     </div><!-- /googleLoginSection -->
@@ -4426,6 +4422,29 @@ function initQuickLogin() {
   if (gs) gs.style.display = 'none';
   const alt = document.getElementById('loginAltSection');
   if (alt) alt.style.display = 'none';
+}
+
+function triggerGoogleSignIn() {
+  const btn = document.getElementById('googleSignInBtn');
+  if (btn) btn.disabled = true;
+  try {
+    google.accounts.id.initialize({
+      client_id: '280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com',
+      callback: handleGoogleLogin,
+      auto_select: false,
+    });
+    google.accounts.id.prompt(notification => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // One Tap 無法顯示，改開 OAuth 彈窗
+        google.accounts.oauth2 && google.accounts.oauth2.initTokenClient ? null : null;
+        if (btn) btn.disabled = false;
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) { errorDiv.innerHTML = '請確認已登入 Google 帳戶後再試，或使用臨時密碼登入。'; errorDiv.classList.add('show'); }
+      }
+    });
+  } catch(e) {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function showGoogleLogin() {
