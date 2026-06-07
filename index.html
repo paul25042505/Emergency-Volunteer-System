@@ -1333,10 +1333,10 @@ function _dlCSV(content, filename) {
     </button>
   </div>
   <!-- ── 月份導覽（固定在 header 內，子選單下方）── -->
-  <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
-    <button onclick="dutyMonthNav(-1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
-    <div id="dutyMonthLabel" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
-    <button onclick="dutyMonthNav(1)" style="background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
+  <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+    <button onclick="dutyMonthNav(-1)" style="flex-shrink:0;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
+    <div id="dutyMonthLabel" style="flex:1;text-align:center;font-size:0.95rem;font-weight:700;color:var(--text);white-space:nowrap;"></div>
+    <button onclick="dutyMonthNav(1)" style="flex-shrink:0;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
   </div>
 </div>
 
