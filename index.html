@@ -1067,6 +1067,17 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
+<!-- 登入過渡畫面 -->
+<div id="loginTransition" style="position:fixed;inset:0;z-index:8000;display:none;flex-direction:column;align-items:center;justify-content:center;background:#fff;">
+  <div id="ltAvatar" style="width:72px;height:72px;border-radius:50%;background:var(--red);color:#fff;font-size:1.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-family:'Noto Sans TC',sans-serif;"></div>
+  <div id="ltName" style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:4px;font-family:'Noto Serif TC',serif;"></div>
+  <div id="ltRole" style="font-size:0.8rem;color:var(--text-mid);margin-bottom:28px;font-family:'Noto Sans TC',sans-serif;"></div>
+  <div style="width:200px;height:3px;background:var(--border);border-radius:3px;overflow:hidden;">
+    <div id="ltBar" style="height:100%;width:0%;background:var(--red);border-radius:3px;transition:width 0.3s ease;"></div>
+  </div>
+  <div id="ltLabel" style="font-size:0.72rem;color:var(--text-light);margin-top:10px;font-family:'Noto Sans TC',sans-serif;">驗證身份中…</div>
+</div>
+
 <div id="globalLoadingBar" style="position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.25);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);">
   <div style="background:rgba(30,30,30,0.82);border-radius:20px;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:16px;min-width:110px;">
     <div id="globalLoadingSpinner" style="position:relative;width:48px;height:48px;">
@@ -4496,10 +4507,24 @@ async function quickLoginAs(idx) {
   try { stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]'); } catch(e) {}
   const u = stored[idx];
   if (!u || !u.email) return;
-  const container = document.getElementById('quickLoginAvatars');
-  const targetDiv = container ? container.querySelector('[data-idx="'+idx+'"]') : null;
-  if (targetDiv) targetDiv.style.opacity = '0.5';
-  // 每次都從 Firestore 白名單取得最新權限（isAdmin 可能在後台被更新）
+
+  // 顯示過渡畫面
+  const lt = document.getElementById('loginTransition');
+  const ltAvatar = document.getElementById('ltAvatar');
+  const ltName   = document.getElementById('ltName');
+  const ltRole   = document.getElementById('ltRole');
+  const ltBar    = document.getElementById('ltBar');
+  const ltLabel  = document.getElementById('ltLabel');
+  if (lt) {
+    if (ltAvatar) ltAvatar.textContent = (u.name || '?')[0];
+    if (ltName)   ltName.textContent   = u.name || '';
+    if (ltRole)   ltRole.textContent   = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+    if (ltBar)    ltBar.style.width    = '10%';
+    if (ltLabel)  ltLabel.textContent  = '驗證身份中…';
+    lt.style.display = 'flex';
+  }
+
+  // 驗證白名單（取最新權限）
   try {
     const wl = await verifyWhitelist(u.email);
     if (wl && wl.allowed) {
@@ -4511,12 +4536,37 @@ async function quickLoginAs(idx) {
       localStorage.setItem('evs_recent_users', JSON.stringify(stored));
     }
   } catch(e) { console.warn('quickLoginAs whitelist refresh failed', e); }
+
+  if (ltBar)   ltBar.style.width   = '35%';
+  if (ltLabel) ltLabel.textContent = '載入資料中…';
+  if (ltRole)  ltRole.textContent  = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+
+  // 儲存 session
   sessionStorage.setItem('rescue_user', JSON.stringify({
     email: u.email, name: u.name, memberName: u.name,
     isAdmin: u.isAdmin || false, isOfficer: u.isOfficer || false,
     role: u.role || 'member', unit: u.unit || '', title: u.title || '',
     loginAt: Date.now()
   }));
+
+  // 預載所有資料
+  await new Promise(resolve => {
+    _prefetchCaches();
+    // 進度動畫：35% → 90% 在 1.5 秒內
+    let pct = 35;
+    const iv = setInterval(() => {
+      pct = Math.min(90, pct + 4);
+      if (ltBar) ltBar.style.width = pct + '%';
+    }, 80);
+    // 最少展示 1.2 秒，讓資料有機會載入
+    setTimeout(() => { clearInterval(iv); resolve(); }, 1200);
+  });
+
+  if (ltBar)   ltBar.style.width   = '100%';
+  if (ltLabel) ltLabel.textContent = '完成！';
+  await new Promise(r => setTimeout(r, 200));
+  if (lt) lt.style.display = 'none';
+
   showApp(u.name, u.email, u.isAdmin || false, u.isOfficer || false, u.role || 'member', u.title || '');
 }
 
