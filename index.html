@@ -4383,19 +4383,9 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 簡易模式已內嵌於各頁面，無需全域按鈕
   // 確保簡易模式關閉
 
-  // 登入後根據 hash 決定顯示哪個頁面
-  const hashPage   = location.hash.replace('#', '');
-  const targetPage = (hashPage && document.getElementById(hashPage))
-    ? hashPage : 'dashboardPage';
-
-  // 先把首頁推入歷史（作為基底），再切到目標頁
-  // 這樣按上一頁永遠有東西可以退
+  // 登入後永遠從首頁開始
   history.replaceState({ pageId: 'dashboardPage' }, '', '#dashboardPage');
-  if (targetPage !== 'dashboardPage') {
-    navTo(targetPage, false); // false = 會再 pushState
-  } else {
-    navTo('dashboardPage', true);
-  }
+  navTo('dashboardPage', true);
 }
 
 // ── 檢查既有 session（重新整理不需再登入）──
