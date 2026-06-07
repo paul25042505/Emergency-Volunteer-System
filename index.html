@@ -964,7 +964,7 @@ function _dlCSV(content, filename) {
     <!-- ── 快速登入頭像 ── -->
     <div id="quickLoginAvatars" style="display:none;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:6px;"></div>
     <div id="quickLoginOther" style="display:none;text-align:center;margin-bottom:14px;">
-      <button onclick="showGoogleLogin()" style="background:none;border:none;color:var(--text-light);font-size:0.73rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:0;">不是你？使用其他帳號</button>
+      <button onclick="showGoogleLogin()" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--text-mid);font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:5px 14px;">切換帳號 / 其他人登入</button>
     </div>
     <!-- Google 登入按鈕 -->
     <div id="googleLoginSection">
@@ -4424,11 +4424,14 @@ function triggerGoogleSignIn() {
     });
     google.accounts.id.prompt(notification => {
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // One Tap 無法顯示，改開 OAuth 彈窗
-        google.accounts.oauth2 && google.accounts.oauth2.initTokenClient ? null : null;
         if (btn) btn.disabled = false;
         const errorDiv = document.getElementById('loginError');
-        if (errorDiv) { errorDiv.innerHTML = '請確認已登入 Google 帳戶後再試，或使用臨時密碼登入。'; errorDiv.classList.add('show'); }
+        if (errorDiv) { errorDiv.innerHTML = '此裝置暫時無法使用 Google 登入，請改用下方的<strong>臨時密碼</strong>登入。'; errorDiv.classList.add('show'); }
+        // 自動展開臨時密碼區並聚焦輸入框
+        const alt = document.getElementById('loginAltSection');
+        if (alt) alt.style.display = '';
+        const inp = document.getElementById('tempPassInput');
+        if (inp) setTimeout(() => inp.focus(), 100);
       }
     });
   } catch(e) {
@@ -4443,6 +4446,8 @@ function showGoogleLogin() {
   if (alt) alt.style.display = '';
   const other = document.getElementById('quickLoginOther');
   if (other) other.style.display = 'none';
+  const inp = document.getElementById('tempPassInput');
+  if (inp) setTimeout(() => inp.focus(), 100);
 }
 
 async function quickLoginAs(idx) {
