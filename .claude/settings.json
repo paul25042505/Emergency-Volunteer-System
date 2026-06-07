@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -q 'git push' && echo \"$cmd\" | grep -q 'vigilant-maxwell-QVb2q'; then cp /home/user/Emergency-Volunteer-System/index.html /tmp/gh-pages-deploy/preview/vigilant-maxwell-QVb2q/index.html && cd /tmp/gh-pages-deploy && git add preview/vigilant-maxwell-QVb2q/index.html && git diff --cached --quiet || (git commit -m 'Preview: auto-deploy' && git push origin gh-pages); fi 2>/dev/null || true",
+            "statusMessage": "部署預覽到 gh-pages..."
+          }
+        ]
+      }
+    ]
+  }
+}
