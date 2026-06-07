@@ -4453,20 +4453,18 @@ async function quickLoginAs(idx) {
   const container = document.getElementById('quickLoginAvatars');
   const targetDiv = container ? container.querySelector('[data-idx="'+idx+'"]') : null;
   if (targetDiv) targetDiv.style.opacity = '0.5';
-  // 舊格式（沒有 isAdmin 欄位）→ 查 Firestore 白名單取得正確權限
-  if (typeof u.isAdmin === 'undefined' && typeof u.isOfficer === 'undefined') {
-    try {
-      const wl = await verifyWhitelist(u.email);
-      if (wl && wl.allowed) {
-        u.isAdmin    = wl.isAdmin    || false;
-        u.isOfficer  = wl.isOfficer  || false;
-        u.role       = wl.role       || 'member';
-        u.title      = wl.title      || '';
-        stored[idx] = u;
-        localStorage.setItem('evs_recent_users', JSON.stringify(stored));
-      }
-    } catch(e) { console.warn('quickLoginAs whitelist refresh failed', e); }
-  }
+  // 每次都從 Firestore 白名單取得最新權限（isAdmin 可能在後台被更新）
+  try {
+    const wl = await verifyWhitelist(u.email);
+    if (wl && wl.allowed) {
+      u.isAdmin   = wl.isAdmin   || false;
+      u.isOfficer = wl.isOfficer || false;
+      u.role      = wl.role      || 'member';
+      u.title     = wl.title     || '';
+      stored[idx] = u;
+      localStorage.setItem('evs_recent_users', JSON.stringify(stored));
+    }
+  } catch(e) { console.warn('quickLoginAs whitelist refresh failed', e); }
   sessionStorage.setItem('rescue_user', JSON.stringify({
     email: u.email, name: u.name, memberName: u.name,
     isAdmin: u.isAdmin || false, isOfficer: u.isOfficer || false,
