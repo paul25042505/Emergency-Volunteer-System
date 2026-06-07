@@ -139,7 +139,7 @@ body {
 body.page-home .header { display: none !important; }
 body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
 body.page-ops #appScroll    { padding-top: calc(env(safe-area-inset-top, 0px) + 162px) !important; }
-body.page-duty #appScroll   { padding-top: calc(env(safe-area-inset-top, 0px) + 100px) !important; }
+body.page-duty #appScroll   { padding-top: calc(env(safe-area-inset-top, 0px) + 165px) !important; }
 body.page-manage #appScroll { padding-top: calc(env(safe-area-inset-top, 0px) + 162px) !important; }
 /* body.page-home #globalLoadingBar — removed, loading is now a full-screen overlay */
 /* 勤務頁：隱藏標準 header，顯示自訂固定 header */
@@ -5077,10 +5077,14 @@ function navTo(pageId, fromHistory) {
   document.body.classList.toggle('page-ops',    isOps);
   document.body.classList.toggle('page-manage', isManage);
   // 立即計算並設定 ops/manage 頁的 padding-top（不依賴 getBoundingClientRect 時序）
-  if (isOps || isManage) {
+  if (isOps || isManage || isDuty) {
     const _sat = (() => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; })();
     const _scr = document.getElementById('appScroll');
-    if (_scr) _scr.style.setProperty('padding-top', (_sat + 162) + 'px', 'important');
+    if (_scr) {
+      // duty: with month nav (+52px) for list/month views; gongcha/meeting no month nav
+      const _dutyOffset = isDuty ? ((_dutyView==='list'||_dutyView==='month') ? 217 : 165) : 162;
+      _scr.style.setProperty('padding-top', (_sat + _dutyOffset) + 'px', 'important');
+    }
   }
   // 同步各 header 的子選單 active 狀態
   if (isOps) {
@@ -14168,6 +14172,12 @@ function dutyView(v) {
   });
   const monthNav = document.getElementById('dutyMonthNav');
   if (monthNav) monthNav.style.display = (v==='gongcha'||v==='meeting') ? 'none' : '';
+  // re-calc padding when month nav visibility changes
+  const _scr2 = document.getElementById('appScroll');
+  if (_scr2 && document.body.classList.contains('page-duty')) {
+    const _sat2 = (() => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; })();
+    _scr2.style.setProperty('padding-top', (_sat2 + ((v==='list'||v==='month')?217:165)) + 'px', 'important');
+  }
   renderDutyView();
   if (prevDutyView && prevDutyView !== v) {
     const order = ['list','month','gongcha','meeting'];
