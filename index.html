@@ -4121,6 +4121,13 @@ function _prefetchCaches() {
     [COL_ANNOUNCE],
     [COL_MEMBERS],
     [COL_WHITELIST],
+    [COL_ITEMS],
+    [COL_MEETING,          'date', 'desc'],
+    [COL_MEETING_EVENTS,   'date', 'desc'],
+    [COL_GONGCHA_MISSIONS, 'date', 'desc'],
+    [COL_CORRECTION],
+    [COL_CASETYPES],
+    [COL_SETTINGS],
   ];
   // 主要資料：拉完後立刻更新首頁（與 loadDashboard 背景更新共用同一 Promise，不重複請求）
   Promise.all(
