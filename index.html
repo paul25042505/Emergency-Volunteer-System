@@ -3963,6 +3963,8 @@ function _dlCSV(content, filename) {
 // ════════════════════════════════════════
 // Firebase 初始化與工具函式
 // ════════════════════════════════════════
+// 防止 iOS Safari pull-to-refresh 後還原捲動位置
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 var _fbDB = null;
 var COL_WHITELIST = 'whitelist', COL_MEMBERS = 'members';
 var COL_SETTINGS = 'settings';
@@ -9082,6 +9084,9 @@ async function saveEditItem() {
 // DOMContentLoaded
 // ════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // 重整後將捲動位置歸零，防止 iOS Safari 還原舊位置導致內容被 header 遮住
+  const _appScroll = document.getElementById('appScroll');
+  if (_appScroll) _appScroll.scrollTop = 0;
   // ── Pull to Refresh ──
   initPullToRefresh();
   initFootersWithVersion();
