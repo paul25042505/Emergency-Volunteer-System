@@ -11292,8 +11292,10 @@ async function loginWithTempPass() {
     });
     const sessionUser = {
       email: member.email || '', name: member.memberName, memberName: member.memberName,
-      isAdmin: member.isAdmin || false, isOfficer: member.isOfficer || false,
+      isAdmin: member.isAdmin === true || member.role === 'admin',
+      isOfficer: member.isOfficer === true || member.role === 'officer',
       role: member.role || 'member', unit: member.unit || '',
+      title: member.title || '',
       loginAt: Date.now(), loginMethod: 'tempPass',
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
@@ -15309,8 +15311,10 @@ async function loginWithTempPass() {
     });
     const sessionUser = {
       email: member.email || '', name: member.memberName, memberName: member.memberName,
-      isAdmin: member.isAdmin || false, isOfficer: member.isOfficer || false,
+      isAdmin: member.isAdmin === true || member.role === 'admin',
+      isOfficer: member.isOfficer === true || member.role === 'officer',
       role: member.role || 'member', unit: member.unit || '',
+      title: member.title || '',
       loginAt: Date.now(), loginMethod: 'tempPass',
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
