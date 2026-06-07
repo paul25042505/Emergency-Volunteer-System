@@ -5092,16 +5092,18 @@ function navTo(pageId, fromHistory) {
   document.body.classList.toggle('page-duty',   isDuty);
   document.body.classList.toggle('page-ops',    isOps);
   document.body.classList.toggle('page-manage', isManage);
-  // 立即計算並設定 ops/manage 頁的 padding-top（量實際 header 高度）
+  // 立即計算並設定 padding-top：先清掉舊值，量到高度就設，否則讓 CSS fallback 生效
+  const _scr = document.getElementById('appScroll');
+  if (_scr) _scr.style.removeProperty('padding-top'); // 清舊 inline style，CSS fallback 立即生效
   if (isOps || isManage || isDuty) {
     const _hdrId = isDuty ? 'dutyCustomHeader' : (isOps ? 'opsCustomHeader' : 'manageCustomHeader');
     const _hdrEl = document.getElementById(_hdrId);
-    const _scr = document.getElementById('appScroll');
     if (_scr && _hdrEl) {
       const _h = Math.round(_hdrEl.getBoundingClientRect().height);
       if (_h > 0) {
         _scr.style.setProperty('padding-top', _h + 'px', 'important');
       }
+      // h===0 代表 header 尚未 layout，syncHeaderHeight(80/250ms) 會補正確值
     }
   }
   // 同步各 header 的子選單 active 狀態
