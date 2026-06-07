@@ -867,13 +867,8 @@ function _attStatSync() {
 }
 
 function parseImportCSV(text) {
-  text = text.replace(/^﻿/, '').replace(/
-/g,'
-').replace(/
-/g,'
-');
-  const lines = text.split('
-').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  text = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
   const first = lines[0] ? lines[0].split(',') : [];
   const isHeader = first.some(c => /^[a-zA-Z]/.test(c.trim()));
   return isHeader ? lines.slice(1) : lines;
@@ -933,12 +928,10 @@ async function importOutCSV() {
   } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
 }
 function downloadAttTemplate() {
-  _dlCSV(['date,dutyType,memberName,title,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,隊員,19:00,22:00,3,1,2','# title 可填：分隊長/副分隊長/幹事/助理幹事/小隊長/隊員/分隊承辦人（留空則自動從成員資料帶入）'].join('
-'), '簽到簽退匯入範本.csv');
+  _dlCSV(['date,dutyType,memberName,title,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,隊員,19:00,22:00,3,1,2','# title 可填：分隊長/副分隊長/幹事/助理幹事/小隊長/隊員/分隊承辦人（留空則自動從成員資料帶入）'].join('\n'), '簽到簽退匯入範本.csv');
 }
 function downloadOutTemplate() {
-  _dlCSV(['date,caseType,timeOut,timeBack,district,address,services,note,memberName','2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖'].join('
-'), '協勤案件匯入範本.csv');
+  _dlCSV(['date,caseType,timeOut,timeBack,district,address,services,note,memberName','2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖'].join('\n'), '協勤案件匯入範本.csv');
 }
 function _dlCSV(content, filename) {
   const a = document.createElement('a');
@@ -5214,8 +5207,8 @@ function navTo(pageId, fromHistory) {
     syncHeaderHeight();
   }
 
-  const _scr = document.getElementById('appScroll');
-  if (_scr) _scr.scrollTop = 0;
+  const _scrTop = document.getElementById('appScroll');
+  if (_scrTop) _scrTop.scrollTop = 0;
 }
 
 function openDrawer() {}
