@@ -4416,27 +4416,9 @@ function initQuickLogin() {
 function triggerGoogleSignIn() {
   const btn = document.getElementById('googleSignInBtn');
   if (btn) btn.disabled = true;
-  try {
-    google.accounts.id.initialize({
-      client_id: '280551181649-veaqj0mncalj5vl8jrrba67f378e0vjp.apps.googleusercontent.com',
-      callback: handleGoogleLogin,
-      auto_select: false,
-    });
-    google.accounts.id.prompt(notification => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        if (btn) btn.disabled = false;
-        const errorDiv = document.getElementById('loginError');
-        if (errorDiv) { errorDiv.innerHTML = '此裝置暫時無法使用 Google 登入，請改用下方的<strong>臨時密碼</strong>登入。'; errorDiv.classList.add('show'); }
-        // 自動展開臨時密碼區並聚焦輸入框
-        const alt = document.getElementById('loginAltSection');
-        if (alt) alt.style.display = '';
-        const inp = document.getElementById('tempPassInput');
-        if (inp) setTimeout(() => inp.focus(), 100);
-      }
-    });
-  } catch(e) {
+  triggerGoogleSelectAccount().finally(() => {
     if (btn) btn.disabled = false;
-  }
+  });
 }
 
 function showGoogleLogin() {
@@ -4446,8 +4428,60 @@ function showGoogleLogin() {
   if (alt) alt.style.display = '';
   const other = document.getElementById('quickLoginOther');
   if (other) other.style.display = 'none';
-  const inp = document.getElementById('tempPassInput');
-  if (inp) setTimeout(() => inp.focus(), 100);
+  // 直接觸發 Google 帳號選擇彈窗
+  triggerGoogleSelectAccount();
+}
+
+async function triggerGoogleSelectAccount() {
+  const spinner  = document.getElementById('loginSpinner');
+  const errorDiv = document.getElementById('loginError');
+  if (errorDiv) errorDiv.classList.remove('show');
+  try {
+    await new Promise((resolve, reject) => {
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: 'email profile openid',
+        prompt: 'select_account',
+        callback: async (tokenResponse) => {
+          if (tokenResponse.error) { reject(new Error(tokenResponse.error)); return; }
+          if (spinner) spinner.classList.add('show');
+          try {
+            const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
+            });
+            const info = await res.json();
+            const email = (info.email || '').trim();
+            const name  = info.name || info.given_name || email;
+            if (!email) { reject(new Error('無法取得帳號資訊')); return; }
+            const fbResult = await verifyWhitelist(email).catch(() => null);
+            if (!fbResult || !fbResult.allowed) {
+              if (spinner) spinner.classList.remove('show');
+              if (errorDiv) { errorDiv.innerHTML = '此 Google 帳號未在白名單中，請聯絡管理員。'; errorDiv.classList.add('show'); }
+              reject(new Error('not allowed')); return;
+            }
+            if (spinner) spinner.classList.remove('show');
+            sessionStorage.setItem('rescue_user', JSON.stringify({
+              email, name, memberName: fbResult.memberName || name,
+              isAdmin: fbResult.isAdmin || false, isOfficer: fbResult.isOfficer || false,
+              role: fbResult.role || 'member', unit: fbResult.unit || '', title: fbResult.title || '',
+              loginAt: Date.now()
+            }));
+            showApp(fbResult.memberName || name, email, fbResult.isAdmin || false, fbResult.isOfficer || false, fbResult.role || 'member', fbResult.title || '');
+            resolve();
+          } catch(e) { reject(e); }
+        },
+      });
+      client.requestAccessToken();
+    });
+  } catch(e) {
+    if (spinner) spinner.classList.remove('show');
+    if (e.message === 'not allowed') return;
+    if (errorDiv) { errorDiv.innerHTML = '無法開啟 Google 登入，請使用下方<strong>臨時密碼</strong>登入。'; errorDiv.classList.add('show'); }
+    const alt = document.getElementById('loginAltSection');
+    if (alt) alt.style.display = '';
+    const inp = document.getElementById('tempPassInput');
+    if (inp) setTimeout(() => inp.focus(), 100);
+  }
 }
 
 async function quickLoginAs(idx) {
