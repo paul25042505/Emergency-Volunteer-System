@@ -4320,7 +4320,7 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 記憶上次登入（最多3筆，用於快速登入頭像）
   try {
     const stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]');
-    const entry = { name, email, title: title || '', ts: Date.now() };
+    const entry = { name, email, title: title || '', isAdmin: isAdmin||false, isOfficer: isOfficer||false, role: role||'member', ts: Date.now() };
     const filtered = stored.filter(u => u.email !== email);
     filtered.unshift(entry);
     localStorage.setItem('evs_recent_users', JSON.stringify(filtered.slice(0, 3)));
@@ -4437,48 +4437,22 @@ function showGoogleLogin() {
   if (other) other.style.display = 'none';
 }
 
-async function quickLoginAs(idx) {
+function quickLoginAs(idx) {
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]'); } catch(e) {}
   const u = stored[idx];
   if (!u || !u.email) return;
-  // 顯示 loading 狀態
+  // 直接用 localStorage 存的資料恢復 session（登入時已驗證過）
   const container = document.getElementById('quickLoginAvatars');
-  const avatarDivs = container ? container.querySelectorAll('div[data-idx]') : [];
   const targetDiv = container ? container.querySelector('[data-idx="'+idx+'"]') : null;
   if (targetDiv) targetDiv.style.opacity = '0.5';
-  const spinner = document.getElementById('loginSpinner');
-  if (spinner) spinner.classList.add('show');
-  const errorDiv = document.getElementById('loginError');
-  if (errorDiv) errorDiv.classList.remove('show');
-  try {
-    // 直接查 Firestore 白名單，不需要 Google OAuth
-    const fbResult = await verifyWhitelist(u.email);
-    if (spinner) spinner.classList.remove('show');
-    if (targetDiv) targetDiv.style.opacity = '1';
-    if (fbResult && fbResult.allowed) {
-      sessionStorage.setItem('rescue_user', JSON.stringify({
-        email: u.email, name: u.name, memberName: fbResult.memberName || u.name,
-        isAdmin: fbResult.isAdmin, isOfficer: fbResult.isOfficer,
-        role: fbResult.role, unit: fbResult.unit, title: fbResult.title,
-        loginAt: Date.now()
-      }));
-      fbAdd(COL_LOGINLOG, {
-        email: u.email, memberName: fbResult.memberName || u.name,
-        role: fbResult.role, unit: fbResult.unit || '',
-        loginAt: new Date().toLocaleString('sv').replace('T',' '),
-        ua: navigator.userAgent.substring(0,120),
-      }).catch(()=>{});
-      showApp(fbResult.memberName || u.name, u.email, fbResult.isAdmin, fbResult.isOfficer, fbResult.role, fbResult.title);
-    } else {
-      if (errorDiv) { errorDiv.innerHTML = '❌ 帳號已無存取權限，請聯絡管理員。'; errorDiv.classList.add('show'); }
-      showGoogleLogin();
-    }
-  } catch(e) {
-    if (spinner) spinner.classList.remove('show');
-    if (targetDiv) targetDiv.style.opacity = '1';
-    showGoogleLogin();
-  }
+  sessionStorage.setItem('rescue_user', JSON.stringify({
+    email: u.email, name: u.name, memberName: u.name,
+    isAdmin: u.isAdmin || false, isOfficer: u.isOfficer || false,
+    role: u.role || 'member', unit: u.unit || '', title: u.title || '',
+    loginAt: Date.now()
+  }));
+  showApp(u.name, u.email, u.isAdmin || false, u.isOfficer || false, u.role || 'member', u.title || '');
 }
 
 function checkSession() {
