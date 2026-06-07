@@ -14695,12 +14695,10 @@ function scrollToDutyDate(dateStr) {
   if (!el) return;
   const scroller = document.getElementById('appScroll');
   if (!scroller) { el.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
-  // 補償固定 header（含子選單＋月份導覽）高度
-  const dutyHeader = document.getElementById('dutyCustomHeader');
-  const offset = (dutyHeader ? dutyHeader.getBoundingClientRect().height : 160) + 12;
+  // header 已在 flex 流中，scrollerTop 即為 header 底部，直接對齊即可
   const elTop = el.getBoundingClientRect().top;
   const scrollerTop = scroller.getBoundingClientRect().top;
-  scroller.scrollBy({ top: elTop - scrollerTop - offset, behavior: 'smooth' });
+  scroller.scrollBy({ top: elTop - scrollerTop - 8, behavior: 'smooth' });
 }
 
 // 計算某成員在次月已排的總小時數
