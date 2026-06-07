@@ -9100,6 +9100,24 @@ document.addEventListener('DOMContentLoaded', () => {
   syncHeaderHeight();
   window.addEventListener('resize', syncHeaderHeight);
   window.addEventListener('load', () => { syncHeaderHeight(); });
+  // ResizeObserver：header 尺寸一變就立即更新 padding（字型載入、展開/收合等都會觸發）
+  if (window.ResizeObserver) {
+    const _scroller = document.getElementById('appScroll');
+    const _hdrObserverMap = {
+      'opsCustomHeader':    'page-ops',
+      'manageCustomHeader': 'page-manage',
+      'dutyCustomHeader':   'page-duty',
+    };
+    for (const [hid, cls] of Object.entries(_hdrObserverMap)) {
+      const hel = document.getElementById(hid);
+      if (!hel || !_scroller) continue;
+      new ResizeObserver(() => {
+        if (!document.body.classList.contains(cls)) return;
+        const h = Math.round(hel.getBoundingClientRect().height);
+        if (h > 0) _scroller.style.setProperty('padding-top', h + 'px', 'important');
+      }).observe(hel);
+    }
+  }
 
   // ── 上一頁／下一頁監聽 ──
   window.addEventListener('popstate', (e) => {
