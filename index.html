@@ -4924,9 +4924,16 @@ function syncHeaderHeight() {
       'page-ops':    'opsCustomHeader',
       'page-manage': 'manageCustomHeader',
     };
+    const _getSAT = () => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; };
     for (const [cls, id] of Object.entries(customHeaderMap)) {
       if (document.body.classList.contains(cls)) {
-        scroller.style.removeProperty('padding-top'); // CSS calc(env(safe-area-inset-top)+offset) handles it
+        const _sat = _getSAT();
+        let _off = 162;
+        if (cls === 'page-duty') {
+          const _dv = typeof _dutyView !== 'undefined' ? _dutyView : 'list';
+          _off = (_dv === 'list' || _dv === 'month') ? 217 : 165;
+        }
+        scroller.style.setProperty('padding-top', (_sat + _off) + 'px', 'important');
         return;
       }
     }
