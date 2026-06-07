@@ -14207,6 +14207,9 @@ function renderDutyView() {
   document.getElementById('dutyListView').style.display  = _dutyView==='list'  ? '' : 'none';
   document.getElementById('dutyGongchaView').style.display = _dutyView==='gongcha' ? '' : 'none';
   document.getElementById('dutyMeetingView').style.display  = _dutyView==='meeting'  ? '' : 'none';
+  // 切換子視圖時回到頂部
+  const _sc = document.getElementById('appScroll');
+  if (_sc) _sc.scrollTop = 0;
   if (_dutyView==='month') renderDutyCalendar();
   else if (_dutyView==='list') renderDutyList();
   else if (_dutyView==='gongcha') renderDutyGongcha();
