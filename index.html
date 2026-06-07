@@ -4927,6 +4927,15 @@ function syncHeaderHeight() {
     const _getSAT = () => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; };
     for (const [cls, id] of Object.entries(customHeaderMap)) {
       if (document.body.classList.contains(cls)) {
+        const hEl = document.getElementById(id);
+        if (hEl) {
+          const h = Math.round(hEl.getBoundingClientRect().height);
+          if (h > 0) {
+            scroller.style.setProperty('padding-top', h + 'px', 'important');
+            return;
+          }
+        }
+        // fallback: SAT + fixed offset
         const _sat = _getSAT();
         let _off = 162;
         if (cls === 'page-duty') {
@@ -5083,14 +5092,16 @@ function navTo(pageId, fromHistory) {
   document.body.classList.toggle('page-duty',   isDuty);
   document.body.classList.toggle('page-ops',    isOps);
   document.body.classList.toggle('page-manage', isManage);
-  // 立即計算並設定 ops/manage 頁的 padding-top（不依賴 getBoundingClientRect 時序）
+  // 立即計算並設定 ops/manage 頁的 padding-top（量實際 header 高度）
   if (isOps || isManage || isDuty) {
-    const _sat = (() => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; })();
+    const _hdrId = isDuty ? 'dutyCustomHeader' : (isOps ? 'opsCustomHeader' : 'manageCustomHeader');
+    const _hdrEl = document.getElementById(_hdrId);
     const _scr = document.getElementById('appScroll');
-    if (_scr) {
-      // duty: with month nav (+52px) for list/month views; gongcha/meeting no month nav
-      const _dutyOffset = isDuty ? ((_dutyView==='list'||_dutyView==='month') ? 217 : 165) : 162;
-      _scr.style.setProperty('padding-top', (_sat + _dutyOffset) + 'px', 'important');
+    if (_scr && _hdrEl) {
+      const _h = Math.round(_hdrEl.getBoundingClientRect().height);
+      if (_h > 0) {
+        _scr.style.setProperty('padding-top', _h + 'px', 'important');
+      }
     }
   }
   // 同步各 header 的子選單 active 狀態
