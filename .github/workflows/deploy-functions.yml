@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'functions/**'
-  workflow_dispatch: # 允許手動觸發
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -17,14 +17,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
       - name: Install functions dependencies
         run: cd functions && npm install
 
       - name: Deploy Firebase Functions
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/sa.json
-          npx firebase-tools@latest deploy --only functions \
-            --project rescue-volunteer-a33f1 \
-            --non-interactive
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
+        run: npx firebase-tools@latest deploy --only functions --project rescue-volunteer-a33f1 --non-interactive
