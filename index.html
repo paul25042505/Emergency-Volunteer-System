@@ -133,51 +133,16 @@ body {
 }
 
 /* ── Header ── */
-.header {
-  background: linear-gradient(135deg, #C62828 0%, #B71C1C 60%, #8E0000 100%) !important;
-  color: white !important; padding: 0; position: fixed; top: 0; left: 0; right: 0; z-index: 200; overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-}
-/* 首頁時隱藏 header，內頁才顯示 */
-body.page-home .header { display: none !important; }
+/* 舊紅色 header 已完全移除 */
 body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
 body.page-more #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
-body.page-more .header    { display: none !important; }
 /* custom header 在 flex 流中，#appScroll 不需要 padding-top */
 body.page-ops #appScroll    { padding-top: 0 !important; }
 body.page-duty #appScroll   { padding-top: 0 !important; }
 body.page-manage #appScroll { padding-top: 0 !important; }
-/* body.page-home #globalLoadingBar — removed, loading is now a full-screen overlay */
-/* 勤務頁：隱藏標準 header，顯示自訂固定 header */
-body.page-ops .header { display: none !important; }
 body.page-ops #opsCustomHeader { display: block !important; }
-/* 管理頁：隱藏標準 header，顯示自訂固定 header */
-body.page-manage .header { display: none !important; }
 body.page-manage #manageCustomHeader { display: block !important; }
-/* 備勤排班頁：隱藏標準 header，顯示自訂固定 header */
-body.page-duty .header { display: none !important; }
 body.page-duty #dutyCustomHeader { display: block !important; }
-/* body.page-duty #globalLoadingBar — removed, loading is now a full-screen overlay */
-.header-inner {
-  position: relative; z-index: 2; display: flex; align-items: center;
-  padding: 14px 16px; min-height: 56px; gap: 10px;
-}
-.header-deco { position: absolute; right: -20px; top: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.05); border-radius: 50%; z-index: 1; }
-.header-deco2 { position: absolute; right: 60px; bottom: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.04); border-radius: 50%; z-index: 1; }
-.header-cross { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 160px; opacity: 0.05; z-index: 1; pointer-events: none; line-height: 1; }
-.back-btn {
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 8px; color: white; height: 36px; padding: 0 12px;
-  display: none; align-items: center; gap: 5px;
-  cursor: pointer; z-index: 5; transition: background 0.15s;
-  font-family: 'Noto Sans TC', sans-serif; font-size: 0.82rem; font-weight: 500;
-  white-space: nowrap; flex-shrink: 0;
-}
-.back-btn.visible { display: flex; }
-.back-btn:hover { background: rgba(255,255,255,0.25); }
-.back-btn svg { flex-shrink: 0; }
-.header-text h1 { font-family: 'Noto Serif TC', serif; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1.2; white-space: nowrap; }
-.header-text p { margin-top: 2px; font-size: 0.68rem; opacity: 0.7; letter-spacing: 0.06em; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
 
 /* ── Form / Members wrap ── */
 .form-wrap, .members-wrap {
@@ -504,8 +469,6 @@ tr:hover td { background: #fdfcfb; }
 .att-member-btn.checkin-btn:hover { background: #eafaf1; }
 @media (max-width: 520px) {
   .row-2 { grid-template-columns: 1fr; }
-  .header-text h1 { font-size: 1.1rem; }
-  .header-text p { max-width: 120px; }
   .checkbox-grid { grid-template-columns: 1fr 1fr; }
   .form-wrap, .members-wrap { padding: 20px 12px 48px; }
   .card { padding: 16px; }
@@ -1165,28 +1128,12 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<!-- ══════ SHARED HEADER ══════ -->
-<div class="header" onclick="scrollToPageTop(event)" style="cursor:pointer;">
-  <div class="header-deco"></div>
-  <div class="header-deco2"></div>
-  <div class="header-cross">✚</div>
-  <div class="header-inner">
-    <button id="headerBackBtn" class="back-btn" onclick="navTo('dashboardPage')" aria-label="返回首頁">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      返回
-    </button>
-    <div class="header-text">
-      <h1 id="pageTitle">救護義消系統</h1>
-      <p id="pageSubEn">Emergency Volunteer Attendance Record</p>
-    </div>
-    <!-- 保留隱藏元素供 JS 更新（兼容舊邏輯） -->
-    <div id="headerUserCard" style="display:none;">
-      <span id="headerUserInfo"></span>
-      <span id="headerUserBadge"></span>
-      <span id="headerSessionTimer"></span>
-      <div id="headerAvatar"></div>
-    </div>
-  </div>
+<!-- 舊紅色 header 已移除；保留隱藏佔位元素供 JS 相容 -->
+<div style="display:none;" aria-hidden="true">
+  <button id="headerBackBtn"></button>
+  <h1 id="pageTitle"></h1>
+  <p id="pageSubEn"></p>
+  <div id="headerUserCard"><span id="headerUserInfo"></span><span id="headerUserBadge"></span><span id="headerSessionTimer"></span><div id="headerAvatar"></div></div>
 </div>
 
 <!-- ══════ 勤務 自訂固定 HEADER ══════ -->
@@ -3404,17 +3351,6 @@ function _dlCSV(content, filename) {
 
     <!-- 選單列表 -->
     <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:20px;">
-
-      <button onclick="navTo('profilePage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
-        <div style="width:38px;height:38px;border-radius:10px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b6fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">個人資料</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">查看及編輯個人基本資料</div>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
 
       <button onclick="navTo('myCorrectionsPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
         <div style="width:38px;height:38px;border-radius:10px;background:#fff3e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
