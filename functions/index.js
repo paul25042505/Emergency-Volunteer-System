@@ -59,12 +59,27 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
 
   const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
 
+  const now = new Date();
   await db.collection('broadcastRequests').add({
     title, body, status: 'sent',
     createdBy: requestedBy || '管理員',
-    createdAt: new Date(), sentAt: new Date(),
+    createdAt: now, sentAt: now,
     recipientCount: uniqueTokens.length,
     fcmResult,
+  });
+
+  // 同步寫入公告（讓所有成員在鈴鐺面板看到）
+  const today = now.toISOString().slice(0, 10);
+  await db.collection('announcements').add({
+    text: `${title}\n${body}`,
+    type: 'broadcast',
+    active: true,
+    pinned: false,
+    urgent: false,
+    startDate: today,
+    endDate: today,
+    createdAt: now,
+    createdBy: requestedBy || '管理員',
   });
 
   res.json({ status: 'sent', count: uniqueTokens.length });
