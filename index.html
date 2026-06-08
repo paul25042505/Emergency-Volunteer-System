@@ -9176,83 +9176,95 @@ async function loadAdminWhitelist(filterUnit) {
       var r  = d.role||(d.isAdmin?'admin':'member');
       var rc = ROLE_CFG[r]||ROLE_CFG.member;
       var av = (d.memberName||'?').charAt(0);
-      var esc = function(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,String.fromCharCode(39)); };
 
-      var row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--warm);';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:white;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);padding:14px;margin-bottom:10px;';
+
+      var topRow = document.createElement('div');
+      topRow.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
 
       var avatar = document.createElement('div');
-      avatar.style.cssText = 'width:36px;height:36px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;';
+      avatar.style.cssText = 'width:44px;height:44px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;';
       avatar.textContent = av;
-      row.appendChild(avatar);
+      topRow.appendChild(avatar);
 
       var info = document.createElement('div');
       info.style.cssText = 'flex:1;min-width:0;';
 
-      var nameRow = document.createElement('div');
-      nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;';
-
+      // Name + title
+      var nameDiv = document.createElement('div');
+      nameDiv.style.cssText = 'display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;';
       var nameSpan = document.createElement('span');
-      nameSpan.style.cssText = 'font-weight:600;font-size:0.92rem;';
+      nameSpan.style.cssText = 'font-weight:700;font-size:0.95rem;color:var(--text);';
       nameSpan.textContent = d.memberName||'—';
-      nameRow.appendChild(nameSpan);
-
+      nameDiv.appendChild(nameSpan);
       if (d.title) {
         var titleSpan = document.createElement('span');
-        titleSpan.style.cssText = 'font-size:0.78rem;color:var(--text-mid);';
+        titleSpan.style.cssText = 'font-size:0.75rem;color:var(--text-mid);';
         titleSpan.textContent = d.title;
-        nameRow.appendChild(titleSpan);
+        nameDiv.appendChild(titleSpan);
       }
+      info.appendChild(nameDiv);
 
+      // Badges row
+      var badgeRow = document.createElement('div');
+      badgeRow.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;';
       var roleBadge = document.createElement('span');
-      roleBadge.style.cssText = 'font-size:0.65rem;background:'+rc.bg+';color:'+rc.color+';border:1px solid '+rc.border+';border-radius:10px;padding:1px 7px;';
+      roleBadge.style.cssText = 'font-size:0.65rem;background:'+rc.bg+';color:'+rc.color+';border:1px solid '+rc.border+';border-radius:8px;padding:2px 7px;font-weight:600;';
       roleBadge.textContent = rc.label;
-      nameRow.appendChild(roleBadge);
-
+      badgeRow.appendChild(roleBadge);
       if (d.cert) {
         var certBadge = document.createElement('span');
-        certBadge.style.cssText = 'font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 7px;';
-        certBadge.textContent = d.cert;
-        nameRow.appendChild(certBadge);
+        certBadge.style.cssText = 'font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:8px;padding:2px 7px;';
+        certBadge.textContent = d.cert + (d.certExp ? '  效期 '+d.certExp : '');
+        badgeRow.appendChild(certBadge);
       }
-      if (d.certExp) {
-        var expSpan = document.createElement('span');
-        expSpan.style.cssText = 'font-size:0.65rem;color:var(--text-light);';
-        expSpan.textContent = '效期 '+d.certExp;
-        nameRow.appendChild(expSpan);
-      }
-      info.appendChild(nameRow);
+      info.appendChild(badgeRow);
 
+      // Email
       var emailDiv = document.createElement('div');
-      emailDiv.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      emailDiv.style.cssText = 'font-size:0.73rem;color:var(--text-light);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
       emailDiv.textContent = d.email||'';
       info.appendChild(emailDiv);
-      if(d.extraEmails&&d.extraEmails.length){d.extraEmails.forEach(function(em){var x=document.createElement('div');x.style.cssText='font-size:0.72rem;color:var(--text-light);opacity:0.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';x.textContent='+ '+em;info.appendChild(x);});}
+      if (d.extraEmails&&d.extraEmails.length) {
+        d.extraEmails.forEach(function(em){
+          var x=document.createElement('div');
+          x.style.cssText='font-size:0.7rem;color:var(--text-light);opacity:0.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          x.textContent='+ '+em;
+          info.appendChild(x);
+        });
+      }
       if (d.phone) {
         var phoneDiv = document.createElement('div');
-        phoneDiv.style.cssText = 'font-size:0.75rem;color:var(--text-mid);margin-top:1px;';
+        phoneDiv.style.cssText = 'font-size:0.73rem;color:var(--text-mid);margin-top:2px;';
         phoneDiv.textContent = '📱 ' + d.phone;
         info.appendChild(phoneDiv);
       }
-      row.appendChild(info);
+      topRow.appendChild(info);
+      card.appendChild(topRow);
+
+      // Buttons row
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #f5f5f5;';
 
       var editBtn = document.createElement('button');
-      editBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
-      editBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
+      editBtn.style.cssText = 'flex:1;background:white;border:1px solid var(--border);border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
+      editBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.onclick = function(){
         adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'');
       };
-      row.appendChild(editBtn);
+      btnRow.appendChild(editBtn);
 
       var delBtn = document.createElement('button');
-      delBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:6px 10px;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
-      delBtn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>';
+      delBtn.style.cssText = 'flex:1;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
+      delBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除';
       delBtn.onclick = function(){
         adminDel(COL_WHITELIST, d.id, '帳號 '+(d.memberName||d.email), loadAdminWhitelist);
       };
-      row.appendChild(delBtn);
+      btnRow.appendChild(delBtn);
 
-      return row;
+      card.appendChild(btnRow);
+      return card;
     }
 
     el.innerHTML = '';
