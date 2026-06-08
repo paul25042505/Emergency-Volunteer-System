@@ -2971,43 +2971,48 @@ function _dlCSV(content, filename) {
       </div>
       <!-- 新增帳號 -->
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:12px;letter-spacing:0.05em;">＋ 新增帳號</div>
-        <div class="filter-grid" style="margin-bottom:12px;">
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.78rem;">Email <span class="req">*</span></label>
-            <input type="email" id="adminWlEmail" placeholder="example@gmail.com" style="width:100%;">
+        <button onclick="(function(btn){var f=document.getElementById('adminWlForm');var open=f.style.display!=='none';f.style.display=open?'none':'block';btn.innerHTML=open?'＋ 新增帳號':'✕ 收起表單';})(this)"
+          style="width:100%;background:none;border:1.5px dashed #aab;border-radius:10px;padding:10px;font-size:0.85rem;font-weight:600;color:#1565c0;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.05em;">
+          ＋ 新增帳號
+        </button>
+        <div id="adminWlForm" style="display:none;margin-top:14px;">
+          <div class="filter-grid" style="margin-bottom:12px;">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.78rem;">Email <span class="req">*</span></label>
+              <input type="email" id="adminWlEmail" placeholder="example@gmail.com" style="width:100%;">
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.78rem;">義消姓名 <span class="req">*</span></label>
+              <input type="text" id="adminWlName" placeholder="姓名" style="width:100%;">
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
+              <select id="adminWlUnit" style="width:100%;"><option value="">請選擇</option></select>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.78rem;">職稱</label>
+              <select id="adminWlTitle" style="width:100%;">
+                <option value="">請選擇</option>
+                <option value="分隊長">分隊長</option>
+                <option value="副分隊長">副分隊長</option>
+                <option value="幹事">幹事</option>
+                <option value="助理幹事">助理幹事</option>
+                <option value="小隊長">小隊長</option>
+                <option value="隊員">隊員</option>
+                <option value="分隊承辦人">分隊承辦人</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.78rem;">角色權限</label>
+              <select id="adminWlRole" style="width:100%;">
+                <option value="member">一般成員</option>
+                <option value="officer">分隊承辦人</option>
+                <option value="admin">系統管理員</option>
+              </select>
+            </div>
           </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.78rem;">義消姓名 <span class="req">*</span></label>
-            <input type="text" id="adminWlName" placeholder="姓名" style="width:100%;">
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
-            <select id="adminWlUnit" style="width:100%;"><option value="">請選擇</option></select>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.78rem;">職稱</label>
-            <select id="adminWlTitle" style="width:100%;">
-              <option value="">請選擇</option>
-              <option value="分隊長">分隊長</option>
-              <option value="副分隊長">副分隊長</option>
-              <option value="幹事">幹事</option>
-              <option value="助理幹事">助理幹事</option>
-              <option value="小隊長">小隊長</option>
-              <option value="隊員">隊員</option>
-              <option value="分隊承辦人">分隊承辦人</option>
-            </select>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.78rem;">角色權限</label>
-            <select id="adminWlRole" style="width:100%;">
-              <option value="member">一般成員</option>
-              <option value="officer">分隊承辦人</option>
-              <option value="admin">系統管理員</option>
-            </select>
-          </div>
+          <button onclick="adminAddWhitelist()" class="btn-search" style="width:100%;">新增帳號</button>
         </div>
-        <button onclick="adminAddWhitelist()" class="btn-search" style="width:100%;">新增帳號</button>
       </div>
 
       <!-- 查詢列表 -->
