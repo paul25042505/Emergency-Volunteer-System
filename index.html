@@ -11313,24 +11313,32 @@ function _showIOSInstallGuide() {
 
 // 取得 FCM token 並儲存到 Firestore
 async function _initFCM() {
+  const _fcmDebug = async (msg) => {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    if (!usr.memberName) return;
+    try { await firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).set({ _fcmDebug: msg }, { merge: true }); } catch(e) {}
+  };
   try {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator)) { await _fcmDebug('no serviceWorker'); return; }
     if (FCM_VAPID_KEY === 'YOUR_VAPID_KEY_HERE') {
-      // VAPID 未設定，只存訂閱狀態（無背景推播）
       await _savePushSubscription(null);
       return;
     }
+    await _fcmDebug('registering SW...');
     const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    await _fcmDebug('SW registered, waiting ready...');
     await navigator.serviceWorker.ready;
+    await _fcmDebug('SW ready, getting token...');
     const messaging = firebase.messaging();
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
+    await _fcmDebug(token ? 'token OK: ' + token.substring(0,20) + '...' : 'token null');
     await _savePushSubscription(token);
-    // 前景訊息處理
     messaging.onMessage(payload => {
       const n = payload.notification || {};
       _fireAdminNotif(n.title || '新通知', n.body || '');
     });
   } catch(e) {
+    await _fcmDebug('ERROR: ' + e.message);
     console.warn('FCM init:', e);
     await _savePushSubscription(null);
   }
