@@ -5280,6 +5280,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
   else if (pageId === 'changelogPage') _nav(loadChangelog);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
+  else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
 
   if (pageId !== 'adminPage') {
     const bar = document.getElementById('adminTabBar');
