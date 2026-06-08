@@ -2532,49 +2532,64 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE：月統計 ══════ -->
 <div class="page" id="statsPage">
   <div class="query-wrap">
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">📈</div>
-        <div class="section-title">月協勤統計</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="filter-card" style="margin-bottom:16px;">
-        <div class="filter-grid">
-          <div class="field"><label>年份</label><select id="statsYear" style="width:100%;" onchange="loadStats()"></select></div>
-          <div class="field">
-            <label>月份</label>
-            <select id="statsMonth" style="width:100%;" onchange="loadStats()">
-              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>分隊別</label>
-            <select id="statsUnit" style="width:100%;" onchange="loadStats()">
-              <option value="">— 全部分隊 —</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="stats-row" id="statsOverview" style="display:none;margin-bottom:16px;">
-        <div class="stat-card"><div class="stat-num" id="statsTotal">0</div><div class="stat-label">協勤總筆數</div></div>
-        <div class="stat-card"><div class="stat-num" id="statsMemCount">0</div><div class="stat-label">協勤人數</div></div>
-        <div class="stat-card"><div class="stat-num" id="statsTotalHours">0</div><div class="stat-label">協勤總時數</div></div>
-      </div>
-      <div class="result-card" id="statsTableCard" style="display:none;">
-        <div class="result-head"><h3 id="statsTableTitle">協勤排行榜</h3></div>
-        <div class="result-table-wrap">
-          <table class="stats-table">
-            <thead><tr><th>排名</th><th>姓名</th><th>分隊別</th><th>出勤次數</th><th>備勤時數</th><th>服務人次</th><th>協勤佔比</th></tr></thead>
-            <tbody id="statsTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div id="statsEmptyMsg" class="query-empty"><span class="empty-icon">📈</span>載入中...</div>
+
+    <!-- Header -->
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Noto Serif TC',serif;font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:0.05em;">協勤統計</div>
+      <div style="font-size:0.65rem;color:var(--text-light);letter-spacing:0.14em;margin-top:2px;">DUTY STATISTICS</div>
     </div>
 
+    <!-- Filter card -->
+    <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:5px;font-weight:600;letter-spacing:0.08em;">年份</div>
+          <select id="statsYear" onchange="loadStats()" style="width:100%;border:none;background:#f2f2f7;border-radius:10px;padding:9px 10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);outline:none;"></select>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:5px;font-weight:600;letter-spacing:0.08em;">月份</div>
+          <select id="statsMonth" onchange="loadStats()" style="width:100%;border:none;background:#f2f2f7;border-radius:10px;padding:9px 10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);outline:none;">
+            <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+            <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+            <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+            <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:5px;font-weight:600;letter-spacing:0.08em;">分隊別</div>
+          <select id="statsUnit" onchange="loadStats()" style="width:100%;border:none;background:#f2f2f7;border-radius:10px;padding:9px 10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);outline:none;">
+            <option value="">全部分隊</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overview stats -->
+    <div id="statsOverview" style="display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="statsTotal">0</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">協勤案件數</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="statsMemCount">0</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">協勤人數</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="statsTotalHours">0</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">協勤總時數</div>
+      </div>
+    </div>
+
+    <!-- Ranking card -->
+    <div id="statsTableCard" style="display:none;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);" id="statsTableTitle">協勤排行榜</div>
+        <div style="font-size:0.65rem;color:var(--text-light);letter-spacing:0.06em;">依時數排序</div>
+      </div>
+      <div id="statsTableBody"></div>
+    </div>
+
+    <div id="statsEmptyMsg" class="query-empty"><span class="empty-icon">📈</span>載入中...</div>
 
     <!-- 案由統計 -->
     <div class="section" id="caseStatsSection" style="display:none;margin-top:8px;">
@@ -2583,38 +2598,22 @@ function _dlCSV(content, filename) {
         <div class="section-title">案由統計</div>
         <div class="section-line"></div>
       </div>
-
-      <!-- 數字摘要 -->
       <div class="stats-row" id="caseStatsOverview" style="margin-bottom:16px;grid-template-columns:repeat(2,1fr);"></div>
-
-      <!-- 圖表區：圓餅 + 長條並排 -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="caseChartsGrid">
-        <!-- 圓餅圖 -->
         <div class="result-card" style="padding:16px;">
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
-            案由分布
-          </div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">案由分布</div>
           <div id="caseTypePieChart" style="width:100%;"></div>
           <div id="caseTypeLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;font-size:0.75rem;"></div>
         </div>
-        <!-- 長條圖 -->
         <div class="result-card" style="padding:16px;">
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
-            各類型案件數
-          </div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">各類型案件數</div>
           <div id="caseTypeBarChart" style="width:100%;"></div>
         </div>
       </div>
-
-      <!-- 分隊比較長條圖（全部分隊時才顯示）-->
       <div class="result-card" id="caseUnitCompareCard" style="padding:16px;margin-bottom:16px;display:none;">
-        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">
-          各分隊案由比較
-        </div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">各分隊案由比較</div>
         <canvas id="caseUnitChart" style="max-height:280px;"></canvas>
       </div>
-
-      <!-- 明細表格 -->
       <div class="result-card" style="padding:0;">
         <div class="result-head"><h3>案由明細</h3></div>
         <div class="result-table-wrap">
@@ -2641,30 +2640,31 @@ function _dlCSV(content, filename) {
 <div class="page" id="gongchaPage">
   <div class="query-wrap" style="padding-bottom:0;">
 
-    <!-- Hero Banner -->
-    <div style="background:linear-gradient(135deg,#b94a3a 0%,#8b1a0e 60%,#5c0f08 100%);border-radius:14px;padding:28px 20px 24px;margin-bottom:20px;text-align:center;box-shadow:0 6px 24px rgba(185,74,58,0.35);">
-      <div style="font-size:2.4rem;margin-bottom:6px;">🏅</div>
-      <div style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:700;color:white;letter-spacing:0.1em;margin-bottom:6px;">公差英雄榜</div>
-      <div style="font-size:0.8rem;color:rgba(255,255,255,0.75);letter-spacing:0.06em;">每一次出勤，都是對分隊最真實的貢獻</div>
-      <div style="display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <select id="gcYear" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"></select>
-        <select id="gcUnit" onchange="loadGongchaStats()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;padding:5px 14px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;"><option value="">全部分隊</option></select>
+    <!-- Header banner -->
+    <div style="background:linear-gradient(135deg,#C1121F 0%,#8b1a0e 100%);border-radius:16px;padding:22px 20px 20px;margin-bottom:20px;box-shadow:0 6px 24px rgba(193,18,31,0.28);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:1.2rem;font-weight:700;color:white;letter-spacing:0.08em;">公差英雄榜</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.65);letter-spacing:0.12em;margin-top:2px;">DUTY HERO RANKING</div>
+        </div>
+        <div style="font-size:2rem;opacity:0.9;">🏅</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select id="gcYear" onchange="loadGongchaStats()" style="flex:1;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:white;padding:8px 12px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;outline:none;"></select>
+        <select id="gcUnit" onchange="loadGongchaStats()" style="flex:1;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:white;padding:8px 12px;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;outline:none;"><option value="" style="color:#333;">全部分隊</option></select>
       </div>
     </div>
 
-    <!-- 摘要卡片 -->
+    <!-- Summary -->
     <div id="gcSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;"></div>
 
-    <!-- 前三名獎台 -->
+    <!-- Podium -->
     <div id="gcPodium" style="margin-bottom:20px;"></div>
 
-    <!-- 完整排行 -->
-    <div class="section" style="margin-bottom:0;">
-      <div class="section-head">
-        <div class="section-num">📋</div>
-        <div class="section-title">完整排行榜</div>
-        <div class="section-line"></div>
-      </div>
+    <!-- Full ranking -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);">完整排行榜</div>
+      <div style="font-size:0.65rem;color:var(--text-light);letter-spacing:0.06em;">依次數排序</div>
     </div>
     <div id="gcTable" style="margin-bottom:0;">
       <div class="query-empty"><span class="empty-icon">🏅</span>載入中...</div>
