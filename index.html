@@ -15349,21 +15349,23 @@ async function gongchaUnregister(id) {
 
 async function gongchaBroadcast(id) {
   try {
-    // 直接讀 Firestore 確保人數最新
-    const snap = await firebase.firestore().collection(COL_GONGCHA_MISSIONS).doc(id).get();
-    if (!snap.exists) return;
-    const doc = { id: snap.id, ...snap.data() };
-    const regs = doc.registrants || [];
-    const need = Math.max(0, (doc.maxCount || 0) - regs.length);
-    const dateStr = doc.date || '';
-    const timeStr = (doc.startTime && doc.endTime) ? `${doc.startTime}–${doc.endTime}` : (doc.startTime || '');
-    const locStr = doc.location || '';
-
-    const defTitle = `📢 公差招募：${doc.title || '任務'}`;
-    const needTxt  = need > 0 ? `還差 ${need} 位夥伴` : '名額即將額滿';
-    const dateTxt  = dateStr ? `日期 ${dateStr}${timeStr ? ' ' + timeStr : ''}` : '';
-    const locTxt   = locStr  ? `地點：${locStr}` : '';
-    const defBody  = `${[needTxt, dateTxt, locTxt].filter(Boolean).join('，')}，歡迎有意願的夥伴趕快登記！😊`;
+    // 先用快取資料立刻顯示 modal，背景再更新人數
+    const cached = (await fbList(COL_GONGCHA_MISSIONS)).find(d => d.id === id) || {};
+    const _buildContent = (doc) => {
+      const regs    = doc.registrants || [];
+      const need    = Math.max(0, (doc.maxCount || 0) - regs.length);
+      const dateStr = doc.date || '';
+      const timeStr = (doc.startTime && doc.endTime) ? `${doc.startTime}–${doc.endTime}` : (doc.startTime || '');
+      const locStr  = doc.location || '';
+      const needTxt = need > 0 ? `還差 ${need} 位夥伴` : '名額即將額滿';
+      const dateTxt = dateStr ? `日期 ${dateStr}${timeStr ? ' ' + timeStr : ''}` : '';
+      const locTxt  = locStr  ? `地點：${locStr}` : '';
+      return {
+        title: `📢 公差招募：${doc.title || '任務'}`,
+        body:  `${[needTxt, dateTxt, locTxt].filter(Boolean).join('，')}，歡迎有意願的夥伴趕快登記！😊`,
+      };
+    };
+    const { title: defTitle, body: defBody } = _buildContent(cached);
 
     // 建立預覽 modal
     const overlay = document.createElement('div');
@@ -15375,16 +15377,16 @@ async function gongchaBroadcast(id) {
           <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📢 推播預覽與確認</div>
           <button onclick="document.getElementById('broadcastPreviewOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);line-height:1;">✕</button>
         </div>
-        <!-- 推播預覽卡：模擬 iOS 通知外觀 -->
+        <!-- 推播預覽卡：模擬真實 iOS 通知排列 -->
         <div style="background:#f2f2f7;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
-          <img src="/Emergency-Volunteer-System/icon-192.png" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">
+          <img src="/Emergency-Volunteer-System/icon-192.png" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" onerror="this.style.display='none'">
           <div style="flex:1;min-width:0;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1px;">
-              <span style="font-size:0.72rem;color:#8e8e93;font-family:'Noto Sans TC',sans-serif;">救護義消系統</span>
-              <span style="font-size:0.7rem;color:#8e8e93;">現在</span>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <div id="bpTitlePreview" style="font-size:0.88rem;font-weight:700;color:#1c1c1e;font-family:'Noto Sans TC',sans-serif;line-height:1.3;flex:1;">${defTitle}</div>
+              <span style="font-size:0.7rem;color:#8e8e93;margin-left:8px;white-space:nowrap;">現在</span>
             </div>
-            <div id="bpTitlePreview" style="font-size:0.88rem;font-weight:700;color:#1c1c1e;font-family:'Noto Sans TC',sans-serif;line-height:1.3;">${defTitle}</div>
-            <div id="bpBodyPreview" style="font-size:0.85rem;color:#1c1c1e;line-height:1.4;font-family:'Noto Sans TC',sans-serif;margin-top:1px;">${defBody}</div>
+            <div style="font-size:0.72rem;color:#8e8e93;font-family:'Noto Sans TC',sans-serif;margin:1px 0 2px;">from 救護義消系統</div>
+            <div id="bpBodyPreview" style="font-size:0.85rem;color:#1c1c1e;line-height:1.4;font-family:'Noto Sans TC',sans-serif;">${defBody}</div>
           </div>
         </div>
         <!-- 編輯欄位 -->
@@ -15409,6 +15411,20 @@ async function gongchaBroadcast(id) {
       </div>`;
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    // 背景更新最新人數（不阻塞顯示）
+    firebase.firestore().collection(COL_GONGCHA_MISSIONS).doc(id).get().then(snap => {
+      if (!snap.exists) return;
+      const fresh = _buildContent({ id: snap.id, ...snap.data() });
+      const tp = document.getElementById('bpTitlePreview');
+      const bp = document.getElementById('bpBodyPreview');
+      const ti = document.getElementById('bpTitleInput');
+      const bi = document.getElementById('bpBodyInput');
+      if (tp) tp.textContent = fresh.title;
+      if (bp) bp.textContent = fresh.body;
+      if (ti) ti.value = fresh.title;
+      if (bi) bi.value = fresh.body;
+    }).catch(() => {});
   } catch(e) { alert('載入失敗：' + e.message); }
 }
 
