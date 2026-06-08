@@ -43,46 +43,50 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
   const { title, body, requestedBy } = req.body;
   if (!title || !body) { res.status(400).json({ error: 'title and body are required' }); return; }
 
-  const db = getFirestore();
-  const snap = await db.collection('pushSubscriptions').get();
-  const tokens = [];
-  snap.forEach(doc => {
-    const d = doc.data();
-    if (d.fcmToken) tokens.push(d.fcmToken);
-  });
+  try {
+    const db = getFirestore();
+    const snap = await db.collection('pushSubscriptions').get();
+    const tokens = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.fcmToken) tokens.push(d.fcmToken);
+    });
 
-  const uniqueTokens = [...new Set(tokens)];
-  if (!uniqueTokens.length) {
-    res.json({ status: 'no_tokens', count: 0 });
-    return;
+    const uniqueTokens = [...new Set(tokens)];
+    if (!uniqueTokens.length) {
+      res.json({ status: 'no_tokens', count: 0 });
+      return;
+    }
+
+    const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
+
+    const now = new Date();
+    await db.collection('broadcastRequests').add({
+      title, body, status: 'sent',
+      createdBy: requestedBy || '管理員',
+      createdAt: now, sentAt: now,
+      recipientCount: uniqueTokens.length,
+      fcmResult,
+    });
+
+    const today = now.toISOString().slice(0, 10);
+    await db.collection('announcements').add({
+      text: `${title}\n${body}`,
+      type: 'broadcast',
+      active: true,
+      pinned: false,
+      urgent: false,
+      startDate: today,
+      endDate: today,
+      createdAt: now,
+      createdBy: requestedBy || '管理員',
+    });
+
+    res.json({ status: 'sent', count: uniqueTokens.length });
+  } catch (err) {
+    console.error('broadcastPush error:', err);
+    res.status(500).json({ error: err.message || 'internal error' });
   }
-
-  const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
-
-  const now = new Date();
-  await db.collection('broadcastRequests').add({
-    title, body, status: 'sent',
-    createdBy: requestedBy || '管理員',
-    createdAt: now, sentAt: now,
-    recipientCount: uniqueTokens.length,
-    fcmResult,
-  });
-
-  // 同步寫入公告（讓所有成員在鈴鐺面板看到）
-  const today = now.toISOString().slice(0, 10);
-  await db.collection('announcements').add({
-    text: `${title}\n${body}`,
-    type: 'broadcast',
-    active: true,
-    pinned: false,
-    urgent: false,
-    startDate: today,
-    endDate: today,
-    createdAt: now,
-    createdBy: requestedBy || '管理員',
-  });
-
-  res.json({ status: 'sent', count: uniqueTokens.length });
 });
 
 // ── 工具函式 ──────────────────────────────────────────────────────────
