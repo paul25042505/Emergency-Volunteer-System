@@ -11253,12 +11253,12 @@ function _showIOSInstallGuide() {
             <div style="font-size:0.75rem;color:#6B7280;">在分享選單中向下捲動找到</div>
           </div>
           <div style="flex-shrink:0;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1"/>
-              <rect x="14" y="3" width="7" height="7" rx="1"/>
-              <rect x="3" y="14" width="7" height="7" rx="1"/>
-              <line x1="14" y1="17" x2="20" y2="17"/>
-              <line x1="17" y1="14" x2="17" y2="20"/>
+            <!-- iOS 加入主畫面 icon -->
+            <svg width="32" height="32" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="56" height="56" rx="12" fill="#E5E5EA"/>
+              <rect x="10" y="10" width="36" height="36" rx="8" fill="white" stroke="#C7C7CC" stroke-width="1.5"/>
+              <line x1="28" y1="20" x2="28" y2="36" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+              <line x1="20" y1="28" x2="36" y2="28" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
             </svg>
           </div>
         </div>
@@ -12329,7 +12329,7 @@ async function loginWithTempPass() {
     if (snap.empty) { spinner.style.display='none'; showTempPassErr('密碼不正確或已失效'); return; }
     const doc  = snap.docs[0];
     const data = doc.data();
-    if (data.expiresAt && data.expiresAt.toMillis() < now) {
+    if (data.expiresAt && (data.expiresAt?.toMillis?.() ?? (data.expiresAt?.seconds ? data.expiresAt.seconds*1000 : new Date(data.expiresAt).getTime())) < now) {
       await doc.ref.update({ active: false });
       spinner.style.display='none'; showTempPassErr('此密碼已過期'); return;
     }
@@ -12439,7 +12439,7 @@ async function loadTempPassList() {
     batchBar.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;';
     el.innerHTML = '';
     docs.slice(0,30).forEach(d => {
-      const expired  = d.expiresAt?.toMillis() < now;
+      const expired  = (d.expiresAt?.toMillis?.() ?? (d.expiresAt?.seconds ? d.expiresAt.seconds*1000 : new Date(d.expiresAt).getTime())) < now;
       const maxed    = d.maxUses > 0 && d.usedCount >= d.maxUses;
       const inactive = !d.active || expired || maxed;
       const expStr   = d.expiresAt?.toDate ? d.expiresAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -16682,7 +16682,7 @@ async function loginWithTempPass() {
     if (snap.empty) { spinner.style.display='none'; showTempPassErr('密碼不正確或已失效'); return; }
     const doc  = snap.docs[0];
     const data = doc.data();
-    if (data.expiresAt && data.expiresAt.toMillis() < now) {
+    if (data.expiresAt && (data.expiresAt?.toMillis?.() ?? (data.expiresAt?.seconds ? data.expiresAt.seconds*1000 : new Date(data.expiresAt).getTime())) < now) {
       await doc.ref.update({ active: false });
       spinner.style.display='none'; showTempPassErr('此密碼已過期'); return;
     }
