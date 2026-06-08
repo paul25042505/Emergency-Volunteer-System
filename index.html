@@ -14274,7 +14274,7 @@ function dutyView(v) {
     else        btn.classList.remove('active');
   });
   const monthNav = document.getElementById('dutyMonthNav');
-  if (monthNav) monthNav.style.display = (v==='gongcha'||v==='meeting') ? 'none' : '';
+  if (monthNav) monthNav.style.display = (v==='gongcha'||v==='meeting') ? 'none' : 'flex';
   renderDutyView();
   if (prevDutyView && prevDutyView !== v) {
     const order = ['list','month','gongcha','meeting'];
