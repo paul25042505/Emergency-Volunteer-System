@@ -14753,7 +14753,16 @@ function renderDutyList() {
   const daysInMonth = new Date(_dutyYear, _dutyMonth+1, 0).getDate();
   const today       = new Date().toLocaleDateString('sv');
   const HOURS       = Array.from({length:16}, (_,i) => i+6);
-  let html = '';
+  const usr         = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const myName      = usr.memberName || usr.name || '';
+
+  // 圖例只顯示一次（在最頂端）
+  let html = '<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:0.68rem;color:var(--text-light);padding:10px 14px 6px;">'
+    + '<span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#fadbd8;display:inline-block;"></span>額滿</span>'
+    + '<span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#fdebd0;display:inline-block;"></span>部分已排</span>'
+    + '<span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#d5f5e3;display:inline-block;"></span>雙人時段</span>'
+    + '<span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#eaf2ff;display:inline-block;"></span>一般時段</span>'
+    + '</div>';
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr   = _dutyYear + '-' + String(_dutyMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
@@ -14762,66 +14771,68 @@ function renderDutyList() {
     const isHoliday = isDutyHoliday(dateStr);
     const dow       = new Date(dateStr).getDay();
     const weekDay   = ['日','一','二','三','四','五','六'][dow];
-    const numColor  = isToday ? 'var(--red)' : isHoliday ? '#c0392b' : (dow===0?'#c0392b':dow===6?'#2980b9':'var(--text)');
-    const weekColor = isToday ? 'var(--red)' : isHoliday ? '#e74c3c' : 'var(--text-light)';
+    const isWeekend = dow===0||dow===6;
+    const allowed   = isDutyDateAllowed(dateStr);
+    const hName     = isHoliday ? getHolidayName(dateStr) : '';
 
-    html += '<div class="duty-day-card" id="duty-day-' + dateStr + '">';
+    // 日期左側顏色
+    const numColor  = isToday ? '#fff' : isHoliday ? '#c0392b' : isWeekend ? (dow===6?'#2980b9':'#c0392b') : 'var(--text)';
+    const weekColor = isToday ? 'rgba(255,255,255,0.85)' : isHoliday ? '#e74c3c' : isWeekend ? numColor : 'var(--text-light)';
+    const leftBg    = isToday ? 'var(--red)' : isHoliday ? '#fdf0ee' : 'transparent';
 
-    // 左側日期
-    html += '<div class="duty-day-num" style="' + (isToday?'background:var(--red-faint);':'') + '">';
-    html += '<div class="d-num" style="color:' + numColor + ';">' + d + '</div>';
-    html += '<div class="d-week" style="color:' + weekColor + ';">' + weekDay + '</div>';
-    if (isToday) html += '<div style="width:5px;height:5px;border-radius:50%;background:var(--red);margin-top:4px;"></div>';
+    html += '<div class="duty-day-card" id="duty-day-' + dateStr + '" style="border-radius:0;border-left:none;border-right:none;border-top:none;' + (isToday ? 'border-bottom:2px solid var(--red);' : '') + '">';
+
+    // ── 左側日期柱 ──
+    html += '<div class="duty-day-num" style="background:' + leftBg + ';border-radius:0;padding:14px 8px;">';
+    html += '<div class="d-num" style="color:' + numColor + ';font-size:1.4rem;font-weight:800;line-height:1;">' + d + '</div>';
+    html += '<div class="d-week" style="color:' + weekColor + ';font-size:0.7rem;margin-top:3px;">' + weekDay + '</div>';
+    if (isToday) html += '<div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.9);margin:5px auto 0;"></div>';
     html += '</div>';
 
-    // 右側內容
-    html += '<div class="duty-day-body">';
+    // ── 右側主體 ──
+    html += '<div class="duty-day-body" style="padding:10px 10px 12px;">';
 
-    // 日期標題 + 新增按鈕
+    // 日期行 + 假日標籤 + 新增按鈕
     html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
-    html += '<div style="font-size:0.75rem;color:var(--text-light);">' + dateStr;
-    if (isHoliday) {
-      const hName = getHolidayName(dateStr);
-      html += ' <span style="background:#fdebd0;color:#c0392b;border-radius:4px;padding:1px 6px;font-size:0.68rem;font-weight:600;">' + (hName || '假日') + '</span>';
-    }
+    html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+    html += '<span style="font-size:0.72rem;color:var(--text-light);">' + dateStr + '</span>';
+    if (isHoliday) html += '<span style="background:#fdebd0;color:#c0392b;border-radius:4px;padding:1px 7px;font-size:0.66rem;font-weight:700;">' + (hName||'假日') + '</span>';
+    if (isToday)   html += '<span style="background:var(--red-faint);color:var(--red);border-radius:4px;padding:1px 7px;font-size:0.66rem;font-weight:700;">今天</span>';
     html += '</div>';
-    html += !isDutyDateAllowed(dateStr) ? '<span style="font-size:0.7rem;color:#aaa;padding:3px 8px;">未開放</span>' : '<button onclick="openQuickAdd(&quot;' + dateStr + '&quot;)" style="background:var(--red);color:white;border:none;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:600;cursor:pointer;">＋ 新增</button>';
+    if (!allowed) {
+      html += '<span style="font-size:0.68rem;color:#bbb;padding:2px 8px;">未開放</span>';
+    } else {
+      html += '<button onclick="openQuickAdd(&quot;' + dateStr + '&quot;)" style="background:var(--red);color:white;border:none;border-radius:8px;padding:4px 12px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">＋ 新增</button>';
+    }
     html += '</div>';
 
     // 人員卡
     if (dayDocs.length === 0) {
-      html += '<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0 8px;">— 尚無備勤 —</div>';
+      html += '<div style="font-size:0.78rem;color:#bbb;padding:2px 0 8px;letter-spacing:0.02em;">— 尚無備勤 —</div>';
     } else {
       dayDocs.forEach(doc => {
-        const usr     = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-        const myName  = usr.memberName || usr.name || '';
         const canEdit = doc.memberName===myName || usr.isAdmin || usr.isOfficer;
-        html += '<div class="duty-person-card">';
-        html += '<div class="duty-person-avatar">' + (doc.memberName||'?').slice(0,1) + '</div>';
+        const isMine  = doc.memberName===myName;
+        html += '<div style="display:flex;align-items:center;gap:8px;background:' + (isMine?'#fff8f8':'#fafafa') + ';border:1px solid ' + (isMine?'#fcd5d5':'#efefef') + ';border-radius:10px;padding:7px 10px;margin-bottom:6px;">';
+        html += '<div style="width:32px;height:32px;border-radius:50%;background:' + (isMine?'var(--red)':'#7a9cc0') + ';color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.88rem;flex-shrink:0;">' + (doc.memberName||'?').slice(0,1) + '</div>';
         html += '<div style="flex:1;min-width:0;">';
         html += '<div style="font-size:0.88rem;font-weight:700;color:var(--text);">' + (doc.memberName||'') + '</div>';
-        html += '<div style="font-size:0.75rem;color:var(--text-mid);margin-top:2px;">勤務時段：' + (doc.start||'') + ' - ' + (doc.end||'') + '</div>';
+        html += '<div style="font-size:0.72rem;color:var(--text-mid);margin-top:1px;">'
+              + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>'
+              + (doc.start||'') + ' – ' + (doc.end||'') + '</div>';
         html += '</div>';
         if (canEdit) {
-          html += '<div style="display:flex;gap:2px;flex-shrink:0;align-items:center;">';
-          html += '<button onclick="openDutyEdit(&quot;' + doc.id + '&quot;,&quot;' + dateStr + '&quot;,&quot;' + (doc.memberName||'') + '&quot;,&quot;' + (doc.start||'') + '&quot;,&quot;' + (doc.end||'') + '&quot;)" style="background:none;border:none;border-radius:6px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7a9cc0;" onmouseenter="this.style.background=\'#eaf2ff\'" onmouseleave="this.style.background=\'none\'"><svg style="width:15px;height:15px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>';
-          html += '<button onclick="deleteDuty(&quot;' + doc.id + '&quot;)" style="background:none;border:none;border-radius:6px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#c0a0a0;" onmouseenter="this.style.background=\'#fff0f0\'" onmouseleave="this.style.background=\'none\'"><svg style="width:15px;height:15px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
+          html += '<div style="display:flex;gap:2px;flex-shrink:0;">';
+          html += '<button onclick="openDutyEdit(&quot;'+doc.id+'&quot;,&quot;'+dateStr+'&quot;,&quot;'+(doc.memberName||'')+'&quot;,&quot;'+(doc.start||'')+'&quot;,&quot;'+(doc.end||'')+'&quot;)" style="background:none;border:none;border-radius:7px;padding:5px;cursor:pointer;color:#7a9cc0;" onmouseenter="this.style.background=\'#eaf2ff\'" onmouseleave="this.style.background=\'none\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>';
+          html += '<button onclick="deleteDuty(&quot;'+doc.id+'&quot;)" style="background:none;border:none;border-radius:7px;padding:5px;cursor:pointer;color:#c0a0a0;" onmouseenter="this.style.background=\'#fff0f0\'" onmouseleave="this.style.background=\'none\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
           html += '</div>';
         }
         html += '</div>';
       });
     }
 
-    // 說明列（每日只在第一次渲染時顯示，放在格子上方）
-    html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;font-size:0.64rem;color:var(--text-light);margin-bottom:5px;">';
-    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#fadbd8;border:1px solid #f5b7b1;display:inline-block;"></span>額滿</span>';
-    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#fdebd0;border:1px solid #fad7a0;display:inline-block;"></span>部分已排</span>';
-    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#d5f5e3;border:1px solid #a9dfbf;display:inline-block;"></span>雙人時段</span>';
-    html += '<span style="display:flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#eaf2ff;border:1px solid #aad4f5;display:inline-block;"></span>一般時段</span>';
-    html += '</div>';
-
-    // 時段 cells：4欄 grid
-    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px;">';
+    // 時段 grid（4欄）
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:4px;">';
     HOURS.forEach(h => {
       const cap   = getDutySlotCapacity(dateStr, h);
       const count = getDutySlotCount(dateStr, h);
@@ -14836,32 +14847,43 @@ function renderDutyList() {
 
       let cellBg, cellColor, nameBg;
       const isTrainingSlot = isDutyTrainingBlock(dateStr, h);
-      if (isTrainingSlot)   { cellBg='#f3e5f5'; cellColor='#6a1b9a'; nameBg='#8e44ad'; }
-      else if (full)        { cellBg='#fadbd8'; cellColor='#922b21'; nameBg='#c0392b'; }
-      else if (count>0)     { cellBg='#fdebd0'; cellColor='#784212'; nameBg='#e67e22'; }
-      else if (cap===2)     { cellBg='#d5f5e3'; cellColor='#1a6b35'; nameBg='#27ae60'; }
-      else                  { cellBg='#eaf2ff'; cellColor='#1a3a6b'; nameBg='#2980b9'; }
+      if (isTrainingSlot) { cellBg='#f3e5f5'; cellColor='#6a1b9a'; nameBg='#8e44ad'; }
+      else if (full)      { cellBg='#fadbd8'; cellColor='#922b21'; nameBg='#c0392b'; }
+      else if (count>0)   { cellBg='#fdebd0'; cellColor='#784212'; nameBg='#e67e22'; }
+      else if (cap===2)   { cellBg='#d5f5e3'; cellColor='#1a6b35'; nameBg='#27ae60'; }
+      else                { cellBg='#eaf2ff'; cellColor='#1a3a6b'; nameBg='#2980b9'; }
 
-      html += '<div style="background:' + cellBg + ';color:' + cellColor + ';border-radius:8px;padding:6px 4px;text-align:center;line-height:1.5;min-height:60px;">';
-      html += '<div style="font-weight:700;font-size:0.75rem;">' + String(h).padStart(2,'0') + '-' + String(h+1).padStart(2,'0') + '</div>';
+      html += '<div style="background:'+cellBg+';color:'+cellColor+';border-radius:6px;padding:5px 3px;text-align:center;line-height:1.4;min-height:54px;">';
+      html += '<div style="font-weight:700;font-size:0.68rem;">' + String(h).padStart(2,'0') + '-' + String(h+1).padStart(2,'0') + '</div>';
       if (isTrainingSlot) {
         const topic = getDutyTrainingNote(dateStr);
-        html += '<div style="font-size:0.58rem;background:#8e44ad;color:white;border-radius:4px;padding:1px 4px;margin-top:2px;">' + (topic||'定訓') + '</div>';
-        html += '<div style="font-size:0.55rem;margin-top:2px;opacity:0.7;">封鎖</div>';
+        html += '<div style="font-size:0.55rem;background:#8e44ad;color:white;border-radius:3px;padding:1px 3px;margin-top:2px;">'+(topic||'定訓')+'</div>';
+        html += '<div style="font-size:0.52rem;margin-top:2px;opacity:0.6;">封鎖</div>';
       } else {
-        if (names.length > 0) {
-          names.forEach(n => {
-            html += '<div style="display:inline-block;background:' + nameBg + ';color:white;border-radius:4px;padding:1px 4px;font-size:0.58rem;margin-top:2px;word-break:break-all;line-height:1.4;max-width:100%;">' + n + '</div>';
-          });
-        }
-        html += '<div style="font-size:0.58rem;margin-top:3px;opacity:0.75;">' + (full?'額滿':'餘'+left) + '</div>';
+        names.forEach(n => {
+          html += '<div style="display:inline-block;background:'+nameBg+';color:white;border-radius:3px;padding:1px 3px;font-size:0.55rem;margin-top:2px;word-break:break-all;line-height:1.3;max-width:100%;">'+n+'</div>';
+        });
+        html += '<div style="font-size:0.55rem;margin-top:2px;opacity:0.7;">'+(full?'額滿':'餘'+left)+'</div>';
       }
       html += '</div>';
     });
     html += '</div>';
+
     html += '</div></div>'; // duty-day-body + duty-day-card
   }
   el.innerHTML = html;
+
+  // 渲染完成後滾回今天（如果在本月）
+  const todayEl = document.getElementById('duty-day-' + today);
+  if (todayEl) {
+    setTimeout(() => {
+      const scroller = document.getElementById('appScroll');
+      if (!scroller) return;
+      const elTop = todayEl.getBoundingClientRect().top;
+      const scrollerTop = scroller.getBoundingClientRect().top;
+      scroller.scrollBy({ top: elTop - scrollerTop - 8, behavior: 'auto' });
+    }, 0);
+  }
 }
 
 function scrollToDutyDate(dateStr) {
