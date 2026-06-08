@@ -14334,82 +14334,98 @@ async function renderDutyGongcha() {
       const pct = total ? Math.min(100, Math.round(regs.length/total*100)) : 0;
       const barColor = full ? '#7f8c8d' : pct >= 60 ? '#e67e22' : '#27ae60';
 
-      html += '<div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:14px;overflow:hidden;">';
+      const accentColor = iReg ? '#27ae60' : full ? '#7f8c8d' : '#c0392b';
+      const accentLight = iReg ? '#f0faf4' : full ? '#f5f5f5' : '#fff0f0';
 
-      // ── header strip ──
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;">';
-      html += '<div style="display:flex;align-items:center;gap:8px;">';
-      html += '<div style="background:#fff3e0;border-radius:8px;padding:4px 10px;text-align:center;">'
-            +   '<div style="font-size:0.65rem;color:#e65100;font-weight:600;line-height:1;">'+mm+'月</div>'
-            +   '<div style="font-size:1.1rem;font-weight:700;color:#e65100;line-height:1.2;">'+dd+'</div>'
-            + '</div>';
-      html += '<div>'
-            +   '<div style="font-size:1rem;font-weight:700;color:var(--text);line-height:1.3;">'+(doc.title||'（無標題）')+'</div>'
-            +   '<div style="font-size:0.72rem;color:var(--text-light);margin-top:1px;">公差任務</div>'
-            + '</div>';
-      html += '</div>';
+      html += '<div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);margin-bottom:16px;overflow:hidden;">';
+
+      // ══ 頂部彩色橫幅 ══
+      html += '<div style="background:linear-gradient(135deg,'+accentColor+' 0%,'+accentColor+'cc 100%);padding:16px 16px 14px;position:relative;">';
+      // 管理員操作按鈕（右上角，白色）
       if (isAdmin) {
-        html += '<div style="display:flex;gap:2px;">'
-              + '<button onclick="showGongchaForm('+JSON.stringify(doc).replace(/"/g,'&quot;')+')" style="background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:8px;color:var(--text-mid);font-size:1rem;" title="編輯">✏️</button>'
-              + '<button onclick="deleteGongcha(\''+doc.id+'\')" style="background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:8px;color:#e74c3c;font-size:1rem;" title="刪除">🗑</button>'
+        html += '<div style="position:absolute;top:10px;right:10px;display:flex;gap:2px;">'
+              + '<button onclick="showGongchaForm('+JSON.stringify(doc).replace(/"/g,'&quot;')+')" style="background:rgba(255,255,255,0.2);border:none;cursor:pointer;padding:5px 7px;border-radius:7px;color:white;font-size:0.9rem;" title="編輯">✏️</button>'
+              + '<button onclick="deleteGongcha(\''+doc.id+'\')" style="background:rgba(255,255,255,0.2);border:none;cursor:pointer;padding:5px 7px;border-radius:7px;color:white;font-size:0.9rem;" title="刪除">🗑</button>'
               + '</div>';
       }
+      // 日期 badge + 標題
+      html += '<div style="display:flex;align-items:flex-start;gap:10px;">';
+      html += '<div style="background:rgba(255,255,255,0.22);border-radius:10px;padding:6px 11px;text-align:center;flex-shrink:0;">'
+            +   '<div style="font-size:0.62rem;color:rgba(255,255,255,0.9);font-weight:700;line-height:1;letter-spacing:0.05em;">'+mm+'月</div>'
+            +   '<div style="font-size:1.5rem;font-weight:800;color:white;line-height:1.1;">'+dd+'</div>'
+            + '</div>';
+      html += '<div style="padding-top:2px;">'
+            +   '<div style="font-size:1.08rem;font-weight:800;color:white;line-height:1.3;letter-spacing:0.01em;">'+(doc.title||'（無標題）')+'</div>'
+            +   '<div style="font-size:0.72rem;color:rgba(255,255,255,0.8);margin-top:3px;">公差任務</div>'
+            + '</div>';
+      html += '</div>';
       html += '</div>';
 
-      // ── divider ──
-      html += '<div style="height:1px;background:#f0f0f0;margin:0 14px;"></div>';
-
-      // ── info rows ──
-      html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px;">';
+      // ══ 資訊格子區 ══
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #f0f0f0;">';
+      // 時間格
+      html += '<div style="padding:12px 14px;border-right:1px solid #f0f0f0;">';
+      html += '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">時間</div>';
       if (doc.time||doc.endTime) {
-        html += '<div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-mid);">'
-              + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>'
-              + (doc.time||'') + (doc.endTime ? ' – ' + doc.endTime : '')
-              + '</div>';
+        html += '<div style="font-size:0.88rem;font-weight:700;color:var(--text);">'+(doc.time||'—')+(doc.endTime?' – '+doc.endTime:'')+'</div>';
+      } else {
+        html += '<div style="font-size:0.88rem;color:#bbb;">—</div>';
       }
-      if (doc.location) {
-        html += '<div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-mid);">'
-              + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'
-              + doc.location
-              + '</div>';
-      }
-      if (doc.description) {
-        html += '<div style="font-size:0.8rem;color:var(--text-mid);line-height:1.5;padding:6px 8px;background:#f8f8f8;border-radius:6px;">'+(doc.description)+'</div>';
-      }
+      html += '</div>';
+      // 地點格
+      html += '<div style="padding:12px 14px;">';
+      html += '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">地點</div>';
+      html += '<div style="font-size:0.88rem;font-weight:700;color:var(--text);word-break:break-all;">'+(doc.location||'—')+'</div>';
+      html += '</div>';
       html += '</div>';
 
-      // ── headcount progress bar ──
-      html += '<div style="padding:0 14px 10px;">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">';
-      html += '<span style="font-size:0.75rem;color:var(--text-mid);">登記人數</span>';
-      html += '<span style="font-size:0.75rem;font-weight:600;color:'+barColor+';">'+regs.length+' / '+total+'人</span>';
+      // 說明區塊
+      if (doc.description) {
+        html += '<div style="padding:10px 14px;border-bottom:1px solid #f0f0f0;">';
+        html += '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">說明</div>';
+        html += '<div style="font-size:0.82rem;color:var(--text-mid);line-height:1.6;">'+doc.description+'</div>';
+        html += '</div>';
+      }
+
+      // ══ 登記人數進度 ══
+      html += '<div style="padding:12px 14px 8px;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+      html += '<span style="font-size:0.72rem;color:#aaa;font-weight:600;letter-spacing:0.06em;">登記人數</span>';
+      html += '<span style="font-size:0.82rem;font-weight:800;color:'+barColor+';">'+regs.length+' <span style="font-weight:400;color:#bbb;">/</span> '+total+' 人</span>';
       html += '</div>';
-      html += '<div style="height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;">'
-            + '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:3px;transition:width 0.4s;"></div>'
+      html += '<div style="height:6px;background:#f0f0f0;border-radius:4px;overflow:hidden;">'
+            + '<div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width 0.4s;"></div>'
             + '</div>';
       html += '</div>';
 
-      // ── registrants chips ──
+      // ══ 登記者頭像列 ══
       if (regs.length) {
-        html += '<div style="display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 10px;">';
+        html += '<div style="padding:4px 14px 12px;display:flex;flex-wrap:wrap;gap:6px;">';
         regs.forEach(r => {
-          html += '<span style="background:#f0f4ff;color:#2c5282;border-radius:20px;padding:3px 10px;font-size:0.76rem;">'+(r.name||r.email)+'</span>';
+          const isMe = r.email === myEmail;
+          html += '<div style="display:flex;align-items:center;gap:5px;background:'+(isMe?accentLight:'#f4f6fa')+';border:1px solid '+(isMe?accentColor+'55':'#e8e8e8')+';border-radius:20px;padding:4px 10px 4px 4px;">'
+                +   '<div style="width:22px;height:22px;border-radius:50%;background:'+(isMe?accentColor:'#8fa8c0')+';color:white;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;">'+(r.name||'?').slice(0,1)+'</div>'
+                +   '<span style="font-size:0.76rem;font-weight:'+(isMe?'700':'500')+';color:'+(isMe?accentColor:'var(--text-mid')+');">'+( r.name||r.email)+'</span>'
+                + '</div>';
         });
         html += '</div>';
       }
 
-      // ── action buttons ──
-      html += '<div style="padding:0 14px 14px;">';
+      // ══ 行動按鈕 ══
+      html += '<div style="padding:'+(regs.length?'0':'4px')+' 14px 14px;">';
       if (iReg) {
-        html += '<div style="background:#f0faf4;border:1px solid #b7ebc8;border-radius:10px;padding:11px;text-align:center;font-size:0.88rem;font-weight:600;color:#27ae60;">✓ 已登記公差</div>';
+        html += '<div style="display:flex;gap:8px;">';
+        html += '<div style="flex:1;background:#f0faf4;border:1px solid #b7ebc8;border-radius:10px;padding:11px;text-align:center;font-size:0.88rem;font-weight:700;color:#27ae60;">✓ 已登記公差</div>';
+        html += '<button onclick="gongchaUnregister(\''+doc.id+'\')" style="background:#fff5f5;color:#c0392b;border:1px solid #f5c6c6;border-radius:10px;padding:11px 14px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:\'Noto Sans TC\',sans-serif;">取消登記</button>';
+        html += '</div>';
       } else if (full) {
         html += '<div style="background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.88rem;font-weight:600;color:#999;">名額已滿</div>';
       } else {
         html += '<div style="display:flex;gap:8px;">';
         if (isAdmin) {
-          html += '<button onclick="gongchaBroadcast(\''+doc.id+'\')" style="flex:1;background:#fff3e0;color:#e65100;border:1px solid #f0c080;border-radius:10px;padding:11px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">📢 廣播尚缺'+need+'人</button>';
+          html += '<button onclick="gongchaBroadcast(\''+doc.id+'\')" style="flex:1;background:#fff3e0;color:#e65100;border:1px solid #f0c080;border-radius:10px;padding:11px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">📢 廣播尚缺'+need+'人</button>';
         }
-        html += '<button onclick="gongchaRegister(\''+doc.id+'\')" style="flex:'+(isAdmin?'1':'1')+';background:var(--red);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">立即登記</button>';
+        html += '<button onclick="gongchaRegister(\''+doc.id+'\')" style="flex:1;background:var(--red);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">立即登記</button>';
         html += '</div>';
       }
       html += '</div>';
@@ -14431,9 +14447,22 @@ async function gongchaRegister(id) {
     if (regs.some(r=>r.email===u.email)) return alert('您已登記');
     regs.push({name:u.name||'',email:u.email,unit:u.unit||''});
     await fbUpdate(COL_GONGCHA_MISSIONS, id, {registrants:regs});
-    alert('登記成功！');
     renderDutyGongcha();
   } catch(e) { alert('登記失敗：'+e.message); }
+}
+
+async function gongchaUnregister(id) {
+  if (!confirm('確定取消此次公差登記？')) return;
+  const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  if (!u.email) return;
+  try {
+    const docs = await fbList(COL_GONGCHA_MISSIONS);
+    const doc = docs.find(d=>d.id===id);
+    if (!doc) return;
+    const regs = (doc.registrants||[]).filter(r=>r.email!==u.email);
+    await fbUpdate(COL_GONGCHA_MISSIONS, id, {registrants:regs});
+    renderDutyGongcha();
+  } catch(e) { alert('取消失敗：'+e.message); }
 }
 
 function gongchaBroadcast(id) { alert('廣播功能尚未開放'); }
