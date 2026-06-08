@@ -69,8 +69,10 @@ body {
 @keyframes _slideFromRight { from { transform: translateX(40%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes _dotFade { 0%,100% { opacity:0.15; } 50% { opacity:1; } }
 @keyframes _slideFromLeft  { from { transform: translateX(-40%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-.page.slide-from-right { animation: _slideFromRight 0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
-.page.slide-from-left  { animation: _slideFromLeft  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.page.slide-from-right,
+.duty-subview.slide-from-right { animation: _slideFromRight 0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.page.slide-from-left,
+.duty-subview.slide-from-left  { animation: _slideFromLeft  0.22s cubic-bezier(0.25,0.46,0.45,0.94) both; }
 
 
 /* ── 簡易模式樣式（in-page，內嵌於各頁面）── */
@@ -3565,7 +3567,7 @@ function _dlCSV(content, filename) {
   <div style="padding:0;max-width:100%;">
 
     <!-- ── 月視圖 ── -->
-    <div id="dutyMonthView" style="display:none;padding:10px 10px;">
+    <div id="dutyMonthView" class="duty-subview" style="display:none;padding:10px 10px;">
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
         <div style="text-align:center;font-size:0.68rem;color:#c0392b;font-weight:600;padding:4px 0;">日</div>
         <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">一</div>
@@ -3586,17 +3588,17 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- ── 清單視圖 ── -->
-    <div id="dutyListView" style="display:none;">
+    <div id="dutyListView" class="duty-subview" style="display:none;">
       <div id="dutyListContent"></div>
     </div>
 
     <!-- ── 公差登記視圖 ── -->
-    <div id="dutyGongchaView" style="display:none;padding:12px 14px;">
+    <div id="dutyGongchaView" class="duty-subview" style="display:none;padding:12px 14px;">
       <div id="dutyGongchaContent"></div>
     </div>
 
     <!-- ── 會議登記視圖 ── -->
-    <div id="dutyMeetingView" style="display:none;padding:12px 14px;">
+    <div id="dutyMeetingView" class="duty-subview" style="display:none;padding:12px 14px;">
       <div id="dutyMeetingContent"></div>
     </div>
 
