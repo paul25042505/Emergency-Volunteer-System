@@ -1837,9 +1837,9 @@ function _dlCSV(content, filename) {
   <!-- 篩選面板 -->
   <div class="mq-filter" style="border-radius:0;">
     <div class="mq-chips" id="qDateChips">
-      <button class="mq-chip active" onclick="qSetDateChip('today',this)">今天</button>
+      <button class="mq-chip" onclick="qSetDateChip('today',this)">今天</button>
       <button class="mq-chip" onclick="qSetDateChip('week',this)">本週</button>
-      <button class="mq-chip" onclick="qSetDateChip('month',this)">本月</button>
+      <button class="mq-chip active" onclick="qSetDateChip('month',this)">本月</button>
       <button class="mq-chip" onclick="qSetDateChip('custom',this)">自訂日期</button>
     </div>
     <div id="qCustomDateRow" style="display:none;flex-direction:row;gap:8px;margin-bottom:10px;align-items:center;">
@@ -7077,6 +7077,8 @@ async function updateQueryMemberSelect() {
 
   filterQueryMembers();
   populateCaseTypeSelect();
+  // 自動查詢本月資料
+  setTimeout(doQuery, 100);
 }
 
 function filterQueryMembers() {
