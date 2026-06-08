@@ -3997,6 +3997,7 @@ var COL_CONFIRM    = 'confirmTasks';
 var COL_DUTY = 'dutySchedule'; // 班表（提前定義供 loadDashboard 使用）
 var COL_GONGCHA_MISSIONS = 'gongchaMissions';
 var COL_MEETING_EVENTS = 'meetingEvents';
+var COL_MEETING_TYPES  = 'meetingTypes';
 var COL_CASETYPES = 'caseTypes';
 
 // Firebase 初始化（SDK 用 defer 載入，window.onload 後才 init）
@@ -14807,16 +14808,14 @@ function showMeetingForm(doc) {
     + '<h3 style="font-family:\'Noto Serif TC\',serif;font-size:1rem;margin:0 0 16px;">' + (isEdit?'編輯':'發佈') + '會議</h3>'
     + '<div style="display:flex;flex-direction:column;gap:12px;">'
     + _mfField('會議標題', '<input id="_mfTitle" placeholder="例：6月幹部會議" value="'+(doc.title||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
-    + _mfField('類型 <span style="color:var(--text-light);font-weight:400;font-size:0.72rem;">（可輸入新類型）</span>',
-        (function(){
-          const seStyle='width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;background:white;';
-          const defaults=['幹部會議','定期訓練','教育訓練','協調會報','餐敘活動','臨時會議'];
-          let o='<select id="_mfType" style="'+seStyle+'"><option value="">— 選擇類型 —</option>';
-          defaults.forEach(t=>{ o+='<option value="'+t+'"'+(doc.type===t?' selected':'')+'>'+t+'</option>'; });
-          o+='<option value="__custom__" style="color:var(--text-light);">✏️ 自行輸入…</option></select>';
-          o+='<input id="_mfTypeCustom" placeholder="輸入新類型名稱" style="display:none;width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;margin-top:6px;">';
-          return o;
-        })())
+    + '<div><div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">類型</div>'
+    +   '<div id="_mfTypeTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>'
+    +   '<div style="display:flex;gap:6px;">'
+    +     '<input id="_mfTypeInput" placeholder="輸入新類型…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:0.85rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">'
+    +     '<button id="_mfTypeAddBtn" type="button" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:\'Noto Sans TC\',sans-serif;">新增</button>'
+    +   '</div>'
+    +   '<input type="hidden" id="_mfType" value="'+(doc.type||'')+'">'
+    + '</div>'
     + _mfField('日期 <span style="color:var(--red)">*</span>', '<input id="_mfDate" type="date" value="'+(doc.date||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;box-sizing:border-box;">')
     + _mfField('時間', (function(){
         const seStyle='flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;background:white;text-align:center;text-align-last:center;-webkit-text-align-last:center;';
@@ -14865,42 +14864,76 @@ function showMeetingForm(doc) {
     };
     bentoThumb.addEventListener('click', () => { bentoCb.checked = !bentoCb.checked; syncThumb(); });
   }
-  // 類型 select：若有現有值不在預設清單，顯示自訂輸入框
-  const typeSel = overlay.querySelector('#_mfType');
-  const typeCustom = overlay.querySelector('#_mfTypeCustom');
-  const defaults = ['幹部會議','定期訓練','教育訓練','協調會報','餐敘活動','臨時會議'];
-  if (doc.type && !defaults.includes(doc.type)) {
-    // 現有值是自訂類型，動態加入選項並選中
-    const opt = document.createElement('option');
-    opt.value = doc.type; opt.textContent = doc.type; opt.selected = true;
-    typeSel.insertBefore(opt, typeSel.lastElementChild);
-  }
-  typeSel.addEventListener('change', () => {
-    if (typeSel.value === '__custom__') {
-      typeCustom.style.display = '';
-      typeCustom.focus();
-    } else {
-      typeCustom.style.display = 'none';
-    }
-  });
-  // 非同步載入已有類型加入選單
-  fbList(COL_MEETING_EVENTS).then(existingDocs => {
-    const existingTypes = [...new Set(existingDocs.map(d=>d.type||'').filter(Boolean))]
-      .filter(t => !defaults.includes(t) && t !== doc.type);
-    existingTypes.sort().forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t; opt.textContent = t;
-      typeSel.insertBefore(opt, typeSel.lastElementChild);
+  // 類型 tag UI
+  const _mfTypeHidden = overlay.querySelector('#_mfType');
+  const _mfTypeTags   = overlay.querySelector('#_mfTypeTags');
+  const _mfTypeInput  = overlay.querySelector('#_mfTypeInput');
+  const _mfTypeAddBtn = overlay.querySelector('#_mfTypeAddBtn');
+  const DEFAULTS = ['幹部會議','定期訓練','教育訓練','協調會報','餐敘活動','臨時會議'];
+
+  function _renderTypeTags(allTypes) {
+    _mfTypeTags.innerHTML = '';
+    allTypes.forEach(({name, custom}) => {
+      const sel = name === _mfTypeHidden.value;
+      const tag = document.createElement('div');
+      tag.style.cssText = 'display:flex;align-items:center;gap:0;border-radius:20px;overflow:hidden;cursor:pointer;border:1.5px solid '+(sel?'var(--red)':'var(--border)')+';background:'+(sel?'#fff0f0':'white')+';transition:all 0.15s;';
+      const label = document.createElement('span');
+      label.textContent = name;
+      label.style.cssText = 'padding:5px 10px;font-size:0.82rem;font-weight:'+(sel?'700':'400')+';color:'+(sel?'var(--red)':'var(--text-mid)')+';';
+      label.onclick = () => { _mfTypeHidden.value = name; _renderTypeTags(allTypes); };
+      tag.appendChild(label);
+      if (custom) {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        del.style.cssText = 'background:none;border:none;border-left:1px solid '+(sel?'#f5c6c6':'var(--border)')+';padding:5px 7px;cursor:pointer;color:'+(sel?'var(--red)':'#bbb')+';display:flex;align-items:center;';
+        del.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm('刪除類型「'+name+'」？')) return;
+          try {
+            const typeDocs = await fbList(COL_MEETING_TYPES);
+            const td = typeDocs.find(d=>d.name===name);
+            if (td) await fbDelete(COL_MEETING_TYPES, td.id);
+            if (_mfTypeHidden.value === name) _mfTypeHidden.value = '';
+            const idx = allTypes.findIndex(t=>t.name===name);
+            if (idx > -1) allTypes.splice(idx, 1);
+            _renderTypeTags(allTypes);
+          } catch(e2) { alert('刪除失敗'); }
+        };
+        tag.appendChild(del);
+      }
+      _mfTypeTags.appendChild(tag);
     });
-  }).catch(()=>{});
+  }
+
+  // 新增類型
+  const _addType = async () => {
+    const name = _mfTypeInput.value.trim();
+    if (!name) return;
+    if (!allTypes.find(t=>t.name===name)) {
+      try { await fbAdd(COL_MEETING_TYPES, {name}); } catch(e2) {}
+      allTypes.push({name, custom:true});
+    }
+    _mfTypeHidden.value = name;
+    _mfTypeInput.value = '';
+    _renderTypeTags(allTypes);
+  };
+  _mfTypeAddBtn.onclick = _addType;
+  _mfTypeInput.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); _addType(); }});
+
+  // 載入類型（預設 + 自訂）
+  let allTypes = DEFAULTS.map(n=>({name:n, custom:false}));
+  fbList(COL_MEETING_TYPES).then(typeDocs => {
+    typeDocs.forEach(td => {
+      if (!allTypes.find(t=>t.name===td.name)) allTypes.push({name:td.name, custom:true});
+    });
+    _renderTypeTags(allTypes);
+  }).catch(()=>{ _renderTypeTags(allTypes); });
 }
 
 async function saveMeetingForm(editId, overlay) {
   const title = document.getElementById('_mfTitle').value.trim();
-  const typeSel = document.getElementById('_mfType');
-  const type = (typeSel.value === '__custom__'
-    ? (document.getElementById('_mfTypeCustom').value.trim())
-    : typeSel.value) || '';
+  const type  = (document.getElementById('_mfType').value || '').trim();
   const date = document.getElementById('_mfDate').value;
   const time = document.getElementById('_mfTime').value;
   const endTime = document.getElementById('_mfEndTime').value;
