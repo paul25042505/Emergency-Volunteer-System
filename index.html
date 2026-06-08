@@ -4051,7 +4051,7 @@ async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collecti
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
 const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
-const _C_SKIP = new Set(['loginLog','feedback','corrections','confirmTasks','tempPass']);
+const _C_SKIP = new Set(['loginLog','feedback','corrections','confirmTasks','tempPass','correctionRequests']);
 async function fbList(col, orderByField, orderDir) {
   // 第一層：localStorage 新鮮快取（零等待，不需網路）
   if (!_C_SKIP.has(col) && _C.fresh(col)) return _C.peek(col);
@@ -9938,12 +9938,49 @@ function _buildAdminMenu() {
     { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
   ];
   grid.innerHTML = items.filter(i => !i.adminOnly || isAdmin).map(i => `
-    <button onclick="adminShowSection('${i.id}')" style="background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:16px 12px;text-align:left;cursor:pointer;font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:block;width:100%;">
+    <button onclick="adminShowSection('${i.id}')" data-admin-sec="${i.id}" style="position:relative;background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:16px 12px;text-align:left;cursor:pointer;font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:block;width:100%;">
       <div style="width:38px;height:38px;border-radius:10px;background:${i.color};display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:10px;">${i.icon}</div>
       <div style="font-size:0.88rem;font-weight:700;color:#1a1a1a;margin-bottom:2px;">${i.label}</div>
       <div style="font-size:0.72rem;color:#888;line-height:1.3;">${i.sub}</div>
     </button>
   `).join('');
+  _loadAdminBadges();
+}
+
+async function _loadAdminBadges() {
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const [corrections, feedbacks] = await Promise.all([fbList(COL_CORRECTION), fbList(COL_FEEDBACK)]);
+    let pendingCorr = corrections.filter(d => d.status === 'pending');
+    const lastSeen = parseInt(localStorage.getItem('adminFbLastSeen') || '0');
+    let newFb = feedbacks.filter(d => {
+      const t = d.time ? new Date(d.time).getTime() : 0;
+      return t > lastSeen;
+    });
+    if (!usr.isAdmin) {
+      pendingCorr = pendingCorr.filter(d => {
+        const unitNames = (window._members || []).filter(m => m.unit === usr.unit).map(m => m.name);
+        return unitNames.includes(d.memberName);
+      });
+      newFb = newFb.filter(d => d.unit === usr.unit);
+    }
+    _setAdminBadge('adminSec-correction', pendingCorr.length);
+    _setAdminBadge('adminSec-feedback', newFb.length);
+  } catch(e) {}
+}
+
+function _setAdminBadge(sectionId, count) {
+  const btn = document.querySelector(`#adminMenuCards button[data-admin-sec="${sectionId}"]`);
+  if (!btn) return;
+  let badge = btn.querySelector('.admin-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.className = 'admin-badge';
+    badge.style.cssText = 'position:absolute;top:8px;right:8px;background:#EF4444;color:white;border-radius:999px;font-size:0.68rem;font-weight:700;padding:2px 6px;min-width:18px;text-align:center;line-height:1.4;pointer-events:none;';
+    btn.appendChild(badge);
+  }
+  badge.style.display = count > 0 ? '' : 'none';
+  badge.textContent = count > 99 ? '99+' : String(count);
 }
 
 function adminShowSection(sectionId) {
@@ -9963,6 +10000,10 @@ function adminShowSection(sectionId) {
   const sel = document.getElementById('adminSecSelect');
   if (sel) sel.value = sectionId;
   document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
+  if (sectionId === 'adminSec-feedback') {
+    localStorage.setItem('adminFbLastSeen', String(Date.now()));
+    _setAdminBadge('adminSec-feedback', 0);
+  }
   if (sectionId === 'adminSec-repair') {
     const df = document.getElementById('repairDateFrom');
     const dt = document.getElementById('repairDateTo');
@@ -10064,8 +10105,98 @@ async function initAdminPage() {
     // 預熱快取
     ['members','whitelist','caseTypes','units','announcements'].forEach(col => fbList(col).catch(()=>{}));
   });
+
+  _setupAdminNotif();
 }
 
+// ════════════════════════════════════════
+// 管理員通知（badge + 推播）
+// ════════════════════════════════════════
+var _adminNotifUnsub = [];
+var _adminNotifReady = false;
+
+async function _setupAdminNotif() {
+  if (_adminNotifReady) return;
+  _adminNotifReady = true;
+
+  if (!('Notification' in window)) return;
+
+  // 若尚未決定，顯示提示橫幅讓使用者主動開啟
+  if (Notification.permission === 'default') {
+    _showNotifBanner();
+    return;
+  }
+  if (Notification.permission === 'granted') _startNotifListeners();
+}
+
+function _showNotifBanner() {
+  const menuGrid = document.getElementById('adminMenuGrid');
+  if (!menuGrid || document.getElementById('adminNotifBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'adminNotifBanner';
+  banner.style.cssText = 'background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-family:"Noto Sans TC",sans-serif;';
+  banner.innerHTML = `
+    <div style="font-size:1.3rem;">🔔</div>
+    <div style="flex:1;">
+      <div style="font-size:0.84rem;font-weight:700;color:#1D4ED8;margin-bottom:2px;">開啟推播通知</div>
+      <div style="font-size:0.75rem;color:#3B82F6;line-height:1.4;">有新修正申請或意見回饋時即時通知您</div>
+    </div>
+    <button onclick="_enableAdminNotif()" style="background:#2563EB;color:white;border:none;border-radius:8px;padding:7px 13px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">開啟</button>
+    <button onclick="this.closest('#adminNotifBanner').remove()" style="background:none;border:none;color:#93C5FD;cursor:pointer;font-size:1.1rem;padding:0 2px;">✕</button>
+  `;
+  menuGrid.insertBefore(banner, menuGrid.firstChild.nextSibling);
+}
+
+async function _enableAdminNotif() {
+  const perm = await Notification.requestPermission();
+  const banner = document.getElementById('adminNotifBanner');
+  if (banner) banner.remove();
+  if (perm === 'granted') _startNotifListeners();
+}
+
+function _startNotifListeners() {
+  _adminNotifUnsub.forEach(fn => { try { fn(); } catch(e) {} });
+  _adminNotifUnsub = [];
+
+  const db = firebase.firestore();
+  let corrFirst = true, fbFirst = true;
+
+  // 監聽待審修正申請
+  const corrUnsub = db.collection(COL_CORRECTION).where('status', '==', 'pending')
+    .onSnapshot(snap => {
+      if (corrFirst) { corrFirst = false; return; }
+      snap.docChanges().forEach(ch => {
+        if (ch.type === 'added') {
+          const d = ch.doc.data();
+          _fireAdminNotif('📝 新修正申請', `${d.memberName || '成員'} 提交了資料修正申請`);
+          _loadAdminBadges();
+        }
+      });
+    }, () => {});
+  _adminNotifUnsub.push(corrUnsub);
+
+  // 監聽新意見回饋
+  const fbUnsub = db.collection(COL_FEEDBACK)
+    .onSnapshot(snap => {
+      if (fbFirst) { fbFirst = false; return; }
+      snap.docChanges().forEach(ch => {
+        if (ch.type === 'added') {
+          const d = ch.doc.data();
+          _fireAdminNotif('💬 新意見回饋', `${d.name || '成員'} 提交了意見回饋`);
+          _loadAdminBadges();
+        }
+      });
+    }, () => {});
+  _adminNotifUnsub.push(fbUnsub);
+}
+
+function _fireAdminNotif(title, body) {
+  if (Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, { body, icon: 'icon-192.png' });
+    n.onclick = () => { window.focus(); navTo('adminPage'); n.close(); };
+  } catch(e) {}
+}
 
 // ════════════════════════════════════════
 // 登入紀錄（管理員限定）
@@ -13886,6 +14017,7 @@ async function handleCorrection(corrId, docId, type, action) {
     }
 
     await loadAdminCorrections();
+    _loadAdminBadges();
   } catch(e) { alert('操作失敗：' + e.message); }
 }
 
