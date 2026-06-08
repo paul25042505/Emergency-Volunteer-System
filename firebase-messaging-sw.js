@@ -12,6 +12,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// 新版 SW 安裝後立即接管，不等舊版頁面關閉
+self.addEventListener('install',  () => self.skipWaiting());
+self.addEventListener('activate', e  => e.waitUntil(clients.claim()));
+
 // 不論前景或背景，iOS 的 push 一律在 SW 顯示系統通知
 self.addEventListener('push', event => {
   let payload = {};
