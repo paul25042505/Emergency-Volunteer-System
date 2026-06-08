@@ -10506,45 +10506,62 @@ function filterMemberList() {
   const regularMembers  = filtered.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人');
   const officerMembers  = filtered.filter(m => m.role === 'officer' || m.title === '分隊承辦人');
 
-  var rows = '';
-  var idx = 1;
-  filtered.forEach(function(m) {
-    const isOfficer = m.role === 'officer' || m.title === '分隊承辦人';
-    const isAdmin   = m.role === 'admin';
-    var cert = m.cert
-      ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:10px;padding:1px 8px;white-space:nowrap;display:inline-block;">' + m.cert + '</span>'
-      : '<span style="font-size:0.68rem;color:var(--text-light);">—</span>';
-    var bg = isOfficer ? '#fdf0ff' : (idx % 2 === 0 ? 'white' : 'var(--warm)');
-    var nameCell = (m.name||'—');
-    if (isOfficer) nameCell += ' <span style="font-size:0.65rem;background:#f0e6ff;color:#8e44ad;border-radius:4px;padding:1px 5px;font-weight:600;">承辦人</span>';
-    if (isAdmin)   nameCell += ' <span style="font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:4px;padding:1px 5px;font-weight:600;">管理員</span>';
-    var numCell = isOfficer ? '<span style="color:var(--text-light);">—</span>' : idx++;
-    rows += '<tr style="background:' + bg + ';">'
-      + '<td style="padding:11px 8px;text-align:center;font-size:0.78rem;color:var(--text-light);font-weight:500;">' + numCell + '</td>'
-      + '<td style="padding:11px 14px;font-weight:600;font-size:0.88rem;white-space:nowrap;">' + nameCell + '</td>'
-      + '<td style="padding:11px 14px;font-size:0.83rem;color:var(--text-mid);white-space:nowrap;">' + (m.title||'—') + '</td>'
-      + '<td style="padding:11px 14px;">' + cert + '</td>'
-      + '</tr>';
-  });
+  // 標題顏色對應職稱
+  const titleColor = t => {
+    if (!t) return { bg:'#f4f6fa', fg:'#888', av:'#aab4c0' };
+    if (t==='分隊長')   return { bg:'#fff0f0', fg:'#c0392b', av:'var(--red)' };
+    if (t==='副分隊長') return { bg:'#fff5ee', fg:'#d35400', av:'#e67e22' };
+    if (t==='幹事'||t==='助理幹事') return { bg:'#f0f8ff', fg:'#2471a3', av:'#2980b9' };
+    if (t==='小隊長')  return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
+    if (t==='分隊承辦人') return { bg:'#f9f0ff', fg:'#7d3c98', av:'#8e44ad' };
+    return { bg:'#f4f6fa', fg:'#5d6d7e', av:'#7f8c8d' };
+  };
 
   const countStr = '共 ' + regularMembers.length + ' 人'
-    + (officerMembers.length ? '（另有承辦人 ' + officerMembers.length + ' 位）' : '');
+    + (officerMembers.length ? '　另有承辦人 ' + officerMembers.length + ' 位' : '');
+
+  let idx = 1;
+  let cards = '';
+  // 一般成員（2欄格）
+  cards += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:' + (officerMembers.length?'16px':'0') + ';">';
+  regularMembers.forEach(m => {
+    const c = titleColor(m.title);
+    const isAdmin = m.role === 'admin';
+    cards += '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">';
+    // 頂部色帶
+    cards += '<div style="background:' + c.bg + ';padding:14px 12px 10px;text-align:center;">';
+    cards += '<div style="width:46px;height:46px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;margin:0 auto 8px;">' + (m.name||'?').slice(0,1) + '</div>';
+    cards += '<div style="font-size:0.95rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>';
+    cards += '</div>';
+    // 資訊區
+    cards += '<div style="padding:8px 10px 10px;">';
+    if (m.title) cards += '<div style="text-align:center;margin-bottom:5px;"><span style="font-size:0.72rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 10px;font-weight:700;">' + m.title + '</span></div>';
+    if (isAdmin) cards += '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 8px;font-weight:600;">管理員</span></div>';
+    if (m.cert)  cards += '<div style="text-align:center;"><span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span></div>';
+    cards += '</div>';
+    cards += '</div>';
+  });
+  cards += '</div>';
+
+  // 承辦人（獨立列）
+  if (officerMembers.length) {
+    cards += '<div style="font-size:0.72rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:8px;">分隊承辦人</div>';
+    cards += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    officerMembers.forEach(m => {
+      const c = titleColor(m.title);
+      cards += '<div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;">';
+      cards += '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>';
+      cards += '<div style="flex:1;"><div style="font-size:0.92rem;font-weight:700;">' + (m.name||'') + '</div>';
+      cards += '<div style="font-size:0.72rem;color:' + c.fg + ';margin-top:2px;">分隊承辦人</div></div>';
+      if (m.cert) cards += '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span>';
+      cards += '</div>';
+    });
+    cards += '</div>';
+  }
 
   container.innerHTML =
-    '<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);">'
-    + '<div style="padding:8px 14px;font-size:0.78rem;font-weight:600;color:var(--text-mid);background:var(--warm);border-bottom:1px solid var(--border);">' + countStr + '</div>'
-    + '<div style="overflow-x:auto;">'
-    + '<table style="width:100%;border-collapse:collapse;min-width:280px;">'
-    + '<thead><tr style="background:var(--red);color:white;">'
-    + '<th style="padding:10px 8px;text-align:center;font-size:0.78rem;font-weight:600;width:36px;">#</th>'
-    + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">姓名</th>'
-    + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">職稱</th>'
-    + '<th style="padding:10px 14px;text-align:left;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;">證照</th>'
-    + '</tr></thead>'
-    + '<tbody>' + rows + '</tbody>'
-    + '</table>'
-    + '</div>'
-    + '</div>';
+    '<div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:12px;font-weight:500;">' + countStr + '</div>'
+    + cards;
 }
 
 // ════════════════════════════════════════
