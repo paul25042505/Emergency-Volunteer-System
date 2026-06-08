@@ -10859,21 +10859,30 @@ async function openNoticePanel() {
       const title   = d.title || lines[0] || '通知';
       const preview = d.body  || lines.slice(1).join('\n').trim();
       const type    = d.type || 'system';
-      const iconMap = { broadcast: '📢', correction: '📝', feedback: '💬', system: '🔔' };
-      const iconBgMap = { broadcast: '#fce4ec', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
-      const tagMap  = { broadcast: '廣播通知', correction: '修正申請', feedback: '意見回饋', system: '系統公告' };
-      const tagBgMap = { broadcast: '#fce4ec', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
-      const tagClrMap = { broadcast: '#c62828', correction: '#1565c0', feedback: '#6a1b9a', system: '#2e7d32' };
-      if (d.urgent) { iconMap[type] = '🚨'; iconBgMap[type] = '#ffebee'; tagMap[type] = '緊急通知'; tagBgMap[type] = '#ffebee'; tagClrMap[type] = '#c62828'; }
-      if (d.pinned) { tagMap[type] = '📌 置頂'; }
-      const icon    = iconMap[type]   || '🔔';
-      const iconBg  = iconBgMap[type] || '#e8f5e9';
-      const tag     = tagMap[type]    || '系統公告';
-      const tagBg   = tagBgMap[type]  || '#e8f5e9';
-      const tagClr  = tagClrMap[type] || '#2e7d32';
+      const svgMap = {
+        broadcast: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>`,
+        correction: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+        feedback:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+        system:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+        urgent:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+      };
+      const iconBgMap  = { broadcast: '#fff3e0', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
+      const iconClrMap = { broadcast: '#e65100', correction: '#1565c0', feedback: '#6a1b9a', system: '#2e7d32' };
+      const tagMap     = { broadcast: '廣播通知', correction: '修正申請', feedback: '意見回饋', system: '系統公告' };
+      const tagBgMap   = { broadcast: '#fff3e0', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
+      const tagClrMap  = { broadcast: '#e65100', correction: '#1565c0', feedback: '#6a1b9a', system: '#2e7d32' };
+      let effectiveType = type;
+      if (d.urgent) { effectiveType = 'urgent'; iconBgMap.urgent = '#ffebee'; iconClrMap.urgent = '#c62828'; tagMap.urgent = '緊急通知'; tagBgMap.urgent = '#ffebee'; tagClrMap.urgent = '#c62828'; }
+      if (d.pinned) { tagMap[effectiveType] = '📌 置頂'; }
+      const iconSvg = svgMap[effectiveType] || svgMap.system;
+      const iconBg  = iconBgMap[effectiveType]  || '#e8f5e9';
+      const iconClr = iconClrMap[effectiveType] || '#2e7d32';
+      const tag     = tagMap[effectiveType]     || '系統公告';
+      const tagBg   = tagBgMap[effectiveType]   || '#e8f5e9';
+      const tagClr  = tagClrMap[effectiveType]  || '#2e7d32';
       const dateStr = d.createdAt ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : (d.startDate||'').replace(/-/g,'/');
       return `<div class="notice-card">
-        <div class="notice-card-icon" style="background:${iconBg};">${icon}</div>
+        <div class="notice-card-icon" style="background:${iconBg};color:${iconClr};">${iconSvg}</div>
         <div class="notice-card-body">
           <div class="notice-card-title" style="${unread ? 'font-weight:700;color:var(--text);' : ''}">${title}</div>
           ${preview ? `<div class="notice-card-preview">${preview}</div>` : ''}
