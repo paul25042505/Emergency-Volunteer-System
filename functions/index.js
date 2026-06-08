@@ -13,11 +13,24 @@ exports.onNewCorrection = onDocumentCreated(
     const data = event.data?.data();
     if (!data) return;
     const tokens = await _getAdminTokens(data.unit);
-    if (!tokens.length) return;
-    await _sendMulticast(tokens, {
-      title: '📝 新修正申請',
-      body:  `${data.memberName || '成員'} 提交了資料修正申請`,
-    });
+    const title  = '📝 新修正申請';
+    const body   = `${data.memberName || '成員'} 提交了資料修正申請`;
+    if (tokens.length) {
+      await _sendMulticast(tokens, { title, body });
+    }
+    const db  = getFirestore();
+    const now = new Date();
+    await db.collection('announcements').add({
+      title, body,
+      text: `${title}\n${body}`,
+      type: 'correction',
+      audience: 'admin',
+      active: true, pinned: false, urgent: false,
+      startDate: now.toISOString().slice(0, 10),
+      endDate:   new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
+      createdAt: now,
+      createdBy: data.memberName || '成員',
+    }).catch(() => {});
   }
 );
 
@@ -28,11 +41,24 @@ exports.onNewFeedback = onDocumentCreated(
     const data = event.data?.data();
     if (!data) return;
     const tokens = await _getAdminTokens(data.unit);
-    if (!tokens.length) return;
-    await _sendMulticast(tokens, {
-      title: '💬 新意見回饋',
-      body:  `${data.name || '成員'} 提交了意見回饋`,
-    });
+    const title  = '💬 新意見回饋';
+    const body   = `${data.name || '成員'} 提交了意見回饋`;
+    if (tokens.length) {
+      await _sendMulticast(tokens, { title, body });
+    }
+    const db  = getFirestore();
+    const now = new Date();
+    await db.collection('announcements').add({
+      title, body,
+      text: `${title}\n${body}`,
+      type: 'feedback',
+      audience: 'admin',
+      active: true, pinned: false, urgent: false,
+      startDate: now.toISOString().slice(0, 10),
+      endDate:   new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
+      createdAt: now,
+      createdBy: data.name || '成員',
+    }).catch(() => {});
   }
 );
 
@@ -69,14 +95,15 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
       fcmResult,
     });
 
-    const today = now.toISOString().slice(0, 10);
     await db.collection('announcements').add({
+      title, body,
       text: `${title}\n${body}`,
       type: 'broadcast',
+      audience: 'all',
       active: true,
       pinned: false,
       urgent: false,
-      startDate: today,
+      startDate: now.toISOString().slice(0, 10),
       endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
       createdAt: now,
       createdBy: requestedBy || '管理員',

@@ -1200,8 +1200,8 @@ function _dlCSV(content, filename) {
   <div id="noticePanelCard">
     <div id="noticePanelHead">
       <div>
-        <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);">最新消息</div>
-        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.12em;margin-top:1px;">SYSTEM NOTICES</div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);">通知中心</div>
+        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.12em;margin-top:1px;">NOTIFICATION CENTER</div>
       </div>
       <button onclick="closeNoticePanel()" style="background:var(--card-bg);border:none;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
@@ -10804,6 +10804,7 @@ function _updateBellBadge() {
 }
 
 async function openNoticePanel() {
+  const lastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
   localStorage.setItem('bellLastSeen', Date.now().toString());
   document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'none');
   const panel = document.getElementById('noticePanel');
@@ -10811,36 +10812,57 @@ async function openNoticePanel() {
   const list = document.getElementById('noticePanelList');
   list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>';
   try {
+    const u     = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const isAdm = u.isAdmin || u.isOfficer;
     const today = new Date().toLocaleDateString('sv');
     const docs  = await fbList(COL_ANNOUNCE);
     const active = docs
-      .filter(d => d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today)
-      .sort((a,b) => {
+      .filter(d => {
+        if (d.active === false) return false;
+        if ((d.startDate||'') > today || (d.endDate||'9999') < today) return false;
+        if (d.audience === 'admin' && !isAdm) return false;
+        return true;
+      })
+      .sort((a, b) => {
         const p = (b.pinned?1:0) - (a.pinned?1:0);
-        return p !== 0 ? p : ((b.startDate||'') > (a.startDate||'') ? 1 : -1);
+        if (p !== 0) return p;
+        const ta = a.createdAt?.toMillis?.() ?? 0;
+        const tb = b.createdAt?.toMillis?.() ?? 0;
+        return tb - ta;
       });
     if (!active.length) {
-      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">目前沒有公告</div>';
+      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">目前沒有通知</div>';
       return;
     }
     list.innerHTML = active.map(d => {
+      const ts      = d.createdAt?.toMillis?.() ?? 0;
+      const unread  = ts > lastSeen;
       const lines   = (d.text||'').split('\n');
-      const title   = lines[0] || '公告';
-      const preview = lines.slice(1).join('\n').trim();
-      const tag     = d.urgent ? '🚨 緊急' : d.pinned ? '📌 置頂' : '系統公告';
-      const tagBg   = d.urgent ? '#ffebee' : d.pinned ? '#fff3e0' : '#e8f5e9';
-      const tagClr  = d.urgent ? '#c62828' : d.pinned ? '#e65100' : '#2e7d32';
-      const iconBg  = d.urgent ? '#ffebee' : '#fce4ec';
-      const icon    = d.urgent ? '🚨' : '📢';
-      const date    = (d.startDate||'').replace(/-/g,'/');
+      const title   = d.title || lines[0] || '通知';
+      const preview = d.body  || lines.slice(1).join('\n').trim();
+      const type    = d.type || 'system';
+      const iconMap = { broadcast: '📢', correction: '📝', feedback: '💬', system: '🔔' };
+      const iconBgMap = { broadcast: '#fce4ec', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
+      const tagMap  = { broadcast: '廣播通知', correction: '修正申請', feedback: '意見回饋', system: '系統公告' };
+      const tagBgMap = { broadcast: '#fce4ec', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
+      const tagClrMap = { broadcast: '#c62828', correction: '#1565c0', feedback: '#6a1b9a', system: '#2e7d32' };
+      if (d.urgent) { iconMap[type] = '🚨'; iconBgMap[type] = '#ffebee'; tagMap[type] = '緊急通知'; tagBgMap[type] = '#ffebee'; tagClrMap[type] = '#c62828'; }
+      if (d.pinned) { tagMap[type] = '📌 置頂'; }
+      const icon    = iconMap[type]   || '🔔';
+      const iconBg  = iconBgMap[type] || '#e8f5e9';
+      const tag     = tagMap[type]    || '系統公告';
+      const tagBg   = tagBgMap[type]  || '#e8f5e9';
+      const tagClr  = tagClrMap[type] || '#2e7d32';
+      const dateStr = d.createdAt ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : (d.startDate||'').replace(/-/g,'/');
       return `<div class="notice-card">
         <div class="notice-card-icon" style="background:${iconBg};">${icon}</div>
         <div class="notice-card-body">
-          <div class="notice-card-title">${title}</div>
+          <div class="notice-card-title" style="${unread ? 'font-weight:700;color:var(--text);' : ''}">${title}</div>
           ${preview ? `<div class="notice-card-preview">${preview}</div>` : ''}
           <div class="notice-card-meta">
             <span class="notice-tag" style="background:${tagBg};color:${tagClr};">${tag}</span>
-            <span style="font-size:0.6rem;color:var(--text-light);">${date}</span>
+            <span style="font-size:0.6rem;color:var(--text-light);">${dateStr}</span>
+            ${unread ? '<span style="font-size:0.6rem;background:var(--red);color:white;border-radius:4px;padding:1px 5px;">未讀</span>' : ''}
           </div>
         </div>
       </div>`;
