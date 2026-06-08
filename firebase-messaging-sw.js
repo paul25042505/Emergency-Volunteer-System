@@ -27,15 +27,12 @@ self.addEventListener('push', event => {
   const body  = n.body  || data.body  || '';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      clientList.forEach(c => c.postMessage({ type: 'SW_PUSH', title, body }));
-      return self.registration.showNotification(title, {
+    self.registration.showNotification(title, {
         body,
         icon:    '/Emergency-Volunteer-System/icon-192.png',
         badge:   '/Emergency-Volunteer-System/icon-192.png',
         vibrate: [200, 100, 200],
         data:    data,
-      });
     })
   );
 });
