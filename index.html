@@ -2540,26 +2540,35 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- Filter card -->
-    <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-        <div>
-          <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:5px;font-weight:600;letter-spacing:0.08em;">年份</div>
-          <select id="statsYear" onchange="loadStats()" style="width:100%;border:none;background:#f2f2f7;border-radius:10px;padding:9px 10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);outline:none;"></select>
+    <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="position:relative;">
+          <div style="font-size:0.6rem;color:var(--text-light);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">年份</div>
+          <div style="background:#f2f2f7;border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:1.05rem;font-weight:800;color:var(--text);font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
+            <select id="statsYear" onchange="document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
+          </div>
         </div>
-        <div>
-          <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:5px;font-weight:600;letter-spacing:0.08em;">月份</div>
-          <select id="statsMonth" onchange="loadStats()" style="width:100%;border:none;background:#f2f2f7;border-radius:10px;padding:9px 10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);outline:none;">
-            <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-            <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-            <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-            <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-          </select>
+        <div style="position:relative;">
+          <div style="font-size:0.6rem;color:var(--text-light);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">月份</div>
+          <div style="background:var(--red);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
+            <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value+'月';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <div style="font-size:0.65rem;color:var(--text-light);margin-bottom:5px;font-weight:600;letter-spacing:0.08em;">分隊別</div>
-          <select id="statsUnit" onchange="loadStats()" style="width:100%;border:none;background:#f2f2f7;border-radius:10px;padding:9px 10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);outline:none;">
-            <option value="">全部分隊</option>
-          </select>
+        <div style="position:relative;">
+          <div style="font-size:0.6rem;color:var(--text-light);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">分隊別</div>
+          <div style="background:#f2f2f7;border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--text);line-height:1.2;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="statsUnitDisplay">全部</div>
+            <select id="statsUnit" onchange="document.getElementById('statsUnitDisplay').textContent=this.value||'全部';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+              <option value="">全部分隊</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -9001,16 +9010,22 @@ function initStatsPage() {
       sel.appendChild(opt);
     }
     sel.value = curY;
-    document.getElementById('statsMonth').value = new Date().getMonth() + 1;
+    const yd = document.getElementById('statsYearDisplay'); if (yd) yd.textContent = curY;
+    const mo = new Date().getMonth() + 1;
+    document.getElementById('statsMonth').value = mo;
+    const md = document.getElementById('statsMonthDisplay'); if (md) md.textContent = mo + '月';
   }
   // 載入分隊選單
   loadUnits().then(() => {
     const unitSel = document.getElementById('statsUnit');
     if (unitSel) {
-      unitSel.innerHTML = '<option value="">— 全部分隊 —</option>' +
+      unitSel.innerHTML = '<option value="">全部分隊</option>' +
         _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
       const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-      if (usr.unit) unitSel.value = usr.unit;
+      if (usr.unit) {
+        unitSel.value = usr.unit;
+        const ud = document.getElementById('statsUnitDisplay'); if (ud) ud.textContent = usr.unit;
+      }
     }
   }).catch(()=>{});
   loadStats();
@@ -16986,46 +17001,34 @@ async function loadGongchaStats() {
     return;
   }
 
-  const rows = ranking.map((r, idx) => {
+  const maxCount = ranking[0]?.count || 1;
+  const avColors = ['#C1121F','#e67e22','#f39c12','#27ae60','#2980b9','#8e44ad','#7f8c8d'];
+
+  tableEl.innerHTML = ranking.map((r, idx) => {
     const t = tier(r.count);
     const isMe = r.name === myName;
-    const rowBg = isMe ? 'background:#fff8f0;' : (idx % 2 === 0 ? 'background:white;' : 'background:#fafafa;');
-    const rankDisplay = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
-    return `<tr style="${rowBg}${isMe ? 'font-weight:600;' : ''}">
-      <td style="text-align:center;font-size:${idx<3?'1.15':'0.85'}rem;padding:9px 6px;">${rankDisplay}</td>
-      <td style="font-size:0.75rem;color:#666;padding:9px 4px;">${r.title||'—'}</td>
-      <td style="padding:9px 6px;font-size:0.85rem;">${r.name}${isMe ? ' <span style="font-size:0.65rem;background:#fde68a;color:#92400e;border-radius:20px;padding:1px 6px;">我</span>' : ''}</td>
-      ${isAdmin ? `<td style="font-size:0.75rem;color:#777;padding:9px 4px;">${r.unit||'—'}</td>` : ''}
-      <td style="text-align:center;font-weight:700;font-size:0.92rem;color:#8b1a0e;padding:9px 6px;">${r.count}</td>
-      <td style="text-align:center;font-size:0.85rem;color:#555;padding:9px 6px;">${r.hours % 1 === 0 ? r.hours : r.hours.toFixed(1)}</td>
-      <td style="text-align:center;padding:9px 6px;">
-        <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.68rem;background:${t.bg};color:${t.color};border-radius:20px;padding:3px 8px;font-weight:600;white-space:nowrap;">
-          ${t.badge} ${t.label}
-        </span>
-      </td>
-    </tr>`;
-  }).join('');
-
-  tableEl.innerHTML = `
-    <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #f0ece8;margin-bottom:16px;">
-      <table style="width:100%;border-collapse:collapse;font-family:'Noto Sans TC',sans-serif;">
-        <thead>
-          <tr style="background:linear-gradient(135deg,#b94a3a,#8b1a0e);color:white;">
-            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">排名</th>
-            <th style="padding:10px 4px;font-size:0.75rem;font-weight:600;text-align:left;">職稱</th>
-            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:left;">姓名</th>
-            ${isAdmin ? '<th style="padding:10px 4px;font-size:0.75rem;font-weight:600;text-align:left;">分隊</th>' : ''}
-            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">次數</th>
-            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">時數</th>
-            <th style="padding:10px 6px;font-size:0.75rem;font-weight:600;text-align:center;">勳章</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-    <div style="text-align:center;font-size:0.7rem;color:#bbb;padding:4px 0 12px;letter-spacing:0.04em;">
-      💎 10次以上・🥇 7–9次・🥈 4–6次・🥉 1–3次・⭐ 蓄勢待發
+    const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':null;
+    const pct = maxCount > 0 ? Math.round(r.count / maxCount * 100) : 0;
+    const avColor = r.count === 0 ? '#c8c8c8' : avColors[Math.min(idx, avColors.length-1)];
+    return `<div style="display:flex;align-items:center;gap:11px;padding:11px 14px;background:${isMe?'#fff8f0':'white'};border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,0.05);${isMe?'border:1.5px solid #f0c080;':'border:1px solid rgba(0,0,0,0.04);'}${r.count===0?'opacity:0.55;':''}">
+      <div style="width:26px;text-align:center;font-size:${medal?'1.05':'0.76'}rem;font-weight:700;color:${medal?'inherit':'var(--text-light)'};flex-shrink:0;">${medal||idx+1}</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:${avColor};color:white;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;flex-shrink:0;">${r.name.slice(0,1)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+          <span style="font-size:0.86rem;font-weight:600;color:var(--text);">${r.name}</span>
+          ${isMe?'<span style="font-size:0.6rem;background:#fde68a;color:#92400e;border-radius:20px;padding:1px 6px;font-weight:600;">我</span>':''}
+          ${r.title?`<span style="font-size:0.62rem;color:var(--text-light);">${r.title}</span>`:''}
+          ${isAdmin&&r.unit?`<span style="font-size:0.6rem;color:var(--text-light);">${r.unit}</span>`:''}
+        </div>
+        <div style="height:4px;background:#f0f0f0;border-radius:2px;"><div style="height:4px;background:${isMe?'#f0a030':'var(--red)'};border-radius:2px;width:${pct}%;"></div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-right:4px;">
+        <div style="font-size:1.05rem;font-weight:800;color:${r.count>0?'var(--red)':'var(--text-light)'};line-height:1;">${r.count}</div>
+        <div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;">${r.hours%1===0?r.hours:r.hours.toFixed(1)}h</div>
+      </div>
+      <span style="font-size:0.62rem;background:${t.bg};color:${t.color};border-radius:20px;padding:3px 7px;font-weight:600;white-space:nowrap;flex-shrink:0;">${t.badge} ${t.label}</span>
     </div>`;
+  }).join('') + `<div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:10px 0 16px;letter-spacing:0.04em;">💎 10次以上・🥇 7–9次・🥈 4–6次・🥉 1–3次・⭐ 蓄勢待發</div>`;
 }
 
 </script>
