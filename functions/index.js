@@ -66,19 +66,20 @@ exports.onNewFeedback = onDocumentCreated(
 exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
-  const { title, body, requestedBy, skipAnnouncement } = req.body;
+  const { title, body, requestedBy, skipAnnouncement, pushTarget } = req.body;
   if (!title || !body) { res.status(400).json({ error: 'title and body are required' }); return; }
 
   try {
     const db = getFirestore();
-    const snap = await db.collection('pushSubscriptions').get();
-    const tokens = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (d.fcmToken) tokens.push(d.fcmToken);
-    });
-
-    const uniqueTokens = [...new Set(tokens)];
+    let uniqueTokens;
+    if (pushTarget === 'admin') {
+      uniqueTokens = await _getAdminTokens(null);
+    } else {
+      const snap = await db.collection('pushSubscriptions').get();
+      const tokens = [];
+      snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
+      uniqueTokens = [...new Set(tokens)];
+    }
     if (!uniqueTokens.length) {
       res.json({ status: 'no_tokens', count: 0 });
       return;
@@ -125,7 +126,7 @@ async function _getAdminTokens(memberUnit) {
     const d = doc.data();
     if (!d.fcmToken) return;
     if (d.isAdmin) { tokens.push(d.fcmToken); return; }
-    if (d.isOfficer && memberUnit && d.unit === memberUnit) tokens.push(d.fcmToken);
+    if (d.isOfficer && (memberUnit === null || d.unit === memberUnit)) tokens.push(d.fcmToken);
   });
   return [...new Set(tokens)];
 }

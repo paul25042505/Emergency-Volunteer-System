@@ -3030,6 +3030,20 @@ function _dlCSV(content, filename) {
             <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂顯示
           </label>
         </div>
+        <div style="background:#f0f4ff;border:1px solid #c7d7ff;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
+          <div style="font-size:0.78rem;font-weight:600;color:#1a237e;margin-bottom:8px;">🔔 手機推播</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+              <input type="radio" name="anFormPushTarget" id="anFormPushNone" value="none" checked style="accent-color:var(--red);"> 不發送推播
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+              <input type="radio" name="anFormPushTarget" id="anFormPushAll" value="all" style="accent-color:var(--red);"> 發送給全部訂閱成員
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+              <input type="radio" name="anFormPushTarget" id="anFormPushAdmin" value="admin" style="accent-color:var(--red);"> 僅發送給管理員／承辦人
+            </label>
+          </div>
+        </div>
         <div style="display:flex;gap:8px;">
           <button onclick="saveAnnounceForm()" class="btn-search" style="flex:1;min-height:unset;">發布公告</button>
           <button onclick="hideAnnounceForm()" class="btn-reset" style="min-height:unset;">取消</button>
@@ -10939,6 +10953,7 @@ function showAnnounceForm(doc) {
   document.getElementById('anFormEnd').value     = doc ? (doc.endDate||nextWeek) : nextWeek;
   document.getElementById('anFormUrgent').checked = doc ? !!doc.urgent : false;
   document.getElementById('anFormPinned').checked = doc ? !!doc.pinned : false;
+  document.getElementById('anFormPushNone').checked = true;
   document.getElementById('anFormStatus').textContent = '';
   document.getElementById('announceForm').style.display = '';
   document.getElementById('announceForm').scrollIntoView({ behavior:'smooth', block:'nearest' });
@@ -10972,16 +10987,18 @@ async function saveAnnounceForm() {
     }
     const base  = { text, title, body, startDate:start, endDate:end, urgent, pinned,
                     active:true, type:'system', audience:'all' };
+    const pushTarget = document.querySelector('input[name="anFormPushTarget"]:checked')?.value || 'none';
     if (id) {
       await fbSet(COL_ANNOUNCE, id, { ...base, updatedAt: new Date().toLocaleString('sv').replace('T',' ') });
     } else {
       await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date() });
-      // 新公告發布時送推播（skipAnnouncement=true 因為已手動寫入 announcements）
+    }
+    if (!id && pushTarget !== 'none') {
       const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
       fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body: body || title, requestedBy: usr.name || '管理員', skipAnnouncement: true }),
+        body: JSON.stringify({ title, body: body || title, requestedBy: usr.name || '管理員', skipAnnouncement: true, pushTarget }),
       }).catch(() => {});
     }
     hideAnnounceForm();
