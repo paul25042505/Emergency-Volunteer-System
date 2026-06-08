@@ -4828,17 +4828,8 @@ function fmtTime(v) {
 // Site Footer
 // ════════════════════════════════════════
 function initFooters(version) {
-  const ver = version || 'v1.9.06';
-  const lines = [
-    `© 2026 臺中市救護義消資訊管理系統 (TEVIS)　${ver}`,
-    `版權所有，轉載必究　系統開發：林伯霖`,
-    `本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。`,
-    `隱私權保護政策｜資訊安全政策`,
-  ].join('<br>');
   document.querySelectorAll('.site-footer-placeholder, .form-footer').forEach(el => {
-    el.className = 'form-footer';
-    el.style.marginTop = '28px';
-    el.innerHTML = lines;
+    el.style.display = 'none';
   });
 }
 
