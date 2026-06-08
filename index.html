@@ -11352,22 +11352,20 @@ function filterMemberList() {
 
   let idx = 1;
   let cards = '';
-  // 一般成員（2欄格）
-  cards += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:' + (officerMembers.length?'16px':'0') + ';">';
+  // 一般成員（3欄格）
+  cards += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:' + (officerMembers.length?'16px':'0') + ';">';
   regularMembers.forEach(m => {
     const c = titleColor(m.title);
     const isAdmin = m.role === 'admin';
     cards += '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">';
-    // 頂部色帶
-    cards += '<div style="background:' + c.bg + ';padding:14px 12px 10px;text-align:center;">';
-    cards += '<div style="width:46px;height:46px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;margin:0 auto 8px;">' + (m.name||'?').slice(0,1) + '</div>';
-    cards += '<div style="font-size:0.95rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>';
+    cards += '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">';
+    cards += '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;margin:0 auto 6px;">' + (m.name||'?').slice(0,1) + '</div>';
+    cards += '<div style="font-size:0.82rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>';
     cards += '</div>';
-    // 資訊區
-    cards += '<div style="padding:8px 10px 10px;">';
-    if (m.title) cards += '<div style="text-align:center;margin-bottom:5px;"><span style="font-size:0.72rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 10px;font-weight:700;">' + m.title + '</span></div>';
-    if (isAdmin) cards += '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 8px;font-weight:600;">管理員</span></div>';
-    if (m.cert)  cards += '<div style="text-align:center;"><span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span></div>';
+    cards += '<div style="padding:6px 6px 8px;">';
+    if (m.title) cards += '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.title + '</span></div>';
+    if (isAdmin) cards += '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>';
+    if (m.cert)  cards += '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>';
     cards += '</div>';
     cards += '</div>';
   });
