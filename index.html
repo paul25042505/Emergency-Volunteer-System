@@ -11607,34 +11607,55 @@ async function initSystemInfoPage() {
         clEl.innerHTML = '<div style="font-size:0.82rem;color:var(--text-light);padding:8px 0;">尚無版本紀錄</div>';
         return;
       }
+      const SHOW_INIT = 3;
+      function _renderDoc(d, idx, total) {
+        const isLatest = !!d.isLatest;
+        const ver   = d.version || '';
+        const date  = d.date    || '';
+        const title = d.title   || '';
+        const dot   = isLatest
+          ? `<div style="position:absolute;left:-20px;top:14px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid white;box-shadow:0 0 0 2px var(--red);"></div>`
+          : `<div style="position:absolute;left:-17px;top:16px;width:8px;height:8px;border-radius:50%;background:#D1D5DB;border:2px solid white;"></div>`;
+        const itemsHtml = _renderItems(d.items, isLatest ? 'var(--red)' : '#9CA3AF');
+        return `<div style="position:relative;margin-bottom:${idx < total-1 ? '20px' : '0'};">
+          ${dot}
+          <div style="background:${isLatest?'white':'#FAFAFA'};border-radius:10px;border:${isLatest?'1.5px solid #FECACA':'1px solid #F3F4F6'};overflow:hidden;${isLatest?'box-shadow:0 2px 12px rgba(224,49,49,0.1);':''}">
+            <div style="padding:12px 14px;${isLatest?'border-bottom:1px solid #FEE2E2;':'border-bottom:1px solid #F3F4F6;'}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:0.95rem;font-weight:800;color:${isLatest?'var(--red)':'#374151'};letter-spacing:-0.01em;">${ver}</span>
+                  ${isLatest ? '<span style="font-size:0.65rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:2px 8px;">最新</span>' : ''}
+                </div>
+                <span style="font-size:0.75rem;color:#9CA3AF;white-space:nowrap;">${date}</span>
+              </div>
+              ${title ? `<div style="font-size:0.8rem;color:#6B7280;margin-top:3px;">${title}</div>` : ''}
+            </div>
+            ${itemsHtml ? `<div style="padding:0 14px 6px;">${itemsHtml}</div>` : ''}
+          </div>
+        </div>`;
+      }
+      const visibleDocs = docs.slice(0, SHOW_INIT);
+      const hiddenDocs  = docs.slice(SHOW_INIT);
+      const hiddenHtml  = hiddenDocs.map((d, i) => _renderDoc(d, SHOW_INIT + i, docs.length)).join('');
       clEl.innerHTML = `<div style="position:relative;padding-left:20px;">
         <div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(to bottom,var(--red),#e5e7eb);border-radius:2px;"></div>
-        ${docs.map((d, idx) => {
-          const isLatest = !!d.isLatest;
-          const ver   = d.version || '';
-          const date  = d.date    || '';
-          const title = d.title   || '';
-          const dot   = isLatest
-            ? `<div style="position:absolute;left:-20px;top:14px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid white;box-shadow:0 0 0 2px var(--red);"></div>`
-            : `<div style="position:absolute;left:-17px;top:16px;width:8px;height:8px;border-radius:50%;background:#D1D5DB;border:2px solid white;"></div>`;
-          const itemsHtml = _renderItems(d.items, isLatest ? 'var(--red)' : '#9CA3AF');
-          return `<div style="position:relative;margin-bottom:${idx < docs.length-1 ? '20px' : '0'};">
-            ${dot}
-            <div style="background:${isLatest?'white':'#FAFAFA'};border-radius:10px;border:${isLatest?'1.5px solid #FECACA':'1px solid #F3F4F6'};overflow:hidden;${isLatest?'box-shadow:0 2px 12px rgba(224,49,49,0.1);':''}">
-              <div style="padding:12px 14px;${isLatest?'border-bottom:1px solid #FEE2E2;':'border-bottom:1px solid #F3F4F6;'}">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:0.95rem;font-weight:800;color:${isLatest?'var(--red)':'#374151'};letter-spacing:-0.01em;">${ver}</span>
-                    ${isLatest ? '<span style="font-size:0.65rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:2px 8px;">最新</span>' : ''}
-                  </div>
-                  <span style="font-size:0.75rem;color:#9CA3AF;white-space:nowrap;">${date}</span>
-                </div>
-                ${title ? `<div style="font-size:0.8rem;color:#6B7280;margin-top:3px;">${title}</div>` : ''}
-              </div>
-              ${itemsHtml ? `<div style="padding:0 14px 6px;">${itemsHtml}</div>` : ''}
-            </div>
-          </div>`;
-        }).join('')}
+        ${visibleDocs.map((d, i) => _renderDoc(d, i, docs.length)).join('')}
+        ${hiddenDocs.length ? `
+        <div id="clHiddenBlock" style="display:none;">
+          ${hiddenHtml}
+        </div>
+        <div style="margin-top:14px;text-align:center;">
+          <button id="clShowMoreBtn" onclick="
+            var h=document.getElementById('clHiddenBlock');
+            var b=document.getElementById('clShowMoreBtn');
+            if(h.style.display==='none'){h.style.display='block';b.textContent='▲ 收起舊版本'}
+            else{h.style.display='none';b.textContent='▼ 顯示更多版本（${hiddenDocs.length} 個）';h.closest('.si-body').scrollIntoView({behavior:'smooth',block:'start'})}
+          " style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:7px 20px;font-size:0.8rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">
+            ▼ 顯示更多版本（${hiddenDocs.length} 個）
+          </button>
+        </div>` : ''}
       </div>`;
     }
   } catch(e) {
