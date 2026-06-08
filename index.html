@@ -3143,13 +3143,23 @@ function _dlCSV(content, filename) {
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
         <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">定訓行事曆</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">管理定訓日程</div></div>
       </div>
-      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div class="filter-grid">
-          <div style="margin-bottom:12px;"><label>定訓日期 <span class="req">*</span></label><input type="date" id="scheduleDate" style="width:100%;"></div>
-          <div style="margin-bottom:12px;"><label>分隊 <span class="req">*</span></label><select id="scheduleUnit" style="width:100%;"><option value="">請選擇分隊</option></select></div>
-          <div style="margin-bottom:12px;grid-column:1/-1;"><label>主題／備註</label><input type="text" id="scheduleTopic" placeholder="例：CPR 複訓、指導醫師出席" style="width:100%;"></div>
+      <div style="background:white;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);padding:18px;margin-bottom:16px;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.1em;margin-bottom:14px;">新增定訓排程</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">日期 <span style="color:var(--red);">*</span></div>
+            <input type="date" id="scheduleDate" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">分隊 <span style="color:var(--red);">*</span></div>
+            <select id="scheduleUnit" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;"><option value="">請選擇</option></select>
+          </div>
         </div>
-        <button onclick="addSchedule()" class="btn-search" style="width:100%;margin-top:4px;">新增定訓</button>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">主題／備註</div>
+          <input type="text" id="scheduleTopic" placeholder="例：CPR 複訓、指導醫師出席" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
+        </div>
+        <button onclick="addSchedule()" style="width:100%;background:var(--red);color:white;border:none;border-radius:12px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">＋ 新增定訓</button>
       </div>
       <div id="adminScheduleList"></div>
     </div>
@@ -14284,48 +14294,32 @@ async function loadAdminSchedule() {
     if (!usr.isAdmin) docs = docs.filter(d => d.unit === usr.unit);
 
     if (!docs.length) {
-      el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">尚無定訓排程</div>';
+      el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.85rem;">尚無定訓排程</div>';
       return;
     }
 
     const today = new Date().toLocaleDateString('sv');
-    el.innerHTML = '';
-    docs.forEach(d => {
+    el.innerHTML = docs.map(d => {
       const isPast = d.date < today;
-      const row = document.createElement('div');
-      row.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);opacity:${isPast?'0.5':'1'};`;
-
-      const dateEl = document.createElement('div');
-      dateEl.style.cssText = 'font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;min-width:90px;';
-      dateEl.textContent = d.date;
-
-      const unitEl = document.createElement('div');
-      unitEl.style.cssText = 'font-size:0.78rem;color:var(--text-light);white-space:nowrap;';
-      unitEl.textContent = d.unit || '';
-
-      const topicEl = document.createElement('div');
-      topicEl.style.cssText = 'flex:1;font-size:0.85rem;color:var(--text-mid);';
-      topicEl.textContent = d.topic || '（未填主題）';
-
-      // 編輯按鈕
-      const editBtn = document.createElement('button');
-      editBtn.textContent = '編輯';
-      editBtn.style.cssText = 'background:#eaf2ff;border:none;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#1a3a6b;cursor:pointer;font-family:"Noto Sans TC",sans-serif;white-space:nowrap;';
-      editBtn.onclick = () => openScheduleEdit(d);
-
-      // 刪除按鈕
-      const delBtn = document.createElement('button');
-      delBtn.textContent = '刪除';
-      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:"Noto Sans TC",sans-serif;white-space:nowrap;';
-      delBtn.onclick = () => deleteSchedule(d.id, d.date);
-
-      row.appendChild(dateEl);
-      row.appendChild(unitEl);
-      row.appendChild(topicEl);
-      row.appendChild(editBtn);
-      row.appendChild(delBtn);
-      el.appendChild(row);
-    });
+      const isToday = d.date === today;
+      const [y, m, day] = (d.date||'').split('-');
+      const dateDisplay = y && m && day ? `${parseInt(m)}/${parseInt(day)}` : d.date;
+      const yearDisplay = y ? `${parseInt(y)-1911} 年` : '';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 5px rgba(0,0,0,0.06);opacity:${isPast?'0.5':'1'};border:${isToday?'1.5px solid var(--red)':'1px solid rgba(0,0,0,0.04)'};">
+        <div style="width:46px;height:46px;border-radius:12px;background:${isPast?'#f0f0f0':isToday?'var(--red)':'#fff0f0'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+          <div style="font-size:1rem;font-weight:800;color:${isPast?'#aaa':isToday?'white':'var(--red)'};line-height:1;">${dateDisplay}</div>
+          <div style="font-size:0.6rem;color:${isPast?'#bbb':isToday?'rgba(255,255,255,0.8)':'#e08080'};margin-top:1px;">${yearDisplay}</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.topic||'（未填主題）'}</div>
+          <div style="font-size:0.72rem;color:var(--text-light);">${d.unit||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button onclick='openScheduleEdit(${JSON.stringify(d).replace(/'/g,"&#39;")})' style="background:#eef4ff;border:none;border-radius:8px;padding:6px 12px;font-size:0.75rem;color:#1a3a6b;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:600;">編輯</button>
+          <button onclick='deleteSchedule("${d.id}","${d.date}")' style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:0.75rem;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:600;">刪除</button>
+        </div>
+      </div>`;
+    }).join('');
   } catch(e) {
     el.innerHTML = '<div style="color:#b94a3a;padding:8px 0;">載入失敗：' + e.message + '</div>';
   }
