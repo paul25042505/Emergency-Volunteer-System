@@ -1460,115 +1460,56 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE 1：協勤案件登錄 ══════ -->
 <div class="page" id="formPage">
   <div class="form-wrap">
-    <!-- 簡易模式切換按鈕 -->
-    <div style="text-align:right;margin-bottom:12px;">
-      <button id="formEasyBtn" onclick="toggleFormEasyMode()" style="background:var(--red);color:white;border:none;border-radius:50px;padding:9px 18px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;letter-spacing:0.05em;cursor:pointer;box-shadow:0 4px 12px rgba(192,57,43,0.3);">👴 簡易模式</button>
-    </div>
-    <!-- 簡易模式協勤區塊 -->
-    <div id="formEasySection" style="display:none;">
-      <div class="easy-greeting">
-        <div class="easy-name" id="formEasyGreetName">您好</div>
-        <div class="easy-date" id="formEasyGreetDate"></div>
+    <!-- 協勤案件登錄 banner -->
+    <div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);overflow:hidden;margin-bottom:16px;">
+      <div style="background:linear-gradient(135deg,var(--red) 0%,#e74c3c 100%);padding:16px 18px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div>
+            <div style="font-size:1.05rem;font-weight:700;color:white;letter-spacing:0.04em;">協勤案件登錄</div>
+            <div style="font-size:0.72rem;color:rgba(255,255,255,0.75);letter-spacing:0.05em;margin-top:1px;">Case Registration</div>
+          </div>
+        </div>
       </div>
-      <div class="easy-form-card" id="easyOutingCard" style="display:none;">
-        <div class="easy-form-title">📋 協勤案件登錄</div>
-        <div class="field">
-          <label>協勤日期</label>
-          <input type="date" id="easyOutingDate">
-        </div>
-        <div class="field">
-          <label>出發時間 ～ 返隊時間</label>
-          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;">
-            <input type="time" id="easyOutingTimeOut">
-            <span style="text-align:center;color:var(--text-light);font-size:1.1rem;">—</span>
-            <input type="time" id="easyOutingTimeBack">
-          </div>
-        </div>
-        <div class="field">
-          <label>行政區</label>
-          <select id="easyOutingDistrict">
-            <option value="">— 請選擇區域 —</option>
-            <option value="臺中市潭子區">臺中市潭子區</option>
-            <option value="臺中市豐原區">臺中市豐原區</option>
-            <option value="臺中市神岡區">臺中市神岡區</option>
-            <option value="臺中市大雅區">臺中市大雅區</option>
-            <option value="臺中市北屯區">臺中市北屯區</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>詳細地址</label>
-          <input type="text" id="easyOutingAddress" placeholder="路名、號碼或地標">
-        </div>
-        <div class="field">
-          <label>案由 <span class="req">*</span></label>
-          <div id="easyCaseTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:4px;"></div>
-          <div id="easyCaseTypeOtherField" style="display:none;margin-top:8px;">
-            <input type="text" id="easyCaseTypeOther" placeholder="請填寫實際案由"
-              style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
-          </div>
-        </div>
-        <div class="field">
-          <label>服務項目（可複選）</label>
-          <div id="easyServiceGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
-        </div>
-        <div class="field">
-          <label>義消姓名</label>
-          <select id="easyOutingUnitSel" onchange="easyOutingFilterMembers()" style="margin-bottom:10px;">
-            <option value="">請選擇分隊</option>
-          </select>
-          <select id="easyOutingMemberSel">
+    </div>
+    <div id="formEasySection" style="display:none;">
+      <div style="display:none;" id="easyOutingCard">
+        <div style="display:none;">
+        <div style="display:none;" id="easyCaseTypeGrid"></div>
+        <div style="display:none;" id="easyCaseTypeOtherField"><input type="text" id="easyCaseTypeOther"></div>
+        <div style="display:none;" id="easyServiceGrid"></div>
+        <input type="date" id="easyOutingDate" style="display:none;">
+        <input type="time" id="easyOutingTimeOut" style="display:none;">
+        <input type="time" id="easyOutingTimeBack" style="display:none;">
+        <input type="text" id="easyOutingAddress" style="display:none;">
+        <select id="easyOutingDistrict" style="display:none;"><option value=""></option></select>
+        <select id="easyOutingUnitSel" style="display:none;"><option value="">請選擇分隊</option></select>
+        <select id="easyOutingMemberSel" style="display:none;">
             <option value="">— 請先選擇分隊 —</option>
           </select>
         </div>
         <div class="field">
           <label>本次案件服務人次 <span class="req">*</span></label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button type="button" class="svc-btn" data-target="easyServiceCountInput" data-val="0"
-              onclick="setSvcBtn(this)"
-              style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:12px 0;font-size:1rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
-            <button type="button" class="svc-btn" data-target="easyServiceCountInput" data-val="1"
-              onclick="setSvcBtn(this)"
-              style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:12px 0;font-size:1rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
-            <button type="button" class="svc-btn" data-target="easyServiceCountInput" data-val="2"
-              onclick="setSvcBtn(this)"
-              style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:12px 0;font-size:1rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">2</button>
-            <input type="number" id="easyServiceCountInput" min="0" step="1" value="1" placeholder="其他"
-              oninput="clearSvcBtns('easyServiceCountInput')"
-              style="width:72px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:12px 4px;font-size:1rem;">
-          </div>
-          <p style="margin:6px 0 0;font-size:0.85rem;color:var(--red);font-weight:500;">⚠️ 請記得確認服務人次，勿漏填！</p>
+        <input type="number" id="easyServiceCountInput" style="display:none;" value="1">
+        <canvas id="easyOutingCanvas" style="display:none;"></canvas>
         </div>
-        <div class="field">
-          <label>義消簽名</label>
-          <div class="sig-wrap">
-            <canvas id="easyOutingCanvas"></canvas>
-            <div class="sig-footer">
-              <span>請用手指在上方簽名</span>
-              <div class="sig-footer-btns">
-                <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('easyOutingCanvas',_sigEasyOutingSetHasSig)"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>全螢幕</button>
-                <button type="button" class="btn-clear" style="flex:1;" onclick="easyClearOutingCanvas()">清除重簽</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <button class="easy-submit-btn" style="background:var(--red);" onclick="easyDoOuting()">送出協勤紀錄</button>
       </div>
     </div>
     <form id="recordForm" novalidate>
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">1</div>
-          <div class="section-title">基本資訊</div>
-          <div class="section-line"></div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:14px;">
+        <div style="padding:10px 16px;background:#FFF5F5;border-bottom:1px solid rgba(224,49,49,0.1);display:flex;align-items:center;gap:8px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--red);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+          <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">基本資訊</span>
         </div>
-        <div class="card">
-          <div class="field">
-            <label for="date">協勤日期 <span class="req">*</span></label>
-            <input type="date" id="date" required>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">協勤日期 <span style="color:var(--red);">*</span></div>
+            <input type="date" id="date" required style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;">
           </div>
-          <div class="card-divider"></div>
-          <div class="field">
-            <label>出動時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">出動時間 <span style="color:var(--red);">*</span> <span style="font-size:0.7rem;font-weight:400;color:var(--text-light);">（24小時制）</span></div>
             <div class="time-row">
               <input type="time" id="timeOut" required>
               <div class="time-dash">—</div>
@@ -1578,15 +1519,14 @@ function _dlCSV(content, filename) {
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">2</div>
-          <div class="section-title">協勤地點</div>
-          <div class="section-line"></div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:14px;">
+        <div style="padding:10px 16px;background:#FFF5F5;border-bottom:1px solid rgba(224,49,49,0.1);display:flex;align-items:center;gap:8px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--red);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+          <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">協勤地點</span>
         </div>
-        <div class="card">
-          <div class="field">
-            <label for="district">行政區 <span class="req">*</span></label>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">行政區 <span style="color:var(--red);">*</span></div>
             <select id="district" required>
               <option value="">— 請選擇區域 —</option>
               <option value="臺中市潭子區">臺中市潭子區</option>
@@ -1596,45 +1536,41 @@ function _dlCSV(content, filename) {
               <option value="臺中市北屯區">臺中市北屯區</option>
             </select>
           </div>
-          <div class="field">
-            <label for="address">詳細地址 <span class="req">*</span></label>
-            <input type="text" id="address" placeholder="路名、號碼或地標" required>
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">詳細地址 <span style="color:var(--red);">*</span></div>
+            <input type="text" id="address" placeholder="路名、號碼或地標" required style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;">
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">3</div>
-          <div class="section-title">案由</div>
-          <div class="section-line"></div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:14px;">
+        <div style="padding:10px 16px;background:#FFF5F5;border-bottom:1px solid rgba(224,49,49,0.1);display:flex;align-items:center;gap:8px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--red);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+          <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">案由</span>
         </div>
-        <div class="card">
-          <div class="field">
-            <label>案由 <span class="req">*</span>（單選）<span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">依值班台電腦救護派遣系統案由填寫</span></label>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">案由 <span style="color:var(--red);">*</span>（單選）<span style="font-size:0.7rem;font-weight:400;color:var(--text-light);margin-left:4px;">依值班台電腦救護派遣系統案由填寫</span></div>
             <div class="checkbox-grid" id="caseTypeGrid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
-              <!-- 由 JS 動態載入 -->
               <div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">載入中...</div>
             </div>
           </div>
-          <div class="field" id="caseTypeOtherField" style="display:none;">
+          <div id="caseTypeOtherField" style="display:none;">
             <input type="hidden" id="isOtherCaseType" value="0">
-            <label for="caseTypeOther">其他（請說明）<span class="req">*</span></label>
-            <input type="text" id="caseTypeOther" placeholder="請輸入案由">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">其他（請說明）<span style="color:var(--red);">*</span></div>
+            <input type="text" id="caseTypeOther" placeholder="請輸入案由" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;">
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">4</div>
-          <div class="section-title">服務內容</div>
-          <div class="section-line"></div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:14px;">
+        <div style="padding:10px 16px;background:#FFF5F5;border-bottom:1px solid rgba(224,49,49,0.1);display:flex;align-items:center;gap:8px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--red);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+          <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">服務內容</span>
         </div>
-        <div class="card">
-          <div class="field">
-            
-            <label>服務項目 <span class="req">*</span>（可複選）</label>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">服務項目 <span style="color:var(--red);">*</span>（可複選）</div>
             <div class="checkbox-grid" id="serviceGrid">
               <label class="cb-item"><input type="checkbox" value="保暖"> 保暖</label>
               <label class="cb-item"><input type="checkbox" value="心理支持"> 心理支持</label>
@@ -1645,7 +1581,6 @@ function _dlCSV(content, filename) {
               <label class="cb-item"><input type="checkbox" value="協助給氧"> 協助給氧</label>
               <label class="cb-item"><input type="checkbox" value="協助抽吸"> 協助抽吸</label>
               <label class="cb-item"><input type="checkbox" value="協助使用LUCAS"> 協助使用LUCAS</label>
-              
               <label class="cb-item"><input type="checkbox" value="協助使用心電圖"> 協助使用心電圖</label>
               <label class="cb-item"><input type="checkbox" value="協助使用支氣管擴張劑"> 協助使用支氣管擴張劑</label>
               <label class="cb-item"><input type="checkbox" value="協助使用NTG"> 協助使用NTG</label>
@@ -1660,9 +1595,8 @@ function _dlCSV(content, filename) {
               <label class="cb-item"><input type="checkbox" value="空跑" onchange="autoZeroSvcIfNeeded(this,'serviceCount')"> 空跑</label>
             </div>
           </div>
-          <div class="card-divider"></div>
-          <div class="field">
-            <label>本次案件服務人次 <span class="req">*</span></label>
+          <div style="border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">本次案件服務人次 <span style="color:var(--red);">*</span></div>
             <div style="display:flex;gap:6px;align-items:center;">
               <button type="button" class="svc-btn" data-target="serviceCount" data-val="0" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">0</button>
               <button type="button" class="svc-btn" data-target="serviceCount" data-val="1" onclick="setSvcBtn(this)" style="background:var(--warm);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex:1;transition:all 0.15s;">1</button>
@@ -1673,36 +1607,33 @@ function _dlCSV(content, filename) {
             </div>
             <p style="margin:6px 0 0;font-size:0.82rem;color:var(--red);font-weight:500;">⚠️ 請記得確認服務人次，勿漏填！</p>
           </div>
-          <div class="card-divider"></div>
-          <div class="field">
-            <label for="note">備註說明</label>
-            <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..."></textarea>
+          <div style="border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">備註說明</div>
+            <textarea id="note" placeholder="其他補充說明、病患狀況、特殊情形..." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;min-height:80px;resize:vertical;"></textarea>
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">5</div>
-          <div class="section-title">協勤義消簽名</div>
-          <div class="section-line"></div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:20px;">
+        <div style="padding:10px 16px;background:#FFF5F5;border-bottom:1px solid rgba(224,49,49,0.1);display:flex;align-items:center;gap:8px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--red);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">5</div>
+          <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">協勤義消簽名</span>
         </div>
-        <div class="card">
-          <div class="field">
-            <label>分隊別 <span class="req">*</span></label>
-            <select id="formUnitSel" onchange="filterFormMembers()" style="width:100%;">
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">分隊別 <span style="color:var(--red);">*</span></div>
+            <select id="formUnitSel" onchange="filterFormMembers()" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;">
               <option value="">請選擇分隊</option>
             </select>
           </div>
-          <div class="field">
-            <label for="memberSelect">協勤義消姓名 <span class="req">*</span></label>
-            <select id="memberSelect" required>
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">協勤義消姓名 <span style="color:var(--red);">*</span></div>
+            <select id="memberSelect" required style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;">
               <option value="">— 請先選擇分隊 —</option>
             </select>
           </div>
-          <div class="card-divider"></div>
-          <div class="field">
-            <label>義消簽名 <span class="req">*</span></label>
+          <div style="border-top:1px solid var(--border);padding-top:14px;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">義消簽名 <span style="color:var(--red);">*</span></div>
             <div class="sig-wrap">
               <canvas id="sigCanvas"></canvas>
               <div class="sig-footer">
@@ -1717,8 +1648,8 @@ function _dlCSV(content, filename) {
         </div>
       </div>
 
-      <div class="submit-section">
-        <button type="button" class="btn-submit" onclick="submitOutingForm()">送　出　紀　錄</button>
+      <div style="padding:0 0 20px;">
+        <button type="button" onclick="submitOutingForm()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--red) 0%,#e74c3c 100%);color:white;border:none;border-radius:14px;font-size:1rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;font-family:'Noto Sans TC',sans-serif;box-shadow:0 4px 16px rgba(224,49,49,0.35);">送　出　紀　錄</button>
       </div>
       <div class="success-msg" id="successMsg">
         <div class="success-icon">✓</div>
