@@ -57,13 +57,14 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
     return;
   }
 
-  await _sendMulticast(uniqueTokens, { title, body });
+  const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
 
   await db.collection('broadcastRequests').add({
     title, body, status: 'sent',
     createdBy: requestedBy || '管理員',
     createdAt: new Date(), sentAt: new Date(),
     recipientCount: uniqueTokens.length,
+    fcmResult,
   });
 
   res.json({ status: 'sent', count: uniqueTokens.length });
@@ -84,16 +85,22 @@ async function _getAdminTokens(memberUnit) {
 }
 
 async function _sendMulticast(tokens, notification) {
-  if (!tokens.length) return;
+  if (!tokens.length) return [];
   const messaging = getMessaging();
   const chunks = [];
   for (let i = 0; i < tokens.length; i += 500) chunks.push(tokens.slice(i, i + 500));
+  const summary = [];
   for (const chunk of chunks) {
     const res = await messaging.sendEachForMulticast({
       tokens: chunk,
-      notification,
       webpush: {
-        notification: { icon: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png', badge: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png', vibrate: [200, 100, 200] },
+        notification: {
+          title: notification.title,
+          body: notification.body,
+          icon: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png',
+          badge: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png',
+          vibrate: [200, 100, 200],
+        },
         fcmOptions: { link: 'https://paul25042505.github.io/Emergency-Volunteer-System/' },
       },
     });
@@ -107,5 +114,9 @@ async function _sendMulticast(tokens, notification) {
       }
     });
     await batch.commit().catch(() => {});
+    res.responses.forEach((r, idx) => {
+      summary.push({ token: chunk[idx].substring(0, 20), success: r.success, error: r.error?.code || null });
+    });
   }
+  return summary;
 }
