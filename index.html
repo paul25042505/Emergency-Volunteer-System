@@ -3091,14 +3091,22 @@ function _dlCSV(content, filename) {
           <div style="font-size:0.78rem;font-weight:600;color:#1a237e;margin-bottom:8px;">🔔 手機推播</div>
           <div style="display:flex;flex-direction:column;gap:6px;">
             <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushNone" value="none" checked style="accent-color:var(--red);"> 不發送推播
+              <input type="radio" name="anFormPushTarget" id="anFormPushNone" value="none" checked style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 不發送推播
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushAll" value="all" style="accent-color:var(--red);"> 發送給全部訂閱成員
+              <input type="radio" name="anFormPushTarget" id="anFormPushAll" value="all" style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 發送給全部訂閱成員
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushAdmin" value="admin" style="accent-color:var(--red);"> 僅發送給管理員／承辦人
+              <input type="radio" name="anFormPushTarget" id="anFormPushAdmin" value="admin" style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 僅發送給管理員／承辦人
             </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+              <input type="radio" name="anFormPushTarget" id="anFormPushMember" value="member" style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 發送給特定成員
+            </label>
+            <div id="anFormMemberRow" style="display:none;padding-left:22px;">
+              <input type="text" id="anFormMemberName" list="anFormMemberList" placeholder="輸入成員姓名"
+                style="width:100%;padding:7px 10px;border:1px solid #c7d7ff;border-radius:6px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;">
+              <datalist id="anFormMemberList"></datalist>
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:8px;">
@@ -11201,6 +11209,23 @@ function hideAnnounceForm() {
   document.getElementById('announceForm').style.display = 'none';
 }
 
+function toggleAnFormMember() {
+  const isMember = document.getElementById('anFormPushMember')?.checked;
+  const row = document.getElementById('anFormMemberRow');
+  if (row) row.style.display = isMember ? '' : 'none';
+  if (isMember) {
+    // 填充成員姓名 datalist
+    const dl = document.getElementById('anFormMemberList');
+    if (dl && !dl.dataset.loaded) {
+      fbList('whitelist').then(docs => {
+        dl.innerHTML = docs.map(d => `<option value="${d.memberName||''}">`).join('');
+        dl.dataset.loaded = '1';
+      }).catch(() => {});
+    }
+    document.getElementById('anFormMemberName')?.focus();
+  }
+}
+
 async function saveAnnounceForm() {
   const id      = document.getElementById('anFormId').value;
   const title   = document.getElementById('anFormTitle').value.trim();
@@ -11233,10 +11258,16 @@ async function saveAnnounceForm() {
     }
     if (!id && pushTarget !== 'none') {
       const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+      const payload = { title, body: body || title, requestedBy: usr.name || '管理員', skipAnnouncement: true, pushTarget };
+      if (pushTarget === 'member') {
+        const memberName = document.getElementById('anFormMemberName')?.value.trim();
+        if (!memberName) { status.style.color='var(--red)'; status.textContent='請輸入成員姓名'; if (btn) { btn.textContent='發布公告'; btn.disabled=false; } return; }
+        payload.targetMember = memberName;
+      }
       fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body: body || title, requestedBy: usr.name || '管理員', skipAnnouncement: true, pushTarget }),
+        body: JSON.stringify(payload),
       }).catch(() => {});
     }
     hideAnnounceForm();

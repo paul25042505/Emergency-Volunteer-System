@@ -125,6 +125,13 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
     let uniqueTokens;
     if (pushTarget === 'admin') {
       uniqueTokens = await _getAdminTokens(null);
+    } else if (pushTarget === 'member') {
+      const { targetMember } = req.body;
+      if (!targetMember) { res.status(400).json({ error: 'targetMember is required for member push' }); return; }
+      const snap = await db.collection('pushSubscriptions').where('memberName', '==', targetMember).get();
+      const tokens = [];
+      snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
+      uniqueTokens = [...new Set(tokens)];
     } else {
       const snap = await db.collection('pushSubscriptions').get();
       const tokens = [];
