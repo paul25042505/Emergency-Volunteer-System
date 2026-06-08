@@ -15328,8 +15328,8 @@ async function _confirmBroadcast() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, body, requestedBy: usr.name || '管理員' }),
     });
-    const result = await resp.json();
-    if (!resp.ok) throw new Error(result.error || '伺服器錯誤');
+    const result = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(result.error || `HTTP ${resp.status}`);
     document.getElementById('broadcastPreviewOverlay')?.remove();
     const count = result.count || 0;
     _showToast(count > 0 ? `✅ 推播已發送給 ${count} 位訂閱成員` : '⚠️ 目前沒有訂閱成員');

@@ -37,7 +37,7 @@ exports.onNewFeedback = onDocumentCreated(
 );
 
 // ── 推播：廣播（HTTP Request）→ 客戶端用 fetch 直接呼叫 ──────────────
-exports.sendBroadcast = onRequest({ region: 'asia-east1', cors: true }, async (req, res) => {
+exports.sendBroadcast = onRequest({ region: 'asia-east1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
   const { title, body, requestedBy } = req.body;
