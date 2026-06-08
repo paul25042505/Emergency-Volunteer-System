@@ -95,8 +95,8 @@ async function _sendMulticast(tokens, notification) {
       tokens: chunk,
       notification,
       webpush: {
-        notification: { icon: '/icon-192.png', badge: '/icon-192.png', vibrate: [200, 100, 200] },
-        fcmOptions: { link: '/' },
+        notification: { icon: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png', badge: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png', vibrate: [200, 100, 200] },
+        fcmOptions: { link: 'https://paul25042505.github.io/Emergency-Volunteer-System/' },
       },
     });
     // 清理失效 token
