@@ -6,6 +6,36 @@ const { getMessaging }      = require('firebase-admin/messaging');
 
 initializeApp();
 
+// ── 推播：公告管理新增資料 → 自動推播對應對象 ────────────────────────
+// _pushed: true 代表此公告由其他函式已推播，跳過避免重複
+exports.onNewAnnouncement = onDocumentCreated(
+  'announcements/{docId}',
+  async event => {
+    const data = event.data?.data();
+    if (!data) return;
+    if (data._pushed) return; // 已由其他路徑推播，略過
+
+    const { title, body, audience, relatedUnit } = data;
+    if (!title || !body) return;
+
+    const db = getFirestore();
+    let tokens;
+    if (audience === 'admin') {
+      tokens = await _getAdminTokens(null);
+    } else {
+      // audience === 'all'：推給所有訂閱者
+      const snap = await db.collection('pushSubscriptions').get();
+      const arr = [];
+      snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) arr.push(d.fcmToken); });
+      tokens = [...new Set(arr)];
+    }
+
+    if (tokens.length) {
+      await _sendMulticast(tokens, { title, body });
+    }
+  }
+);
+
 // ── 推播：新修正申請 → 通知所有管理員/承辦人 ──────────────────────────
 exports.onNewCorrection = onDocumentCreated(
   'correctionRequests/{docId}',
@@ -30,6 +60,7 @@ exports.onNewCorrection = onDocumentCreated(
       endDate:   new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
       createdAt: now,
       createdBy: data.memberName || '成員',
+      _pushed: true,
     }).catch(() => {});
   }
 );
@@ -58,6 +89,7 @@ exports.onNewFeedback = onDocumentCreated(
       endDate:   new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
       createdAt: now,
       createdBy: data.name || '成員',
+      _pushed: true,
     }).catch(() => {});
   }
 );
@@ -73,7 +105,7 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
     const db  = getFirestore();
     const now = new Date();
 
-    // 1. 先存公告記錄（保證有記錄才推播）
+    // 1. 先存公告記錄（_pushed: true 避免 onNewAnnouncement 重複推播）
     if (!skipAnnouncement) {
       await db.collection('announcements').add({
         title, body,
@@ -85,6 +117,7 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
         endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
         createdAt: now,
         createdBy: requestedBy || '管理員',
+        _pushed: true,
       });
     }
 
