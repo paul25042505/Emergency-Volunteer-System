@@ -14397,7 +14397,7 @@ function showGongchaForm(doc) {
     + (function(){
         const sel = (id,val)=>{
           const seStyle='flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;background:white;text-align:center;';
-          let o='<select id="'+id+'" style="'+seStyle+'"><option value="">請選擇</option>';
+          let o='<select id="'+id+'" style="'+seStyle+'"><option value="" style="color:#aaa;">—</option>';
           for(let h=0;h<24;h++)for(let m=0;m<60;m+=30){
             const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),t=hh+':'+mm;
             o+='<option value="'+t+'"'+(val===t?' selected':'')+'>'+t+'</option>';
