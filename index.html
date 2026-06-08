@@ -11144,6 +11144,10 @@ function _renderClItems(container) {
     inp.style.cssText = 'width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:"Noto Sans TC",sans-serif;';
     inp.addEventListener('input', function() { _clItems[i].subtitle = this.value; });
 
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:0.7rem;color:#9CA3AF;line-height:1.6;margin-top:-2px;';
+    hint.innerHTML = '標籤配色：含「<b style="color:#166534">新增</b>」→綠　「<b style="color:#92400E">修復/修正</b>」→琥珀　「<b style="color:#075985">改善/優化/更新</b>」→藍　「<b style="color:#9F1239">刪除/移除</b>」→紅　「<b style="color:#6B21A8">安全</b>」→紫';
+
     var ta = document.createElement('textarea');
     ta.placeholder = '詳細說明（可換行）...';
     ta.rows = 2;
@@ -11156,7 +11160,7 @@ function _renderClItems(container) {
     delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:5px 9px;color:#b94a3a;cursor:pointer;font-size:0.8rem;min-height:unset;flex-shrink:0;margin-top:2px;';
     delBtn.addEventListener('click', function() { _clItems.splice(i,1); _renderClItems(container); });
 
-    col.appendChild(inp); col.appendChild(ta);
+    col.appendChild(inp); col.appendChild(hint); col.appendChild(ta);
     row.appendChild(col); row.appendChild(delBtn);
     container.appendChild(row);
   });
