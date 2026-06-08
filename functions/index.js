@@ -112,3 +112,4 @@ async function _sendMulticast(tokens, notification) {
     await batch.commit().catch(() => {});
   }
 }
+
