@@ -13637,13 +13637,6 @@ async function loadAdminCorrections() {
     docs.forEach(d => {
       const card = document.createElement('div');
       const isPending = d.status === 'pending';
-      card.style.cssText = `background:white;border:1px solid ${isPending ? '#9ec5fe' : 'var(--border)'};border-radius:10px;padding:16px;margin-bottom:12px;`;
-
-      const statusBadge = {
-        pending:  '<span style="background:#cfe2ff;color:#084298;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">待審核</span>',
-        approved: '<span style="background:#d4edda;color:#1a6b35;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">已核准</span>',
-        rejected: '<span style="background:#fde8e8;color:#b94a3a;border-radius:10px;padding:2px 8px;font-size:0.7rem;font-weight:600;">已拒絕</span>',
-      }[d.status] || '';
 
       const isDeleteReq = d.requestType === 'delete';
       const typeLabel = isDeleteReq
@@ -13673,62 +13666,76 @@ async function loadAdminCorrections() {
         if (!cf[key] && !og[key]) return;
         const label = fieldLabels[key] || key;
         if (sigKeys.includes(key)) {
-          // 簽名用圖片顯示
-          const oldSig = og[key] ? `<img src="${og[key]}" style="height:36px;border:1px solid #eee;border-radius:4px;background:#fafaf8;vertical-align:middle;">` : '<span style="color:var(--text-light);">未簽名</span>';
-          const newSig = cf[key] ? `<img src="${cf[key]}" style="height:36px;border:1px solid #9ec5fe;border-radius:4px;background:#f0f4ff;vertical-align:middle;">` : '';
-          if (!cf[key]) return; // 沒有新簽名就跳過
-          diffRows += `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
-            <span style="width:72px;flex-shrink:0;font-size:0.75rem;color:var(--text-light);">${label}</span>
-            <span>${oldSig}</span>
-            <span style="color:var(--text-light);font-size:0.85rem;">→</span>
-            <span>${newSig}</span>
-          </div>`;
+          const oldSig = og[key] ? `<img src="${og[key]}" style="height:36px;border-radius:5px;border:1px solid #e5e7eb;background:#fafafa;vertical-align:middle;">` : '<span style="font-size:0.75rem;color:#9CA3AF;">未簽名</span>';
+          const newSig = cf[key] ? `<img src="${cf[key]}" style="height:36px;border-radius:5px;border:1.5px solid #93C5FD;background:#EFF6FF;vertical-align:middle;">` : '';
+          if (!cf[key]) return;
+          diffRows += `<tr><td style="padding:8px 10px 8px 0;font-size:0.75rem;color:#6B7280;white-space:nowrap;vertical-align:middle;">${label}</td><td style="padding:8px 6px;vertical-align:middle;">${oldSig}</td><td style="padding:8px 6px;font-size:0.8rem;color:#9CA3AF;vertical-align:middle;">→</td><td style="padding:8px 0;vertical-align:middle;">${newSig}</td></tr>`;
         } else {
           const oldVal = og[key] !== undefined ? String(og[key]) : '—';
           const newVal = cf[key] !== undefined ? String(cf[key]) : '';
           if (!newVal || oldVal === newVal) return;
-          diffRows += `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
-            <span style="width:72px;flex-shrink:0;font-size:0.75rem;color:var(--text-light);">${label}</span>
-            <span style="font-size:0.82rem;text-decoration:line-through;color:var(--text-light);">${oldVal}</span>
-            <span style="color:var(--text-light);font-size:0.85rem;">→</span>
-            <span style="font-size:0.82rem;font-weight:600;color:#1a6b35;">${newVal}</span>
-          </div>`;
+          diffRows += `<tr><td style="padding:8px 10px 8px 0;font-size:0.75rem;color:#6B7280;white-space:nowrap;vertical-align:middle;">${label}</td><td style="padding:8px 6px;font-size:0.82rem;color:#9CA3AF;text-decoration:line-through;vertical-align:middle;">${oldVal}</td><td style="padding:8px 6px;font-size:0.8rem;color:#9CA3AF;vertical-align:middle;">→</td><td style="padding:8px 0;font-size:0.85rem;font-weight:700;color:#111827;vertical-align:middle;">${newVal}</td></tr>`;
         }
       });
-      if (!diffRows) diffRows = '<div style="font-size:0.78rem;color:var(--text-light);padding:4px 0;">（無欄位差異資料）</div>';
+      if (!diffRows) diffRows = `<tr><td colspan="4" style="padding:6px 0;font-size:0.78rem;color:#9CA3AF;">（無欄位差異資料）</td></tr>`;
 
-      const reasonTags = d.reasonTags ? `<span style="font-size:0.75rem;background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;">${d.reasonTags}</span>` : '';
-      const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:var(--text-light);margin-top:6px;">補充：${d.reason}</div>` : '';
-      const submittedBy = d.submittedBy ? `<span style="font-size:0.75rem;color:var(--text-light);">由 ${d.submittedBy} 送出</span>` : '';
+      const statusCfg = {
+        pending:  { bar:'#3B82F6', hBg:'#EFF6FF', badge:'待審核', badgeBg:'#DBEAFE', badgeColor:'#1D4ED8' },
+        approved: { bar:'#16A34A', hBg:'#F0FDF4', badge:'已核准', badgeBg:'#DCFCE7', badgeColor:'#15803D' },
+        rejected: { bar:'#DC2626', hBg:'#FEF2F2', badge:'已拒絕', badgeBg:'#FEE2E2', badgeColor:'#B91C1C' },
+      };
+      const scfg = statusCfg[d.status] || statusCfg.pending;
+      const recType   = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
+      const reqType   = isDeleteReq ? '刪除申請' : '修正申請';
+      const reasonTags = d.reasonTags ? `<span style="font-size:0.72rem;background:#FEF9C3;color:#854D0E;border-radius:6px;padding:2px 8px;">${d.reasonTags}</span>` : '';
+      const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:#6B7280;margin-top:4px;">補充：${d.reason}</div>` : '';
+      const submittedAt = d.submittedAt?.seconds
+        ? new Date(d.submittedAt.seconds*1000).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+        : '';
 
+      card.style.cssText = 'background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);margin-bottom:12px;overflow:hidden;';
       card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-          <input type="checkbox" class="corrChk" data-id="${d.id}" style="flex-shrink:0;">
-          <span style="font-size:0.78rem;background:var(--warm);border-radius:4px;padding:2px 8px;">${typeLabel}</span>
-          ${statusBadge}
-          <span style="font-size:0.82rem;font-weight:700;">${d.memberName||''}</span>
-          <span style="font-size:0.78rem;color:var(--text-light);">${d.date||''}</span>
-          ${d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">簽到 ${d.checkinTime}</span>` : ''}
-          ${d.timeOut && !d.checkinTime ? `<span style="font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">出勤 ${d.timeOut}</span>` : ''}
-          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">${submittedBy}<button onclick="adminDel('${COL_CORRECTION}','${d.id}','修正申請',loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button></span>
+        <!-- 標頭 -->
+        <div style="background:${scfg.hBg};border-bottom:1px solid ${scfg.bar}22;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <input type="checkbox" class="corrChk" data-id="${d.id}" style="flex-shrink:0;width:16px;height:16px;cursor:pointer;">
+              <span style="font-size:0.72rem;font-weight:700;background:${scfg.badgeBg};color:${scfg.badgeColor};border-radius:20px;padding:3px 10px;">${scfg.badge}</span>
+              <span style="font-size:0.82rem;font-weight:800;color:#111827;">${d.memberName||''}</span>
+              <span style="font-size:0.75rem;color:#6B7280;">${d.date||''}</span>
+            </div>
+            <button onclick="adminDel('${COL_CORRECTION}','${d.id}','修正申請',loadAdminCorrections)" style="background:none;border:none;padding:4px;cursor:pointer;color:#9CA3AF;flex-shrink:0;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:0.72rem;color:#6B7280;background:#F3F4F6;border-radius:6px;padding:2px 8px;">${reqType}・${recType}</span>
+            ${d.checkinTime ? `<span style="font-size:0.72rem;color:#075985;background:#E0F2FE;border-radius:6px;padding:2px 7px;">簽到 ${d.checkinTime}</span>` : ''}
+            ${d.timeOut && !d.checkinTime ? `<span style="font-size:0.72rem;color:#075985;background:#E0F2FE;border-radius:6px;padding:2px 7px;">出勤 ${d.timeOut}</span>` : ''}
+            ${submittedAt ? `<span style="font-size:0.7rem;color:#9CA3AF;margin-left:auto;">送出 ${submittedAt}</span>` : ''}
+          </div>
         </div>
-        ${reasonTags || reasonNote ? `<div style="margin-bottom:10px;">${reasonTags}${reasonNote}</div>` : ''}
-        <div style="background:var(--warm);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
-          <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">修正對比</div>
-          ${diffRows}
+        <!-- 原因 -->
+        ${reasonTags||reasonNote ? `<div style="padding:10px 14px 0;">${reasonTags}${reasonNote}</div>` : ''}
+        <!-- 對比表 -->
+        <div style="padding:0 14px 6px;">
+          <div style="font-size:0.7rem;font-weight:600;color:#9CA3AF;padding:10px 0 4px;letter-spacing:0.05em;">${isDeleteReq ? '申請刪除以下紀錄' : '申請修正欄位'}</div>
+          <table style="width:100%;border-collapse:collapse;">${diffRows}</table>
         </div>
-        <div style="font-size:0.68rem;color:#aaa;padding:2px 0 6px;">🔍 docId:${_dbgDocId} | 即時簽名:${_dbgLive} | 原始簽名:${_dbgOgSig}</div>
+        <!-- debug -->
+        <div style="font-size:0.65rem;color:#D1D5DB;padding:2px 14px 8px;">docId:${_dbgDocId} | ${_dbgLive} | 原簽:${_dbgOgSig}</div>
+        <!-- 操作按鈕 -->
         ${isPending ? `
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
-            style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:9px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            ${isDeleteReq ? '✅ 核准刪除' : '✅ 核准並前往修改'}
-          </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #F3F4F6;">
           <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','rejected')"
-            style="flex:1;background:white;color:#b94a3a;border:1px solid #f5c6c6;border-radius:6px;padding:9px;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            ❌ 拒絕
+            style="padding:12px;background:white;color:#6B7280;border:none;border-right:1px solid #F3F4F6;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:0 0 0 14px;">
+            拒絕
           </button>
-        </div>` : ''}
+          <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
+            style="padding:12px;background:${scfg.bar};color:white;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:0 0 14px 0;">
+            ${isDeleteReq ? '核准刪除' : '核准修改'}
+          </button>
+        </div>` : `<div style="height:4px;background:${scfg.bar};opacity:0.6;"></div>`}
       `;
       el.appendChild(card);
     });
