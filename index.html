@@ -14741,10 +14741,13 @@ async function meetingRsvp(id) {
           + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrFood" value="素食" '+(existing.food==='素食'?'checked':'')+' style="margin-right:4px;">素食</label>'
           + '</div></div>'
         : '')
-    + '<div style="display:flex;gap:8px;">'
+    + '<div style="display:flex;gap:8px;margin-bottom:'+(existing.attend?'8px':'0')+'">'
     + '<button id="_mrSaveBtn" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">確認送出</button>'
-    + '<button id="_mrCancelBtn" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">取消</button>'
+    + '<button id="_mrCancelBtn" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">關閉</button>'
     + '</div>'
+    + (existing.attend
+        ? '<button id="_mrDeleteBtn" style="width:100%;background:none;border:none;color:#c0392b;font-size:0.8rem;cursor:pointer;padding:4px;font-family:\'Noto Sans TC\',sans-serif;opacity:0.7;">刪除我的回覆紀錄</button>'
+        : '')
     + '</div>';
   document.body.appendChild(overlay);
   overlay.querySelector('#_mrCancelBtn').onclick = ()=>overlay.remove();
@@ -14759,6 +14762,16 @@ async function meetingRsvp(id) {
       overlay.remove();
       renderDutyMeeting();
     } catch(e) { alert('送出失敗：'+e.message); }
+  };
+  const delBtn = overlay.querySelector('#_mrDeleteBtn');
+  if (delBtn) delBtn.onclick = async ()=>{
+    if (!confirm('確定刪除您的出席回覆？')) return;
+    const newRsvp = rsvp.filter(r=>r.email!==u.email);
+    try {
+      await fbUpdate(COL_MEETING_EVENTS, id, {rsvp:newRsvp});
+      overlay.remove();
+      renderDutyMeeting();
+    } catch(e) { alert('刪除失敗：'+e.message); }
   };
 }
 
