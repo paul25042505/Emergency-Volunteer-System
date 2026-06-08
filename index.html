@@ -10374,8 +10374,19 @@ function _startNotifListeners() {
 
 function _fireAdminNotif(title, body) {
   if (Notification.permission !== 'granted') return;
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, {
+        body,
+        icon: '/Emergency-Volunteer-System/icon-192.png',
+        badge: '/Emergency-Volunteer-System/icon-192.png',
+        vibrate: [200, 100, 200],
+      });
+    }).catch(() => {});
+    return;
+  }
   try {
-    const n = new Notification(title, { body, icon: 'icon-192.png' });
+    const n = new Notification(title, { body, icon: '/Emergency-Volunteer-System/icon-192.png' });
     n.onclick = () => { window.focus(); navTo('adminPage'); n.close(); };
   } catch(e) {}
 }
