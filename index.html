@@ -4598,6 +4598,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 登入後永遠從首頁開始
   history.replaceState({ pageId: 'dashboardPage' }, '', '#dashboardPage');
   navTo('dashboardPage', true);
+  // 鈴鐺紅點：所有使用者登入後即啟動即時監聽
+  setTimeout(_updateBellBadge, 500);
 }
 
 // ── 檢查既有 session（重新整理不需再登入）──
