@@ -10825,12 +10825,40 @@ function _siToggle(btn) {
 }
 
 async function initSystemInfoPage() {
-  const verEl = document.getElementById('siVersionInfo');
-  const clEl  = document.getElementById('siChangelogList');
+  const verEl  = document.getElementById('siVersionInfo');
+  const clEl   = document.getElementById('siChangelogList');
   const footEl = document.getElementById('siFooterVersion');
-  const loading = '<div style="font-size:0.85rem;color:var(--text-light);">載入中…</div>';
+  const loading = '<div style="font-size:0.85rem;color:var(--text-light);padding:4px 0;">載入中…</div>';
   if (verEl) verEl.innerHTML = loading;
   if (clEl)  clEl.innerHTML  = loading;
+
+  // 依 subtitle 給對應底色（淺色 chip）
+  function _chipColor(subtitle) {
+    const s = (subtitle || '').toLowerCase();
+    if (/修正|修復|fix/.test(s))   return { bg:'#FEF3C7', color:'#92400E' };
+    if (/新增|add|new/.test(s))    return { bg:'#DCFCE7', color:'#166534' };
+    if (/改善|優化|update/.test(s))return { bg:'#E0F2FE', color:'#075985' };
+    if (/刪除|移除|remove/.test(s))return { bg:'#FFE4E6', color:'#9F1239' };
+    if (/安全|security/.test(s))   return { bg:'#F3E8FF', color:'#6B21A8' };
+    return { bg:'#F1F5F9', color:'#475569' };
+  }
+
+  function _renderItems(items, accentColor) {
+    if (!items || !items.length) return '';
+    return items.map(it => {
+      const detail = (it.detail || '').replace(/\n/g, '<br>');
+      const chip   = _chipColor(it.subtitle);
+      return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #F3F4F6;">
+        <div style="width:3px;border-radius:2px;background:${accentColor};flex-shrink:0;margin:3px 0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+            <span style="font-size:0.7rem;font-weight:600;background:${chip.bg};color:${chip.color};border-radius:6px;padding:2px 8px;white-space:nowrap;">${it.subtitle||''}</span>
+          </div>
+          <div style="font-size:0.82rem;color:#374151;line-height:1.7;">${detail}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   try {
     const docs = await fbList(COL_CHANGELOG);
@@ -10846,73 +10874,61 @@ async function initSystemInfoPage() {
       const ver   = latest.version || '';
       const date  = latest.date    || '';
       const title = latest.title   || '';
-      const itemsHtml = (latest.items || []).map(it => {
-        const detail = (it.detail || '').replace(/\n/g, '<br>');
-        return `<div style="padding:9px 0;border-bottom:1px solid var(--warm);">
-          <div style="margin-bottom:4px;">
-            <span style="font-size:0.68rem;background:var(--red);color:white;border-radius:10px;padding:2px 9px;">${it.subtitle||''}</span>
-          </div>
-          <div style="font-size:0.83rem;color:var(--text);line-height:1.7;">${detail}</div>
-        </div>`;
-      }).join('');
       verEl.innerHTML = `
-        <div style="background:linear-gradient(135deg,var(--red),#c0392b);border-radius:10px;padding:14px 16px;margin-bottom:2px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-            <div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:1.1rem;font-weight:800;color:white;font-family:monospace;">🆕 ${ver}</span>
-                <span style="font-size:0.65rem;background:white;color:var(--red);border-radius:10px;padding:2px 8px;font-weight:700;">LATEST</span>
-              </div>
-              <div style="font-size:0.78rem;color:rgba(255,255,255,0.8);margin-top:3px;">📅 ${date}</div>
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:4px 0 14px;border-bottom:1px solid #F3F4F6;margin-bottom:4px;">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--red),#c0392b);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(224,49,49,0.3);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div style="flex:1;padding-top:2px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:1.4rem;font-weight:800;color:#111827;letter-spacing:-0.02em;">v${ver}</span>
+              <span style="font-size:0.68rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:3px 10px;letter-spacing:0.04em;">最新版本</span>
             </div>
-            <div style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.9);text-align:right;">${title}</div>
+            <div style="font-size:0.82rem;color:#6B7280;margin-top:3px;">${date}　<span style="color:#374151;font-weight:500;">${title}</span></div>
           </div>
         </div>
-        <div style="padding:4px 0 4px;">${itemsHtml || '<div style="color:var(--text-light);font-size:0.83rem;padding:10px 0;">（無內容）</div>'}</div>
+        <div>${_renderItems(latest.items, 'var(--red)')}</div>
       `;
       if (footEl) footEl.textContent = `v${ver}`;
     } else if (verEl) {
       verEl.innerHTML = '<div style="font-size:0.82rem;color:var(--text-light);padding:8px 0;">尚無版本資料</div>';
     }
 
-    // ── 更新紀錄 ──
+    // ── 更新紀錄（時間軸） ──
     if (clEl) {
       if (!docs.length) {
         clEl.innerHTML = '<div style="font-size:0.82rem;color:var(--text-light);padding:8px 0;">尚無版本紀錄</div>';
         return;
       }
-      clEl.innerHTML = docs.map(d => {
-        const isLatest  = !!d.isLatest;
-        const ver       = d.version || '';
-        const date      = d.date    || '';
-        const title     = d.title   || '';
-        const itemsHtml = (d.items || []).map(it => {
-          const detail = (it.detail || '').replace(/\n/g, '<br>');
-          return `<div style="padding:10px 0;border-bottom:1px solid var(--warm);">
-            <div style="margin-bottom:5px;">
-              <span style="font-size:0.68rem;background:${isLatest?'var(--red)':'#6c757d'};color:white;border-radius:10px;padding:2px 9px;">${it.subtitle||''}</span>
-            </div>
-            <div style="font-size:0.83rem;color:var(--text);line-height:1.7;">${detail}</div>
-          </div>`;
-        }).join('');
-        return `<div style="margin-bottom:14px;border-radius:8px;overflow:hidden;${isLatest?'border:2px solid var(--red);box-shadow:0 4px 16px rgba(185,74,58,0.12);':'border:1px solid #eee;'}">
-          <div style="background:${isLatest?'linear-gradient(135deg,var(--red),#c0392b)':'var(--warm)'};padding:12px 16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-              <div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:1rem;font-weight:800;color:${isLatest?'white':'var(--text)'};font-family:monospace;">${isLatest?'🆕':'📋'} ${ver}</span>
-                  ${isLatest?'<span style="font-size:0.65rem;background:white;color:var(--red);border-radius:10px;padding:2px 8px;font-weight:700;">LATEST</span>':''}
+      clEl.innerHTML = `<div style="position:relative;padding-left:20px;">
+        <div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(to bottom,var(--red),#e5e7eb);border-radius:2px;"></div>
+        ${docs.map((d, idx) => {
+          const isLatest = !!d.isLatest;
+          const ver   = d.version || '';
+          const date  = d.date    || '';
+          const title = d.title   || '';
+          const dot   = isLatest
+            ? `<div style="position:absolute;left:-20px;top:14px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid white;box-shadow:0 0 0 2px var(--red);"></div>`
+            : `<div style="position:absolute;left:-17px;top:16px;width:8px;height:8px;border-radius:50%;background:#D1D5DB;border:2px solid white;"></div>`;
+          const itemsHtml = _renderItems(d.items, isLatest ? 'var(--red)' : '#9CA3AF');
+          return `<div style="position:relative;margin-bottom:${idx < docs.length-1 ? '20px' : '0'};">
+            ${dot}
+            <div style="background:${isLatest?'white':'#FAFAFA'};border-radius:10px;border:${isLatest?'1.5px solid #FECACA':'1px solid #F3F4F6'};overflow:hidden;${isLatest?'box-shadow:0 2px 12px rgba(224,49,49,0.1);':''}">
+              <div style="padding:12px 14px;${isLatest?'border-bottom:1px solid #FEE2E2;':'border-bottom:1px solid #F3F4F6;'}">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:0.95rem;font-weight:800;color:${isLatest?'var(--red)':'#374151'};letter-spacing:-0.01em;">v${ver}</span>
+                    ${isLatest ? '<span style="font-size:0.65rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:2px 8px;">最新</span>' : ''}
+                  </div>
+                  <span style="font-size:0.75rem;color:#9CA3AF;white-space:nowrap;">${date}</span>
                 </div>
-                <div style="font-size:0.78rem;color:${isLatest?'rgba(255,255,255,0.8)':'var(--text-light)'};margin-top:3px;">📅 ${date}</div>
+                ${title ? `<div style="font-size:0.8rem;color:#6B7280;margin-top:3px;">${title}</div>` : ''}
               </div>
-              <div style="font-size:0.82rem;font-weight:600;color:${isLatest?'rgba(255,255,255,0.9)':'var(--text-mid)'};text-align:right;">${title}</div>
+              ${itemsHtml ? `<div style="padding:0 14px 6px;">${itemsHtml}</div>` : ''}
             </div>
-          </div>
-          <div style="padding:4px 16px 10px;background:white;">
-            ${itemsHtml || '<div style="color:var(--text-light);font-size:0.83rem;padding:10px 0;">（無內容）</div>'}
-          </div>
-        </div>`;
-      }).join('');
+          </div>`;
+        }).join('')}
+      </div>`;
     }
   } catch(e) {
     console.warn('initSystemInfoPage:', e);
