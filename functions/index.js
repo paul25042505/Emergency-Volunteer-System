@@ -77,7 +77,7 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
       pinned: false,
       urgent: false,
       startDate: today,
-      endDate: today,
+      endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
       createdAt: now,
       createdBy: requestedBy || '管理員',
     });
