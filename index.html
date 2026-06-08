@@ -4584,12 +4584,12 @@ async function handleGoogleLogin(response) {
       sessionStorage.setItem('rescue_user', JSON.stringify({
         email, name, memberName, isAdmin, isOfficer, role, unit, title, loginAt: Date.now()
       }));
-      // 寫入登入紀錄
+      // 寫入登入紀錄（超過 500 筆時自動刪除最舊的）
       fbAdd(COL_LOGINLOG, {
         email, memberName, role, unit,
         loginAt: new Date().toLocaleString('sv').replace('T', ' '),
         ua: navigator.userAgent.substring(0, 120),
-      }).catch(() => {});
+      }).then(() => _trimLoginLog(500)).catch(() => {});
       showApp(memberName, email, isAdmin, isOfficer, role, title);
     } else {
       spinner.classList.remove('show');
@@ -10294,6 +10294,18 @@ function adminShowSection(sectionId) {
     _setAdminBadge('adminSec-feedback', 0);
   }
   if (sectionId === 'adminSec-pushctrl') loadAdminPushCtrl();
+  if (sectionId === 'adminSec-loginlog') {
+    const df = document.getElementById('loginLogFrom');
+    const dt = document.getElementById('loginLogTo');
+    if (df && !df.value) {
+      const now = new Date();
+      const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+      const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
+      df.value = `${y}-${m}-01`;
+      if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+    }
+    setTimeout(loadLoginLog, 100);
+  }
   if (sectionId === 'adminSec-repair') {
     const df = document.getElementById('repairDateFrom');
     const dt = document.getElementById('repairDateTo');
@@ -10714,6 +10726,18 @@ function resetLoginLog() {
   const u = document.getElementById('loginLogUnit'); if (u) u.value = '';
   const el = document.getElementById('adminLoginLogList');
   if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>';
+}
+
+async function _trimLoginLog(maxCount) {
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_LOGINLOG).orderBy('loginAt','desc').get({ source: 'server' });
+    if (snap.size <= maxCount) return;
+    const toDelete = snap.docs.slice(maxCount);
+    const batch = _fbDB.batch();
+    toDelete.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  } catch(e) {}
 }
 
 // ── 登入頁意見回饋 ──
