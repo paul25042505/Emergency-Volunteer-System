@@ -13666,7 +13666,9 @@ async function loadAdminCorrections() {
       // 產生修正對比列表
       const sigKeys = ['checkinSig','checkoutSig','signature'];
       let diffRows = '';
-      const allKeys = new Set([...Object.keys(cf), ...Object.keys(og)]);
+      const KEY_ORDER = ['date','checkinTime','checkoutTime','timeOut','timeBack','hours','count','service','dutyType','memberName','district','address','caseType','services','serviceCount','note','checkinSig','checkoutSig','signature'];
+      const extraKeys = [...new Set([...Object.keys(cf), ...Object.keys(og)])].filter(k => !KEY_ORDER.includes(k));
+      const allKeys = [...KEY_ORDER, ...extraKeys];
       allKeys.forEach(key => {
         if (!cf[key] && !og[key]) return;
         const label = fieldLabels[key] || key;
