@@ -39,10 +39,34 @@ exports.onNewFeedback = onDocumentCreated(
   }
 );
 
-// ── 推播：修正申請狀態更新 → 通知提交者 ──────────────────────────────
-exports.onCorrectionUpdated = onDocumentCreated(
-  'correctionRequests/{docId}',
-  async event => { /* 由 onDocumentUpdated 處理，此處預留 */ }
+// ── 推播：廣播公差缺人 → 通知所有訂閱者 ─────────────────────────────
+exports.onBroadcastRequest = onDocumentCreated(
+  'broadcastRequests/{docId}',
+  async event => {
+    const data = event.data?.data();
+    if (!data || data.status !== 'pending') return;
+
+    const db = getFirestore();
+    const snap = await db.collection('pushSubscriptions').get();
+    const tokens = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.fcmToken) tokens.push(d.fcmToken);
+    });
+
+    const uniqueTokens = [...new Set(tokens)];
+    if (!uniqueTokens.length) {
+      await event.data.ref.update({ status: 'no_tokens' });
+      return;
+    }
+
+    await _sendMulticast(uniqueTokens, {
+      title: data.title,
+      body:  data.body,
+    });
+
+    await event.data.ref.update({ status: 'sent', sentAt: new Date(), recipientCount: uniqueTokens.length });
+  }
 );
 
 // ── 工具函式 ──────────────────────────────────────────────────────────

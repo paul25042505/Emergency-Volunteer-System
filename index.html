@@ -4228,7 +4228,7 @@ async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collecti
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
 const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
-const _C_SKIP = new Set(['loginLog','feedback','corrections','confirmTasks','tempPass','correctionRequests']);
+const _C_SKIP = new Set(['loginLog','feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
 async function fbList(col, orderByField, orderDir) {
   // 第一層：localStorage 新鮮快取（零等待，不需網路）
   if (!_C_SKIP.has(col) && _C.fresh(col)) return _C.peek(col);
@@ -15206,7 +15206,98 @@ async function gongchaUnregister(id) {
   } catch(e) { alert('取消失敗：'+e.message); }
 }
 
-function gongchaBroadcast(id) { alert('廣播功能尚未開放'); }
+async function gongchaBroadcast(id) {
+  try {
+    const docs = await fbList(COL_GONGCHA_MISSIONS);
+    const doc = docs.find(d => d.id === id);
+    if (!doc) return;
+    const regs = doc.registrants || [];
+    const need = Math.max(0, (doc.maxCount || 0) - regs.length);
+    const dateStr = doc.date || '';
+    const timeStr = (doc.startTime && doc.endTime) ? `${doc.startTime}–${doc.endTime}` : (doc.startTime || '');
+    const locStr = doc.location || '';
+
+    const defTitle = `📢 公差招募：${doc.title || '任務'}`;
+    const defBody  = `尚缺 ${need} 人，日期 ${dateStr}${timeStr ? ' ' + timeStr : ''}${locStr ? '，地點：' + locStr : ''}，請盡快登記！`;
+
+    // 建立預覽 modal
+    const overlay = document.createElement('div');
+    overlay.id = 'broadcastPreviewOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;padding:0 0 0 0;';
+    overlay.innerHTML = `
+      <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📢 推播預覽與確認</div>
+          <button onclick="document.getElementById('broadcastPreviewOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);line-height:1;">✕</button>
+        </div>
+        <!-- 推播預覽卡 -->
+        <div style="background:#f0f4ff;border:1px solid #c7d7ff;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <img src="icon-192.png" style="width:22px;height:22px;border-radius:5px;" onerror="this.style.display='none'">
+            <span style="font-size:0.72rem;color:#6b7280;font-family:'Noto Sans TC',sans-serif;">義消系統 · 推播通知</span>
+          </div>
+          <div id="bpTitlePreview" style="font-size:0.92rem;font-weight:700;color:#1a1a1a;margin-bottom:3px;font-family:'Noto Sans TC',sans-serif;">${defTitle}</div>
+          <div id="bpBodyPreview" style="font-size:0.82rem;color:#4b5563;line-height:1.5;font-family:'Noto Sans TC',sans-serif;">${defBody}</div>
+        </div>
+        <!-- 編輯欄位 -->
+        <div style="margin-bottom:10px;">
+          <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:4px;font-family:'Noto Sans TC',sans-serif;">標題</div>
+          <input id="bpTitleInput" type="text" value="${defTitle.replace(/"/g,'&quot;')}" maxlength="60"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;outline:none;"
+            oninput="document.getElementById('bpTitlePreview').textContent=this.value">
+        </div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:4px;font-family:'Noto Sans TC',sans-serif;">內容</div>
+          <textarea id="bpBodyInput" rows="3" maxlength="200"
+            style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:none;box-sizing:border-box;outline:none;"
+            oninput="document.getElementById('bpBodyPreview').textContent=this.value">${defBody}</textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="document.getElementById('broadcastPreviewOverlay').remove()"
+            style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
+          <button id="bpSendBtn" onclick="_confirmBroadcast()"
+            style="flex:2;padding:12px;border:none;border-radius:10px;background:var(--red);color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔔 發送推播</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  } catch(e) { alert('載入失敗：' + e.message); }
+}
+
+function _showToast(msg, duration = 3000) {
+  let t = document.getElementById('_globalToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_globalToast';
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.92);color:white;padding:10px 20px;border-radius:20px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;z-index:99999;pointer-events:none;transition:opacity 0.3s;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, duration);
+}
+
+async function _confirmBroadcast() {
+  const title = document.getElementById('bpTitleInput')?.value?.trim();
+  const body  = document.getElementById('bpBodyInput')?.value?.trim();
+  if (!title || !body) return alert('標題與內容不能空白');
+  const btn = document.getElementById('bpSendBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '發送中…'; }
+  try {
+    await firebase.firestore().collection('broadcastRequests').add({
+      title, body,
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: (JSON.parse(sessionStorage.getItem('rescue_user') || '{}')).name || '管理員',
+    });
+    document.getElementById('broadcastPreviewOverlay')?.remove();
+    _showToast('✅ 推播已發送給所有訂閱成員');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔔 發送推播'; }
+    alert('發送失敗：' + e.message);
+  }
+}
 
 async function deleteGongcha(id) {
   if (!confirm('確定刪除此公差任務？')) return;
