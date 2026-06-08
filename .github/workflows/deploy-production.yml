@@ -22,6 +22,7 @@ jobs:
           cp index.html /tmp/prod-index.html
           cp icon-192.png /tmp/prod-icon-192.png 2>/dev/null || true
           cp icon-512.png /tmp/prod-icon-512.png 2>/dev/null || true
+          cp firebase-messaging-sw.js /tmp/prod-sw.js 2>/dev/null || true
 
       - name: Deploy to gh-pages root
         run: |
@@ -40,8 +41,9 @@ jobs:
           cp /tmp/prod-index.html index.html
           cp /tmp/prod-icon-192.png icon-192.png 2>/dev/null || true
           cp /tmp/prod-icon-512.png icon-512.png 2>/dev/null || true
+          cp /tmp/prod-sw.js firebase-messaging-sw.js 2>/dev/null || true
 
-          git add index.html icon-192.png icon-512.png 2>/dev/null
+          git add index.html icon-192.png icon-512.png firebase-messaging-sw.js 2>/dev/null
           git diff --staged --quiet && echo "No changes" && exit 0
           git commit -m "production deploy from main"
           git push --force origin gh-pages
