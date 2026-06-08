@@ -12941,6 +12941,12 @@ async function loadAdminCaseTypes() {
   });
 }
 
+async function _reloadCaseTypes() {
+  _caseTypesList = [];
+  _caseTypeDocs = [];
+  await loadCaseTypes();
+}
+
 async function addCaseType() {
   const inp = document.getElementById('newCaseTypeInput');
   const name = (inp?.value || '').trim();
@@ -12949,6 +12955,7 @@ async function addCaseType() {
   try {
     await fbAdd(COL_CASETYPES, { name, order: _caseTypesList.length });
     inp.value = '';
+    await _reloadCaseTypes();
     await loadAdminCaseTypes();
   } catch(e) { _confirmModal('新增失敗：' + e.message, ()=>{}, '確定', '#333'); }
 }
@@ -12956,19 +12963,20 @@ async function addCaseType() {
 async function deleteCaseType(name) {
   _confirmModal('確定刪除「' + name + '」？', async () => {
     try {
+      // 確保 _caseTypeDocs 是最新的（含剛新增的條目）
       let doc = _caseTypeDocs.find(d => d.name === name);
       if (!doc) {
-        const all = await fbList(COL_CASETYPES);
-        if (all.length === 0) {
-          const toAdd = DEFAULT_CASE_TYPES.filter(n => n !== name);
-          await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
-          await loadAdminCaseTypes();
-          return;
-        }
-        await loadCaseTypes();
+        await _reloadCaseTypes();
         doc = _caseTypeDocs.find(d => d.name === name);
       }
-      if (doc) await fbDelete(COL_CASETYPES, doc.id);
+      if (!doc) {
+        // 預設值尚未存入 Firestore，先把其他預設值寫入
+        const toAdd = DEFAULT_CASE_TYPES.filter(n => n !== name);
+        await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
+      } else {
+        await fbDelete(COL_CASETYPES, doc.id);
+      }
+      await _reloadCaseTypes();
       await loadAdminCaseTypes();
     } catch(e) { _confirmModal('刪除失敗：' + e.message, ()=>{}, '確定', '#333'); }
   }, '刪除');
