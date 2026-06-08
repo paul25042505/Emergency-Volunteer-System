@@ -2118,67 +2118,71 @@ function _dlCSV(content, filename) {
 
     <!-- ── 簽退畫面 ── -->
     <div id="attCheckoutView" style="display:none;">
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num" style="font-size:0.9rem;">←</div>
-          <div class="section-title" id="attCheckoutName">成員姓名</div>
-          <div class="section-line"></div>
-          <button type="button" onclick="attBackToMain()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;min-height:unset;">← 返回</button>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">✓</div>
-          <div class="section-title">簽退</div>
-          <div class="section-line"></div>
-        </div>
-        <div class="card">
-          <div class="field" style="background:var(--warm);border-radius:4px;padding:10px 14px;margin-bottom:16px;">
-            <span style="font-size:0.78rem;color:var(--text-mid);">簽到時間：</span>
-            <span class="time-badge" id="attCheckinTimeRef"></span>
+      <div style="padding:14px 14px 20px;">
+        <div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);overflow:hidden;">
+          <!-- Red gradient banner -->
+          <div style="background:linear-gradient(135deg,var(--red) 0%,#e74c3c 100%);padding:16px 18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div id="attCheckoutName" style="font-size:1.05rem;font-weight:700;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">成員姓名</div>
+                <div style="font-size:0.72rem;color:rgba(255,255,255,0.75);letter-spacing:0.05em;margin-top:1px;">Check Out</div>
+              </div>
+              <button type="button" onclick="attBackToMain()" style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 12px;font-size:0.78rem;color:white;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+            </div>
           </div>
-          <div class="field">
-            <label>簽退時間 <span class="req">*</span></label>
-            
-            <select id="attCheckoutTime" style="width:100%;" onchange="autoCalcHours()"></select>
-          </div>
-          <div class="field">
-            <label>簽退簽名 <span class="req">*</span></label>
-            <div class="sig-wrap">
-              <canvas id="attCheckoutCanvas"></canvas>
-              <div class="sig-footer">
-                <span>請用滑鼠或手指於上方簽名</span>
-                <div class="sig-footer-btns">
-                  <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;flex:1;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l3-1 7-7-2-2-7 7-1 3z"/><path d="M10 4l2 2"/></svg>管理員代填</button>
-                  <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckoutCanvas',_sigCheckoutSetHasSig)"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>全螢幕</button>
-                  <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkout')">清除重簽</button>
+          <!-- Form content -->
+          <div style="padding:18px;display:flex;flex-direction:column;gap:14px;">
+            <!-- Check-in time reference -->
+            <div style="background:#FFF5F5;border:1.5px solid rgba(224,49,49,0.15);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style="font-size:0.78rem;color:var(--text-mid);">簽到時間：</span>
+              <span class="time-badge" id="attCheckinTimeRef" style="font-size:0.82rem;font-weight:600;color:var(--red);"></span>
+            </div>
+            <!-- Checkout time -->
+            <div>
+              <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">簽退時間 <span style="color:var(--red);">*</span></div>
+              <select id="attCheckoutTime" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;color:var(--text-dark);appearance:none;-webkit-appearance:none;" onchange="autoCalcHours()"></select>
+            </div>
+            <!-- Signature -->
+            <div>
+              <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">簽退簽名 <span style="color:var(--red);">*</span></div>
+              <div class="sig-wrap">
+                <canvas id="attCheckoutCanvas"></canvas>
+                <div class="sig-footer">
+                  <span>請用滑鼠或手指於上方簽名</span>
+                  <div class="sig-footer-btns">
+                    <button type="button" onclick="fillAdminSig('checkout')" class="admin-fill-btn" style="display:none;flex:1;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l3-1 7-7-2-2-7 7-1 3z"/><path d="M10 4l2 2"/></svg>管理員代填</button>
+                    <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckoutCanvas',_sigCheckoutSetHasSig)"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>全螢幕</button>
+                    <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkout')">清除重簽</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="card-divider"></div>
-          <div class="field">
-            <input type="number" id="attHours" style="display:none;" min="0" step="0.5">
-            <input type="number" id="attCount" style="display:none;" min="0" step="1">
-            <input type="number" id="attService" style="display:none;" min="0" step="1" value="0">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-              <div style="background:var(--red-faint);border:1.5px solid rgba(224,49,49,0.15);border-radius:14px;padding:14px 8px;text-align:center;">
-                <div style="font-size:0.65rem;font-weight:600;color:var(--red);letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">備勤時數</div>
-                <div id="attHoursDisplay" style="font-size:1.6rem;font-weight:700;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
-              </div>
-              <div id="attCountField" style="background:#EFF6FF;border:1.5px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
-                <div style="font-size:0.65rem;font-weight:600;color:#1D4ED8;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">出勤次數</div>
-                <div id="attCountDisplay" style="font-size:1.6rem;font-weight:700;color:#1D4ED8;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
-              </div>
-              <div id="attServiceField" style="background:#F0FDF4;border:1.5px solid rgba(22,163,74,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
-                <div style="font-size:0.65rem;font-weight:600;color:#16A34A;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">服務人次</div>
-                <div id="attServiceDisplay" style="font-size:1.6rem;font-weight:700;color:#16A34A;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
+            <!-- Stats -->
+            <div>
+              <input type="number" id="attHours" style="display:none;" min="0" step="0.5">
+              <input type="number" id="attCount" style="display:none;" min="0" step="1">
+              <input type="number" id="attService" style="display:none;" min="0" step="1" value="0">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                <div style="background:var(--red-faint);border:1.5px solid rgba(224,49,49,0.15);border-radius:14px;padding:14px 8px;text-align:center;">
+                  <div style="font-size:0.65rem;font-weight:600;color:var(--red);letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">備勤時數</div>
+                  <div id="attHoursDisplay" style="font-size:1.6rem;font-weight:700;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+                </div>
+                <div id="attCountField" style="background:#EFF6FF;border:1.5px solid rgba(59,130,246,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
+                  <div style="font-size:0.65rem;font-weight:600;color:#1D4ED8;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">出勤次數</div>
+                  <div id="attCountDisplay" style="font-size:1.6rem;font-weight:700;color:#1D4ED8;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
+                </div>
+                <div id="attServiceField" style="background:#F0FDF4;border:1.5px solid rgba(22,163,74,0.18);border-radius:14px;padding:14px 8px;text-align:center;">
+                  <div style="font-size:0.65rem;font-weight:600;color:#16A34A;letter-spacing:0.08em;margin-bottom:6px;opacity:0.7;">服務人次</div>
+                  <div id="attServiceDisplay" style="font-size:1.6rem;font-weight:700;color:#16A34A;font-family:'Noto Serif TC',serif;line-height:1;">0</div>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="submit-section" style="margin-top:16px;">
-            <button type="button" class="btn-checkout" onclick="doCheckout()">確認簽退送出</button>
+            <!-- Submit -->
+            <button type="button" class="btn-checkout" onclick="doCheckout()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--red) 0%,#e74c3c 100%);color:white;border:none;border-radius:12px;font-size:1rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;letter-spacing:0.04em;">確認簽退送出</button>
           </div>
         </div>
       </div>
