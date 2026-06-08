@@ -4329,7 +4329,8 @@ async function fbList(col, orderByField, orderDir) {
 
   await ensureFirebase();
   const key = col + '|' + (orderByField||'') + '|' + (orderDir||'');
-  if (_fbInflight[key]) return _fbInflight[key]; // 共用進行中的請求，防重複
+  // _C_SKIP 集合不共用 inflight（需要每次拿最新資料）
+  if (!_C_SKIP.has(col) && _fbInflight[key]) return _fbInflight[key];
 
   _fbInflight[key] = (async () => {
     let q = _fbDB.collection(col).limit(1000);
@@ -10647,9 +10648,9 @@ async function loadLoginLog() {
     const dateTo   = document.getElementById('loginLogTo')?.value   || '';
     const unit     = document.getElementById('loginLogUnit')?.value  || '';
 
-    let docs = await fbList(COL_LOGINLOG);
-    // 依登入時間倒序
-    docs.sort((a,b) => (b.loginAt||'') > (a.loginAt||'') ? 1 : -1);
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_LOGINLOG).orderBy('loginAt','desc').limit(500).get({ source: 'server' });
+    let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
     if (dateFrom) docs = docs.filter(d => (d.loginAt||'').substring(0,10) >= dateFrom);
     if (dateTo)   docs = docs.filter(d => (d.loginAt||'').substring(0,10) <= dateTo);
