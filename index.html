@@ -9310,7 +9310,7 @@ async function loadAdminWhitelist(filterUnit) {
 
       var editBtn = document.createElement('button');
       editBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
-      editBtn.textContent = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
+      editBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.onclick = function(){
         adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'');
       };
@@ -9318,7 +9318,7 @@ async function loadAdminWhitelist(filterUnit) {
 
       var delBtn = document.createElement('button');
       delBtn.style.cssText = 'flex-shrink:0;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:6px 10px;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;min-height:unset;';
-      delBtn.textContent = '<svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>';
+      delBtn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>';
       delBtn.onclick = function(){
         adminDel(COL_WHITELIST, d.id, '帳號 '+(d.memberName||d.email), loadAdminWhitelist);
       };
@@ -10417,7 +10417,7 @@ async function loadAdminAnnouncements() {
       foot.style.cssText = 'padding:8px 14px;display:flex;gap:6px;background:var(--cream);';
 
       const editBtn = document.createElement('button');
-      editBtn.textContent = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
+      editBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;min-height:unset;';
       editBtn.addEventListener('click', () => showAnnounceForm(d));
 
@@ -10427,7 +10427,7 @@ async function loadAdminAnnouncements() {
       toggleBtn.addEventListener('click', () => toggleAnnounce(d.id, d.active !== false));
 
       const delBtn = document.createElement('button');
-      delBtn.textContent = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除';
+      delBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除';
       delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 12px;font-size:0.75rem;color:#b94a3a;cursor:pointer;min-height:unset;';
       delBtn.addEventListener('click', () => deleteAnnounce(d.id, d.text||''));
 
@@ -11650,7 +11650,7 @@ async function loadAdminChangelog() {
       actions.className = 'cl-actions';
       actions.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
       var editBtn = document.createElement('button');
-      editBtn.textContent = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
+      editBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:0.75rem;cursor:pointer;white-space:nowrap;min-height:unset;';
       var delBtn = document.createElement('button');
       delBtn.textContent = '刪除';
@@ -12246,11 +12246,11 @@ async function renderMeetingList() {
         const actions = document.createElement('div');
         actions.style.cssText = 'display:flex;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);background:#fafaf8;';
         const editBtn = document.createElement('button');
-        editBtn.textContent = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
+        editBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
         editBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:5px;padding:5px 14px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
         editBtn.onclick = (e) => { e.stopPropagation(); meetingShowForm(doc); };
         const delBtn = document.createElement('button');
-        delBtn.textContent = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除';
+        delBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除';
         delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:5px;padding:5px 14px;font-size:0.78rem;color:#b94a3a;cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
         delBtn.onclick = (e) => { e.stopPropagation(); meetingDelete(doc.id, doc.title); };
         actions.appendChild(editBtn);
