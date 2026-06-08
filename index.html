@@ -5439,6 +5439,14 @@ function _syncTabBar(pageId) {
 }
 
 function goBack() {
+  // 若目前在 adminPage 且有子區塊展開，先回到後台選單
+  if (window._currentPageId === 'adminPage') {
+    const menuGrid = document.getElementById('adminMenuGrid');
+    if (menuGrid && menuGrid.style.display === 'none') {
+      adminShowSection('menu');
+      return;
+    }
+  }
   const prev = window._prevPageId;
   // 若有明確上一頁就回去，否則回到該頁所屬的 tab 預設頁
   if (prev && prev !== window._currentPageId) {
@@ -9584,6 +9592,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 上一頁／下一頁監聽 ──
   window.addEventListener('popstate', (e) => {
+    // 若目前在 adminPage 且有子區塊展開，攔截手勢返回，先回到後台選單
+    if (window._currentPageId === 'adminPage') {
+      const menuGrid = document.getElementById('adminMenuGrid');
+      if (menuGrid && menuGrid.style.display === 'none') {
+        history.pushState({ pageId: 'adminPage' }, '', '#adminPage');
+        adminShowSection('menu');
+        return;
+      }
+    }
     const pageId = (e.state && e.state.pageId)
       || location.hash.replace('#', '')
       || 'dashboardPage';
