@@ -895,19 +895,25 @@ tr:hover td { background: #fdfcfb; }
 #noticePanel { position: fixed; inset: 0; z-index: 999; display: none; }
 #noticePanelBg { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
 #noticePanelCard {
-  position: absolute; top: 0; left: 0; right: 0;
-  background: #f2f2f7; border-radius: 0 0 28px 28px;
-  max-height: 86vh; display: flex; flex-direction: column;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
-  animation: noticePanelDown 0.28s cubic-bezier(0.4,0,0.2,1);
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #f2f2f7; border-radius: 24px 24px 0 0;
+  max-height: 88vh; display: flex; flex-direction: column;
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+  animation: noticePanelUp 0.28s cubic-bezier(0.4,0,0.2,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@keyframes noticePanelDown {
-  from { transform: translateY(-100%); }
+@keyframes noticePanelUp {
+  from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
 #noticePanelHead {
-  padding: calc(env(safe-area-inset-top,0px) + 18px) 20px 0;
+  padding: 16px 20px 0;
   flex-shrink: 0; background: #f2f2f7;
+  border-radius: 24px 24px 0 0;
+}
+#noticePanelHandle {
+  width: 36px; height: 4px; border-radius: 2px; background: #c7c7cc;
+  margin: 0 auto 14px;
 }
 #noticePanelTopRow {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
@@ -1221,6 +1227,7 @@ function _dlCSV(content, filename) {
   <div id="noticePanelBg" onclick="closeNoticePanel()"></div>
   <div id="noticePanelCard">
     <div id="noticePanelHead">
+      <div id="noticePanelHandle"></div>
       <div id="noticePanelTopRow">
         <div>
           <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);">通知中心</div>
@@ -10847,7 +10854,7 @@ function _updateBellBadge() {
       .onSnapshot(snap => {
         if (snap.empty) return;
         const d = snap.docs[0].data();
-        const ts = d.createdAt?.toMillis?.() ?? 0;
+        const ts = _tsMillis(d.createdAt);
         const lastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
         const show = ts > lastSeen;
         document.querySelectorAll('.bell-badge').forEach(el => el.style.display = show ? 'block' : 'none');
@@ -10874,8 +10881,16 @@ let _noticeAllDocs = [];
 let _noticeLastSeen = 0;
 let _noticeTab = 'msg';
 
+function _tsMillis(val) {
+  if (!val) return 0;
+  if (typeof val.toMillis === 'function') return val.toMillis();
+  if (typeof val.seconds === 'number') return val.seconds * 1000 + Math.floor((val.nanoseconds||0)/1e6);
+  const n = typeof val === 'string' ? Date.parse(val) : Number(val);
+  return isNaN(n) ? 0 : n;
+}
+
 function _buildNoticeCard(d) {
-  const ts      = d.createdAt?.toMillis?.() ?? 0;
+  const ts      = _tsMillis(d.createdAt);
   const unread  = ts > _noticeLastSeen;
   const lines   = (d.text||'').split('\n');
   const title   = d.title || lines[0] || '通知';
@@ -10884,7 +10899,7 @@ function _buildNoticeCard(d) {
   if (!_NOTICE_META[t]) t = 'system';
   const meta = { ..._NOTICE_META[t] };
   if (d.pinned) meta.tag = '📌 置頂';
-  const dateStr = d.createdAt
+  const dateStr = ts > 0
     ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
     : (d.startDate||'').replace(/-/g,'/');
   return `<div class="notice-card${unread?' unread':''}">
@@ -10955,8 +10970,8 @@ async function openNoticePanel() {
       });
     // update tab unread dots
     const msgTypes = ['broadcast', 'correction', 'feedback'];
-    const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && (d.createdAt?.toMillis?.()??0) > _noticeLastSeen);
-    const hasUnreadAnn = _noticeAllDocs.some(d => !msgTypes.includes(d.type||'system') && (d.createdAt?.toMillis?.()??0) > _noticeLastSeen);
+    const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
+    const hasUnreadAnn = _noticeAllDocs.some(d => !msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
     const dotMsg = document.getElementById('noticeTabDot-msg');
     const dotAnn = document.getElementById('noticeTabDot-ann');
     if (dotMsg) dotMsg.style.display = hasUnreadMsg ? 'block' : 'none';
