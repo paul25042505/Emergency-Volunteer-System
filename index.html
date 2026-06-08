@@ -3335,13 +3335,35 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
-      <button onclick="navTo('feedbackPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;cursor:pointer;text-align:left;">
+      <button onclick="navTo('feedbackPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
         <div style="width:38px;height:38px;border-radius:10px;background:#f0faf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
         <div style="flex:1;">
           <div style="font-size:0.92rem;font-weight:700;color:var(--text);">意見回饋</div>
           <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">提供建議或回報問題</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <button onclick="navTo('changelogPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;" id="moreChangelogBtn">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">版本修改紀錄</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">查看系統更新與功能變更</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <button onclick="navTo('adminPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;cursor:pointer;text-align:left;display:none;" id="moreAdminBtn">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF1F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">後台管理</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">成員、資料與系統設定管理</div>
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
@@ -10633,10 +10655,11 @@ function _initMorePage() {
   const av = document.getElementById('moreAvatar');
   const nm = document.getElementById('moreName');
   const tl = document.getElementById('moreTitle');
-  const card = document.getElementById('moreUserCard');
   if (av) av.textContent = (u.name||'?').slice(0,1);
   if (nm) nm.textContent = u.name || '—';
   if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+  const adminBtn = document.getElementById('moreAdminBtn');
+  if (adminBtn) adminBtn.style.display = (u.isAdmin || u.isOfficer) ? 'flex' : 'none';
 }
 
 async function initFeedbackPage() {
