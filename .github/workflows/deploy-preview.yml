@@ -1,0 +1,64 @@
+name: Deploy Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '要預覽的分支名稱 (例如: claude/ui-banking-redesign)'
+        required: true
+        default: 'claude/ui-banking-redesign'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Determine branch
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "PREVIEW_BRANCH=${{ github.event.inputs.branch }}" >> $GITHUB_ENV
+          else
+            echo "PREVIEW_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PREVIEW_BRANCH }}
+          fetch-depth: 0
+
+      - name: Get branch slug
+        run: |
+          BRANCH="${{ env.PREVIEW_BRANCH }}"
+          SLUG="${BRANCH#claude/}"
+          SLUG="${SLUG//\//-}"
+          echo "SLUG=$SLUG" >> $GITHUB_ENV
+
+      - name: Save preview files
+        run: |
+          cp index.html /tmp/preview-index.html
+          cp icon-192.png /tmp/preview-icon-192.png 2>/dev/null || true
+          cp icon-512.png /tmp/preview-icon-512.png 2>/dev/null || true
+
+      - name: Deploy to gh-pages preview folder
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+          mkdir -p "preview/$SLUG"
+          cp /tmp/preview-index.html "preview/$SLUG/index.html"
+
+          git add "preview/$SLUG/index.html"
+          git diff --staged --quiet && echo "No changes" && exit 0
+          git commit -m "preview: ${{ env.PREVIEW_BRANCH }}"
+          git push origin gh-pages
+
+      - name: Print preview URL
+        run: echo "🔗 預覽網址：https://paul25042505.github.io/Emergency-Volunteer-System/preview/$SLUG/"
