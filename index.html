@@ -5571,9 +5571,9 @@ function _showDashStatModal(title, bodyHtml) {
   if (existing) existing.remove();
   const m = document.createElement('div');
   m.id = '_dashStatModal';
-  m.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.4);';
+  m.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);';
   m.innerHTML = `
-    <div style="background:white;border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="background:white;border-radius:18px;width:calc(100% - 40px);max-width:400px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
       <div style="padding:16px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
         <div style="font-size:0.95rem;font-weight:700;color:var(--text-dark);">${title}</div>
         <button onclick="document.getElementById('_dashStatModal').remove()" style="background:none;border:none;font-size:1.3rem;color:var(--text-light);cursor:pointer;padding:0 4px;line-height:1;">×</button>
