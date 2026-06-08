@@ -1304,7 +1304,7 @@ function _dlCSV(content, filename) {
 <!-- ══════ 子頁面返回列 ══════ -->
 <div id="subPageNav" style="display:none;width:100%;background:#F4F6F9;padding:calc(env(safe-area-inset-top,0px) + 6px) 8px 6px;">
   <div style="display:flex;align-items:center;justify-content:center;position:relative;min-height:36px;">
-    <button onclick="history.back()" style="position:absolute;left:0;background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:8px;color:var(--text-mid);display:flex;align-items:center;gap:4px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;" onmouseenter="this.style.background='#f4f4f4'" onmouseleave="this.style.background='none'">
+    <button onclick="goBack()" style="position:absolute;left:0;background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:8px;color:var(--text-mid);display:flex;align-items:center;gap:4px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;" onmouseenter="this.style.background='#f4f4f4'" onmouseleave="this.style.background='none'">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <span id="subPageNavTitle" style="font-size:0.95rem;font-weight:700;color:var(--text);"></span>
@@ -5137,8 +5137,21 @@ function _syncTabBar(pageId) {
   }
 }
 
+function goBack() {
+  const prev = window._prevPageId;
+  // 若有明確上一頁就回去，否則回到該頁所屬的 tab 預設頁
+  if (prev && prev !== window._currentPageId) {
+    navTo(prev);
+    return;
+  }
+  const tabDefault = { more: 'morePage', manage: 'membersPage', home: 'dashboardPage', duty: 'attendancePage', schedule: 'dutyPage' };
+  const tab = _tabForPage[window._currentPageId] || 'more';
+  navTo(tabDefault[tab] || 'morePage');
+}
+
 function navTo(pageId, fromHistory) {
   const _prevPageId = window._currentPageId || '';
+  window._prevPageId    = _prevPageId;          // 供 goBack() 使用
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const _newPage = document.getElementById(pageId);
