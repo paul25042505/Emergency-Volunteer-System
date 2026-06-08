@@ -3998,6 +3998,7 @@ var COL_DUTY = 'dutySchedule'; // 班表（提前定義供 loadDashboard 使用�
 var COL_GONGCHA_MISSIONS = 'gongchaMissions';
 var COL_MEETING_EVENTS = 'meetingEvents';
 var COL_MEETING_TYPES  = 'meetingTypes';
+var COL_MEETING_LOCS   = 'meetingLocations';
 var COL_CASETYPES = 'caseTypes';
 
 // Firebase 初始化（SDK 用 defer 載入，window.onload 後才 init）
@@ -14830,7 +14831,14 @@ function showMeetingForm(doc) {
         return '<div style="display:flex;gap:8px;">'+mkSel('_mfTime',doc.time||'')+mkSel('_mfEndTime',doc.endTime||'')+'</div>'
           +'<div style="display:flex;gap:8px;margin-top:3px;"><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">開始</span><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">結束</span></div>';
       })())
-    + _mfField('地點', '<input id="_mfLocation" placeholder="例：分隊會議室" value="'+(doc.location||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
+    + '<div><div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">地點</div>'
+    +   '<div id="_mfLocTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>'
+    +   '<div style="display:flex;gap:6px;">'
+    +     '<input id="_mfLocInput" placeholder="輸入新地點…" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:0.85rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">'
+    +     '<button id="_mfLocAddBtn" type="button" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:\'Noto Sans TC\',sans-serif;">新增</button>'
+    +   '</div>'
+    +   '<input type="hidden" id="_mfLocation" value="'+(doc.location||'')+'">'
+    + '</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8f9fa;border-radius:10px;padding:12px 14px;">'
     +   '<div>'
     +     '<div style="font-size:0.85rem;font-weight:600;color:var(--text);">提供便當</div>'
@@ -14932,6 +14940,72 @@ function showMeetingForm(doc) {
       if (!allTypes.find(t=>t.name===td.name)) { allTypes.push({name:td.name, custom:true}); changed = true; }
     });
     if (changed) _renderTypeTags(allTypes);
+  }).catch(()=>{});
+
+  // ── 地點 tag UI ──
+  const _mfLocHidden = overlay.querySelector('#_mfLocation');
+  const _mfLocTags   = overlay.querySelector('#_mfLocTags');
+  const _mfLocInput  = overlay.querySelector('#_mfLocInput');
+  const _mfLocAddBtn = overlay.querySelector('#_mfLocAddBtn');
+  const LOC_DEFAULTS = ['分隊會議室'];
+
+  function _renderLocTags(locs) {
+    _mfLocTags.innerHTML = '';
+    locs.forEach(({name, custom}) => {
+      const sel = name === _mfLocHidden.value;
+      const tag = document.createElement('div');
+      tag.style.cssText = 'display:flex;align-items:center;border-radius:20px;overflow:hidden;cursor:pointer;border:1.5px solid '+(sel?'var(--red)':'var(--border)')+';background:'+(sel?'#fff0f0':'white')+';transition:all 0.15s;';
+      const label = document.createElement('span');
+      label.textContent = name;
+      label.style.cssText = 'padding:5px 10px;font-size:0.82rem;font-weight:'+(sel?'700':'400')+';color:'+(sel?'var(--red)':'var(--text-mid)')+';';
+      label.onclick = () => { _mfLocHidden.value = sel ? '' : name; _renderLocTags(locs); };
+      tag.appendChild(label);
+      if (custom) {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        del.style.cssText = 'background:none;border:none;border-left:1px solid '+(sel?'#f5c6c6':'var(--border)')+';padding:5px 7px;cursor:pointer;color:'+(sel?'var(--red)':'#bbb')+';display:flex;align-items:center;';
+        del.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm('刪除地點「'+name+'」？')) return;
+          try {
+            const locDocs = await fbList(COL_MEETING_LOCS);
+            const ld = locDocs.find(d=>d.name===name);
+            if (ld) await fbDelete(COL_MEETING_LOCS, ld.id);
+            if (_mfLocHidden.value === name) _mfLocHidden.value = '';
+            const idx = locs.findIndex(t=>t.name===name);
+            if (idx > -1) locs.splice(idx, 1);
+            _renderLocTags(locs);
+          } catch(e2) { alert('刪除失敗'); }
+        };
+        tag.appendChild(del);
+      }
+      _mfLocTags.appendChild(tag);
+    });
+  }
+
+  const _addLoc = async () => {
+    const name = _mfLocInput.value.trim();
+    if (!name) return;
+    if (!allLocs.find(l=>l.name===name)) {
+      try { await fbAdd(COL_MEETING_LOCS, {name}); } catch(e2) {}
+      allLocs.push({name, custom:true});
+    }
+    _mfLocHidden.value = name;
+    _mfLocInput.value = '';
+    _renderLocTags(allLocs);
+  };
+  _mfLocAddBtn.onclick = _addLoc;
+  _mfLocInput.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); _addLoc(); }});
+
+  let allLocs = LOC_DEFAULTS.map(n=>({name:n, custom:false}));
+  _renderLocTags(allLocs);
+  fbList(COL_MEETING_LOCS).then(locDocs => {
+    let changed = false;
+    locDocs.forEach(ld => {
+      if (!allLocs.find(l=>l.name===ld.name)) { allLocs.push({name:ld.name, custom:true}); changed = true; }
+    });
+    if (changed) _renderLocTags(allLocs);
   }).catch(()=>{});
 }
 
