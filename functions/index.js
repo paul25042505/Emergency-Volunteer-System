@@ -66,7 +66,7 @@ exports.onNewFeedback = onDocumentCreated(
 exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
-  const { title, body, requestedBy } = req.body;
+  const { title, body, requestedBy, skipAnnouncement } = req.body;
   if (!title || !body) { res.status(400).json({ error: 'title and body are required' }); return; }
 
   try {
@@ -95,19 +95,19 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
       fcmResult,
     });
 
-    await db.collection('announcements').add({
-      title, body,
-      text: `${title}\n${body}`,
-      type: 'broadcast',
-      audience: 'all',
-      active: true,
-      pinned: false,
-      urgent: false,
-      startDate: now.toISOString().slice(0, 10),
-      endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
-      createdAt: now,
-      createdBy: requestedBy || '管理員',
-    });
+    if (!skipAnnouncement) {
+      await db.collection('announcements').add({
+        title, body,
+        text: `${title}\n${body}`,
+        type: 'broadcast',
+        audience: 'all',
+        active: true, pinned: false, urgent: false,
+        startDate: now.toISOString().slice(0, 10),
+        endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
+        createdAt: now,
+        createdBy: requestedBy || '管理員',
+      });
+    }
 
     res.json({ status: 'sent', count: uniqueTokens.length });
   } catch (err) {

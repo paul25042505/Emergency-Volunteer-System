@@ -10972,6 +10972,13 @@ async function saveAnnounceForm() {
       await fbSet(COL_ANNOUNCE, id, { ...base, updatedAt: new Date().toLocaleString('sv').replace('T',' ') });
     } else {
       await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date() });
+      // 新公告發布時送推播（skipAnnouncement=true 因為已手動寫入 announcements）
+      const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+      fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body: body || title, requestedBy: usr.name || '管理員', skipAnnouncement: true }),
+      }).catch(() => {});
     }
     hideAnnounceForm();
     await loadAdminAnnouncements();
