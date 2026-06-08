@@ -10881,7 +10881,7 @@ async function initSystemInfoPage() {
           </div>
           <div style="flex:1;padding-top:2px;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <span style="font-size:1.4rem;font-weight:800;color:#111827;letter-spacing:-0.02em;">v${ver}</span>
+              <span style="font-size:1.4rem;font-weight:800;color:#111827;letter-spacing:-0.02em;">${ver}</span>
               <span style="font-size:0.68rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:3px 10px;letter-spacing:0.04em;">最新版本</span>
             </div>
             <div style="font-size:0.82rem;color:#6B7280;margin-top:3px;">${date}　<span style="color:#374151;font-weight:500;">${title}</span></div>
@@ -10889,7 +10889,7 @@ async function initSystemInfoPage() {
         </div>
         <div>${_renderItems(latest.items, 'var(--red)')}</div>
       `;
-      if (footEl) footEl.textContent = `v${ver}`;
+      if (footEl) footEl.textContent = `${ver}`;
     } else if (verEl) {
       verEl.innerHTML = '<div style="font-size:0.82rem;color:var(--text-light);padding:8px 0;">尚無版本資料</div>';
     }
@@ -10917,7 +10917,7 @@ async function initSystemInfoPage() {
               <div style="padding:12px 14px;${isLatest?'border-bottom:1px solid #FEE2E2;':'border-bottom:1px solid #F3F4F6;'}">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                   <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:0.95rem;font-weight:800;color:${isLatest?'var(--red)':'#374151'};letter-spacing:-0.01em;">v${ver}</span>
+                    <span style="font-size:0.95rem;font-weight:800;color:${isLatest?'var(--red)':'#374151'};letter-spacing:-0.01em;">${ver}</span>
                     ${isLatest ? '<span style="font-size:0.65rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:2px 8px;">最新</span>' : ''}
                   </div>
                   <span style="font-size:0.75rem;color:#9CA3AF;white-space:nowrap;">${date}</span>
