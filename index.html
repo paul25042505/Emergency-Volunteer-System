@@ -11011,7 +11011,7 @@ async function _togglePushNotif() {
     return;
   }
   if (Notification.permission === 'granted') {
-    alert('如需關閉推播，請至瀏覽器設定 → 通知，移除本站的通知權限。');
+    _showTurnOffGuide();
     return;
   }
   // iOS：未安裝 PWA 時先引導安裝
@@ -11025,6 +11025,48 @@ async function _togglePushNotif() {
     await _initFCM();
     _startNotifListeners();
   }
+}
+
+function _showTurnOffGuide() {
+  if (document.getElementById('pushOffModal')) return;
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const modal = document.createElement('div');
+  modal.id = 'pushOffModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:"Noto Sans TC",sans-serif;';
+
+  const steps = isIOS ? [
+    { icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`, text: '開啟 iPhone <b>設定</b>' },
+    { icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`, text: '選擇 <b>通知</b>' },
+    { icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`, text: '找到本系統 App，關閉<b>允許通知</b>' },
+  ] : [
+    { icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`, text: '點瀏覽器右上角 <b>⋮ 選單</b>' },
+    { icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`, text: '選擇<b>網站設定</b>或<b>權限</b>' },
+    { icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`, text: '將<b>通知</b>權限設為封鎖或移除' },
+  ];
+
+  const stepsHtml = steps.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:14px;background:#F9FAFB;border-radius:14px;padding:14px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="color:#6B7280;font-size:0.85rem;font-weight:800;">${i+1}</span>
+      </div>
+      <div style="flex:1;font-size:0.86rem;color:#374151;line-height:1.5;">${s.text}</div>
+      <div style="flex-shrink:0;opacity:0.5;">${s.icon}</div>
+    </div>
+  `).join('');
+
+  modal.innerHTML = `
+    <div style="background:white;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 36px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:1.05rem;font-weight:800;color:#1a1a1a;">關閉推播通知</div>
+        <button onclick="document.getElementById('pushOffModal').remove()" style="background:none;border:none;font-size:1.4rem;color:#9CA3AF;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+      <div style="font-size:0.78rem;color:#6B7280;margin-bottom:20px;">瀏覽器不允許用程式關閉通知，請依以下步驟手動操作</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">${stepsHtml}</div>
+      <button onclick="document.getElementById('pushOffModal').remove()" style="width:100%;margin-top:20px;background:#1a1a1a;color:white;border:none;border-radius:12px;padding:14px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">了解</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
 function _showIOSInstallGuide() {
