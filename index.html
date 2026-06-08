@@ -14674,7 +14674,7 @@ async function renderDutyMeeting() {
             +   '<div style="display:flex;gap:10px;flex-wrap:wrap;">'
             +     '<span style="display:flex;align-items:center;gap:4px;font-size:0.78rem;"><span style="width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block;"></span>出席 '+attend+' 人</span>'
             +     '<span style="display:flex;align-items:center;gap:4px;font-size:0.78rem;"><span style="width:8px;height:8px;border-radius:50%;background:#e67e22;display:inline-block;"></span>請假 '+leave+' 人</span>'
-            +     (meat||veg ? '<span style="font-size:0.78rem;color:var(--text-light);">葷 '+meat+' / 素 '+veg+'</span>' : '')
+            +     (doc.hasBento ? '<span style="font-size:0.78rem;color:var(--text-light);">🍱 葷 '+meat+' / 素 '+veg+'</span>' : '')
             +   '</div>'
             + '</div>';
 
@@ -14733,12 +14733,14 @@ async function meetingRsvp(id) {
     + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrAttend" value="出席" '+(existing.attend==='出席'?'checked':'')+' style="margin-right:4px;">出席</label>'
     + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrAttend" value="請假" '+(existing.attend==='請假'?'checked':'')+' style="margin-right:4px;">請假</label>'
     + '</div></div>'
-    + '<div style="margin-bottom:16px;">'
-    + '<div style="font-size:0.85rem;font-weight:600;margin-bottom:6px;">餐食選擇</div>'
-    + '<div style="display:flex;gap:8px;">'
-    + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrFood" value="葷食" '+(existing.food==='葷食'?'checked':'')+' style="margin-right:4px;">葷食</label>'
-    + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrFood" value="素食" '+(existing.food==='素食'?'checked':'')+' style="margin-right:4px;">素食</label>'
-    + '</div></div>'
+    + (doc.hasBento
+        ? '<div style="margin-bottom:16px;">'
+          + '<div style="font-size:0.85rem;font-weight:600;margin-bottom:6px;">餐食選擇 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（本次有提供便當）</span></div>'
+          + '<div style="display:flex;gap:8px;">'
+          + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrFood" value="葷食" '+(existing.food==='葷食'?'checked':'')+' style="margin-right:4px;">葷食</label>'
+          + '<label style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;"><input type="radio" name="_mrFood" value="素食" '+(existing.food==='素食'?'checked':'')+' style="margin-right:4px;">素食</label>'
+          + '</div></div>'
+        : '')
     + '<div style="display:flex;gap:8px;">'
     + '<button id="_mrSaveBtn" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">確認送出</button>'
     + '<button id="_mrCancelBtn" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:8px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">取消</button>'
@@ -14795,7 +14797,7 @@ function showMeetingForm(doc) {
     + _mfField('類型 <span style="color:var(--text-light);font-weight:400;font-size:0.72rem;">（可輸入新類型）</span>',
         (function(){
           const seStyle='width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;background:white;';
-          const defaults=['幹部會議','定期訓練','教育訓練','協調會報','臨時會議'];
+          const defaults=['幹部會議','定期訓練','教育訓練','協調會報','餐敘活動','臨時會議'];
           let o='<select id="_mfType" style="'+seStyle+'"><option value="">— 選擇類型 —</option>';
           defaults.forEach(t=>{ o+='<option value="'+t+'"'+(doc.type===t?' selected':'')+'>'+t+'</option>'; });
           o+='<option value="__custom__" style="color:var(--text-light);">✏️ 自行輸入…</option></select>';
@@ -14817,6 +14819,18 @@ function showMeetingForm(doc) {
           +'<div style="display:flex;gap:8px;margin-top:3px;"><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">開始</span><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">結束</span></div>';
       })())
     + _mfField('地點', '<input id="_mfLocation" placeholder="例：分隊會議室" value="'+(doc.location||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
+    + '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8f9fa;border-radius:10px;padding:12px 14px;">'
+    +   '<div>'
+    +     '<div style="font-size:0.85rem;font-weight:600;color:var(--text);">提供便當</div>'
+    +     '<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">開啟後，出席回覆可填選葷素</div>'
+    +   '</div>'
+    +   '<label style="position:relative;display:inline-block;width:44px;height:26px;flex-shrink:0;">'
+    +     '<input type="checkbox" id="_mfHasBento" '+(doc.hasBento?'checked':'')+' style="opacity:0;width:0;height:0;">'
+    +     '<span id="_mfBentoThumb" style="position:absolute;inset:0;border-radius:13px;background:'+(doc.hasBento?'var(--red)':'#ccc')+';transition:background 0.2s;cursor:pointer;">'
+    +       '<span style="position:absolute;top:3px;left:'+(doc.hasBento?'21px':'3px')+';width:20px;height:20px;border-radius:50%;background:white;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>'
+    +     '</span>'
+    +   '</label>'
+    + '</div>'
     + _mfField('說明 <span style="color:var(--text-light);font-weight:400;">（選填）</span>', '<textarea id="_mfDesc" placeholder="補充說明、注意事項…" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;resize:vertical;min-height:60px;box-sizing:border-box;">'+(doc.description||'')+'</textarea>')
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:16px;">'
@@ -14828,10 +14842,20 @@ function showMeetingForm(doc) {
   document.body.appendChild(overlay);
   overlay.querySelector('#_mfCancelBtn').onclick = ()=>overlay.remove();
   overlay.querySelector('#_mfSaveBtn').onclick = ()=>saveMeetingForm(isEdit?doc.id:'', overlay);
+  // 便當 toggle
+  const bentoCb = overlay.querySelector('#_mfHasBento');
+  const bentoThumb = overlay.querySelector('#_mfBentoThumb');
+  if (bentoCb && bentoThumb) {
+    const syncThumb = () => {
+      bentoThumb.style.background = bentoCb.checked ? 'var(--red)' : '#ccc';
+      bentoThumb.querySelector('span').style.left = bentoCb.checked ? '21px' : '3px';
+    };
+    bentoThumb.addEventListener('click', () => { bentoCb.checked = !bentoCb.checked; syncThumb(); });
+  }
   // 類型 select：若有現有值不在預設清單，顯示自訂輸入框
   const typeSel = overlay.querySelector('#_mfType');
   const typeCustom = overlay.querySelector('#_mfTypeCustom');
-  const defaults = ['幹部會議','定期訓練','教育訓練','協調會報','臨時會議'];
+  const defaults = ['幹部會議','定期訓練','教育訓練','協調會報','餐敘活動','臨時會議'];
   if (doc.type && !defaults.includes(doc.type)) {
     // 現有值是自訂類型，動態加入選項並選中
     const opt = document.createElement('option');
@@ -14869,8 +14893,9 @@ async function saveMeetingForm(editId, overlay) {
   const endTime = document.getElementById('_mfEndTime').value;
   const location = document.getElementById('_mfLocation').value.trim();
   const description = document.getElementById('_mfDesc').value.trim();
+  const hasBento = !!(document.getElementById('_mfHasBento') || {checked:false}).checked;
   if (!title||!date) return alert('請填寫標題與日期');
-  const data = {title,type,date,time,endTime,location,description};
+  const data = {title,type,date,time,endTime,location,description,hasBento};
   try {
     if (editId) { await fbUpdate(COL_MEETING_EVENTS,editId,data); }
     else { data.rsvp=[]; data.createdAt=new Date().toISOString(); await fbAdd(COL_MEETING_EVENTS,data); }
