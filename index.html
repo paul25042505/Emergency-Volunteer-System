@@ -4312,7 +4312,7 @@ async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collecti
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
 const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
-const _C_SKIP = new Set(['loginLog','feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
+const _C_SKIP = new Set(['loginLog','loginLogs','feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
 async function fbList(col, orderByField, orderDir) {
   // 第一層：localStorage 新鮮快取（零等待，不需網路）
   if (!_C_SKIP.has(col) && _C.fresh(col)) return _C.peek(col);
