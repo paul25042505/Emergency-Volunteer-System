@@ -10990,7 +10990,10 @@ function _updatePushToggleUI() {
   toggle.style.background = on ? '#2563EB' : '#E5E7EB';
   if (thumb) thumb.style.left = on ? '20px' : '2px';
   if (status) {
-    if (perm === 'unsupported') status.textContent = '此裝置不支援推播';
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (perm === 'unsupported' && isIOS && !isStandalone) status.textContent = '需先安裝至主畫面・點此查看步驟';
+    else if (perm === 'unsupported') status.textContent = '此裝置不支援推播';
     else if (perm === 'granted') status.textContent = '已開啟・有新申請或回饋時通知您';
     else if (perm === 'denied') status.textContent = '已封鎖・請至瀏覽器設定開啟';
     else status.textContent = '點擊開啟推播通知';
@@ -10998,7 +11001,11 @@ function _updatePushToggleUI() {
 }
 
 async function _togglePushNotif() {
-  if (!('Notification' in window)) return;
+  if (!('Notification' in window)) {
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    if (isIOS) { _showIOSInstallGuide(); return; }
+    return;
+  }
   if (Notification.permission === 'denied') {
     alert('推播通知已被封鎖，請至瀏覽器設定 → 通知，手動開啟本站的通知權限。');
     return;
@@ -11007,12 +11014,119 @@ async function _togglePushNotif() {
     alert('如需關閉推播，請至瀏覽器設定 → 通知，移除本站的通知權限。');
     return;
   }
+  // iOS：未安裝 PWA 時先引導安裝
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (isIOS && !isStandalone) { _showIOSInstallGuide(); return; }
+
   const perm = await Notification.requestPermission();
   _updatePushToggleUI();
   if (perm === 'granted') {
     await _initFCM();
     _startNotifListeners();
   }
+}
+
+function _showIOSInstallGuide() {
+  if (document.getElementById('iosInstallModal')) return;
+  const modal = document.createElement('div');
+  modal.id = 'iosInstallModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;font-family:"Noto Sans TC",sans-serif;';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 36px;max-height:92vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:1.05rem;font-weight:800;color:#1a1a1a;">安裝後才能開啟推播</div>
+        <button onclick="document.getElementById('iosInstallModal').remove()" style="background:none;border:none;font-size:1.4rem;color:#9CA3AF;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+      <div style="font-size:0.78rem;color:#6B7280;margin-bottom:20px;">iOS 需先將本系統加入主畫面，才能接收推播通知</div>
+
+      <!-- 步驟卡片 -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+
+        <!-- Step 1 -->
+        <div style="display:flex;align-items:center;gap:14px;background:#F8FAFF;border-radius:14px;padding:14px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:#2563EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:white;font-size:0.85rem;font-weight:800;">1</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:0.86rem;font-weight:700;color:#1a1a1a;margin-bottom:3px;">點擊下方分享按鈕</div>
+            <div style="font-size:0.75rem;color:#6B7280;">Safari 底部工具列中間的按鈕</div>
+          </div>
+          <div style="flex-shrink:0;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="display:flex;align-items:center;gap:14px;background:#F8FAFF;border-radius:14px;padding:14px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:#2563EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:white;font-size:0.85rem;font-weight:800;">2</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:0.86rem;font-weight:700;color:#1a1a1a;margin-bottom:3px;">選擇「加入主畫面」</div>
+            <div style="font-size:0.75rem;color:#6B7280;">在分享選單中向下捲動找到</div>
+          </div>
+          <div style="flex-shrink:0;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <line x1="14" y1="17" x2="20" y2="17"/>
+              <line x1="17" y1="14" x2="17" y2="20"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="display:flex;align-items:center;gap:14px;background:#F8FAFF;border-radius:14px;padding:14px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:#2563EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:white;font-size:0.85rem;font-weight:800;">3</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:0.86rem;font-weight:700;color:#1a1a1a;margin-bottom:3px;">點擊右上角「新增」</div>
+            <div style="font-size:0.75rem;color:#6B7280;">確認後桌面會出現 App 圖示</div>
+          </div>
+          <div style="flex-shrink:0;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="display:flex;align-items:center;gap:14px;background:#F0FDF4;border-radius:14px;padding:14px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:#16A34A;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:white;font-size:0.85rem;font-weight:800;">4</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:0.86rem;font-weight:700;color:#1a1a1a;margin-bottom:3px;">從主畫面開啟，再開啟通知</div>
+            <div style="font-size:0.75rem;color:#6B7280;">回到更多 → 推播通知，點開啟</div>
+          </div>
+          <div style="flex-shrink:0;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:18px;background:#FFFBEB;border-radius:10px;padding:10px 12px;font-size:0.75rem;color:#92400E;line-height:1.6;">
+        ⚠️ iOS 16.4 以上版本支援。安裝後從主畫面開啟，才能正常接收推播通知。
+      </div>
+
+      <button onclick="document.getElementById('iosInstallModal').remove()" style="width:100%;margin-top:16px;background:#1a1a1a;color:white;border:none;border-radius:12px;padding:14px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+        了解
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
 // 取得 FCM token 並儲存到 Firestore
