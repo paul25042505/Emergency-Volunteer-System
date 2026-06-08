@@ -14936,7 +14936,7 @@ function showMeetingForm(doc) {
             const idx = allTypes.findIndex(t=>t.name===name);
             if (idx > -1) allTypes.splice(idx, 1);
             _renderTypeTags(allTypes);
-          } catch(e2) { alert('刪除失敗'); }
+          } catch(e2) { alert('刪除失敗：' + (e2.message||e2)); }
         };
         tag.appendChild(del);
       }
@@ -15004,7 +15004,7 @@ function showMeetingForm(doc) {
             const idx = locs.findIndex(t=>t.name===name);
             if (idx > -1) locs.splice(idx, 1);
             _renderLocTags(locs);
-          } catch(e2) { alert('刪除失敗'); }
+          } catch(e2) { alert('刪除失敗：' + (e2.message||e2)); }
         };
         tag.appendChild(del);
       }
