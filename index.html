@@ -3576,11 +3576,12 @@ function _dlCSV(content, filename) {
         <div style="text-align:center;font-size:0.68rem;color:#3498db;padding:4px 0;">六</div>
       </div>
       <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
-      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;font-size:0.7rem;color:var(--text-light);">
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#7f8c8d;"></div>額滿</div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#e67e22;"></div>部分已排</div>
-        <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:#27ae60;"></div>未排班</div>
-        <div style="display:flex;align-items:center;gap:4px;">🔴 假日</div>
+      <div id="dutyCalLegend" style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;font-size:0.68rem;color:var(--text-light);padding:8px 4px;background:white;border-radius:10px;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#7f8c8d;display:inline-block;flex-shrink:0;"></span>額滿</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#e67e22;display:inline-block;flex-shrink:0;"></span>部分已排</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#27ae60;display:inline-block;flex-shrink:0;"></span>尚有空位</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#fef9f0;border:1px solid #f0c040;display:inline-block;flex-shrink:0;"></span>假日</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#8e44ad;display:inline-block;flex-shrink:0;"></span>定訓</span>
       </div>
     </div>
 
@@ -14231,6 +14232,7 @@ async function initDutyPage() {
   const now = new Date();
   _dutyYear  = now.getFullYear();
   _dutyMonth = now.getMonth();
+  renderDutyCalSkeleton(); // 顯示骨架屏，待資料載入後替換
   await loadDutyData();
   onDutyTimeChange();
   setTimeout(() => scrollToDutyDate(now.toLocaleDateString('sv')), 150);
@@ -14733,6 +14735,23 @@ async function saveMeetingForm(editId, overlay) {
     if (overlay) overlay.remove();
     renderDutyMeeting();
   } catch(e) { alert('儲存失敗：'+e.message); }
+}
+
+function renderDutyCalSkeleton() {
+  const grid = document.getElementById('dutyCalGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+  const skelStyle = 'min-height:96px;border-radius:8px;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:pulse 1.4s ease-in-out infinite;';
+  for (let i = 0; i < firstDay; i++)
+    grid.appendChild(Object.assign(document.createElement('div'), {style:'min-height:60px;'}));
+  for (let d = 0; d < daysInMonth; d++) {
+    const cell = document.createElement('div');
+    cell.style.cssText = skelStyle;
+    grid.appendChild(cell);
+  }
 }
 
 function renderDutyCalendar() {
