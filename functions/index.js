@@ -70,7 +70,25 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
   if (!title || !body) { res.status(400).json({ error: 'title and body are required' }); return; }
 
   try {
-    const db = getFirestore();
+    const db  = getFirestore();
+    const now = new Date();
+
+    // 1. 先存公告記錄（保證有記錄才推播）
+    if (!skipAnnouncement) {
+      await db.collection('announcements').add({
+        title, body,
+        text: `${title}\n${body}`,
+        type: 'broadcast',
+        audience: pushTarget === 'admin' ? 'admin' : 'all',
+        active: true, pinned: false, urgent: false,
+        startDate: now.toISOString().slice(0, 10),
+        endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
+        createdAt: now,
+        createdBy: requestedBy || '管理員',
+      });
+    }
+
+    // 2. 取得推播目標 token
     let uniqueTokens;
     if (pushTarget === 'admin') {
       uniqueTokens = await _getAdminTokens(null);
@@ -85,9 +103,9 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
       return;
     }
 
+    // 3. 發推播
     const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
 
-    const now = new Date();
     await db.collection('broadcastRequests').add({
       title, body, status: 'sent',
       createdBy: requestedBy || '管理員',
@@ -95,20 +113,6 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
       recipientCount: uniqueTokens.length,
       fcmResult,
     });
-
-    if (!skipAnnouncement) {
-      await db.collection('announcements').add({
-        title, body,
-        text: `${title}\n${body}`,
-        type: 'broadcast',
-        audience: 'all',
-        active: true, pinned: false, urgent: false,
-        startDate: now.toISOString().slice(0, 10),
-        endDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
-        createdAt: now,
-        createdBy: requestedBy || '管理員',
-      });
-    }
 
     res.json({ status: 'sent', count: uniqueTokens.length });
   } catch (err) {
