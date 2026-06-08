@@ -3386,6 +3386,62 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- ══════ PAGE：個人基本資料 ══════ -->
+<!-- ══════ PAGE：更多選單 ══════ -->
+<div class="page" id="morePage">
+  <div class="form-wrap" style="padding-top:16px;">
+
+    <!-- 使用者簡介 -->
+    <div id="moreUserCard" style="display:flex;align-items:center;gap:14px;background:white;border-radius:16px;padding:18px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:20px;">
+      <div id="moreAvatar" style="width:52px;height:52px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;flex-shrink:0;">?</div>
+      <div style="flex:1;min-width:0;">
+        <div id="moreName" style="font-size:1.05rem;font-weight:800;color:var(--text);">—</div>
+        <div id="moreTitle" style="font-size:0.78rem;color:var(--text-mid);margin-top:2px;"></div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+
+    <!-- 選單列表 -->
+    <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
+
+      <button onclick="navTo('profilePage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b6fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">個人資料</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">查看及編輯個人基本資料</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <button onclick="navTo('myCorrectionsPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#fff3e0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">我的申請紀錄</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">查看出勤補登、請假等申請</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <button onclick="navTo('feedbackPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;cursor:pointer;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#f0faf4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">意見回饋</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">提供建議或回報問題</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
 <div class="page" id="profilePage">
   <div class="form-wrap">
 
@@ -5015,6 +5071,7 @@ async function refreshCurrentPage() {
     case 'dutyPage':        await loadDutyData(); break;
     case 'meetingPage':     await loadMeetingPage(); break;
     case 'changelogPage':      await loadChangelog(); break;
+    case 'morePage':           _initMorePage(); break;
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
     case 'gongchaPage':        await loadGongchaStats(); break;
@@ -5121,6 +5178,7 @@ const _tabForPage = {
   dutyPage:           'schedule',
   myCorrectionsPage:  'manage', reportPage:         'manage',
   statsPage:          'manage', gongchaPage:        'manage',
+  morePage:           'more',
   feedbackPage:       'more',   meetingPage:        'more',
   changelogPage:      'more',   adminPage:          'more',
   profilePage:        'more',   membersPage:        'more',   itemsPage: 'more',
@@ -5130,7 +5188,7 @@ const _tabPageMap = {
   duty:     'attendancePage',
   schedule: 'dutyPage',
   manage:   'myCorrectionsPage',
-  more:     'feedbackPage',
+  more:     'morePage',
 };
 
 function switchTab(tabId) {
@@ -5229,6 +5287,7 @@ function navTo(pageId, fromHistory) {
     myCorrectionsPage: ['我的申請記錄', 'My Requests'],
     gongchaPage:    ['公差英雄榜', 'Merit Leaderboard'],
     changelogPage:  ['版本修改紀錄', 'Version History'],
+    morePage:       ['更多', 'More'],
     feedbackPage:   ['意見回饋', 'Feedback'],
     adminPage:      ['管理員後台', 'Admin Panel'],
   };
@@ -10533,6 +10592,18 @@ function filterMemberList() {
 // ════════════════════════════════════════
 // 意見回饋（改版）
 // ════════════════════════════════════════
+function _initMorePage() {
+  const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const av = document.getElementById('moreAvatar');
+  const nm = document.getElementById('moreName');
+  const tl = document.getElementById('moreTitle');
+  const card = document.getElementById('moreUserCard');
+  if (av) av.textContent = (u.name||'?').slice(0,1);
+  if (nm) nm.textContent = u.name || '—';
+  if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+  if (card) card.onclick = () => navTo('profilePage');
+}
+
 async function initFeedbackPage() {
   await Promise.all([loadMembers(), loadUnits()]);
   const sel = document.getElementById('fbUnit');
