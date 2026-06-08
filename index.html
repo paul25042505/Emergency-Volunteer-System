@@ -11376,7 +11376,10 @@ async function _initFCM() {
     await _savePushSubscription(token);
     messaging.onMessage(payload => {
       const n = payload.notification || {};
-      _fireAdminNotif(n.title || '新通知', n.body || '');
+      const title = n.title || '新通知';
+      const body  = n.body  || '';
+      _showForegroundPush(title, body);
+      _updateBellBadge();
     });
   } catch(e) {
     await _fcmDebug('ERROR: ' + e.message);
@@ -15337,6 +15340,17 @@ async function gongchaBroadcast(id) {
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   } catch(e) { alert('載入失敗：' + e.message); }
+}
+
+function _showForegroundPush(title, body) {
+  const existing = document.getElementById('_fgPushBanner');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = '_fgPushBanner';
+  el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#003049;color:#fff;padding:14px 16px 12px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
+  el.innerHTML = `<span style="font-size:1.4rem;line-height:1">🔔</span><div style="flex:1"><div style="font-weight:700;font-size:0.95rem;margin-bottom:2px">${title}</div><div style="font-size:0.85rem;opacity:0.88">${body}</div></div><button onclick="document.getElementById('_fgPushBanner')?.remove()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:0 4px;line-height:1">×</button>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
 }
 
 function _showToast(msg, duration = 3000) {
