@@ -9992,7 +9992,7 @@ function _adminScrollTo_legacy(sectionId) {
 var _adminTabObserver = null;
 async function initAdminPage() {
   const u=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  if(!u.isAdmin && !u.isOfficer){alert('您沒有管理員權限');navTo('dashboardPage');return;}
+  if(!u.isAdmin && !u.isOfficer){ _confirmModal('您沒有管理員權限', ()=>navTo('dashboardPage'), '返回', '#333'); return; }
   const isAdminOnly = u.isAdmin || u.role === 'admin';
 
   // 管理員限定功能：選單 option 和 subnav 顯示控制
@@ -10022,9 +10022,17 @@ async function initAdminPage() {
     }
   }
 
-  await loadUnits();
+  await loadUnits().catch(()=>{});
   populateUnitSelects();
-  await Promise.all([loadAdminUnits(),loadAdminWhitelist(),loadAdminItems(),loadAdminAnnouncements(),loadAdminFeedback(),loadAdminChangelog(),loadAdminCaseTypes(),initScheduleSection(),loadAdminCorrections(),initTempPassSection(),initConfirmSection()]);
+
+  // 各模組獨立載入，任一失敗不影響其他
+  const _safeLoad = fn => { try { return Promise.resolve(fn()).catch(e => console.warn('adminLoad:', e)); } catch(e) { return Promise.resolve(); } };
+  await Promise.all([
+    _safeLoad(loadAdminUnits), _safeLoad(loadAdminWhitelist), _safeLoad(loadAdminItems),
+    _safeLoad(loadAdminAnnouncements), _safeLoad(loadAdminFeedback), _safeLoad(loadAdminChangelog),
+    _safeLoad(loadAdminCaseTypes), _safeLoad(initScheduleSection), _safeLoad(loadAdminCorrections),
+    _safeLoad(initTempPassSection), _safeLoad(initConfirmSection),
+  ]);
 
   // 顯示選擇器，預設顯示第一個可見 section
   const selector = document.getElementById('adminSecSelector');
