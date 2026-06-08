@@ -11053,20 +11053,38 @@ async function loadAdminAnnouncements() {
       statusBadge.textContent = isActive ? '✓ 進行中' : isExpired ? '已過期' : '未啟用';
 
       const typeBadges = document.createElement('div');
-      typeBadges.style.cssText = 'display:flex;gap:4px;';
+      typeBadges.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;';
+      // 來源標籤
+      const srcMap = { broadcast:'📢 廣播', correction:'📝 修正申請', feedback:'💬 意見回饋', system:'🔔 系統公告' };
+      const srcClr = { broadcast:'#c62828', correction:'#1565c0', feedback:'#6a1b9a', system:'#2e7d32' };
+      const srcBg  = { broadcast:'#ffebee', correction:'#e3f2fd', feedback:'#f3e5f5', system:'#e8f5e9' };
+      const srcType = d.type || 'system';
+      const srcB = document.createElement('span');
+      srcB.style.cssText = `font-size:0.68rem;background:${srcBg[srcType]||'#f5f5f5'};color:${srcClr[srcType]||'#555'};border-radius:10px;padding:2px 8px;font-weight:600;`;
+      srcB.textContent = srcMap[srcType] || '🔔 系統公告';
+      typeBadges.appendChild(srcB);
       if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='🚨 緊急'; typeBadges.appendChild(b); }
       if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='📌 置頂'; typeBadges.appendChild(b); }
 
       const dateSpan = document.createElement('span');
-      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;';
+      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;white-space:nowrap;';
       dateSpan.textContent = `${d.startDate||''} ～ ${d.endDate||''}`;
 
       head.appendChild(statusBadge); head.appendChild(typeBadges); head.appendChild(dateSpan);
 
-      // 內容
+      // 內容：標題粗體 + 內文
       const body = document.createElement('div');
-      body.style.cssText = 'padding:10px 14px;font-size:0.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap;border-bottom:1px solid var(--border);';
-      body.textContent = d.text||'';
+      body.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);';
+      const titleEl = document.createElement('div');
+      titleEl.style.cssText = 'font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:2px;';
+      titleEl.textContent = d.title || (d.text||'').split('\n')[0] || '';
+      body.appendChild(titleEl);
+      if (d.body || (d.text||'').includes('\n')) {
+        const bodyEl = document.createElement('div');
+        bodyEl.style.cssText = 'font-size:0.82rem;color:var(--text-mid);line-height:1.6;white-space:pre-wrap;';
+        bodyEl.textContent = d.body || (d.text||'').split('\n').slice(1).join('\n').trim();
+        body.appendChild(bodyEl);
+      }
 
       // 操作列
       const foot = document.createElement('div');
