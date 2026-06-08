@@ -14811,7 +14811,7 @@ function showMeetingForm(doc) {
     + '<div><div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">類型</div>'
     +   '<div id="_mfTypeTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>'
     +   '<div style="display:flex;gap:6px;">'
-    +     '<input id="_mfTypeInput" placeholder="輸入新類型…" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:0.85rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">'
+    +     '<input id="_mfTypeInput" placeholder="輸入新類型…" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:0.85rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">'
     +     '<button id="_mfTypeAddBtn" type="button" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 14px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:\'Noto Sans TC\',sans-serif;">新增</button>'
     +   '</div>'
     +   '<input type="hidden" id="_mfType" value="'+(doc.type||'')+'">'
@@ -14836,12 +14836,10 @@ function showMeetingForm(doc) {
     +     '<div style="font-size:0.85rem;font-weight:600;color:var(--text);">提供便當</div>'
     +     '<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">開啟後，出席回覆可填選葷素</div>'
     +   '</div>'
-    +   '<label style="position:relative;display:inline-block;width:44px;height:26px;flex-shrink:0;">'
-    +     '<input type="checkbox" id="_mfHasBento" '+(doc.hasBento?'checked':'')+' style="opacity:0;width:0;height:0;">'
-    +     '<span id="_mfBentoThumb" style="position:absolute;inset:0;border-radius:13px;background:'+(doc.hasBento?'var(--red)':'#ccc')+';transition:background 0.2s;cursor:pointer;">'
-    +       '<span style="position:absolute;top:3px;left:'+(doc.hasBento?'21px':'3px')+';width:20px;height:20px;border-radius:50%;background:white;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>'
-    +     '</span>'
-    +   '</label>'
+    +   '<div id="_mfBentoThumb" style="position:relative;width:44px;height:26px;flex-shrink:0;border-radius:13px;background:'+(doc.hasBento?'var(--red)':'#ccc')+';transition:background 0.2s;cursor:pointer;" data-on="'+(doc.hasBento?'1':'0')+'">'
+    +     '<span style="position:absolute;top:3px;left:'+(doc.hasBento?'21px':'3px')+';width:20px;height:20px;border-radius:50%;background:white;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);display:block;"></span>'
+    +     '<input type="checkbox" id="_mfHasBento" '+(doc.hasBento?'checked':'')+' style="position:absolute;opacity:0;width:0;height:0;">'
+    +   '</div>'
     + '</div>'
     + _mfField('說明 <span style="color:var(--text-light);font-weight:400;">（選填）</span>', '<textarea id="_mfDesc" placeholder="補充說明、注意事項…" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;resize:vertical;min-height:60px;box-sizing:border-box;">'+(doc.description||'')+'</textarea>')
     + '</div>'
@@ -14855,14 +14853,18 @@ function showMeetingForm(doc) {
   overlay.querySelector('#_mfCancelBtn').onclick = ()=>overlay.remove();
   overlay.querySelector('#_mfSaveBtn').onclick = ()=>saveMeetingForm(isEdit?doc.id:'', overlay);
   // 便當 toggle
-  const bentoCb = overlay.querySelector('#_mfHasBento');
+  const bentoCb    = overlay.querySelector('#_mfHasBento');
   const bentoThumb = overlay.querySelector('#_mfBentoThumb');
   if (bentoCb && bentoThumb) {
     const syncThumb = () => {
-      bentoThumb.style.background = bentoCb.checked ? 'var(--red)' : '#ccc';
-      bentoThumb.querySelector('span').style.left = bentoCb.checked ? '21px' : '3px';
+      const on = bentoCb.checked;
+      bentoThumb.style.background = on ? 'var(--red)' : '#ccc';
+      bentoThumb.querySelector('span').style.left = on ? '21px' : '3px';
     };
-    bentoThumb.addEventListener('click', () => { bentoCb.checked = !bentoCb.checked; syncThumb(); });
+    bentoThumb.addEventListener('click', () => {
+      bentoCb.checked = !bentoCb.checked;
+      syncThumb();
+    });
   }
   // 類型 tag UI
   const _mfTypeHidden = overlay.querySelector('#_mfType');
