@@ -1397,66 +1397,6 @@ function _dlCSV(content, filename) {
       <span id="dashMyMonthAtt"></span><span id="dashMyMonthOut"></span><span id="dashMyMonthSvc"></span>
     </div>
 
-    <!-- 快速操作橫滾列（sticky，滾動時固定頂部）-->
-    <div class="dash-quick-sticky">
-    <div class="quick-scroll">
-      <div class="qa-item" id="quick-attendance" onclick="navTo('attendancePage')">
-        <div class="qa-icon" style="background:#FFEBEE;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </div>
-        <div class="qa-lbl">簽到退</div>
-      </div>
-      <div class="qa-item" id="quick-form" onclick="navTo('formPage')">
-        <div class="qa-icon" style="background:#E8F5E9;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M4 7h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-        </div>
-        <div class="qa-lbl">協勤登錄</div>
-      </div>
-      <div class="qa-item" onclick="navTo('queryPage')">
-        <div class="qa-icon" style="background:#E3F2FD;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
-        <div class="qa-lbl">紀錄查詢</div>
-      </div>
-      <div class="qa-item" onclick="navTo('attQueryPage')">
-        <div class="qa-icon" style="background:#E1F5FE;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0277BD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
-        </div>
-        <div class="qa-lbl">簽到退查詢</div>
-      </div>
-      <div class="qa-item" onclick="navTo('statsPage')">
-        <div class="qa-icon" style="background:#F3E5F5;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6A1B9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        </div>
-        <div class="qa-lbl">協勤統計</div>
-      </div>
-      <div class="qa-item" onclick="navTo('gongchaPage')">
-        <div class="qa-icon" style="background:#FFF8E1;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F57F17" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
-        </div>
-        <div class="qa-lbl">公差英雄榜</div>
-      </div>
-      <div class="qa-item" onclick="navTo('dutyPage')">
-        <div class="qa-icon" style="background:#E8EAF6;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#283593" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="qa-lbl">備勤排班</div>
-      </div>
-      <div class="qa-item" onclick="navTo('meetingPage')">
-        <div class="qa-icon" style="background:#FFF3E0;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </div>
-        <div class="qa-lbl">定訓公告</div>
-      </div>
-      <div class="qa-item" onclick="navTo('reportPage')">
-        <div class="qa-icon" style="background:#F5F5F5;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#616161" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
-        </div>
-        <div class="qa-lbl">報表匯出</div>
-      </div>
-    </div>
-    </div><!-- /.dash-quick-sticky -->
-
     <!-- 今日概況 -->
     <div style="margin-bottom:20px;">
       <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日概況</div><div class="sec-pill-line"></div></div>
@@ -1465,13 +1405,15 @@ function _dlCSV(content, filename) {
           <div class="stat-num" id="dashTodayAtt">—</div>
           <div class="stat-label">今日協勤筆數</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="showDashCheckinList()" style="cursor:pointer;position:relative;">
           <div class="stat-num" id="dashTodayMembers">—</div>
           <div class="stat-label">今日簽到人數</div>
+          <div style="position:absolute;bottom:6px;right:8px;font-size:0.6rem;color:var(--text-light);opacity:0.7;">點擊查看 ›</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="showDashOnlineList()" style="cursor:pointer;position:relative;">
           <div class="stat-num" style="color:var(--red);" id="dashTodaySignin">—</div>
           <div class="stat-label">目前在線人數</div>
+          <div style="position:absolute;bottom:6px;right:8px;font-size:0.6rem;color:var(--text-light);opacity:0.7;">點擊查看 ›</div>
         </div>
       </div>
     </div>
@@ -5576,6 +5518,7 @@ async function _bgSyncTitle(_su) {
 }
 
 function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
+  window._dashAttDocs = attDocs;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
   // 今日概況
@@ -5602,6 +5545,45 @@ function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
   set('dashMonthHours', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
   set('dashMyMonthAtt', myYearAtt.length);
   set('dashMyMonthSvc', myYearAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0));
+}
+
+function showDashCheckinList() {
+  const todayStr = new Date().toLocaleDateString('sv');
+  const docs = (window._dashAttDocs || []).filter(r => (r.date||'') === todayStr);
+  const names = [...new Set(docs.map(r => r.memberName||'').filter(Boolean))].sort();
+  _showDashStatModal('今日簽到人數', names.length ? names.map(n =>
+    `<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:0.9rem;color:var(--text-dark);">${n}</div>`
+  ).join('') : '<div style="padding:20px;text-align:center;color:var(--text-light);">尚無簽到紀錄</div>');
+}
+
+function showDashOnlineList() {
+  const todayStr = new Date().toLocaleDateString('sv');
+  const docs = (window._dashAttDocs || []).filter(r => r.checkinTime && !r.checkoutTime && r.date === todayStr);
+  const rows = [...new Map(docs.map(r => [r.memberName, r])).values()].sort((a,b)=>(a.memberName||'').localeCompare(b.memberName||''));
+  _showDashStatModal('目前在線人數（補簽）', rows.length ? rows.map(r =>
+    `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:0.9rem;color:var(--text-dark);">${r.memberName||'—'}</span>
+      <span style="font-size:0.78rem;color:var(--text-mid);">簽到 ${r.checkinTime||'—'}</span>
+    </div>`
+  ).join('') : '<div style="padding:20px;text-align:center;color:var(--text-light);">目前無在線人員</div>');
+}
+
+function _showDashStatModal(title, bodyHtml) {
+  const existing = document.getElementById('_dashStatModal');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = '_dashStatModal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.4);';
+  m.innerHTML = `
+    <div style="background:white;border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+        <div style="font-size:0.95rem;font-weight:700;color:var(--text-dark);">${title}</div>
+        <button onclick="document.getElementById('_dashStatModal').remove()" style="background:none;border:none;font-size:1.3rem;color:var(--text-light);cursor:pointer;padding:0 4px;line-height:1;">×</button>
+      </div>
+      <div style="overflow-y:auto;">${bodyHtml}</div>
+    </div>`;
+  m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+  document.body.appendChild(m);
 }
 
 function _applyDashDuty(dutyDocs, todayStr) {
