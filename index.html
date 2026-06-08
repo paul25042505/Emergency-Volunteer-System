@@ -897,10 +897,12 @@ tr:hover td { background: #fdfcfb; }
 #noticePanelCard {
   position: absolute; bottom: 0; left: 0; right: 0;
   background: #f2f2f7; border-radius: 24px 24px 0 0;
-  max-height: 88vh; display: flex; flex-direction: column;
+  height: 88vh; display: flex; flex-direction: column;
   box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
   animation: noticePanelUp 0.28s cubic-bezier(0.4,0,0.2,1);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  touch-action: none;
+  will-change: transform;
 }
 @keyframes noticePanelUp {
   from { transform: translateY(100%); }
@@ -10900,7 +10902,7 @@ function _buildNoticeCard(d) {
   const meta = { ..._NOTICE_META[t] };
   if (d.pinned) meta.tag = '📌 置頂';
   const dateStr = ts > 0
-    ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+    ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', hour12: false })
     : (d.startDate||'').replace(/-/g,'/');
   return `<div class="notice-card${unread?' unread':''}">
     <div class="notice-card-icon" style="background:${meta.bg};color:${meta.clr};">${_NOTICE_SVG[t]||_NOTICE_SVG.system}</div>
@@ -10969,6 +10971,7 @@ async function openNoticePanel() {
   document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'none');
   const panel = document.getElementById('noticePanel');
   panel.style.display = 'block';
+  _initNoticePanelSwipe();
   _noticeTab = 'msg';
   switchNoticeTab('msg');
   const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
@@ -10994,7 +10997,59 @@ async function openNoticePanel() {
 }
 
 function closeNoticePanel() {
-  document.getElementById('noticePanel').style.display = 'none';
+  const card = document.getElementById('noticePanelCard');
+  if (card) {
+    card.style.transition = 'transform 0.22s cubic-bezier(0.4,0,0.2,1)';
+    card.style.transform = 'translateY(100%)';
+    setTimeout(() => {
+      document.getElementById('noticePanel').style.display = 'none';
+      card.style.transition = '';
+      card.style.transform = '';
+    }, 220);
+  } else {
+    document.getElementById('noticePanel').style.display = 'none';
+  }
+}
+
+function _initNoticePanelSwipe() {
+  const card    = document.getElementById('noticePanelCard');
+  const handle  = document.getElementById('noticePanelHead');
+  const list    = document.getElementById('noticePanelList');
+  if (!card || !handle || handle._swipeInit) return;
+  handle._swipeInit = true;
+  let startY = 0, startT = 0, curY = 0, dragging = false;
+
+  function onStart(e) {
+    const touch = e.touches ? e.touches[0] : e;
+    startY = touch.clientY; startT = Date.now(); curY = 0; dragging = true;
+    card.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    curY = touch.clientY - startY;
+    if (curY < 0) { curY = 0; return; }
+    // allow swipe only if list is scrolled to top
+    if (list && list.scrollTop > 0 && curY < 10) { dragging = false; return; }
+    card.style.transform = `translateY(${curY}px)`;
+    if (e.cancelable) e.preventDefault();
+  }
+  function onEnd() {
+    if (!dragging) return; dragging = false;
+    const elapsed = Date.now() - startT;
+    const velocity = curY / elapsed; // px/ms
+    if (curY > 120 || velocity > 0.5) {
+      closeNoticePanel();
+    } else {
+      card.style.transition = 'transform 0.22s cubic-bezier(0.4,0,0.2,1)';
+      card.style.transform = 'translateY(0)';
+      setTimeout(() => { card.style.transition = ''; }, 220);
+    }
+  }
+
+  handle.addEventListener('touchstart', onStart, { passive: true });
+  handle.addEventListener('touchmove',  onMove,  { passive: false });
+  handle.addEventListener('touchend',   onEnd,   { passive: true });
 }
 
 // ── 首頁：載入並顯示目前有效的公告 ──
