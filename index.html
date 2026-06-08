@@ -11373,7 +11373,10 @@ async function _initFCM() {
     const reg = await navigator.serviceWorker.register('/Emergency-Volunteer-System/firebase-messaging-sw.js', { scope: '/Emergency-Volunteer-System/', updateViaCache: 'none' });
     await _fcmDebug('SW registered, waiting ready...');
     await navigator.serviceWorker.ready;
-    await _fcmDebug('SW ready, getting token...');
+    await _fcmDebug('SW ready, force-resubscribing...');
+    const existingSub = await reg.pushManager.getSubscription();
+    if (existingSub) await existingSub.unsubscribe();
+    await _fcmDebug('getting token...');
     const messaging = firebase.messaging();
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
     await _fcmDebug(token ? 'token OK: ' + token.substring(0,20) + '...' : 'token null');
