@@ -1210,7 +1210,13 @@ function _dlCSV(content, filename) {
     </div>
   </div>
   <div style="display:flex;gap:10px;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
-    <button onclick="navTo('statsPage')" id="manageSub-stats" class="duty-sub-card active">
+    <button onclick="navTo('membersPage')" id="manageSub-members" class="duty-sub-card active">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      成員列表
+    </button>
+    <button onclick="navTo('statsPage')" id="manageSub-stats" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       </div>
@@ -5124,13 +5130,13 @@ const _tabForPage = {
   morePage:           'more',
   feedbackPage:       'more',   meetingPage:        'more',
   changelogPage:      'more',   adminPage:          'more',
-  profilePage:        'more',   membersPage:        'more',   itemsPage: 'more',
+  profilePage:        'more',   membersPage:        'manage',  itemsPage: 'more',
 };
 const _tabPageMap = {
   home:     'dashboardPage',
   duty:     'attendancePage',
   schedule: 'dutyPage',
-  manage:   'statsPage',
+  manage:   'membersPage',
   more:     'morePage',
 };
 
@@ -5157,7 +5163,7 @@ function navTo(pageId, fromHistory) {
   (function() {
     const groups = [
       ['attendancePage','formPage','attQueryPage','queryPage'],
-      ['statsPage','gongchaPage','reportPage'],
+      ['membersPage','statsPage','gongchaPage','reportPage'],
     ];
     for (const g of groups) {
       const pi = g.indexOf(_prevPageId), ni = g.indexOf(pageId);
@@ -5175,7 +5181,7 @@ function navTo(pageId, fromHistory) {
   const isDuty   = pageId === 'dutyPage';
   const isMore   = pageId === 'morePage';
   const opsPages = ['attendancePage','formPage','attQueryPage','queryPage'];
-  const mngPages = ['reportPage','statsPage','gongchaPage'];
+  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage'];
   const isOps    = opsPages.includes(pageId);
   const isManage = mngPages.includes(pageId);
   document.body.classList.toggle('page-home',   isHome);
@@ -5195,7 +5201,7 @@ function navTo(pageId, fromHistory) {
   }
   if (isManage) {
     document.querySelectorAll('#manageCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const mngBtnMap = { statsPage:'manageSub-stats', gongchaPage:'manageSub-gongcha', reportPage:'manageSub-report' };
+    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', gongchaPage:'manageSub-gongcha', reportPage:'manageSub-report' };
     const mb = document.getElementById(mngBtnMap[pageId]);
     if (mb) mb.classList.add('active');
   }
