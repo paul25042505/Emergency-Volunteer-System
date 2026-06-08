@@ -1,4 +1,5 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onCall }            = require('firebase-functions/v2/https');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
@@ -11,10 +12,8 @@ exports.onNewCorrection = onDocumentCreated(
   async event => {
     const data = event.data?.data();
     if (!data) return;
-
     const tokens = await _getAdminTokens(data.unit);
     if (!tokens.length) return;
-
     await _sendMulticast(tokens, {
       title: '📝 新修正申請',
       body:  `${data.memberName || '成員'} 提交了資料修正申請`,
@@ -28,10 +27,8 @@ exports.onNewFeedback = onDocumentCreated(
   async event => {
     const data = event.data?.data();
     if (!data) return;
-
     const tokens = await _getAdminTokens(data.unit);
     if (!tokens.length) return;
-
     await _sendMulticast(tokens, {
       title: '💬 新意見回饋',
       body:  `${data.name || '成員'} 提交了意見回饋`,
@@ -39,35 +36,36 @@ exports.onNewFeedback = onDocumentCreated(
   }
 );
 
-// ── 推播：廣播公差缺人 → 通知所有訂閱者 ─────────────────────────────
-exports.onBroadcastRequest = onDocumentCreated(
-  'broadcastRequests/{docId}',
-  async event => {
-    const data = event.data?.data();
-    if (!data || data.status !== 'pending') return;
+// ── 推播：廣播（HTTP Callable）→ 客戶端直接呼叫 ───────────────────────
+exports.sendBroadcast = onCall({ region: 'asia-east1' }, async (request) => {
+  const { title, body, requestedBy } = request.data;
+  if (!title || !body) throw new Error('title and body are required');
 
-    const db = getFirestore();
-    const snap = await db.collection('pushSubscriptions').get();
-    const tokens = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (d.fcmToken) tokens.push(d.fcmToken);
-    });
+  const db = getFirestore();
+  const snap = await db.collection('pushSubscriptions').get();
+  const tokens = [];
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.fcmToken) tokens.push(d.fcmToken);
+  });
 
-    const uniqueTokens = [...new Set(tokens)];
-    if (!uniqueTokens.length) {
-      await event.data.ref.update({ status: 'no_tokens' });
-      return;
-    }
+  const uniqueTokens = [...new Set(tokens)];
+  if (!uniqueTokens.length) return { status: 'no_tokens', count: 0 };
 
-    await _sendMulticast(uniqueTokens, {
-      title: data.title,
-      body:  data.body,
-    });
+  await _sendMulticast(uniqueTokens, { title, body });
 
-    await event.data.ref.update({ status: 'sent', sentAt: new Date(), recipientCount: uniqueTokens.length });
-  }
-);
+  // 記錄到 broadcastRequests
+  await db.collection('broadcastRequests').add({
+    title, body,
+    status: 'sent',
+    createdBy: requestedBy || '管理員',
+    createdAt: new Date(),
+    sentAt: new Date(),
+    recipientCount: uniqueTokens.length,
+  });
+
+  return { status: 'sent', count: uniqueTokens.length };
+});
 
 // ── 工具函式 ──────────────────────────────────────────────────────────
 async function _getAdminTokens(memberUnit) {
@@ -77,17 +75,15 @@ async function _getAdminTokens(memberUnit) {
   snap.forEach(doc => {
     const d = doc.data();
     if (!d.fcmToken) return;
-    // 全域管理員收全部；承辦人只收本分隊
     if (d.isAdmin) { tokens.push(d.fcmToken); return; }
     if (d.isOfficer && memberUnit && d.unit === memberUnit) tokens.push(d.fcmToken);
   });
-  return [...new Set(tokens)]; // 去重
+  return [...new Set(tokens)];
 }
 
 async function _sendMulticast(tokens, notification) {
   if (!tokens.length) return;
   const messaging = getMessaging();
-  // FCM 每次最多 500 個 token
   const chunks = [];
   for (let i = 0; i < tokens.length; i += 500) chunks.push(tokens.slice(i, i + 500));
   for (const chunk of chunks) {
@@ -99,17 +95,15 @@ async function _sendMulticast(tokens, notification) {
         fcmOptions: { link: 'https://paul25042505.github.io/Emergency-Volunteer-System/' },
       },
     });
-    // 清理失效 token
     const db = getFirestore();
     const batch = db.batch();
-    res.responses.forEach((r, i) => {
+    res.responses.forEach((r, idx) => {
       if (!r.success && (r.error?.code === 'messaging/registration-token-not-registered' ||
                          r.error?.code === 'messaging/invalid-registration-token')) {
-        const q = db.collection('pushSubscriptions').where('fcmToken', '==', chunk[i]);
+        const q = db.collection('pushSubscriptions').where('fcmToken', '==', chunk[idx]);
         q.get().then(s => s.forEach(d => batch.update(d.ref, { fcmToken: null })));
       }
     });
     await batch.commit().catch(() => {});
   }
 }
-

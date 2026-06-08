@@ -1023,6 +1023,7 @@ function _dlCSV(content, filename) {
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 </head>
 <body>
 
@@ -15322,14 +15323,12 @@ async function _confirmBroadcast() {
   const btn = document.getElementById('bpSendBtn');
   if (btn) { btn.disabled = true; btn.textContent = '發送中…'; }
   try {
-    await firebase.firestore().collection('broadcastRequests').add({
-      title, body,
-      status: 'pending',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdBy: (JSON.parse(sessionStorage.getItem('rescue_user') || '{}')).name || '管理員',
-    });
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const sendBroadcast = firebase.functions().httpsCallable('sendBroadcast');
+    const result = await sendBroadcast({ title, body, requestedBy: usr.name || '管理員' });
     document.getElementById('broadcastPreviewOverlay')?.remove();
-    _showToast('✅ 推播已發送給所有訂閱成員');
+    const count = result.data?.count || 0;
+    _showToast(count > 0 ? `✅ 推播已發送給 ${count} 位訂閱成員` : '⚠️ 目前沒有訂閱成員');
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '🔔 發送推播'; }
     alert('發送失敗：' + e.message);
