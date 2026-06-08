@@ -15323,7 +15323,7 @@ async function _confirmBroadcast() {
   if (btn) { btn.disabled = true; btn.textContent = '發送中…'; }
   try {
     const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    const resp = await fetch('https://asia-east1-rescue-volunteer-a33f1.cloudfunctions.net/sendBroadcast', {
+    const resp = await fetch('https://asia-east1-rescue-volunteer-a33f1.cloudfunctions.net/broadcastPush', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, body, requestedBy: usr.name || '管理員' }),
