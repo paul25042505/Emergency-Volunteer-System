@@ -15770,10 +15770,21 @@ async function _confirmBroadcast() {
     const resp = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, body, requestedBy: usr.name || '管理員' }),
+      body: JSON.stringify({ title, body, requestedBy: usr.name || '管理員', skipAnnouncement: true }),
     });
     const result = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error(result.error || `HTTP ${resp.status}`);
+    // 客戶端直接寫入公告，讓本地快取同步更新
+    const now = new Date();
+    await fbAdd(COL_ANNOUNCE, {
+      title, body, text: `${title}\n${body}`,
+      type: 'broadcast', audience: 'all',
+      active: true, pinned: false, urgent: false,
+      startDate: now.toLocaleDateString('sv'),
+      endDate: new Date(now.getTime() + 30 * 86400000).toLocaleDateString('sv'),
+      createdAt: now, createdBy: usr.name || '管理員',
+      _pushed: true,
+    }).catch(() => {});
     document.getElementById('broadcastPreviewOverlay')?.remove();
     const count = result.count || 0;
     _showToast(count > 0 ? `✅ 推播已發送給 ${count} 位訂閱成員` : '⚠️ 目前沒有訂閱成員');
