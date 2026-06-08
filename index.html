@@ -10938,47 +10938,58 @@ function switchNoticeTab(tab) {
   _renderNoticeTab();
 }
 
+function _applyNoticeDocs(docs, u) {
+  const isAdm = u.isAdmin || u.isOfficer;
+  const today = new Date().toLocaleDateString('sv');
+  _noticeAllDocs = docs
+    .filter(d => {
+      if (d.active === false) return false;
+      if ((d.startDate||'') > today || (d.endDate||'9999') < today) return false;
+      if (d.audience === 'admin' && !isAdm) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const p = (b.pinned?1:0) - (a.pinned?1:0);
+      if (p !== 0) return p;
+      return _tsMillis(b.createdAt) - _tsMillis(a.createdAt);
+    });
+  const msgTypes = ['broadcast', 'correction', 'feedback'];
+  const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
+  const hasUnreadAnn = _noticeAllDocs.some(d => !msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
+  const dotMsg = document.getElementById('noticeTabDot-msg');
+  const dotAnn = document.getElementById('noticeTabDot-ann');
+  if (dotMsg) dotMsg.style.display = hasUnreadMsg ? 'block' : 'none';
+  if (dotAnn) dotAnn.style.display = hasUnreadAnn ? 'block' : 'none';
+  _renderNoticeTab();
+}
+
 async function openNoticePanel() {
   _noticeLastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
   localStorage.setItem('bellLastSeen', Date.now().toString());
   document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'none');
   const panel = document.getElementById('noticePanel');
   panel.style.display = 'block';
-  // reset to msg tab
   _noticeTab = 'msg';
   switchNoticeTab('msg');
-  const list = document.getElementById('noticePanelList');
-  list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>';
+  const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   try {
-    const u     = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    const isAdm = u.isAdmin || u.isOfficer;
-    const today = new Date().toLocaleDateString('sv');
-    const docs  = await fbList(COL_ANNOUNCE);
-    _noticeAllDocs = docs
-      .filter(d => {
-        if (d.active === false) return false;
-        if ((d.startDate||'') > today || (d.endDate||'9999') < today) return false;
-        if (d.audience === 'admin' && !isAdm) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        const p = (b.pinned?1:0) - (a.pinned?1:0);
-        if (p !== 0) return p;
-        const ta = a.createdAt?.toMillis?.() ?? 0;
-        const tb = b.createdAt?.toMillis?.() ?? 0;
-        return tb - ta;
-      });
-    // update tab unread dots
-    const msgTypes = ['broadcast', 'correction', 'feedback'];
-    const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
-    const hasUnreadAnn = _noticeAllDocs.some(d => !msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
-    const dotMsg = document.getElementById('noticeTabDot-msg');
-    const dotAnn = document.getElementById('noticeTabDot-ann');
-    if (dotMsg) dotMsg.style.display = hasUnreadMsg ? 'block' : 'none';
-    if (dotAnn) dotAnn.style.display = hasUnreadAnn ? 'block' : 'none';
-    _renderNoticeTab();
+    await ensureFirebase();
+    // 1. 先用快取立即顯示
+    try {
+      const cacheSnap = await _fbDB.collection(COL_ANNOUNCE).limit(200).get({ source: 'cache' });
+      if (!cacheSnap.empty) {
+        _applyNoticeDocs(cacheSnap.docs.map(d => ({id:d.id,...d.data()})), u);
+      }
+    } catch(e) { /* 無快取 */ }
+    // 2. 背景從 server 更新，面板仍開著就重新渲染
+    _fbDB.collection(COL_ANNOUNCE).limit(200).get({ source: 'server' }).then(snap => {
+      if (document.getElementById('noticePanel')?.style.display !== 'none') {
+        _applyNoticeDocs(snap.docs.map(d => ({id:d.id,...d.data()})), u);
+      }
+    }).catch(() => {});
   } catch(e) {
-    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入失敗</div>';
+    document.getElementById('noticePanelList').innerHTML =
+      '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入失敗</div>';
   }
 }
 
