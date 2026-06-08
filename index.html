@@ -11320,7 +11320,7 @@ async function _initFCM() {
       await _savePushSubscription(null);
       return;
     }
-    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
     await navigator.serviceWorker.ready;
     const messaging = firebase.messaging();
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
