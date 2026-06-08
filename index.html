@@ -3005,8 +3005,12 @@ function _dlCSV(content, filename) {
       <div id="announceForm" style="display:none;background:var(--warm);border-radius:10px;padding:16px;margin-bottom:16px;">
         <input type="hidden" id="anFormId">
         <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:0.78rem;">公告內容 <span class="req">*</span></label>
-          <textarea id="anFormText" rows="3" placeholder="填寫公告內容..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:vertical;"></textarea>
+          <label style="font-size:0.78rem;">標題 <span class="req">*</span></label>
+          <input type="text" id="anFormTitle" placeholder="公告標題..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label style="font-size:0.78rem;">內容</label>
+          <textarea id="anFormText" rows="3" placeholder="公告內容（選填）..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:vertical;"></textarea>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
           <div class="field" style="margin:0;">
@@ -10929,7 +10933,8 @@ function showAnnounceForm(doc) {
   const today = new Date().toLocaleDateString('sv');
   const nextWeek = new Date(Date.now() + 7*24*3600*1000).toLocaleDateString('sv');
   document.getElementById('anFormId').value      = doc ? (doc.id||'') : '';
-  document.getElementById('anFormText').value    = doc ? (doc.text||'') : '';
+  document.getElementById('anFormTitle').value   = doc ? (doc.title || (doc.text||'').split('\n')[0] || '') : '';
+  document.getElementById('anFormText').value    = doc ? (doc.body  || (doc.text||'').split('\n').slice(1).join('\n').trim() || '') : '';
   document.getElementById('anFormStart').value   = doc ? (doc.startDate||today) : today;
   document.getElementById('anFormEnd').value     = doc ? (doc.endDate||nextWeek) : nextWeek;
   document.getElementById('anFormUrgent').checked = doc ? !!doc.urgent : false;
@@ -10945,13 +10950,15 @@ function hideAnnounceForm() {
 
 async function saveAnnounceForm() {
   const id      = document.getElementById('anFormId').value;
-  const text    = document.getElementById('anFormText').value.trim();
+  const title   = document.getElementById('anFormTitle').value.trim();
+  const body    = document.getElementById('anFormText').value.trim();
+  const text    = body ? `${title}\n${body}` : title;
   const start   = document.getElementById('anFormStart').value;
   const end     = document.getElementById('anFormEnd').value;
   const urgent  = document.getElementById('anFormUrgent').checked;
   const pinned  = document.getElementById('anFormPinned').checked;
   const status  = document.getElementById('anFormStatus');
-  if (!text)  { status.style.color='var(--red)'; status.textContent='請填入公告內容'; return; }
+  if (!title) { status.style.color='var(--red)'; status.textContent='請填入標題'; return; }
   if (!start || !end) { status.style.color='var(--red)'; status.textContent='請填入日期範圍'; return; }
   if (start > end) { status.style.color='var(--red)'; status.textContent='結束日期不能早於開始日期'; return; }
   const btn = document.querySelector('#announceForm .btn-search');
@@ -10963,9 +10970,6 @@ async function saveAnnounceForm() {
       await Promise.all(allDocs.filter(d => d.pinned && d.id !== id)
         .map(d => fbUpdate(COL_ANNOUNCE, d.id, { pinned: false })));
     }
-    const lines = text.split('\n');
-    const title = lines[0] || text;
-    const body  = lines.slice(1).join('\n').trim();
     const base  = { text, title, body, startDate:start, endDate:end, urgent, pinned,
                     active:true, type:'system', audience:'all' };
     if (id) {
