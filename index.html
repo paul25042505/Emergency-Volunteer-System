@@ -3192,6 +3192,17 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
+      <button onclick="navTo('systemInfoPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0F9FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">系統資訊</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">關於本系統、使用規範與版權聲明</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
       <button onclick="navTo('adminPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;cursor:pointer;text-align:left;display:none;" id="moreAdminBtn">
         <div style="width:38px;height:38px;border-radius:10px;background:#FFF1F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -3206,6 +3217,154 @@ function _dlCSV(content, filename) {
     </div>
 
     <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：系統資訊 ══════ -->
+<div class="page" id="systemInfoPage">
+  <div class="form-wrap" style="padding-top:16px;padding-bottom:40px;">
+
+    <!-- 標題卡 -->
+    <div style="background:linear-gradient(135deg,#0369a1 0%,#0c4a6e 100%);border-radius:16px;padding:22px 20px;margin-bottom:16px;color:white;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.03em;">系統資訊</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.65);margin-top:2px;">System Information</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系統簡介 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:12px;">
+      <button onclick="_siToggle(this)" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Noto Sans TC',sans-serif;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        </div>
+        <span style="flex:1;font-size:0.92rem;font-weight:700;color:var(--text);">系統簡介</span>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
+        <p style="font-size:0.88rem;line-height:1.8;color:var(--text);margin:12px 0 8px;">本系統為<strong>臺中市義勇消防總隊鳳凰救護大隊潭子分隊</strong>專屬數位管理平台，提供以下核心功能：</p>
+        <ul style="font-size:0.85rem;line-height:2;color:var(--text-mid);padding-left:18px;margin:0;">
+          <li>義消出勤簽到 / 簽退與出勤紀錄管理</li>
+          <li>協勤案件登錄與查詢</li>
+          <li>定訓行事曆與公告管理</li>
+          <li>成員帳號與權限管理</li>
+          <li>協勤統計與報表匯出</li>
+        </ul>
+        <p style="font-size:0.82rem;color:var(--text-light);margin:10px 0 0;line-height:1.7;">本系統為漸進式網頁應用程式（PWA），支援安裝至手機主畫面，即使網路不穩定仍可查閱快取資料。</p>
+      </div>
+    </div>
+
+    <!-- 版本資訊 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:12px;">
+      <button onclick="_siToggle(this)" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Noto Sans TC',sans-serif;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <span style="flex:1;font-size:0.92rem;font-weight:700;color:var(--text);">版本資訊</span>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
+        <div id="siVersionInfo" style="margin-top:12px;">
+          <div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 更新紀錄 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:12px;">
+      <button onclick="_siToggle(this)" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Noto Sans TC',sans-serif;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <span style="flex:1;font-size:0.92rem;font-weight:700;color:var(--text);">更新紀錄</span>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
+        <div id="siChangelogList" style="margin-top:12px;">
+          <div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 使用規範 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:12px;">
+      <button onclick="_siToggle(this)" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Noto Sans TC',sans-serif;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#FFFBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <span style="flex:1;font-size:0.92rem;font-weight:700;color:var(--text);">使用規範</span>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
+        <div style="margin-top:12px;">
+          <p style="font-size:0.85rem;font-weight:600;color:var(--text);margin:0 0 8px;">本系統僅供授權成員使用，使用者應遵守以下規範：</p>
+          <ol style="font-size:0.84rem;line-height:1.9;color:var(--text-mid);padding-left:18px;margin:0 0 12px;">
+            <li>帳號由個人專屬持有，禁止轉借或共用帳號。</li>
+            <li>資料應確實、誠實填寫，不得虛報出勤、偽造紀錄。</li>
+            <li>未經授權不得存取、修改或刪除他人資料。</li>
+            <li>發現系統異常或資料錯誤，應立即通報管理員。</li>
+            <li>禁止利用本系統進行任何違法或不當用途。</li>
+            <li>離開裝置前請確保已登出，以防他人冒用。</li>
+          </ol>
+          <p style="font-size:0.78rem;color:var(--text-light);margin:0;line-height:1.6;">違反上述規範者，管理員有權暫停或撤銷其帳號使用資格。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 資訊安全聲明 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:12px;">
+      <button onclick="_siToggle(this)" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Noto Sans TC',sans-serif;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#FFF1F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <span style="flex:1;font-size:0.92rem;font-weight:700;color:var(--text);">資訊安全聲明</span>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
+        <div style="margin-top:12px;">
+          <p style="font-size:0.85rem;font-weight:600;color:var(--text);margin:0 0 8px;">資料保護措施</p>
+          <ul style="font-size:0.84rem;line-height:1.9;color:var(--text-mid);padding-left:18px;margin:0 0 14px;">
+            <li>本系統資料儲存於 Google Firebase 雲端平台，具備業界標準加密傳輸（TLS/HTTPS）。</li>
+            <li>使用者身份驗證採用 Firebase Authentication，登入資訊不儲存於本地裝置明文中。</li>
+            <li>各成員僅能存取與其權限相符的資料範圍。</li>
+            <li>系統管理員操作均留有登入紀錄可供稽核。</li>
+          </ul>
+          <p style="font-size:0.85rem;font-weight:600;color:var(--text);margin:0 0 8px;">隱私聲明</p>
+          <p style="font-size:0.84rem;line-height:1.8;color:var(--text-mid);margin:0 0 10px;">本系統所收集之個人資料（姓名、電話、電子郵件等）僅用於隊務管理目的，不會對外揭露或提供第三方使用。</p>
+          <p style="font-size:0.78rem;color:var(--text-light);margin:0;line-height:1.6;">如有資安疑慮或發現異常登入，請立即通報系統管理員。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 版權聲明 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:12px;">
+      <button onclick="_siToggle(this)" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Noto Sans TC',sans-serif;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#F5F3FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l.94 1.06A4 4 0 1 1 9 12.93"/></svg>
+        </div>
+        <span style="flex:1;font-size:0.92rem;font-weight:700;color:var(--text);">版權聲明</span>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
+        <div style="margin-top:12px;">
+          <p style="font-size:0.88rem;line-height:1.8;color:var(--text);margin:0 0 10px;">© 2026 臺中市義勇消防總隊鳳凰救護大隊潭子分隊<br>版權所有，轉載必究</p>
+          <p style="font-size:0.84rem;line-height:1.8;color:var(--text-mid);margin:0 0 10px;">本系統由<strong>林伯霖</strong>設計開發，所有程式碼、介面設計及相關內容之著作權歸屬於原作者。</p>
+          <p style="font-size:0.84rem;line-height:1.8;color:var(--text-mid);margin:0 0 12px;">未經書面授權，不得以任何形式複製、修改、散布或商業使用本系統之任何部分。</p>
+          <div style="background:#F8F9FA;border-radius:8px;padding:10px 12px;">
+            <div style="font-size:0.75rem;color:var(--text-light);line-height:1.8;">
+              系統版本 <span id="siFooterVersion" style="font-weight:600;color:var(--text-mid);">—</span><br>
+              本網站所有內容均受著作權法保護，未經授權不得轉載、複製或使用。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -4849,6 +5008,7 @@ async function refreshCurrentPage() {
     case 'gongchaPage':        await loadGongchaStats(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
+    case 'systemInfoPage':  await initSystemInfoPage(); break;
     default: break;
   }
 }
@@ -4954,6 +5114,7 @@ const _tabForPage = {
   feedbackPage:       'more',   meetingPage:        'more',
   changelogPage:      'more',   adminPage:          'more',
   profilePage:        'more',   membersPage:        'manage',  itemsPage: 'more',
+  systemInfoPage:     'more',
 };
 const _tabPageMap = {
   home:     'dashboardPage',
@@ -5034,7 +5195,7 @@ function navTo(pageId, fromHistory) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', changelogPage:'版本紀錄', meetingPage:'定訓與公告', gongchaPage:'公差英雄榜', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', changelogPage:'版本紀錄', meetingPage:'定訓與公告', gongchaPage:'公差英雄榜', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -5070,6 +5231,7 @@ function navTo(pageId, fromHistory) {
     morePage:       ['更多', 'More'],
     feedbackPage:   ['意見回饋', 'Feedback'],
     adminPage:      ['管理員後台', 'Admin Panel'],
+    systemInfoPage: ['系統資訊', 'System Info'],
   };
   const t = titles[pageId];
   if (t) {
@@ -10637,6 +10799,61 @@ async function loadAdminFeedback() {
 // ════════════════════════════════════════
 // 版本修改紀錄（前台動態載入）
 // ════════════════════════════════════════
+function _siToggle(btn) {
+  const card = btn.closest('[data-si-card]');
+  if (!card) return;
+  const body  = card.querySelector('.si-body');
+  const arrow = card.querySelector('.si-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display  = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+async function initSystemInfoPage() {
+  // Populate version info
+  try {
+    const docs = await fbList(COL_CHANGELOG);
+    docs.sort((a, b) => {
+      if (a.isLatest && !b.isLatest) return -1;
+      if (!a.isLatest && b.isLatest) return 1;
+      return (b.date || '') > (a.date || '') ? 1 : (b.date || '') < (a.date || '') ? -1 : 0;
+    });
+    const latest = docs.find(d => d.isLatest) || docs[0];
+    if (latest) {
+      const ver = latest.version || '';
+      const date = latest.date || '';
+      const el = document.getElementById('siVersionInfo');
+      if (el) el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0 8px;">
+          <span style="background:var(--red);color:white;border-radius:20px;padding:3px 14px;font-size:0.82rem;font-weight:700;">v${ver}</span>
+          <span style="font-size:0.82rem;color:#888;">${date}</span>
+          <span style="font-size:0.75rem;background:#e8f5e9;color:#2e7d32;border-radius:10px;padding:2px 10px;">最新版本</span>
+        </div>
+        <div style="font-size:0.82rem;color:#555;line-height:1.6;">${(latest.items||[]).map(i=>`• ${i.subtitle||''}`).join('<br>')}</div>
+      `;
+      const foot = document.getElementById('siFooterVersion');
+      if (foot) foot.textContent = `v${ver}`;
+    }
+    // Changelog list
+    const clEl = document.getElementById('siChangelogList');
+    if (clEl && docs.length) {
+      clEl.innerHTML = docs.slice(0, 10).map(d => {
+        const badge = d.isLatest ? `<span style="background:var(--red);color:white;border-radius:10px;padding:1px 8px;font-size:0.7rem;margin-left:6px;">最新</span>` : '';
+        const items = (d.items||[]).map(i => `<div style="font-size:0.8rem;color:#444;padding:3px 0;">• <b>${i.subtitle||''}</b>${i.detail ? ': ' + (i.detail||'').split('\n')[0] : ''}</div>`).join('');
+        return `<div style="padding:10px 0;border-bottom:1px solid #f0f0f0;">
+          <div style="font-size:0.88rem;font-weight:700;color:#1a1a1a;">v${d.version||''}${badge} <span style="font-weight:400;color:#888;font-size:0.78rem;">${d.date||''}</span></div>
+          ${items}
+        </div>`;
+      }).join('');
+    } else if (clEl) {
+      clEl.innerHTML = '<div style="font-size:0.82rem;color:#aaa;padding:8px 0;">尚無紀錄</div>';
+    }
+  } catch(e) {
+    console.warn('initSystemInfoPage:', e);
+  }
+}
+
 async function loadChangelog() {
   const el = document.getElementById('changelogList');
   if (!el) return;
