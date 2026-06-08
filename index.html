@@ -140,6 +140,7 @@ body.page-more #appScroll { padding-top: env(safe-area-inset-top, 0px) !importan
 body.page-ops #appScroll    { padding-top: 0 !important; }
 body.page-duty #appScroll   { padding-top: 0 !important; }
 body.page-manage #appScroll { padding-top: 0 !important; }
+#appScroll { padding-top: 0 !important; }
 body.page-ops #opsCustomHeader { display: block !important; }
 body.page-manage #manageCustomHeader { display: block !important; }
 body.page-duty #dutyCustomHeader { display: block !important; }
@@ -1290,6 +1291,16 @@ function _dlCSV(content, filename) {
     <button onclick="dutyMonthNav(-1)" style="flex-shrink:0;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">‹</button>
     <div id="dutyMonthLabel" style="flex:1;text-align:center;font-size:0.95rem;font-weight:700;color:var(--text);white-space:nowrap;"></div>
     <button onclick="dutyMonthNav(1)" style="flex-shrink:0;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;color:var(--text-mid);">›</button>
+  </div>
+</div>
+
+<!-- ══════ 子頁面返回列 ══════ -->
+<div id="subPageNav" style="display:none;width:100%;background:#fff;border-bottom:1px solid rgba(0,0,0,0.06);padding:calc(env(safe-area-inset-top,0px) + 6px) 8px 6px;">
+  <div style="display:flex;align-items:center;justify-content:center;position:relative;min-height:36px;">
+    <button onclick="history.back()" style="position:absolute;left:0;background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:8px;color:var(--text-mid);display:flex;align-items:center;gap:4px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;" onmouseenter="this.style.background='#f4f4f4'" onmouseleave="this.style.background='none'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span id="subPageNavTitle" style="font-size:0.95rem;font-weight:700;color:var(--text);"></span>
   </div>
 </div>
 
@@ -5194,11 +5205,17 @@ function navTo(pageId, fromHistory) {
     const mb = document.getElementById(mngBtnMap[pageId]);
     if (mb) mb.classList.add('active');
   }
+  // 子頁面返回列：僅在非主頁面顯示
+  const _subNav = document.getElementById('subPageNav');
+  const _subNavTitle = document.getElementById('subPageNavTitle');
+  const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
+  if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
+  if (_subNavTitle && _showSubNav) {
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', changelogPage:'版本紀錄', meetingPage:'定訓與公告', gongchaPage:'公差英雄榜', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退' };
+    _subNavTitle.textContent = titles2[pageId] || '';
+  }
   const backBtn = document.getElementById('headerBackBtn');
   if (backBtn) backBtn.classList.toggle('visible', !isHome && !isDuty && !isOps && !isManage);
-  syncHeaderHeight(); // header 顯示/隱藏後再同步高度
-  setTimeout(syncHeaderHeight, 80);
-  setTimeout(syncHeaderHeight, 250);
 
   // 同步底部 tab bar
   _syncTabBar(pageId);
