@@ -15579,6 +15579,9 @@ async function _confirmBroadcast() {
     document.getElementById('broadcastPreviewOverlay')?.remove();
     const count = result.count || 0;
     _showToast(count > 0 ? `✅ 推播已發送給 ${count} 位訂閱成員` : '⚠️ 目前沒有訂閱成員');
+    // 強制顯示鈴鐺紅點（清除 lastSeen 讓新公告顯示為未讀）
+    localStorage.removeItem('bellLastSeen');
+    document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'block');
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '🔔 發送推播'; }
     alert('發送失敗：' + e.message);
