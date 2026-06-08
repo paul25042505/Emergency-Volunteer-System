@@ -2934,6 +2934,15 @@ function _dlCSV(content, filename) {
       <div id="adminCorrectionList"></div>
     </div>
 
+    <div id="adminSec-pushctrl" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#1e3a5f 0%,#0f2849 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">推播控制台</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">推播訂閱管理</div></div>
+        <button onclick="loadAdminPushCtrl()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
+      </div>
+      <div id="adminPushCtrlContent"></div>
+    </div>
+
     <div id="adminSec-schedule" style="display:none;padding:0 0 20px;">
       <div style="background:linear-gradient(135deg,#00796b 0%,#004d40 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
@@ -3179,6 +3188,19 @@ function _dlCSV(content, filename) {
           <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">提供建議或回報問題</div>
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <button id="morePushBtn" onclick="_togglePushNotif()" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">推播通知</div>
+          <div id="morePushStatus" style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">檢查中...</div>
+        </div>
+        <div id="morePushToggle" style="width:40px;height:22px;border-radius:11px;background:#E5E7EB;position:relative;transition:background 0.2s;flex-shrink:0;">
+          <div id="morePushThumb" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
       </button>
 
       <button onclick="navTo('systemInfoPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
@@ -3986,6 +4008,7 @@ var COL_ITEMS = 'items', COL_FEEDBACK = 'feedback', COL_UNITS = 'units', COL_CHA
 var COL_LOGINLOG = 'loginLogs';
 var COL_MEETING  = 'meetingRecords';
 var COL_CORRECTION = 'correctionRequests';
+var COL_PUSH_SUBS = 'pushSubscriptions';
 var COL_CONFIRM    = 'confirmTasks';
 var COL_DUTY = 'dutySchedule'; // 班表（提前定義供 loadDashboard 使用）
 var COL_GONGCHA_MISSIONS = 'gongchaMissions';
@@ -9934,6 +9957,7 @@ function _buildAdminMenu() {
     { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1' },
     { id:'adminSec-repair',     icon:'🔧', label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c' },
     { id:'adminSec-confirm',    icon:'✅', label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
+    { id:'adminSec-pushctrl',   icon:'🔔', label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
     { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
     { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
   ];
@@ -9984,7 +10008,7 @@ function _setAdminBadge(sectionId, count) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl'];
   const menuGrid = document.getElementById('adminMenuGrid');
   if (sectionId === 'menu') {
     allSecs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
@@ -10004,6 +10028,7 @@ function adminShowSection(sectionId) {
     localStorage.setItem('adminFbLastSeen', String(Date.now()));
     _setAdminBadge('adminSec-feedback', 0);
   }
+  if (sectionId === 'adminSec-pushctrl') loadAdminPushCtrl();
   if (sectionId === 'adminSec-repair') {
     const df = document.getElementById('repairDateFrom');
     const dt = document.getElementById('repairDateTo');
@@ -10157,6 +10182,7 @@ async function _enableAdminNotif() {
 function _startNotifListeners() {
   _adminNotifUnsub.forEach(fn => { try { fn(); } catch(e) {} });
   _adminNotifUnsub = [];
+  _savePushSubscription();
 
   const db = firebase.firestore();
   let corrFirst = true, fbFirst = true;
@@ -10196,6 +10222,119 @@ function _fireAdminNotif(title, body) {
     const n = new Notification(title, { body, icon: 'icon-192.png' });
     n.onclick = () => { window.focus(); navTo('adminPage'); n.close(); };
   } catch(e) {}
+}
+
+// ════════════════════════════════════════
+// 推播控制台（管理員）
+// ════════════════════════════════════════
+var _pushCtrlUnit = '';
+
+async function loadAdminPushCtrl() {
+  const el = document.getElementById('adminPushCtrlContent');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  try {
+    await loadMembers();
+    const [subs, wl] = await Promise.all([
+      firebase.firestore().collection(COL_PUSH_SUBS).get().then(s => s.docs.map(d => ({id:d.id,...d.data()}))),
+      fbList(COL_WHITELIST),
+    ]);
+    const subMap = {};
+    subs.forEach(s => { subMap[s.memberName] = s; });
+
+    // 取所有成員（whitelist），依 unit + name 排序
+    let allMembers = wl.map(m => ({ name: m.memberName || m.name, unit: m.unit || '' }))
+      .filter(m => m.name);
+    // 去重
+    const seen = new Set();
+    allMembers = allMembers.filter(m => { if (seen.has(m.name)) return false; seen.add(m.name); return true; });
+
+    const units = [...new Set(allMembers.map(m => m.unit).filter(Boolean))].sort();
+    const filtered = _pushCtrlUnit ? allMembers.filter(m => m.unit === _pushCtrlUnit) : allMembers;
+
+    const total      = filtered.length;
+    const subCount   = filtered.filter(m => subMap[m.name]).length;
+    const unsubCount = total - subCount;
+    const pct = total > 0 ? Math.round(subCount / total * 100) : 0;
+
+    // 圓弧進度條 SVG
+    const r = 28, circ = 2 * Math.PI * r;
+    const dash = circ * pct / 100;
+    const progressSvg = `<svg width="80" height="80" viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="#E5E7EB" stroke-width="7"/>
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="#2563EB" stroke-width="7"
+        stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+        stroke-dashoffset="${(circ/4).toFixed(1)}" stroke-linecap="round"/>
+      <text x="40" y="44" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">${pct}%</text>
+    </svg>`;
+
+    // 篩選器 HTML
+    const unitOpts = ['', ...units].map(u => `<option value="${u}" ${u===_pushCtrlUnit?'selected':''}>${u||'全部分隊'}</option>`).join('');
+
+    // 成員列表
+    const rows = filtered.sort((a,b) => {
+      if (a.unit !== b.unit) return a.unit.localeCompare(b.unit);
+      const as = subMap[a.name] ? 0 : 1, bs = subMap[b.name] ? 0 : 1;
+      return as - bs || a.name.localeCompare(b.name);
+    }).map(m => {
+      const s = subMap[m.name];
+      const on = !!s;
+      let timeStr = '';
+      if (s && s.grantedAt) {
+        const d = s.grantedAt.toDate ? s.grantedAt.toDate() : new Date(s.grantedAt.seconds*1000);
+        const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
+        timeStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : `${diff} 天前`;
+      }
+      const platformIcon = s ? (s.platform === 'iOS' ? '🍎' : s.platform === 'Android' ? '🤖' : '💻') : '';
+      return `<div style="background:white;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+        <div style="width:8px;height:8px;border-radius:4px;background:${on?'#22C55E':'#E5E7EB'};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${m.name}</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:1px;">${m.unit}</div>
+        </div>
+        ${on ? `<div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:0.72rem;color:#22C55E;font-weight:600;">已訂閱</div>
+          <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">${platformIcon} ${s.browser||''} · ${timeStr}</div>
+        </div>` : `<div style="font-size:0.72rem;color:#9CA3AF;flex-shrink:0;">未訂閱</div>`}
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <!-- 統計卡 -->
+      <div style="background:white;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="flex-shrink:0;">${progressSvg}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;">
+            <div style="background:#F8FAFF;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:1.4rem;font-weight:800;color:#1D4ED8;">${total}</div>
+              <div style="font-size:0.72rem;color:#6B7280;margin-top:2px;">全部成員</div>
+            </div>
+            <div style="background:#F0FDF4;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:1.4rem;font-weight:800;color:#16A34A;">${subCount}</div>
+              <div style="font-size:0.72rem;color:#6B7280;margin-top:2px;">已訂閱</div>
+            </div>
+            <div style="background:#FFF7ED;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:1.4rem;font-weight:800;color:#EA580C;">${unsubCount}</div>
+              <div style="font-size:0.72rem;color:#6B7280;margin-top:2px;">未訂閱</div>
+            </div>
+            <div style="background:#F5F3FF;border-radius:10px;padding:10px 12px;">
+              <div style="font-size:1.4rem;font-weight:800;color:#7C3AED;">${pct}%</div>
+              <div style="font-size:0.72rem;color:#6B7280;margin-top:2px;">訂閱率</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 篩選 -->
+      <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+        <select onchange="_pushCtrlUnit=this.value;loadAdminPushCtrl()" style="width:100%;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:0.84rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;">${unitOpts}</select>
+      </div>
+
+      <!-- 名單 -->
+      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;padding:0 2px;">共 ${filtered.length} 人</div>
+      ${rows || '<div style="color:var(--text-light);padding:16px;text-align:center;">無資料</div>'}
+    `;
+  } catch(e) { el.innerHTML = '載入失敗：' + e.message; }
 }
 
 // ════════════════════════════════════════
@@ -10812,6 +10951,71 @@ function filterMemberList() {
 }
 
 // ════════════════════════════════════════
+// 推播通知（使用者端）
+// ════════════════════════════════════════
+function _updatePushToggleUI() {
+  const toggle = document.getElementById('morePushToggle');
+  const thumb  = document.getElementById('morePushThumb');
+  const status = document.getElementById('morePushStatus');
+  if (!toggle) return;
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  const on = perm === 'granted';
+  toggle.style.background = on ? '#2563EB' : '#E5E7EB';
+  if (thumb) thumb.style.left = on ? '20px' : '2px';
+  if (status) {
+    if (perm === 'unsupported') status.textContent = '此裝置不支援推播';
+    else if (perm === 'granted') status.textContent = '已開啟・有新申請或回饋時通知您';
+    else if (perm === 'denied') status.textContent = '已封鎖・請至瀏覽器設定開啟';
+    else status.textContent = '點擊開啟推播通知';
+  }
+}
+
+async function _togglePushNotif() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') {
+    alert('推播通知已被封鎖，請至瀏覽器設定 → 通知，手動開啟本站的通知權限。');
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    // 已開啟 → 提示使用者至設定關閉（無法用 JS 撤銷）
+    alert('如需關閉推播，請至瀏覽器設定 → 通知，移除本站的通知權限。');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  _updatePushToggleUI();
+  if (perm === 'granted') {
+    await _savePushSubscription();
+    _startNotifListeners();
+  }
+}
+
+async function _savePushSubscription() {
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (!usr.memberName) return;
+    const ua = navigator.userAgent;
+    let platform = 'Desktop';
+    if (/iPhone|iPad/.test(ua)) platform = 'iOS';
+    else if (/Android/.test(ua)) platform = 'Android';
+    const browser = /CriOS|Chrome/.test(ua) ? 'Chrome' : /FxiOS|Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Other';
+    await firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).set({
+      memberName: usr.memberName,
+      unit: usr.unit || '',
+      grantedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      platform, browser,
+    });
+  } catch(e) {}
+}
+
+async function _removePushSubscription() {
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (!usr.memberName) return;
+    await firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).delete();
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════
 // 意見回饋（改版）
 // ════════════════════════════════════════
 function _initMorePage() {
@@ -10824,6 +11028,12 @@ function _initMorePage() {
   if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
   const adminBtn = document.getElementById('moreAdminBtn');
   if (adminBtn) adminBtn.style.display = (u.isAdmin || u.isOfficer) ? 'flex' : 'none';
+  _updatePushToggleUI();
+  // 已授權者自動恢復監聽（admin 端已在 initAdminPage 處理）
+  if (Notification.permission === 'granted' && !_adminNotifReady) {
+    _adminNotifReady = true;
+    _startNotifListeners();
+  }
 }
 
 async function initFeedbackPage() {
