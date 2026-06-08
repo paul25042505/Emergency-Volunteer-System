@@ -2733,20 +2733,18 @@ function _dlCSV(content, filename) {
 <div class="page" id="adminPage">
   <div class="query-wrap">
 
-    <!-- 後台功能選擇器 -->
-    <div id="adminSecSelector" class="card" style="display:none;margin-bottom:16px;padding:12px 16px;">
-      <label style="font-size:0.8rem;color:var(--text-mid);font-weight:600;display:block;margin-bottom:6px;">切換功能</label>
-      <select id="adminSecSelect" onchange="adminShowSection(this.value)" style="width:100%;">
+    <!-- 後台功能選擇器（保留 select 供 JS 相容） -->
+    <div id="adminSecSelector" style="display:none;">
+      <select id="adminSecSelect" style="display:none;">
         <option value="adminSec-units"      id="adminSelOpt-units">🏢 分隊管理</option>
         <option value="adminSec-wl">👤 成員帳號</option>
         <option value="adminSec-casetypes">🏷 案由管理</option>
-        <option value="adminSec-items">📦 物品領用</option>
         <option value="adminSec-announce"   id="adminSelOpt-announce">📢 公告管理</option>
         <option value="adminSec-feedback">💬 意見回饋</option>
-        <option value="adminSec-correction"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/><path d="M11 9l1.5-1.5L14 9l-2 2-1.5-1.5z"/></svg>修正申請</option>
+        <option value="adminSec-correction">修正申請</option>
         <option value="adminSec-schedule">📅 定訓行事曆</option>
         <option value="adminSec-temppass">🔑 臨時密碼</option>
-        <option value="adminSec-changelog"  id="adminSelOpt-changelog"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg> 版本紀錄</option>
+        <option value="adminSec-changelog"  id="adminSelOpt-changelog">版本紀錄</option>
         <option value="adminSec-loginlog"   id="adminSelOpt-loginlog" style="display:none;">🔐 登入紀錄</option>
         <option value="adminSec-import">📥 批次匯入</option>
         <option value="adminSec-repair">🔧 資料修復</option>
@@ -2754,11 +2752,29 @@ function _dlCSV(content, filename) {
       </select>
     </div>
 
-    <div class="section" id="adminSec-units" style="display:none;">
-      <div class="section-head"><div class="section-num">🏢</div><div class="section-title">分隊管理</div><div class="section-line"></div>
-        <button onclick="loadAdminUnits()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <!-- 後台選單格 -->
+    <div id="adminMenuGrid" style="display:none;padding:0 0 20px;">
+      <!-- Title card -->
+      <div style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d44 100%);border-radius:16px;padding:20px 18px;margin-bottom:16px;color:white;">
+        <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.04em;">管理員後台</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:3px;">Admin Panel</div>
       </div>
-      <div class="card">
+      <!-- 2-column grid of section cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="adminMenuCards">
+        <!-- Cards injected by JS based on role -->
+      </div>
+    </div>
+
+    <div id="adminSec-units" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#2d3a8c 0%,#1a237e 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;">
+          <div style="font-size:1rem;font-weight:700;color:white;">分隊管理</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">分隊新增與刪除</div>
+        </div>
+        <button onclick="loadAdminUnits()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
+      </div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;gap:8px;margin-bottom:16px;">
           <input type="text" id="adminUnitName" placeholder="分隊名稱（例：潭子分隊）" style="flex:1;">
           <button onclick="adminAddUnit()" class="btn-search" style="min-height:unset;padding:6px 14px;">新增</button>
@@ -2767,27 +2783,32 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-wl" style="display:none;">
-      <div class="section-head"><div class="section-num">👤</div><div class="section-title">成員帳號管理</div><div class="section-line"></div>
-        <button onclick="loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <div id="adminSec-wl" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#1a6b9a 0%,#1565c0 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;">
+          <div style="font-size:1rem;font-weight:700;color:white;">成員帳號管理</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">帳號管理與權限設定</div>
+        </div>
+        <button onclick="loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
       <!-- 新增帳號 -->
-      <div class="card" style="margin-bottom:16px;">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:12px;letter-spacing:0.05em;">＋ 新增帳號</div>
         <div class="filter-grid" style="margin-bottom:12px;">
-          <div class="field" style="margin:0;">
+          <div style="margin-bottom:12px;">
             <label style="font-size:0.78rem;">Email <span class="req">*</span></label>
             <input type="email" id="adminWlEmail" placeholder="example@gmail.com" style="width:100%;">
           </div>
-          <div class="field" style="margin:0;">
+          <div style="margin-bottom:12px;">
             <label style="font-size:0.78rem;">義消姓名 <span class="req">*</span></label>
             <input type="text" id="adminWlName" placeholder="姓名" style="width:100%;">
           </div>
-          <div class="field" style="margin:0;">
+          <div style="margin-bottom:12px;">
             <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
             <select id="adminWlUnit" style="width:100%;"><option value="">請選擇</option></select>
           </div>
-          <div class="field" style="margin:0;">
+          <div style="margin-bottom:12px;">
             <label style="font-size:0.78rem;">職稱</label>
             <select id="adminWlTitle" style="width:100%;">
               <option value="">請選擇</option>
@@ -2800,7 +2821,7 @@ function _dlCSV(content, filename) {
               <option value="分隊承辦人">分隊承辦人</option>
             </select>
           </div>
-          <div class="field" style="margin:0;">
+          <div style="margin-bottom:12px;">
             <label style="font-size:0.78rem;">角色權限</label>
             <select id="adminWlRole" style="width:100%;">
               <option value="member">一般成員</option>
@@ -2813,9 +2834,9 @@ function _dlCSV(content, filename) {
       </div>
 
       <!-- 查詢列表 -->
-      <div class="card">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;letter-spacing:0.05em;">🔍 查詢成員</div>
-        <div class="field" style="margin-bottom:12px;">
+        <div style="margin-bottom:12px;">
           <label>選擇分隊</label>
           <select id="adminWlFilterUnit" onchange="filterAdminWlByUnit()" style="width:100%;">
             <option value="">請選擇分隊</option>
@@ -2827,29 +2848,32 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-casetypes" style="display:none;">
-      <div class="section-head"><div class="section-num">🏷</div><div class="section-title">案由管理</div><div class="section-line"></div>
-        <button onclick="loadAdminCaseTypes()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <div id="adminSec-casetypes" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#b84a1a 0%,#8b3a1a 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;">
+          <div style="font-size:1rem;font-weight:700;color:white;">案由管理</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">新增／刪除案由</div>
+        </div>
+        <button onclick="loadAdminCaseTypes()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" id="newCaseTypeInput" placeholder="輸入新案由" style="flex:1;">
-        <button onclick="addCaseType()" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 18px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:'Noto Sans TC',sans-serif;">新增</button>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="newCaseTypeInput" placeholder="輸入新案由" style="flex:1;">
+          <button onclick="addCaseType()" style="background:var(--red);color:white;border:none;border-radius:6px;padding:8px 18px;font-size:0.85rem;cursor:pointer;white-space:nowrap;font-family:'Noto Sans TC',sans-serif;">新增</button>
+        </div>
+        <div id="adminCaseTypeList"></div>
       </div>
-      <div id="adminCaseTypeList"></div>
     </div>
 
-    <div class="section" id="adminSec-items" style="display:none;">
-      <div class="section-head"><div class="section-num">📦</div><div class="section-title">物品領用管理</div><div class="section-line"></div>
-        <button onclick="loadAdminItems()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
-      </div>
-      <div id="adminItemList"></div>
-    </div>
-    <div class="section" id="adminSec-announce" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">📢</div>
-        <div class="section-title">公告管理</div>
-        <div class="section-line"></div>
-        <button onclick="showAnnounceForm(null)" class="btn-search" style="min-height:unset;padding:4px 14px;font-size:0.78rem;">＋ 新增公告</button>
+    <div id="adminSec-announce" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#e03131 0%,#c0392b 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;">
+          <div style="font-size:1rem;font-weight:700;color:white;">公告管理</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">發布與編輯公告</div>
+        </div>
+        <button onclick="showAnnounceForm(null)" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">＋ 新增</button>
       </div>
 
       <!-- 新增/編輯表單 -->
@@ -2890,287 +2914,191 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div class="section" id="adminSec-feedback" style="display:none;">
-      <div class="section-head"><div class="section-num">💬</div><div class="section-title">意見回饋</div><div class="section-line"></div>
-        <button onclick="batchDelChecked('fbChk',COL_FEEDBACK,loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>批次刪除</button>
-        <button onclick="loadAdminFeedback()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <div id="adminSec-feedback" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#2e7d32 0%,#1b5e20 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">意見回饋</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">查看成員意見</div></div>
+        <button onclick="batchDelChecked('fbChk',COL_FEEDBACK,loadAdminFeedback)" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">批次刪除</button>
+        <button onclick="loadAdminFeedback()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
       <div id="adminFeedbackList"></div>
     </div>
 
-    <div class="section" id="adminSec-correction" style="display:none;">
-      <div class="section-head">
-        <div class="section-num"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></div>
-        <div class="section-title">修正申請</div>
-        <div class="section-line"></div>
-        <button onclick="batchDelChecked('corrChk',COL_CORRECTION,loadAdminCorrections)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>批次刪除</button>
-        <button onclick="loadAdminCorrections()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <div id="adminSec-correction" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#6a1a8a 0%,#4a148c 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">修正申請</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">審核資料修正</div></div>
+        <button onclick="batchDelChecked('corrChk',COL_CORRECTION,loadAdminCorrections)" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">批次刪除</button>
+        <button onclick="loadAdminCorrections()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
-      <div id="adminCorrectionList" style="margin-top:4px;"></div>
+      <div id="adminCorrectionList"></div>
     </div>
 
-    <div class="section" id="adminSec-schedule" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">📅</div>
-        <div class="section-title">定訓行事曆</div>
-        <div class="section-line"></div>
+    <div id="adminSec-schedule" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#00796b 0%,#004d40 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">定訓行事曆</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">管理定訓日程</div></div>
       </div>
-      <div class="card" style="margin-bottom:12px;">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div class="filter-grid">
-          <div class="field">
-            <label>定訓日期 <span class="req">*</span></label>
-            <input type="date" id="scheduleDate">
-          </div>
-          <div class="field">
-            <label>分隊 <span class="req">*</span></label>
-            <select id="scheduleUnit">
-              <option value="">請選擇分隊</option>
-            </select>
-          </div>
-
-          <div class="field" style="grid-column:1/-1;">
-            <label>主題／備註</label>
-            <input type="text" id="scheduleTopic" placeholder="例：CPR 複訓、指導醫師出席">
-          </div>
+          <div style="margin-bottom:12px;"><label>定訓日期 <span class="req">*</span></label><input type="date" id="scheduleDate" style="width:100%;"></div>
+          <div style="margin-bottom:12px;"><label>分隊 <span class="req">*</span></label><select id="scheduleUnit" style="width:100%;"><option value="">請選擇分隊</option></select></div>
+          <div style="margin-bottom:12px;grid-column:1/-1;"><label>主題／備註</label><input type="text" id="scheduleTopic" placeholder="例：CPR 複訓、指導醫師出席" style="width:100%;"></div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
-          <button onclick="addSchedule()" class="btn-search" style="margin-left:auto;min-height:unset;padding:8px 20px;font-size:0.85rem;">新增</button>
-        </div>
+        <button onclick="addSchedule()" class="btn-search" style="width:100%;margin-top:4px;">新增定訓</button>
       </div>
-      <div id="adminScheduleList" style="margin-top:4px;"></div>
-
-
+      <div id="adminScheduleList"></div>
     </div>
-    <!-- ══════ SECTION：臨時密碼管理 ══════ -->
-    <div class="section" id="adminSec-temppass" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">🔑</div>
-        <div class="section-title">臨時密碼管理</div>
-        <div class="section-line"></div>
+
+    <div id="adminSec-temppass" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#f57c00 0%,#e65100 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">臨時密碼管理</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">建立登入密碼</div></div>
       </div>
-      <div class="card" style="margin-bottom:16px;">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 新增臨時密碼</div>
-        <div class="field">
-          <label>分隊別 <span class="req">*</span></label>
-          <select id="tpUnit" style="width:100%;" onchange="filterTpMembers()">
-            <option value="">請選擇分隊別</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>綁定成員 <span class="req">*</span></label>
-          <select id="tpMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select>
-        </div>
-        <div class="field">
-          <label>臨時密碼 <span class="req">*</span></label>
+        <div style="margin-bottom:12px;"><label>分隊別 <span class="req">*</span></label><select id="tpUnit" style="width:100%;" onchange="filterTpMembers()"><option value="">請選擇分隊別</option></select></div>
+        <div style="margin-bottom:12px;"><label>綁定成員 <span class="req">*</span></label><select id="tpMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select></div>
+        <div style="margin-bottom:12px;"><label>臨時密碼 <span class="req">*</span></label>
           <div style="display:flex;gap:8px;">
             <input type="text" id="tpCode" placeholder="自訂密碼（4~12字元）" maxlength="12" style="flex:1;">
             <button onclick="tpGenerate()" style="background:var(--warm);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;cursor:pointer;white-space:nowrap;min-height:unset;">隨機產生</button>
           </div>
         </div>
-        <div class="row-2">
-          <div class="field">
-            <label>有效期限 <span class="req">*</span></label>
-            <select id="tpExpiry" style="width:100%;">
-              <option value="1">1 小時</option>
-              <option value="6">6 小時</option>
-              <option value="24" selected>24 小時</option>
-              <option value="72">3 天</option>
-              <option value="168">7 天</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>可使用次數</label>
-            <select id="tpUses" style="width:100%;">
-              <option value="1">1 次</option>
-              <option value="3">3 次</option>
-              <option value="5">5 次</option>
-              <option value="0" selected>無限制</option>
-            </select>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><label>有效期限 <span class="req">*</span></label><select id="tpExpiry" style="width:100%;"><option value="1">1 小時</option><option value="6">6 小時</option><option value="24" selected>24 小時</option><option value="72">3 天</option><option value="168">7 天</option></select></div>
+          <div><label>可使用次數</label><select id="tpUses" style="width:100%;"><option value="1">1 次</option><option value="3">3 次</option><option value="5">5 次</option><option value="0" selected>無限制</option></select></div>
         </div>
-        <div class="field">
-          <label>備註（說明用途）</label>
-          <input type="text" id="tpNote" placeholder="例：協助王小明登入" style="width:100%;">
-        </div>
+        <div style="margin-bottom:12px;"><label>備註（說明用途）</label><input type="text" id="tpNote" placeholder="例：協助王小明登入" style="width:100%;"></div>
         <button onclick="addTempPass()" class="btn-search" style="width:100%;">🔑 建立臨時密碼</button>
       </div>
-      <div class="card">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 現有臨時密碼</div>
-          <button onclick="batchDelChecked('tpChk',COL_TEMP_PASS,loadTempPassList)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>批次刪除</button>
-        <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+          <div style="display:flex;gap:6px;">
+            <button onclick="batchDelChecked('tpChk',COL_TEMP_PASS,loadTempPassList)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">批次刪除</button>
+            <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+          </div>
         </div>
         <div id="tempPassList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
       </div>
     </div>
 
-    <div class="section" id="adminSec-changelog" style="display:none;">
-      <div class="section-head">
-        <div class="section-num"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></div>
-        <div class="section-title">版本修改紀錄管理</div>
-        <div class="section-line"></div>
-        <button onclick="showChangelogForm(null)" class="btn-search" style="min-height:unset;padding:4px 14px;font-size:0.78rem;">＋ 新增版本</button>
+    <div id="adminSec-changelog" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#455a64 0%,#263238 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">版本修改紀錄</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">維護更新說明</div></div>
+        <button onclick="showChangelogForm(null)" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">＋ 新增版本</button>
       </div>
-      <!-- 新增/編輯表單 -->
-      <div id="changelogForm" style="display:none;background:var(--warm);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div id="changelogForm" style="display:none;background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <input type="hidden" id="clFormId">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div class="field" style="margin:0;">
-            <label style="font-size:0.78rem;">版本號 <span class="req">*</span></label>
-            <input type="text" id="clFormVersion" placeholder="例：v1.6.0" style="width:100%;">
-          </div>
-          <div class="field" style="margin:0;">
-            <label style="font-size:0.78rem;">日期 <span class="req">*</span></label>
-            <input type="date" id="clFormDate" style="width:100%;">
-          </div>
+          <div><label style="font-size:0.78rem;">版本號 <span class="req">*</span></label><input type="text" id="clFormVersion" placeholder="例：v1.6.0" style="width:100%;"></div>
+          <div><label style="font-size:0.78rem;">日期 <span class="req">*</span></label><input type="date" id="clFormDate" style="width:100%;"></div>
         </div>
-        <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:0.78rem;">標題 <span class="req">*</span></label>
-          <input type="text" id="clFormTitle" placeholder="例：Firebase 全面整合" style="width:100%;">
-        </div>
+        <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">標題 <span class="req">*</span></label><input type="text" id="clFormTitle" placeholder="例：Firebase 全面整合" style="width:100%;"></div>
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:6px;font-weight:600;">內容項目</div>
         <div id="clFormItems" style="margin-bottom:8px;"></div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:12px;">
           <button onclick="saveChangelog()" class="btn-search" style="flex:1;">儲存</button>
           <button onclick="hideChangelogForm()" class="btn-reset">取消</button>
-          <label style="display:flex;align-items:center;gap:5px;font-size:0.8rem;cursor:pointer;font-weight:400;white-space:nowrap;color:var(--red);">
-            <input type="checkbox" id="clFormIsLatest" style="accent-color:var(--red);"> 標為最新版本
-          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.8rem;cursor:pointer;font-weight:400;white-space:nowrap;color:var(--red);"><input type="checkbox" id="clFormIsLatest" style="accent-color:var(--red);"> 標為最新版本</label>
         </div>
       </div>
       <div id="adminChangelogList"></div>
     </div>
 
-    <!-- 登入紀錄（僅系統管理員可見）-->
-    <div class="section" id="adminSec-loginlog" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">🔐</div>
-        <div class="section-title">登入紀錄</div>
-        <div class="section-line"></div>
-        <button onclick="loadLoginLog()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <div id="adminSec-loginlog" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#37474f 0%,#263238 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">登入紀錄</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">查看登入記錄</div></div>
+        <button onclick="loadLoginLog()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
-      <div class="filter-card" style="margin-bottom:12px;padding:14px 16px;">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div class="filter-grid">
-          <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="loginLogFrom" style="width:100%;"></div>
-          <div class="field" style="margin:0;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="loginLogTo" style="width:100%;"></div>
-          <div class="field" style="margin:0;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
+          <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="loginLogFrom" style="width:100%;"></div>
+          <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="loginLogTo" style="width:100%;"></div>
+          <div style="margin-bottom:10px;grid-column:1/-1;"><label style="font-size:0.78rem;">分隊別</label><select id="loginLogUnit" style="width:100%;"><option value="">— 全部分隊 —</option></select></div>
         </div>
-        <div class="filter-actions" style="margin-top:12px;">
-          <button class="btn-search" onclick="loadLoginLog()">查　詢</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-search" onclick="loadLoginLog()" style="flex:1;">查　詢</button>
           <button class="btn-reset" onclick="resetLoginLog()">清除</button>
-          <button onclick="batchDelChecked('llChk',COL_LOGINLOG,loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:6px 14px;font-size:0.82rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>批次刪除</button>
+          <button onclick="batchDelChecked('llChk',COL_LOGINLOG,loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:6px 14px;font-size:0.82rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">批次刪除</button>
         </div>
       </div>
-      <div id="adminLoginLogList">
-        <div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>
-      </div>
+      <div id="adminLoginLogList"><div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div></div>
     </div>
 
-    <div class="section" id="adminSec-import" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">📥</div>
-        <div class="section-title">批次匯入</div>
-        <div class="section-line"></div>
+    <div id="adminSec-import" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#1565c0 0%,#0d47a1 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">批次匯入</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">CSV 資料匯入</div></div>
       </div>
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">
-          上傳 CSV 檔案即可批次新增資料。簽名欄位可留空，之後再由當事人補簽。<br>
-          <span style="color:var(--red);font-weight:600;">注意：重複資料不會自動偵測，請先確認再匯入。</span>
-        </div>
-        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
-          <div style="font-weight:600;font-size:0.92rem;margin-bottom:10px;color:var(--text);">✍ 簽到簽退紀錄</div>
-          <div style="font-size:0.75rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:monospace;line-height:1.8;">
-            欄位：date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service<br>
-            範例：2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2
-          </div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">上傳 CSV 檔案即可批次新增資料。簽名欄位可留空，之後再由當事人補簽。<br><span style="color:var(--red);font-weight:600;">注意：重複資料不會自動偵測，請先確認再匯入。</span></div>
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--text);">✍ 簽到簽退紀錄</div>
+          <div style="font-size:0.72rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-family:monospace;line-height:1.7;">欄位：date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service<br>範例：2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <input type="file" id="importAttFile" accept=".csv" style="flex:1;min-width:0;">
-            <button onclick="downloadAttTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.8rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 下載範本</button>
-            <button onclick="importAttCSV()" class="btn-search" style="min-height:unset;padding:8px 18px;white-space:nowrap;">匯入</button>
+            <button onclick="downloadAttTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 範本</button>
+            <button onclick="importAttCSV()" class="btn-search" style="min-height:unset;padding:7px 16px;white-space:nowrap;">匯入</button>
           </div>
-          <div id="importAttResult" style="margin-top:10px;font-size:0.82rem;"></div>
+          <div id="importAttResult" style="margin-top:8px;font-size:0.82rem;"></div>
         </div>
-        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-weight:600;font-size:0.92rem;margin-bottom:10px;color:var(--text);">🚑 協勤案件紀錄</div>
-          <div style="font-size:0.75rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:monospace;line-height:1.8;">
-            欄位：date, caseType, timeOut, timeBack, district, address, services, note, memberName<br>
-            範例：2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖
-          </div>
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;">
+          <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--text);">🚑 協勤案件紀錄</div>
+          <div style="font-size:0.72rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-family:monospace;line-height:1.7;">欄位：date, caseType, timeOut, timeBack, district, address, services, note, memberName<br>範例：2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <input type="file" id="importOutFile" accept=".csv" style="flex:1;min-width:0;">
-            <button onclick="downloadOutTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:0.8rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 下載範本</button>
-            <button onclick="importOutCSV()" class="btn-search" style="min-height:unset;padding:8px 18px;white-space:nowrap;">匯入</button>
+            <button onclick="downloadOutTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 範本</button>
+            <button onclick="importOutCSV()" class="btn-search" style="min-height:unset;padding:7px 16px;white-space:nowrap;">匯入</button>
           </div>
-          <div id="importOutResult" style="margin-top:10px;font-size:0.82rem;"></div>
+          <div id="importOutResult" style="margin-top:8px;font-size:0.82rem;"></div>
         </div>
       </div>
     </div>
 
-    <!-- ══ SECTION：資料修復 ══ -->
-    <div class="section" id="adminSec-repair" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">🔧</div>
-        <div class="section-title">資料修復工具</div>
-        <div class="section-line"></div>
+    <div id="adminSec-repair" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#c62828 0%,#b71c1c 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">資料修復工具</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">修復服務人次</div></div>
       </div>
-      <div class="card">
-        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">
-          依備勤時間區間重新計算簽退<strong>服務人次</strong>（排除空跑案件，只計算備勤時段內的出勤）。<br>
-          <span style="color:var(--red);font-weight:600;">適用於：歷史資料匯入後或大量編輯後的資料不一致。</span>
-        </div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">依備勤時間區間重新計算簽退<strong>服務人次</strong>（排除空跑案件，只計算備勤時段內的出勤）。<br><span style="color:var(--red);font-weight:600;">適用於：歷史資料匯入後或大量編輯後的資料不一致。</span></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
           <label style="font-size:0.82rem;color:var(--text-mid);">日期區間</label>
           <input type="date" id="repairDateFrom" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:0.82rem;">
           <span style="font-size:0.82rem;color:var(--text-mid);">至</span>
-          <input type="date" id="repairDateTo"   style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:0.82rem;">
+          <input type="date" id="repairDateTo" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:0.82rem;">
           <span style="font-size:0.75rem;color:var(--text-light);">（留空 = 全部）</span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            🔍 預覽待修復項目
-          </button>
-          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;">
-            🔄 確認執行修復（0 筆）
-          </button>
+          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔍 預覽待修復項目</button>
+          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;">🔄 確認執行修復（0 筆）</button>
         </div>
         <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
-
     </div>
 
-    <!-- ══ SECTION：確認任務 ══ -->
-    <div class="section" id="adminSec-confirm" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">✅</div>
-        <div class="section-title">上月紀錄確認任務</div>
-        <div class="section-line"></div>
-        <button onclick="loadAdminConfirmTasks()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <div id="adminSec-confirm" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#2e7d32 0%,#1b5e20 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">上月紀錄確認任務</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">上月紀錄確認</div></div>
+        <button onclick="loadAdminConfirmTasks()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
-      <!-- 發起確認 -->
-      <div class="card" style="margin-bottom:16px;">
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 發起新的確認任務</div>
-        <div class="row-2" style="margin-bottom:12px;">
-          <div class="field" style="margin:0;">
-            <label style="font-size:0.78rem;">確認月份 <span class="req">*</span></label>
-            <input type="month" id="confirmMonth" style="width:100%;min-height:42px;padding:10px 13px;border:1px solid var(--border);border-radius:4px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;">
-          </div>
-          <div class="field" style="margin:0;">
-            <label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label>
-            <select id="confirmUnit" style="width:100%;"><option value="">請選擇分隊</option></select>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div><label style="font-size:0.78rem;">確認月份 <span class="req">*</span></label><input type="month" id="confirmMonth" style="width:100%;min-height:42px;padding:10px 13px;border:1px solid var(--border);border-radius:4px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;"></div>
+          <div><label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label><select id="confirmUnit" style="width:100%;"><option value="">請選擇分隊</option></select></div>
         </div>
-        <div class="field" style="margin-bottom:12px;">
-          <label style="font-size:0.78rem;">通知說明（選填）</label>
-          <input type="text" id="confirmNote" placeholder="例：請於5/10前完成確認" style="width:100%;">
-        </div>
+        <div style="margin-bottom:12px;"><label style="font-size:0.78rem;">通知說明（選填）</label><input type="text" id="confirmNote" placeholder="例：請於5/10前完成確認" style="width:100%;"></div>
         <button onclick="createConfirmTask()" class="btn-search" style="width:100%;">✅ 發起確認任務並通知成員</button>
         <div id="confirmCreateStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
       </div>
-      <!-- 任務列表 -->
-      <div id="adminConfirmTaskList">
-        <div class="query-empty"><span class="empty-icon">✅</span>載入中...</div>
-      </div>
+      <div id="adminConfirmTaskList"><div class="query-empty"><span class="empty-icon">✅</span>載入中...</div></div>
     </div>
 
     <div class="site-footer-placeholder"></div>
@@ -9756,42 +9684,6 @@ async function adminEditOut(id) {
   document.getElementById('adminEditModal').style.display='flex';
 }
 
-async function loadAdminItems() {
-  const el=document.getElementById('adminItemList'); if(!el)return;
-  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
-  try {
-    const docs=await fbList(COL_ITEMS);
-    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">尚無物品</div>';return;}
-    el.innerHTML=docs.map(d=>{
-      const total=(d.recipients||[]).length;
-      const claimed=(d.recipients||[]).filter(r=>r.claimed).length;
-      const rows=(d.recipients||[]).map(r=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--warm);">
-          <span style="flex:1;font-size:0.83rem;">${r.name}</span>
-          <span style="font-size:0.75rem;color:${r.claimed?'#1a6b35':'var(--text-light)'};">${r.claimed?'✓ '+(r.claimTime||''):'未領取'}</span>
-          ${r.claimed?`<button onclick="adminUnclaim('${d.id}','${r.name.replace(/'/g,String.fromCharCode(39))}')" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 6px;font-size:0.7rem;color:#b94a3a;cursor:pointer;">取消</button>`:''}
-        </div>`).join('');
-      return `<div class="result-card" style="margin-bottom:12px;">
-        <div class="result-head">
-          <h3 style="font-size:0.9rem;">${d.itemName}${d.note?` <span style="font-weight:400;font-size:0.78rem;color:var(--text-light);">${d.note}</span>`:''} <span style="font-weight:400;font-size:0.78rem;color:${claimed===total?'#1a6b35':'var(--text-mid)'};">${claimed}/${total}</span></h3>
-          <button onclick="adminDel('${COL_ITEMS}','${d.id}','物品 ${d.itemName}',loadAdminItems)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:2px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;">刪除</button>
-        </div>
-        <div style="padding:8px 16px;">${rows}</div>
-      </div>`;
-    }).join('');
-  } catch(e){el.innerHTML='載入失敗：'+e.message;}
-}
-
-async function adminUnclaim(itemId, memberName) {
-  if(!confirm('確認取消 '+memberName+' 的領取？'))return;
-  try {
-    const doc=await fbGet(COL_ITEMS,itemId); if(!doc)return;
-    const recipients=(doc.recipients||[]).map(r=>r.name===memberName?{...r,claimed:false,claimTime:'',sig:''}:r);
-    await fbUpdate(COL_ITEMS,itemId,{recipients});
-    await loadAdminItems(); updateItemsBadge();
-  } catch(e){alert('操作失敗：'+e.message);}
-}
-
 
 // ── 勾選批次刪除共用函式 ──
 function toggleAllCheck(className, checked) {
@@ -9824,20 +9716,51 @@ async function adminDel(col,id,label,reloadFn) {
   catch(e){alert('刪除失敗：'+e.message);}
 }
 
+function _buildAdminMenu() {
+  const grid = document.getElementById('adminMenuCards');
+  if (!grid) return;
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin = usr.isAdmin;
+  const items = [
+    { id:'adminSec-wl',         icon:'👤', label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
+    { id:'adminSec-casetypes',  icon:'🏷', label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
+    { id:'adminSec-announce',   icon:'📢', label:'公告管理',   sub:'發布與編輯公告',     color:'#c0392b' },
+    { id:'adminSec-feedback',   icon:'💬', label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
+    { id:'adminSec-correction', icon:'📝', label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
+    { id:'adminSec-schedule',   icon:'📅', label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
+    { id:'adminSec-temppass',   icon:'🔑', label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
+    { id:'adminSec-changelog',  icon:'📋', label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
+    { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1' },
+    { id:'adminSec-repair',     icon:'🔧', label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c' },
+    { id:'adminSec-confirm',    icon:'✅', label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
+    { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
+    { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
+  ];
+  grid.innerHTML = items.filter(i => !i.adminOnly || isAdmin).map(i => `
+    <button onclick="adminShowSection('${i.id}')" style="background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:16px 12px;text-align:left;cursor:pointer;font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:block;width:100%;">
+      <div style="width:38px;height:38px;border-radius:10px;background:${i.color};display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:10px;">${i.icon}</div>
+      <div style="font-size:0.88rem;font-weight:700;color:#1a1a1a;margin-bottom:2px;">${i.label}</div>
+      <div style="font-size:0.72rem;color:#888;line-height:1.3;">${i.sub}</div>
+    </button>
+  `).join('');
+}
+
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-items','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm'];
+  const menuGrid = document.getElementById('adminMenuGrid');
+  if (sectionId === 'menu') {
+    allSecs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    if (menuGrid) menuGrid.style.display = 'block';
+    document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
+    return;
+  }
   allSecs.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = (id === sectionId) ? '' : 'none';
   });
-  const wrap = document.querySelector('#adminPage > .query-wrap');
-  if (wrap) wrap.classList.remove('admin-full');
+  if (menuGrid) menuGrid.style.display = 'none';
   const sel = document.getElementById('adminSecSelect');
   if (sel) sel.value = sectionId;
-  document.querySelectorAll('.admin-subnav-btn').forEach(b => {
-    b.classList.remove('active-subnav');
-    if ((b.getAttribute('onclick')||'').includes(sectionId)) b.classList.add('active-subnav');
-  });
   document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
   if (sectionId === 'adminSec-repair') {
     const df = document.getElementById('repairDateFrom');
@@ -9935,17 +9858,18 @@ async function initAdminPage() {
   // 各模組獨立載入，任一失敗不影響其他
   const _safeLoad = fn => { try { return Promise.resolve(fn()).catch(e => console.warn('adminLoad:', e)); } catch(e) { return Promise.resolve(); } };
   await Promise.all([
-    _safeLoad(loadAdminUnits), _safeLoad(loadAdminWhitelist), _safeLoad(loadAdminItems),
+    _safeLoad(loadAdminUnits), _safeLoad(loadAdminWhitelist),
     _safeLoad(loadAdminAnnouncements), _safeLoad(loadAdminFeedback), _safeLoad(loadAdminChangelog),
     _safeLoad(loadAdminCaseTypes), _safeLoad(initScheduleSection), _safeLoad(loadAdminCorrections),
     _safeLoad(initTempPassSection), _safeLoad(initConfirmSection),
   ]);
 
-  // 顯示選擇器，預設顯示第一個可見 section
-  const selector = document.getElementById('adminSecSelector');
-  if (selector) selector.style.display = '';
-  const firstSec = isAdminOnly ? 'adminSec-units' : 'adminSec-wl';
-  adminShowSection(firstSec);
+  // 預熱快取
+  ['members','whitelist','caseTypes','units','announcements'].forEach(col => fbList(col).catch(()=>{}));
+
+  // 建立選單格並顯示
+  _buildAdminMenu();
+  adminShowSection('menu');
 }
 
 
