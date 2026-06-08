@@ -11325,7 +11325,7 @@ async function _initFCM() {
       return;
     }
     await _fcmDebug('registering SW...');
-    const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    const reg = await navigator.serviceWorker.register('/Emergency-Volunteer-System/firebase-messaging-sw.js', { scope: '/Emergency-Volunteer-System/', updateViaCache: 'none' });
     await _fcmDebug('SW registered, waiting ready...');
     await navigator.serviceWorker.ready;
     await _fcmDebug('SW ready, getting token...');
