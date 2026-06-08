@@ -13724,8 +13724,9 @@ async function loadAdminCorrections() {
         rejected: { bar:'#DC2626', hBg:'#FEF2F2', badge:'已拒絕', badgeBg:'#FEE2E2', badgeColor:'#B91C1C' },
       };
       const scfg = statusCfg[d.status] || statusCfg.pending;
-      const recType   = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
-      const reqType   = isDeleteReq ? '刪除申請' : '修正申請';
+      const recType   = d.type === 'outing' ? '協勤' : '簽到退';
+      const reqType   = isDeleteReq ? '刪除' : '修正';
+      const typeChip  = `${recType}紀錄 ${reqType}`;
       const reasonTags = d.reasonTags ? `<span style="font-size:0.72rem;background:#FEF9C3;color:#854D0E;border-radius:6px;padding:2px 8px;">${d.reasonTags}</span>` : '';
       const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:#6B7280;margin-top:4px;">補充：${d.reason}</div>` : '';
       const submittedAt = d.submittedAt?.seconds
@@ -13748,7 +13749,7 @@ async function loadAdminCorrections() {
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span style="font-size:0.72rem;color:#6B7280;background:#F3F4F6;border-radius:6px;padding:2px 8px;">${reqType}・${recType}</span>
+            <span style="font-size:0.72rem;color:#6B7280;background:#F3F4F6;border-radius:6px;padding:2px 8px;">${typeChip}</span>
             ${submittedAt ? `<span style="font-size:0.7rem;color:#9CA3AF;margin-left:auto;">送出 ${submittedAt}</span>` : ''}
           </div>
         </div>
@@ -13926,8 +13927,9 @@ function renderMyCorrections() {
   docs.forEach(d => {
     const cfg = statusCfg[d.status] || statusCfg.pending;
     const isDelReq  = d.requestType === 'delete';
-    const recType   = d.type === 'outing' ? '協勤紀錄' : '簽到退紀錄';
-    const reqType   = isDelReq ? '刪除申請' : '修正申請';
+    const recType   = d.type === 'outing' ? '協勤' : '簽到退';
+    const reqType   = isDelReq ? '刪除' : '修正';
+    const typeChip  = `${recType}紀錄 ${reqType}`;
 
     const _MY_MAP = { corrCheckin:'checkinTime', corrCheckout:'checkoutTime', corrCount:'count', corrService:'service', corrTimeOut:'timeOut', corrTimeBack:'timeBack', corrAddress:'address', corrCaseType:'caseType', corrServices:'services', corrServiceCount:'serviceCount' };
     const cf = Object.fromEntries(Object.entries(d.correctedFields||{}).map(([k,v])=>[_MY_MAP[k]||k, v]));
@@ -13982,7 +13984,7 @@ function renderMyCorrections() {
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:0.72rem;font-weight:700;background:${cfg.badgeBg};color:${cfg.badgeColor};border-radius:20px;padding:3px 10px;">${cfg.badge}</span>
           <span style="font-size:0.8rem;font-weight:700;color:#111827;">${d.date || ''}</span>
-          <span style="font-size:0.72rem;color:#6B7280;background:#F3F4F6;border-radius:6px;padding:2px 8px;">${reqType}・${recType}</span>
+          <span style="font-size:0.72rem;color:#6B7280;background:#F3F4F6;border-radius:6px;padding:2px 8px;">${typeChip}</span>
         </div>
         <div style="width:10px;height:10px;border-radius:50%;background:${cfg.bar};flex-shrink:0;"></div>
       </div>
