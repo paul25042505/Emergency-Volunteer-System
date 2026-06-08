@@ -10473,7 +10473,14 @@ async function initMembersPage() {
     sel.innerHTML = '<option value="">請選擇分隊</option>' +
       _unitsList.map(u => '<option value="' + u + '">' + u + '</option>').join('');
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-    if (usr.unit) { sel.value = usr.unit; filterMemberList(); return; }
+    // 優先用 sessionStorage 的 unit，找不到就從成員資料比對姓名
+    let defaultUnit = (usr.unit || '').trim();
+    if (!defaultUnit) {
+      const myName = (usr.memberName || usr.name || '').trim();
+      const matched = members.find(m => m.name === myName);
+      if (matched) defaultUnit = (matched.unit || '').trim();
+    }
+    if (defaultUnit) { sel.value = defaultUnit; filterMemberList(); return; }
   }
   if (container) container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
 }
