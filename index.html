@@ -14695,11 +14695,16 @@ async function renderDutyMeeting() {
       // ══ 行動按鈕 ══
       html += '<div style="padding:'+(rsvp.length?'0':'4px')+' 14px 14px;">';
       if (ended) {
-        html += '<div style="background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.88rem;font-weight:600;color:#999;">會議已結束</div>';
+        html += '<div style="background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.85rem;font-weight:600;color:#aaa;letter-spacing:0.04em;">會議已結束</div>';
       } else if (myRsvp) {
-        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:#f0faf4;color:#27ae60;border:1px solid #b7ebc8;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">✓ 已填寫出席（修改）</button>';
+        html += '<div style="display:flex;gap:8px;">';
+        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="flex:1;background:#f0faf4;color:#27ae60;border:1.5px solid #b7ebc8;border-radius:10px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'
+              + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>已回覆（修改）</button>';
+        html += '<button onclick="meetingUnrsvp(\''+doc.id+'\')" style="background:#fff5f5;color:#c0392b;border:1.5px solid #f5c6c6;border-radius:10px;padding:11px 14px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">取消回覆</button>';
+        html += '</div>';
       } else {
-        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">填寫出席</button>';
+        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:12px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'
+              + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>填寫出席回覆</button>';
       }
       html += '</div>';
 
@@ -14753,6 +14758,20 @@ async function meetingRsvp(id) {
       renderDutyMeeting();
     } catch(e) { alert('送出失敗：'+e.message); }
   };
+}
+
+async function meetingUnrsvp(id) {
+  if (!confirm('確定取消出席回覆？')) return;
+  const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  if (!u.email) return;
+  try {
+    const docs = await fbList(COL_MEETING_EVENTS);
+    const doc = docs.find(d=>d.id===id);
+    if (!doc) return;
+    const newRsvp = (doc.rsvp||[]).filter(r=>r.email!==u.email);
+    await fbUpdate(COL_MEETING_EVENTS, id, {rsvp:newRsvp});
+    renderDutyMeeting();
+  } catch(e) { alert('取消失敗：'+e.message); }
 }
 
 async function deleteMeetingEvent(id) {
