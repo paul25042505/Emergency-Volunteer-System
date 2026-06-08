@@ -14755,6 +14755,8 @@ function renderDutyList() {
   const HOURS       = Array.from({length:16}, (_,i) => i+6);
   const usr         = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   const myName      = usr.memberName || usr.name || '';
+  const membersList = (_C && _C.peek && _C.peek(COL_MEMBERS)) || [];
+  const getMemberTitle = name => { const m = membersList.find(x=>x.name===name); return m ? (m.title||'') : ''; };
 
   // 圖例只顯示一次（在最頂端）
   let html = '<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:0.68rem;color:var(--text-light);padding:10px 14px 6px;">'
@@ -14811,20 +14813,29 @@ function renderDutyList() {
       html += '<div style="font-size:0.78rem;color:#bbb;padding:2px 0 8px;letter-spacing:0.02em;">— 尚無備勤 —</div>';
     } else {
       dayDocs.forEach(doc => {
-        const canEdit = doc.memberName===myName || usr.isAdmin || usr.isOfficer;
-        const isMine  = doc.memberName===myName;
-        html += '<div style="display:flex;align-items:center;gap:8px;background:' + (isMine?'#fff8f8':'#fafafa') + ';border:1px solid ' + (isMine?'#fcd5d5':'#efefef') + ';border-radius:10px;padding:7px 10px;margin-bottom:6px;">';
-        html += '<div style="width:32px;height:32px;border-radius:50%;background:' + (isMine?'var(--red)':'#7a9cc0') + ';color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.88rem;flex-shrink:0;">' + (doc.memberName||'?').slice(0,1) + '</div>';
+        const canEdit  = doc.memberName===myName || usr.isAdmin || usr.isOfficer;
+        const isMine   = doc.memberName===myName;
+        const title    = getMemberTitle(doc.memberName||'');
+        const avatarBg = isMine ? 'var(--red)' : '#5b8db8';
+        html += '<div style="display:flex;align-items:center;gap:10px;background:'+(isMine?'#fff8f8':'#fafafa')+';border:1px solid '+(isMine?'#f5c6c6':'#e8e8e8')+';border-radius:12px;padding:10px 12px;margin-bottom:8px;">';
+        // 頭像
+        html += '<div style="width:40px;height:40px;border-radius:50%;background:'+avatarBg+';color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.12);">'+(doc.memberName||'?').slice(0,1)+'</div>';
+        // 文字區
         html += '<div style="flex:1;min-width:0;">';
-        html += '<div style="font-size:0.88rem;font-weight:700;color:var(--text);">' + (doc.memberName||'') + '</div>';
-        html += '<div style="font-size:0.72rem;color:var(--text-mid);margin-top:1px;">'
-              + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>'
-              + (doc.start||'') + ' – ' + (doc.end||'') + '</div>';
+        html += '<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">';
+        html += '<span style="font-size:0.95rem;font-weight:700;color:var(--text);">'+(doc.memberName||'')+'</span>';
+        if (title) html += '<span style="font-size:0.7rem;color:'+(isMine?'var(--red)':'#5b8db8')+';background:'+(isMine?'#fdeaea':'#eaf2ff')+';border-radius:20px;padding:1px 7px;font-weight:600;">'+title+'</span>';
         html += '</div>';
+        html += '<div style="display:flex;align-items:center;gap:4px;font-size:0.76rem;color:var(--text-mid);margin-top:3px;">'
+              + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>'
+              + (doc.start||'') + ' – ' + (doc.end||'')
+              + '</div>';
+        html += '</div>';
+        // 操作按鈕
         if (canEdit) {
           html += '<div style="display:flex;gap:2px;flex-shrink:0;">';
-          html += '<button onclick="openDutyEdit(&quot;'+doc.id+'&quot;,&quot;'+dateStr+'&quot;,&quot;'+(doc.memberName||'')+'&quot;,&quot;'+(doc.start||'')+'&quot;,&quot;'+(doc.end||'')+'&quot;)" style="background:none;border:none;border-radius:7px;padding:5px;cursor:pointer;color:#7a9cc0;" onmouseenter="this.style.background=\'#eaf2ff\'" onmouseleave="this.style.background=\'none\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>';
-          html += '<button onclick="deleteDuty(&quot;'+doc.id+'&quot;)" style="background:none;border:none;border-radius:7px;padding:5px;cursor:pointer;color:#c0a0a0;" onmouseenter="this.style.background=\'#fff0f0\'" onmouseleave="this.style.background=\'none\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
+          html += '<button onclick="openDutyEdit(&quot;'+doc.id+'&quot;,&quot;'+dateStr+'&quot;,&quot;'+(doc.memberName||'')+'&quot;,&quot;'+(doc.start||'')+'&quot;,&quot;'+(doc.end||'')+'&quot;)" style="background:none;border:none;border-radius:8px;padding:6px;cursor:pointer;color:#7a9cc0;" onmouseenter="this.style.background=\'#eaf2ff\'" onmouseleave="this.style.background=\'none\'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>';
+          html += '<button onclick="deleteDuty(&quot;'+doc.id+'&quot;)" style="background:none;border:none;border-radius:8px;padding:6px;cursor:pointer;color:#c0a0a0;" onmouseenter="this.style.background=\'#fff0f0\'" onmouseleave="this.style.background=\'none\'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
           html += '</div>';
         }
         html += '</div>';
