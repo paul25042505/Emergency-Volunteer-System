@@ -14608,7 +14608,9 @@ async function renderDutyMeeting() {
       + '<button onclick="showMeetingForm()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:8px 16px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">+ 發佈會議</button></div>';
   }
   if (!docs.length) {
-    html += '<div style="text-align:center;padding:40px;color:var(--text-light);">目前沒有會議</div>';
+    html += '<div style="text-align:center;padding:48px 24px;color:var(--text-light);">'
+          + '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+          + '<div style="font-size:0.88rem;">目前沒有會議</div></div>';
   } else {
     const now = new Date().toLocaleDateString('sv');
     docs.forEach(doc => {
@@ -14618,33 +14620,89 @@ async function renderDutyMeeting() {
       const myEmail = u.email||'';
       const myRsvp = rsvp.find(r=>r.email===myEmail);
       const attend = rsvp.filter(r=>r.attend==='出席').length;
-      const leave = rsvp.filter(r=>r.attend==='請假').length;
-      const meat = rsvp.filter(r=>r.food==='葷食').length;
-      const veg = rsvp.filter(r=>r.food==='素食').length;
-      const ended = doc.date < now;
-      html += '<div class="mq-card" style="margin-bottom:12px;">';
-      html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">';
-      html += '<span style="font-size:0.82rem;color:var(--text-mid);">' + mm + '/' + dd + '</span>';
-      html += '<span class="mq-badge" style="background:#e8f4fd;color:#1a6b9a;">' + (doc.type||'會議') + '</span>';
-      html += '<span style="font-weight:600;flex:1;">' + (doc.title||'') + '</span>';
+      const leave  = rsvp.filter(r=>r.attend==='請假').length;
+      const meat   = rsvp.filter(r=>r.food==='葷食').length;
+      const veg    = rsvp.filter(r=>r.food==='素食').length;
+      const ended  = doc.date < now;
+
+      const accentColor = ended ? '#95a5a6' : myRsvp ? '#27ae60' : '#2980b9';
+      const accentLight = ended ? '#f5f5f5' : myRsvp ? '#f0faf4' : '#eaf4ff';
+
+      html += '<div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);margin-bottom:16px;overflow:hidden;">';
+
+      // ══ 頂部彩色橫幅 ══
+      html += '<div style="background:linear-gradient(135deg,'+accentColor+' 0%,'+accentColor+'cc 100%);padding:16px 16px 14px;position:relative;">';
       if (isAdmin) {
-        html += '<button onclick="showMeetingForm(' + JSON.stringify(doc).replace(/"/g,'&quot;') + ')" style="background:none;border:none;cursor:pointer;color:var(--text-mid);font-size:0.8rem;padding:2px 6px;">✏️</button>';
-        html += '<button onclick="deleteMeetingEvent(\''+doc.id+'\')" style="background:none;border:none;cursor:pointer;color:#e74c3c;font-size:0.8rem;padding:2px 6px;">🗑</button>';
+        html += '<div style="position:absolute;top:10px;right:10px;display:flex;gap:2px;">'
+              + '<button onclick="showMeetingForm('+JSON.stringify(doc).replace(/"/g,'&quot;')+')" style="background:rgba(255,255,255,0.2);border:none;cursor:pointer;padding:6px;border-radius:7px;color:white;display:flex;align-items:center;justify-content:center;" title="編輯"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>'
+              + '<button onclick="deleteMeetingEvent(\''+doc.id+'\')" style="background:rgba(255,255,255,0.2);border:none;cursor:pointer;padding:6px;border-radius:7px;color:white;display:flex;align-items:center;justify-content:center;" title="刪除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>'
+              + '</div>';
       }
+      html += '<div style="display:flex;align-items:flex-start;gap:10px;">';
+      html += '<div style="background:rgba(255,255,255,0.22);border-radius:10px;padding:6px 11px;text-align:center;flex-shrink:0;">'
+            +   '<div style="font-size:0.62rem;color:rgba(255,255,255,0.9);font-weight:700;line-height:1;letter-spacing:0.05em;">'+mm+'月</div>'
+            +   '<div style="font-size:1.5rem;font-weight:800;color:white;line-height:1.1;">'+dd+'</div>'
+            + '</div>';
+      html += '<div style="padding-top:2px;padding-right:'+(isAdmin?'64px':'0')+'">'
+            +   '<div style="font-size:1.08rem;font-weight:800;color:white;line-height:1.3;letter-spacing:0.01em;">'+(doc.title||'（無標題）')+'</div>'
+            +   '<div style="font-size:0.72rem;color:rgba(255,255,255,0.85);margin-top:3px;">'+(doc.type||'會議')+(ended?' &nbsp;·&nbsp; 已結束':'')+'</div>'
+            + '</div>';
+      html += '</div></div>';
+
+      // ══ 資訊格子 ══
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #f0f0f0;">';
+      html += '<div style="padding:12px 14px;border-right:1px solid #f0f0f0;">'
+            +   '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">時間</div>'
+            +   '<div style="font-size:0.88rem;font-weight:700;color:var(--text);">'+(doc.time||'—')+(doc.endTime?' – '+doc.endTime:'')+'</div>'
+            + '</div>';
+      html += '<div style="padding:12px 14px;">'
+            +   '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">地點</div>'
+            +   '<div style="font-size:0.88rem;font-weight:700;color:var(--text);word-break:break-all;">'+(doc.location||'—')+'</div>'
+            + '</div>';
       html += '</div>';
-      html += '<div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:4px;">🕐 ' + (doc.time||'') + (doc.endTime?'–'+doc.endTime:'') + ' &nbsp;📍 ' + (doc.location||'') + '</div>';
-      if (doc.description) html += '<div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:6px;">' + doc.description + '</div>';
-      html += '<div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:6px;">' + rsvp.length + '/' + '? 已填</div>';
-      html += '<div style="display:flex;gap:16px;font-size:0.8rem;color:var(--text-mid);margin-bottom:8px;">';
-      html += '<span>出席：'+attend+'人</span><span>請假：'+leave+'人</span><span>葷食：'+meat+'份</span><span>素食：'+veg+'份</span>';
-      html += '</div>';
+
+      if (doc.description) {
+        html += '<div style="padding:10px 14px;border-bottom:1px solid #f0f0f0;">'
+              +   '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">說明</div>'
+              +   '<div style="font-size:0.82rem;color:var(--text-mid);line-height:1.6;">'+doc.description+'</div>'
+              + '</div>';
+      }
+
+      // ══ 出席統計 ══
+      html += '<div style="padding:12px 14px;border-bottom:1px solid #f0f0f0;">'
+            +   '<div style="font-size:0.65rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:8px;">出席回覆</div>'
+            +   '<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+            +     '<span style="display:flex;align-items:center;gap:4px;font-size:0.78rem;"><span style="width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block;"></span>出席 '+attend+' 人</span>'
+            +     '<span style="display:flex;align-items:center;gap:4px;font-size:0.78rem;"><span style="width:8px;height:8px;border-radius:50%;background:#e67e22;display:inline-block;"></span>請假 '+leave+' 人</span>'
+            +     (meat||veg ? '<span style="font-size:0.78rem;color:var(--text-light);">葷 '+meat+' / 素 '+veg+'</span>' : '')
+            +   '</div>'
+            + '</div>';
+
+      // ══ 已填者頭像列 ══
+      if (rsvp.length) {
+        html += '<div style="padding:8px 14px 12px;display:flex;flex-wrap:wrap;gap:6px;">';
+        rsvp.forEach(r => {
+          const isMe = r.email === myEmail;
+          const rc = r.attend==='出席' ? '#27ae60' : r.attend==='請假' ? '#e67e22' : '#8fa8c0';
+          html += '<div style="display:flex;align-items:center;gap:5px;background:'+(isMe?accentLight:'#f4f6fa')+';border:1px solid '+(isMe?accentColor+'55':'#e8e8e8')+';border-radius:20px;padding:4px 10px 4px 4px;">'
+                +   '<div style="width:22px;height:22px;border-radius:50%;background:'+rc+';color:white;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;">'+(r.name||'?').slice(0,1)+'</div>'
+                +   '<span style="font-size:0.76rem;font-weight:'+(isMe?'700':'500')+';color:'+(isMe?accentColor:'var(--text-mid)')+';"> '+(r.name||r.email)+'</span>'
+                + '</div>';
+        });
+        html += '</div>';
+      }
+
+      // ══ 行動按鈕 ══
+      html += '<div style="padding:'+(rsvp.length?'0':'4px')+' 14px 14px;">';
       if (ended) {
-        html += '<button style="width:100%;background:#95a5a6;color:white;border:none;border-radius:8px;padding:10px;font-size:0.88rem;font-weight:600;cursor:default;">已結束</button>';
+        html += '<div style="background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.88rem;font-weight:600;color:#999;">會議已結束</div>';
       } else if (myRsvp) {
-        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:#27ae60;color:white;border:none;border-radius:8px;padding:10px;font-size:0.88rem;font-weight:600;cursor:pointer;">已填寫（修改）</button>';
+        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:#f0faf4;color:#27ae60;border:1px solid #b7ebc8;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">✓ 已填寫出席（修改）</button>';
       } else {
-        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:10px;font-size:0.88rem;font-weight:600;cursor:pointer;">填寫出席</button>';
+        html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">填寫出席</button>';
       }
+      html += '</div>';
+
       html += '</div>';
     });
   }
