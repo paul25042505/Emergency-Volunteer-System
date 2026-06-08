@@ -4016,15 +4016,41 @@ function ensureFirebase() {
 async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;}
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
 const _fbInflight = {};
+// 跳過快取的集合（寫入頻繁或需要即時資料）
+const _C_SKIP = new Set(['loginLog','feedback','corrections','confirmTasks','tempPass']);
 async function fbList(col, orderByField, orderDir) {
+  // 第一層：localStorage 新鮮快取（零等待，不需網路）
+  if (!_C_SKIP.has(col) && _C.fresh(col)) return _C.peek(col);
+
   await ensureFirebase();
   const key = col + '|' + (orderByField||'') + '|' + (orderDir||'');
-  if (_fbInflight[key]) return _fbInflight[key]; // 共用進行中的請求
+  if (_fbInflight[key]) return _fbInflight[key]; // 共用進行中的請求，防重複
+
   _fbInflight[key] = (async () => {
     let q = _fbDB.collection(col).limit(1000);
     if (orderByField) q = q.orderBy(orderByField, orderDir || 'asc');
+
+    // 第二層：Firestore IndexedDB 離線快取（毫秒級，persistence 開啟時有效）
+    if (!_C_SKIP.has(col)) {
+      try {
+        const snap = await q.get({ source: 'cache' });
+        if (!snap.empty) {
+          const data = snap.docs.map(d => ({id:d.id,...d.data()}));
+          _C.set(col, data);
+          // 背景從伺服器更新（不阻塞）
+          q.get({ source: 'server' }).then(s => {
+            _C.set(col, s.docs.map(d => ({id:d.id,...d.data()})));
+          }).catch(()=>{});
+          return data;
+        }
+      } catch(e) { /* IndexedDB 無資料，繼續走網路 */ }
+    }
+
+    // 第三層：直接從網路讀取
     const s = await q.get();
-    return s.docs.map(d=>({id:d.id,...d.data()}));
+    const data = s.docs.map(d=>({id:d.id,...d.data()}));
+    if (!_C_SKIP.has(col)) _C.set(col, data);
+    return data;
   })();
   _fbInflight[key].finally(() => delete _fbInflight[key]).catch(()=>{});
   return _fbInflight[key];
@@ -4044,7 +4070,16 @@ async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collecti
 
 // ── 本地快取（stale-while-revalidate）──
 const _C = {
-  TTL: { attendance:600, outingRecords:600, dutySchedule:600, announcements:600, members:1800, whitelist:1800 },
+  TTL: {
+    attendance:120, outingRecords:120,        // 簽到退/出勤：2 分鐘（頻繁寫入）
+    dutySchedule:300,                          // 排班：5 分鐘
+    announcements:600, meetingEvents:300,      // 公告/會議：10/5 分鐘
+    members:1800, whitelist:1800,              // 成員：30 分鐘
+    caseTypes:1800, units:3600,                // 案件類型/分隊：30/60 分鐘
+    meetingTypes:1800, meetingLocations:1800,  // 會議類型/地點：30 分鐘
+    gongchaMissions:180, meetings:180,         // 公差/定訓：3 分鐘
+    settings:3600, changelog:3600,             // 設定/版本：60 分鐘
+  },
   _k: col => '_fc2_' + col,
   peek(col) {
     try { const r = localStorage.getItem(this._k(col)); return r ? JSON.parse(r).d : null; } catch(e) { return null; }
@@ -4060,35 +4095,6 @@ const _C = {
   },
   invalidate(col) { try { localStorage.removeItem(this._k(col)); } catch(e) {} },
 };
-
-// 三層快取策略：localStorage → Firestore IndexedDB → 網路
-async function fbListCached(col, orderBy, dir) {
-  // 第一層：localStorage 新鮮快取，零等待
-  if (_C.fresh(col)) return _C.peek(col);
-
-  await ensureFirebase();
-  let q = _fbDB.collection(col).limit(1000);
-  if (orderBy) q = q.orderBy(orderBy, dir || 'asc');
-
-  // 第二層：Firestore IndexedDB 離線快取（persistence 開啟時，毫秒級）
-  try {
-    const snap = await q.get({ source: 'cache' });
-    if (!snap.empty) {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      _C.set(col, data);
-      // 背景從 server 更新（不阻塞）
-      q.get({ source: 'server' }).then(s => {
-        const fresh = s.docs.map(d => ({ id: d.id, ...d.data() }));
-        _C.set(col, fresh);
-      }).catch(() => {});
-      return data;
-    }
-  } catch(e) { /* 快取無資料，繼續走網路 */ }
-
-  // 第三層：直接從網路讀（首次使用）
-  const data = await fbList(col, orderBy, dir);
-  _C.set(col, data); return data;
-}
 
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
 // 回傳 Promise，等主要資料載入完畢才 resolve
@@ -4110,15 +4116,11 @@ function _prefetchCaches() {
     [COL_CASETYPES],
     [COL_SETTINGS],
   ];
-  // 次要資料：靜默背景拉取（不阻塞）
-  sideTargets.forEach(([col, ...args]) => {
-    if (!_C.fresh(col)) fbList(col, ...args).then(d => _C.set(col, d)).catch(() => {});
-  });
-  // 主要資料：等待完成後更新首頁，並回傳 Promise
+  // 次要資料：靜默背景拉取（fbList 已自動快取）
+  sideTargets.forEach(([col, ...args]) => { fbList(col, ...args).catch(() => {}); });
+  // 主要資料：等待完成後更新首頁
   return Promise.all(
-    mainTargets.map(([col, ...args]) =>
-      _C.fresh(col) ? Promise.resolve(_C.peek(col)) : fbList(col, ...args).then(d => { _C.set(col, d); return d; }).catch(() => null)
-    )
+    mainTargets.map(([col, ...args]) => fbList(col, ...args).catch(() => null))
   ).then(([attDocs, outDocs, dutyDocs]) => {
     if (attDocs && outDocs) {
       const today = new Date(), todayStr = today.toLocaleDateString('sv'), monthStr = todayStr.substring(0,7);
@@ -5218,7 +5220,11 @@ function navTo(pageId, fromHistory) {
     document.getElementById('pageSubEn').textContent = t[1];
   }
 
-  const _nav = fn => Promise.resolve(fn()).finally(() => hideLoading());
+  const _nav = fn => {
+    let p;
+    try { p = fn(); } catch(e) { console.warn('navTo init error:', e); hideLoading(); return Promise.resolve(); }
+    return Promise.resolve(p).catch(e => console.warn('navTo async error:', e)).finally(hideLoading);
+  };
   if (pageId === 'dashboardPage') _nav(loadDashboard);
   else if (pageId === 'formPage') { _nav(initFormPage); setTimeout(() => resizeCanvas(), 50); }
   else if (pageId === 'membersPage') _nav(initMembersPage);
