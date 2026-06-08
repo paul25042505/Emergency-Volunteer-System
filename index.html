@@ -11375,6 +11375,7 @@ async function _initFCM() {
     await _fcmDebug(token ? 'token OK: ' + token.substring(0,20) + '...' : 'token null');
     await _savePushSubscription(token);
     messaging.onMessage(payload => {
+      _showToast('🔔 onMessage fired');
       const n = payload.notification || {};
       const title = n.title || '新通知';
       const body  = n.body  || '';

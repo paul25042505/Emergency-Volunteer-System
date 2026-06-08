@@ -12,25 +12,16 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 不論前景或背景，iOS 的 push 一律在 SW 顯示系統通知
-self.addEventListener('push', event => {
-  let payload = {};
-  try { payload = event.data ? event.data.json() : {}; } catch(e) {}
-
-  const n       = payload.notification || {};
-  const data    = payload.data || {};
-  const title   = n.title || data.title || '新通知';
-  const body    = n.body  || data.body  || '';
-
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon:    '/Emergency-Volunteer-System/icon-192.png',
-      badge:   '/Emergency-Volunteer-System/icon-192.png',
-      vibrate: [200, 100, 200],
-      data:    data,
-    })
-  );
+// 背景訊息（app 關閉或最小化）
+messaging.onBackgroundMessage(payload => {
+  const n = payload.notification || {};
+  self.registration.showNotification(n.title || '新通知', {
+    body:    n.body || '',
+    icon:    '/Emergency-Volunteer-System/icon-192.png',
+    badge:   '/Emergency-Volunteer-System/icon-192.png',
+    data:    payload.data || {},
+    vibrate: [200, 100, 200],
+  });
 });
 
 // 點擊通知後開啟或聚焦頁面
