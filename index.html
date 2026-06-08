@@ -14702,6 +14702,10 @@ async function deleteMeetingEvent(id) {
   try { await fbDelete(COL_MEETING_EVENTS, id); renderDutyMeeting(); } catch(e) { alert('刪除失敗'); }
 }
 
+function _mfField(label, inputHtml) {
+  return '<div><div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:4px;">' + label + '</div>' + inputHtml + '</div>';
+}
+
 function showMeetingForm(doc) {
   doc = doc || {};
   const isEdit = !!doc.id;
@@ -14709,16 +14713,13 @@ function showMeetingForm(doc) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;display:flex;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto;';
   overlay.innerHTML = '<div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">'
     + '<h3 style="font-family:\'Noto Serif TC\',serif;font-size:1rem;margin:0 0 16px;">' + (isEdit?'編輯':'發佈') + '會議</h3>'
-    + '<div style="display:flex;flex-direction:column;gap:10px;">'
-    + '<input id="_mfTitle" placeholder="會議標題" value="'+(doc.title||'')+'" style="border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;">'
-    + '<input id="_mfType" placeholder="類型（如：幹部會議）" value="'+(doc.type||'')+'" style="border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;">'
-    + '<input id="_mfDate" type="date" value="'+(doc.date||'')+'" style="border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;">'
-    + '<div style="display:flex;gap:8px;">'
-    + '<input id="_mfTime" type="time" value="'+(doc.time||'')+'" placeholder="開始時間" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;">'
-    + '<input id="_mfEndTime" type="time" value="'+(doc.endTime||'')+'" placeholder="結束時間" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;">'
-    + '</div>'
-    + '<input id="_mfLocation" placeholder="地點" value="'+(doc.location||'')+'" style="border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;">'
-    + '<textarea id="_mfDesc" placeholder="說明（選填）" style="border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;resize:vertical;min-height:60px;">'+(doc.description||'')+'</textarea>'
+    + '<div style="display:flex;flex-direction:column;gap:12px;">'
+    + _mfField('會議標題', '<input id="_mfTitle" placeholder="例：6月幹部會議" value="'+(doc.title||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
+    + _mfField('類型', '<input id="_mfType" placeholder="例：幹部會議、訓練課程" value="'+(doc.type||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
+    + _mfField('日期 <span style="color:var(--red)">*</span>', '<input id="_mfDate" type="date" value="'+(doc.date||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;box-sizing:border-box;">')
+    + _mfField('時間', '<div style="display:flex;gap:8px;"><input id="_mfTime" type="time" value="'+(doc.time||'')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;"><input id="_mfEndTime" type="time" value="'+(doc.endTime||'')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;"></div>')
+    + _mfField('地點', '<input id="_mfLocation" placeholder="例：分隊會議室" value="'+(doc.location||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
+    + _mfField('說明 <span style="color:var(--text-light);font-weight:400;">（選填）</span>', '<textarea id="_mfDesc" placeholder="補充說明、注意事項…" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;resize:vertical;min-height:60px;box-sizing:border-box;">'+(doc.description||'')+'</textarea>')
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:16px;">'
     + '<button id="_mfSaveBtn" style="flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">儲存</button>'
