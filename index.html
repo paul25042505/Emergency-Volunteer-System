@@ -4846,6 +4846,12 @@ async function quickLoginAs(idx) {
   await new Promise(r => setTimeout(r, 200));
   if (lt) lt.style.display = 'none';
 
+  fbAdd(COL_LOGINLOG, {
+    email: u.email, memberName: u.name, role: u.role || 'member', unit: u.unit || '',
+    loginAt: new Date().toLocaleString('sv').replace('T', ' '),
+    ua: navigator.userAgent.substring(0, 120), loginMethod: 'quick',
+  }).then(() => _trimLoginLog(500)).catch(() => {});
+
   showApp(u.name, u.email, u.isAdmin || false, u.isOfficer || false, u.role || 'member', u.title || '');
 }
 
@@ -12705,6 +12711,12 @@ async function loginWithTempPass() {
     };
     sessionStorage.setItem('rescue_user', JSON.stringify(sessionUser));
     spinner.style.display = 'none';
+    fbAdd(COL_LOGINLOG, {
+      email: sessionUser.email, memberName: sessionUser.memberName,
+      role: sessionUser.role, unit: sessionUser.unit || '',
+      loginAt: new Date().toLocaleString('sv').replace('T', ' '),
+      ua: navigator.userAgent.substring(0, 120), loginMethod: 'tempPass',
+    }).then(() => _trimLoginLog(500)).catch(() => {});
     showApp(sessionUser.memberName, sessionUser.email, sessionUser.isAdmin, sessionUser.isOfficer, sessionUser.role, sessionUser.title || '');
   } catch(e) {
     spinner.style.display = 'none';
