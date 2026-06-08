@@ -9852,34 +9852,27 @@ async function initAdminPage() {
     });
   }
 
-  // 設定登入紀錄分隊篩選
-  if (isAdminOnly) {
-    const llUnit = document.getElementById('loginLogUnit');
-    if (llUnit) {
-      await loadUnits();
-      llUnit.innerHTML = '<option value="">— 全部分隊 —</option>' +
-        _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
-    }
-  }
+  // 先立刻顯示選單，不等資料
+  _buildAdminMenu();
+  adminShowSection('menu');
 
-  await loadUnits().catch(()=>{});
-  populateUnitSelects();
-
-  // 各模組獨立載入，任一失敗不影響其他
+  // 背景預載資料（不阻塞畫面）
   const _safeLoad = fn => { try { return Promise.resolve(fn()).catch(e => console.warn('adminLoad:', e)); } catch(e) { return Promise.resolve(); } };
-  await Promise.all([
+  Promise.all([
+    loadUnits().catch(()=>{}).then(() => populateUnitSelects()),
     _safeLoad(loadAdminUnits), _safeLoad(loadAdminWhitelist),
     _safeLoad(loadAdminAnnouncements), _safeLoad(loadAdminFeedback), _safeLoad(loadAdminChangelog),
     _safeLoad(loadAdminCaseTypes), _safeLoad(initScheduleSection), _safeLoad(loadAdminCorrections),
     _safeLoad(initTempPassSection), _safeLoad(initConfirmSection),
-  ]);
-
-  // 預熱快取
-  ['members','whitelist','caseTypes','units','announcements'].forEach(col => fbList(col).catch(()=>{}));
-
-  // 建立選單格並顯示
-  _buildAdminMenu();
-  adminShowSection('menu');
+  ]).then(() => {
+    // 登入紀錄分隊篩選（管理員）
+    if (isAdminOnly) {
+      const llUnit = document.getElementById('loginLogUnit');
+      if (llUnit) llUnit.innerHTML = '<option value="">— 全部分隊 —</option>' + _unitsList.map(u => `<option value="${u}">${u}</option>`).join('');
+    }
+    // 預熱快取
+    ['members','whitelist','caseTypes','units','announcements'].forEach(col => fbList(col).catch(()=>{}));
+  });
 }
 
 
