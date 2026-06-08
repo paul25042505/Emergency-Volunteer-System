@@ -7261,7 +7261,8 @@ function openCheckout(key) {
   autoCalcHours();
   loadTodayCount(memberName);
   requestAnimationFrame(() => requestAnimationFrame(() => initAttCanvas('checkout')));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const _sc = document.getElementById('appScroll');
+  if (_sc) _sc.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function attBackToMain() {
