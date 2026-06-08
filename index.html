@@ -14715,7 +14715,9 @@ function showMeetingForm(doc) {
     + '<h3 style="font-family:\'Noto Serif TC\',serif;font-size:1rem;margin:0 0 16px;">' + (isEdit?'編輯':'發佈') + '會議</h3>'
     + '<div style="display:flex;flex-direction:column;gap:12px;">'
     + _mfField('會議標題', '<input id="_mfTitle" placeholder="例：6月幹部會議" value="'+(doc.title||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
-    + _mfField('類型', '<input id="_mfType" placeholder="例：幹部會議、訓練課程" value="'+(doc.type||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
+    + _mfField('類型 <span style="color:var(--text-light);font-weight:400;font-size:0.72rem;">（可自行輸入新類型）</span>',
+        '<input id="_mfType" list="_mfTypeList" placeholder="選擇或輸入類型…" value="'+(doc.type||'')+'" autocomplete="off" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">'
+        + '<datalist id="_mfTypeList"></datalist>')
     + _mfField('日期 <span style="color:var(--red)">*</span>', '<input id="_mfDate" type="date" value="'+(doc.date||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;box-sizing:border-box;">')
     + _mfField('時間', '<div style="display:flex;gap:8px;"><input id="_mfTime" type="time" value="'+(doc.time||'')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;"><input id="_mfEndTime" type="time" value="'+(doc.endTime||'')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;"></div>')
     + _mfField('地點', '<input id="_mfLocation" placeholder="例：分隊會議室" value="'+(doc.location||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;box-sizing:border-box;">')
@@ -14730,6 +14732,13 @@ function showMeetingForm(doc) {
   document.body.appendChild(overlay);
   overlay.querySelector('#_mfCancelBtn').onclick = ()=>overlay.remove();
   overlay.querySelector('#_mfSaveBtn').onclick = ()=>saveMeetingForm(isEdit?doc.id:'', overlay);
+  // 非同步載入已有類型填入 datalist
+  fbList(COL_MEETING_EVENTS).then(docs => {
+    const dl = overlay.querySelector('#_mfTypeList');
+    if (!dl) return;
+    const types = [...new Set(docs.map(d=>d.type||'').filter(Boolean))].sort();
+    types.forEach(t => { const o = document.createElement('option'); o.value = t; dl.appendChild(o); });
+  }).catch(()=>{});
 }
 
 async function saveMeetingForm(editId, overlay) {
