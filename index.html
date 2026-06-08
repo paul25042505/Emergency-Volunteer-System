@@ -14394,12 +14394,22 @@ function showGongchaForm(doc) {
     + '<div style="display:flex;flex-direction:column;gap:10px;">'
     + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">任務標題 <span style="color:var(--red);">*</span></div><input id="_gcTitle" placeholder="例：分隊協勤支援" value="'+(doc.title||'')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;"></div>'
     + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">任務日期 <span style="color:var(--red);">*</span></div><input id="_gcDate" type="date" value="'+(doc.date||'')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;"></div>'
-    + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">時間</div><div style="display:flex;gap:8px;">'
-    + '<input id="_gcTime" type="time" value="'+(doc.time||'')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;">'
-    + '<input id="_gcEndTime" type="time" value="'+(doc.endTime||'')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;">'
-    + '</div><div style="display:flex;gap:8px;margin-top:3px;"><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">開始</span><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">結束</span></div></div>'
+    + (function(){
+        const sel = (id,val)=>{
+          const seStyle='flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;background:white;';
+          let o='<select id="'+id+'" style="'+seStyle+'"><option value="">—</option>';
+          for(let h=0;h<24;h++)for(let m=0;m<60;m+=30){
+            const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),t=hh+':'+mm;
+            o+='<option value="'+t+'"'+(val===t?' selected':'')+'>'+t+'</option>';
+          }
+          return o+'</select>';
+        };
+        return '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">時間</div><div style="display:flex;gap:8px;">'
+          +sel('_gcTime',doc.time||'')+sel('_gcEndTime',doc.endTime||'')
+          +'</div><div style="display:flex;gap:8px;margin-top:3px;"><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">開始</span><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">結束</span></div></div>';
+      })()
     + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">地點</div><input id="_gcLocation" placeholder="例：臺中市政府廣場" value="'+(doc.location||'')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;"></div>'
-    + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">所需人數</div><input id="_gcHeadcount" type="number" placeholder="例：5" value="'+(doc.headcount||'')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;" min="1"></div>'
+    + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">所需人數</div><input id="_gcHeadcount" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="例：5" value="'+(doc.headcount||'')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;" min="1"></div>'
     + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">說明（選填）</div><textarea id="_gcDesc" placeholder="任務詳細說明…" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;resize:vertical;min-height:60px;">'+(doc.description||'')+'</textarea></div>'
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:16px;">'
