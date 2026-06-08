@@ -14923,14 +14923,16 @@ function showMeetingForm(doc) {
   _mfTypeAddBtn.onclick = _addType;
   _mfTypeInput.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); _addType(); }});
 
-  // 載入類型（預設 + 自訂）
+  // 立即渲染預設類型，非同步補入自訂類型
   let allTypes = DEFAULTS.map(n=>({name:n, custom:false}));
+  _renderTypeTags(allTypes);
   fbList(COL_MEETING_TYPES).then(typeDocs => {
+    let changed = false;
     typeDocs.forEach(td => {
-      if (!allTypes.find(t=>t.name===td.name)) allTypes.push({name:td.name, custom:true});
+      if (!allTypes.find(t=>t.name===td.name)) { allTypes.push({name:td.name, custom:true}); changed = true; }
     });
-    _renderTypeTags(allTypes);
-  }).catch(()=>{ _renderTypeTags(allTypes); });
+    if (changed) _renderTypeTags(allTypes);
+  }).catch(()=>{});
 }
 
 async function saveMeetingForm(editId, overlay) {
