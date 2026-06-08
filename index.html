@@ -43,6 +43,8 @@
 html, body {
   height: 100%;
   overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
 }
 body {
   background: #F4F6F9;
@@ -52,6 +54,10 @@ body {
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
+}
+input, textarea, select, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 /* 主捲動區 */
 #appScroll {
