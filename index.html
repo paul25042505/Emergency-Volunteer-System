@@ -15349,9 +15349,10 @@ async function gongchaUnregister(id) {
 
 async function gongchaBroadcast(id) {
   try {
-    const docs = await fbList(COL_GONGCHA_MISSIONS);
-    const doc = docs.find(d => d.id === id);
-    if (!doc) return;
+    // 直接讀 Firestore 確保人數最新
+    const snap = await firebase.firestore().collection(COL_GONGCHA_MISSIONS).doc(id).get();
+    if (!snap.exists) return;
+    const doc = { id: snap.id, ...snap.data() };
     const regs = doc.registrants || [];
     const need = Math.max(0, (doc.maxCount || 0) - regs.length);
     const dateStr = doc.date || '';
@@ -15359,7 +15360,10 @@ async function gongchaBroadcast(id) {
     const locStr = doc.location || '';
 
     const defTitle = `📢 公差招募：${doc.title || '任務'}`;
-    const defBody  = `尚缺 ${need} 人，日期 ${dateStr}${timeStr ? ' ' + timeStr : ''}${locStr ? '，地點：' + locStr : ''}，請盡快登記！`;
+    const needTxt  = need > 0 ? `還差 ${need} 位夥伴` : '名額即將額滿';
+    const dateTxt  = dateStr ? `日期 ${dateStr}${timeStr ? ' ' + timeStr : ''}` : '';
+    const locTxt   = locStr  ? `地點：${locStr}` : '';
+    const defBody  = `${[needTxt, dateTxt, locTxt].filter(Boolean).join('，')}，歡迎有意願的夥伴趕快登記！😊`;
 
     // 建立預覽 modal
     const overlay = document.createElement('div');
