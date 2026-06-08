@@ -3181,17 +3181,6 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
-      <button onclick="navTo('changelogPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;" id="moreChangelogBtn">
-        <div style="width:38px;height:38px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">版本修改紀錄</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">查看系統更新與功能變更</div>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-
       <button onclick="navTo('systemInfoPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
         <div style="width:38px;height:38px;border-radius:10px;background:#F0F9FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -3737,21 +3726,6 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<div class="page" id="changelogPage">
-  <div class="query-wrap">
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></div>
-        <div class="section-title">版本修改紀錄</div>
-        <div class="section-line"></div>
-      </div>
-    </div>
-    <div id="changelogList">
-      <div class="query-empty"><span class="empty-icon"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></span>載入中...</div>
-    </div>
-    <div class="site-footer-placeholder"></div>
-  </div>
-</div>
 
 
 <!-- 編輯物品領取人 Modal -->
@@ -5001,7 +4975,6 @@ async function refreshCurrentPage() {
     case 'itemsPage':       await initItemsPage(); break;
     case 'dutyPage':        await loadDutyData(); break;
     case 'meetingPage':     await loadMeetingPage(); break;
-    case 'changelogPage':      await loadChangelog(); break;
     case 'morePage':           _initMorePage(); break;
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
@@ -5112,7 +5085,7 @@ const _tabForPage = {
   statsPage:          'manage', gongchaPage:        'manage',
   morePage:           'more',
   feedbackPage:       'more',   meetingPage:        'more',
-  changelogPage:      'more',   adminPage:          'more',
+  adminPage:          'more',
   profilePage:        'more',   membersPage:        'manage',  itemsPage: 'more',
   systemInfoPage:     'more',
 };
@@ -5208,7 +5181,7 @@ function navTo(pageId, fromHistory) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', changelogPage:'版本紀錄', meetingPage:'定訓與公告', gongchaPage:'公差英雄榜', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差英雄榜', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -5240,7 +5213,6 @@ function navTo(pageId, fromHistory) {
     meetingPage:    ['定訓與公告', 'Training & Announcements'],
     myCorrectionsPage: ['我的申請記錄', 'My Requests'],
     gongchaPage:    ['公差英雄榜', 'Merit Leaderboard'],
-    changelogPage:  ['版本修改紀錄', 'Version History'],
     morePage:       ['更多', 'More'],
     feedbackPage:   ['意見回饋', 'Feedback'],
     adminPage:      ['管理員後台', 'Admin Panel'],
@@ -5278,7 +5250,6 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'meetingPage')   _nav(loadMeetingPage);
   else if (pageId === 'myCorrectionsPage') _nav(loadMyCorrections);
   else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
-  else if (pageId === 'changelogPage') _nav(loadChangelog);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
 
@@ -10937,66 +10908,7 @@ async function initSystemInfoPage() {
   }
 }
 
-async function loadChangelog() {
-  const el = document.getElementById('changelogList');
-  if (!el) return;
-  el.innerHTML = '<div class="query-empty"><span class="empty-icon"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></span>載入中...</div>';
-  try {
-    let docs = await fbList(COL_CHANGELOG);
-    // 跟後台一樣：先依 order 排，order 相同再依日期倒序
-    docs.sort(function(a,b){
-      // isLatest 永遠排第一，其餘依日期倒序
-      if (a.isLatest && !b.isLatest) return -1;
-      if (!a.isLatest && b.isLatest) return 1;
-      return (b.date||'') > (a.date||'') ? 1 : (b.date||'') < (a.date||'') ? -1 : 0;
-    });
-    if (!docs.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg></span>尚無版本紀錄</div>';
-      return;
-    }
-    var html = '';
-    docs.forEach(function(d, idx) {
-      var isLatest = !!d.isLatest;
-      var itemsHtml = (d.items||[]).map(function(it) {
-        var detail = (it.detail||'').replace(/\n/g, '<br>');
-        return '<div style="padding:10px 0;border-bottom:1px solid var(--warm);">'
-          + '<div style="margin-bottom:5px;">'
-          + '<span style="font-size:0.68rem;background:' + (isLatest?'var(--red)':'#6c757d') + ';color:white;border-radius:10px;padding:2px 9px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">'
-          + (it.subtitle||'')
-          + '</span>'
-          + '</div>'
-          + '<div style="font-size:0.83rem;color:var(--text);line-height:1.7;">' + detail + '</div>'
-          + '</div>';
-      }).join('');
-
-      // 版本 emoji
-      var verEmoji = isLatest ? '🆕 ' : '📋 ';
-
-      html += '<div class="result-card" style="margin-bottom:16px;' + (isLatest ? 'border:2px solid var(--red);box-shadow:0 4px 16px rgba(185,74,58,0.12);' : '') + '">'
-        // 版本標頭
-        + '<div style="background:' + (isLatest ? 'linear-gradient(135deg,var(--red),#c0392b)' : 'var(--warm)') + ';padding:14px 16px;border-radius:6px 6px 0 0;">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">'
-        + '<div>'
-        + '<div style="display:flex;align-items:center;gap:8px;">'
-        + '<span style="font-size:1.1rem;font-weight:800;color:' + (isLatest?'white':'var(--text)') + ';font-family:monospace;">' + verEmoji + (d.version||'') + '</span>'
-        + (isLatest ? '<span style="font-size:0.65rem;background:white;color:var(--red);border-radius:10px;padding:2px 8px;font-weight:700;">LATEST</span>' : '')
-        + '</div>'
-        + '<div style="font-size:0.78rem;color:' + (isLatest?'rgba(255,255,255,0.8)':'var(--text-light)') + ';margin-top:3px;">📅 ' + (d.date||'') + '</div>'
-        + '</div>'
-        + '<div style="font-size:0.85rem;font-weight:600;color:' + (isLatest?'rgba(255,255,255,0.9)':'var(--text-mid)') + ';text-align:right;">' + (d.title||'') + '</div>'
-        + '</div>'
-        + '</div>'
-        // 內容
-        + '<div style="padding:4px 16px 12px;">'
-        + (itemsHtml || '<div style="color:var(--text-light);font-size:0.83rem;padding:12px 0;">（無內容）</div>')
-        + '</div>'
-        + '</div>';
-    });
-    el.innerHTML = html;
-  } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
-  }
-}
+async function loadChangelog() {}
 
 // ── 後台版本紀錄管理 ──
 var _clItems = [];
@@ -11181,7 +11093,6 @@ async function _saveChangelogInline(id, version, date, title, isLatest, btn, for
     _clItems = [];
     formEl.style.display = 'none';
     await loadAdminChangelog();
-    loadChangelog();
     initFootersWithVersion(); // 同步更新底部版本號
   } catch(e) { alert('儲存失敗：'+e.message); }
   finally { btn.textContent = '儲存'; btn.disabled = false; }
@@ -11201,7 +11112,6 @@ async function _moveChangelog(idx, dir) {
       fbUpdate(COL_CHANGELOG, b.id, { order: aOrder }),
     ]);
     await loadAdminChangelog();
-    loadChangelog();
   } catch(e) { alert('排序失敗：'+e.message); }
 }
 
