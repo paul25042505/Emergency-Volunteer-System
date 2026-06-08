@@ -569,41 +569,86 @@ tr:hover td { background: #fdfcfb; }
 #loginScreen {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   position: fixed; inset: 0;
-  background: linear-gradient(160deg, var(--navy) 0%, #004A6E 60%, #003049 100%);
-  z-index: 9999; padding: 32px 24px;
+  background: linear-gradient(175deg, #000C18 0%, #001828 30%, #002440 65%, #003049 100%);
+  z-index: 9999; padding: 24px 24px 32px; overflow: hidden;
+}
+#loginScreen::before {
+  content: ''; position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+  width: 480px; height: 480px;
+  background: radial-gradient(ellipse, rgba(193,18,31,0.12) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+#loginScreen::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 35%;
+  background: linear-gradient(0deg, rgba(0,48,73,0.6) 0%, transparent 100%);
+  pointer-events: none; z-index: 0;
+}
+.login-slogan {
+  position: relative; z-index: 1;
+  font-size: 0.7rem; letter-spacing: 0.22em; color: rgba(255,255,255,0.5);
+  font-family: 'Noto Sans TC', sans-serif; font-weight: 400;
+  padding: 7px 0; margin-bottom: 20px; text-align: center; width: 100%; max-width: 340px;
+  border-top: 1px solid rgba(255,195,0,0.25); border-bottom: 1px solid rgba(255,195,0,0.25);
+}
+.login-slogan span { color: rgba(255,195,0,0.7); margin: 0 4px; }
+.login-ecg {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 340px; height: 28px; margin-bottom: 14px; opacity: 0.28;
 }
 .login-card {
-  background: var(--white); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px;
-  padding: 40px 32px; max-width: 360px; width: 100%;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.25); text-align: center;
+  position: relative; z-index: 1;
+  background: rgba(0,12,24,0.72); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+  padding: 32px 28px; max-width: 340px; width: 100%;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+  text-align: center;
+  backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
 }
 .login-logo {
-  width: 96px; height: 96px; background: none; border-radius: 22px;
-  overflow: hidden; margin: 0 auto 20px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  width: 88px; height: 88px; background: none; border-radius: 20px;
+  overflow: hidden; margin: 0 auto 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 2px rgba(255,195,0,0.2);
 }
 .login-title {
-  font-family: 'Noto Serif TC', serif; font-size: 1.08rem; font-weight: 700;
-  color: var(--text); letter-spacing: 0.08em; margin-bottom: 4px;
+  font-family: 'Noto Serif TC', serif; font-size: 1.05rem; font-weight: 700;
+  color: #fff; letter-spacing: 0.08em; margin-bottom: 4px;
 }
 .login-sub {
-  font-size: 0.78rem; color: var(--text-light); letter-spacing: 0.06em;
-  margin-bottom: 28px; line-height: 1.6;
+  font-size: 0.72rem; color: rgba(255,195,0,0.6); letter-spacing: 0.08em;
+  margin-bottom: 24px; line-height: 1.6;
 }
-.login-divider { height: 1px; background: var(--border); margin: 24px 0; }
+.login-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
 .login-hint {
-  font-size: 0.72rem; color: var(--text-light); margin-top: 20px;
+  font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-top: 16px;
   line-height: 1.7; letter-spacing: 0.04em;
 }
 .login-error {
-  display: none; background: #fdf0ee; border: 1px solid #f0bab4;
+  display: none; background: rgba(193,18,31,0.15); border: 1px solid rgba(193,18,31,0.4);
   border-radius: 6px; padding: 12px 16px; margin-top: 16px;
-  font-size: 0.82rem; color: var(--red-dark); line-height: 1.6;
+  font-size: 0.82rem; color: #ff8a8a; line-height: 1.6;
 }
 .login-error.show { display: block; }
+.login-bottom-brand {
+  position: relative; z-index: 1;
+  margin-top: 18px; text-align: center;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.login-bottom-brand .lbb-main {
+  font-size: 0.72rem; color: rgba(255,255,255,0.45); letter-spacing: 0.06em; margin-bottom: 2px;
+}
+.login-bottom-brand .lbb-sub {
+  font-size: 0.62rem; color: rgba(255,255,255,0.25); letter-spacing: 0.04em;
+}
+/* dark card text overrides */
+.login-card { color: rgba(255,255,255,0.65); }
+#loginAltSection { border-top-color: rgba(255,255,255,0.1) !important; }
+#loginAltSection > div:first-child { color: rgba(255,255,255,0.4) !important; }
+#loginFeedbackForm { border-top-color: rgba(255,255,255,0.1) !important; }
+#loginFeedbackForm > div:first-child { color: rgba(255,255,255,0.55) !important; }
+.login-hint button { border-color: rgba(255,255,255,0.18) !important; color: rgba(255,255,255,0.45) !important; background: transparent !important; }
+#quickLoginOther button { border-color: rgba(255,255,255,0.2) !important; color: rgba(255,255,255,0.5) !important; background: transparent !important; }
 #loginSpinner {
   display: none; margin: 16px auto 0;
-  font-size: 0.82rem; color: var(--text-light); letter-spacing: 0.04em;
+  font-size: 0.82rem; color: rgba(255,255,255,0.5); letter-spacing: 0.04em;
 }
 #loginSpinner.show { display: block; }
 /* ── iOS Toggle Switch ── */
@@ -938,6 +983,12 @@ function _dlCSV(content, filename) {
 
 <!-- ══════ 登入畫面 ══════ -->
 <div id="loginScreen">
+  <!-- Slogan bar -->
+  <div class="login-slogan">守護生命<span>・</span>專業服務<span>・</span>即時支援</div>
+  <!-- ECG decoration line -->
+  <svg class="login-ecg" viewBox="0 0 340 28" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="0,14 60,14 75,14 80,3 86,25 91,7 96,20 101,14 180,14 185,14 190,3 196,25 201,7 206,20 211,14 280,14 340,14" stroke="#C1121F" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
   <div class="login-card">
     <!-- ── 一般登入 ── -->
     <div id="fullLoginPanel">
@@ -1050,6 +1101,11 @@ function _dlCSV(content, filename) {
       </div>
     </div>
     </div><!-- /fullLoginPanel -->
+  </div>
+  <!-- Bottom brand -->
+  <div class="login-bottom-brand">
+    <div class="lbb-main">臺中市義勇消防總隊 救護義消大隊</div>
+    <div class="lbb-sub">僅供授權義消成員使用</div>
   </div>
 </div>
 
