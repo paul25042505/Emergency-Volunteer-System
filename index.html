@@ -3337,7 +3337,45 @@ function _dlCSV(content, filename) {
         <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="si-body" style="display:none;padding:0 16px 16px;border-top:1px solid #f5f5f5;">
-        <p style="font-size:0.88rem;line-height:1.8;color:var(--text);margin:12px 0 8px;"><strong>臺中市救護義消資訊管理系統（TEVIS）</strong>為臺中市義勇消防總隊鳳凰救護大隊潭子分隊專屬數位管理平台，提供以下核心功能：</p>
+        <!-- 系統識別 -->
+        <div style="margin:14px 0 12px;padding:14px 16px;background:linear-gradient(135deg,var(--navy) 0%,#004A6E 100%);border-radius:12px;text-align:center;">
+          <div style="font-size:1.5rem;font-weight:800;letter-spacing:0.25em;color:#FFC300;font-family:'Noto Sans TC',sans-serif;margin-bottom:4px;">TEVIS</div>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.9);font-family:'Noto Serif TC',serif;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">臺中市救護義消資訊管理系統</div>
+          <div style="font-size:0.68rem;color:rgba(255,195,0,0.75);font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">Taichung EMS Volunteer Information System</div>
+        </div>
+        <!-- 色系 -->
+        <p style="font-size:0.78rem;font-weight:700;color:var(--text);margin:0 0 8px;letter-spacing:0.04em;">品牌色系</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fafafa;border-radius:8px;border:1px solid #f0f0f0;">
+            <div style="width:28px;height:28px;border-radius:6px;background:#C1121F;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:700;color:var(--text);">消防紅</div>
+              <div style="font-size:0.65rem;color:var(--text-light);font-family:monospace;">#C1121F</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fafafa;border-radius:8px;border:1px solid #f0f0f0;">
+            <div style="width:28px;height:28px;border-radius:6px;background:#003049;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:700;color:var(--text);">海軍藍</div>
+              <div style="font-size:0.65rem;color:var(--text-light);font-family:monospace;">#003049</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fafafa;border-radius:8px;border:1px solid #f0f0f0;">
+            <div style="width:28px;height:28px;border-radius:6px;background:#F8F9FA;border:1px solid #e0e0e0;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:700;color:var(--text);">淺灰</div>
+              <div style="font-size:0.65rem;color:var(--text-light);font-family:monospace;">#F8F9FA</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fafafa;border-radius:8px;border:1px solid #f0f0f0;">
+            <div style="width:28px;height:28px;border-radius:6px;background:#FFC300;flex-shrink:0;"></div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:700;color:var(--text);">金色</div>
+              <div style="font-size:0.65rem;color:var(--text-light);font-family:monospace;">#FFC300</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:0.88rem;line-height:1.8;color:var(--text);margin:0 0 8px;"><strong>TEVIS</strong> 為臺中市義勇消防總隊鳳凰救護大隊潭子分隊專屬數位管理平台，提供以下核心功能：</p>
         <ul style="font-size:0.85rem;line-height:2;color:var(--text-mid);padding-left:18px;margin:0;">
           <li>義消出勤簽到 / 簽退與出勤紀錄管理</li>
           <li>協勤案件登錄與查詢</li>
