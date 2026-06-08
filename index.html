@@ -3392,16 +3392,26 @@ function _dlCSV(content, filename) {
 <div class="page" id="morePage">
   <div class="form-wrap" style="padding-top:16px;">
 
+    <!-- 使用者簡介卡片 -->
+    <div id="moreUserCard" onclick="navTo('profilePage')" style="display:flex;align-items:center;gap:14px;background:white;border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:14px;cursor:pointer;">
+      <div id="moreAvatar" style="width:52px;height:52px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;flex-shrink:0;">?</div>
+      <div style="flex:1;min-width:0;">
+        <div id="moreName" style="font-size:1.05rem;font-weight:800;color:var(--text);">—</div>
+        <div id="moreTitle" style="font-size:0.78rem;color:var(--text-mid);margin-top:2px;"></div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+
     <!-- 選單列表 -->
     <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-bottom:20px;">
 
-      <!-- 個人資料（含使用者頭像，合併） -->
-      <button id="moreUserCard" onclick="navTo('profilePage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:18px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
-        <div id="moreAvatar" style="width:48px;height:48px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;flex-shrink:0;">?</div>
-        <div style="flex:1;min-width:0;">
-          <div id="moreName" style="font-size:1rem;font-weight:800;color:var(--text);">—</div>
-          <div id="moreTitle" style="font-size:0.75rem;color:var(--text-mid);margin-top:2px;"></div>
-          <div style="font-size:0.7rem;color:#aaa;margin-top:3px;">查看及編輯個人基本資料</div>
+      <button onclick="navTo('profilePage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;border-bottom:1px solid #f0f0f0;cursor:pointer;text-align:left;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b6fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">個人資料</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">查看及編輯個人基本資料</div>
         </div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
