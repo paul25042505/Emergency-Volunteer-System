@@ -14275,12 +14275,6 @@ function dutyView(v) {
   });
   const monthNav = document.getElementById('dutyMonthNav');
   if (monthNav) monthNav.style.display = (v==='gongcha'||v==='meeting') ? 'none' : '';
-  // re-calc padding when month nav visibility changes
-  const _scr2 = document.getElementById('appScroll');
-  if (_scr2 && document.body.classList.contains('page-duty')) {
-    const _sat2 = (() => { const d=document.createElement('div'); d.style.cssText='position:fixed;top:env(safe-area-inset-top,0);height:0;width:0;pointer-events:none;visibility:hidden;'; document.body.appendChild(d); const t=d.getBoundingClientRect().top; d.remove(); return t||0; })();
-    _scr2.style.setProperty('padding-top', (_sat2 + ((v==='list'||v==='month')?217:165)) + 'px', 'important');
-  }
   renderDutyView();
   if (prevDutyView && prevDutyView !== v) {
     const order = ['list','month','gongcha','meeting'];
