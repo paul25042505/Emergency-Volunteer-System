@@ -14318,7 +14318,7 @@ function toggleDutyForm() {
   if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
 }
 
-function dutyView(v) {
+function dutyView(v, scrollToDate) {
   const prevDutyView = _dutyView;
   _dutyView = v;
   ['month','list','gongcha','meeting'].forEach(t => {
@@ -14330,6 +14330,10 @@ function dutyView(v) {
   const monthNav = document.getElementById('dutyMonthNav');
   if (monthNav) monthNav.style.display = (v==='gongcha'||v==='meeting') ? 'none' : 'flex';
   renderDutyView();
+  if (v === 'list') {
+    const target = scrollToDate || new Date().toLocaleDateString('sv');
+    setTimeout(() => scrollToDutyDate(target), 120);
+  }
   if (prevDutyView && prevDutyView !== v) {
     const order = ['list','month','gongcha','meeting'];
     const pi = order.indexOf(prevDutyView), ni = order.indexOf(v);
@@ -14785,7 +14789,7 @@ function renderDutyCalendar() {
 
     const cell = document.createElement('div');
     cell.style.cssText = 'min-height:96px;border:1.5px solid ' + borderColor + ';border-radius:8px;padding:5px 3px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
-    if (isAllowed) cell.onclick = () => { dutyView('list'); setTimeout(()=>scrollToDutyDate(dateStr),100); };
+    if (isAllowed) cell.onclick = () => { dutyView('list', dateStr); };
 
     const num = document.createElement('div');
     num.style.cssText = 'font-size:0.88rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:3px;';
