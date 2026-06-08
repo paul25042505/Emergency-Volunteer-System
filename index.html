@@ -1897,11 +1897,7 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE 4：簽到簽退 ══════ -->
 <div class="page" id="attendancePage">
   <div class="attendance-wrap">
-    <!-- 簡易模式切換按鈕 -->
-    <div style="text-align:right;margin-bottom:12px;">
-      <button id="attEasyBtn" onclick="toggleAttEasyMode()" style="background:var(--red);color:white;border:none;border-radius:50px;padding:9px 18px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;font-weight:600;letter-spacing:0.05em;cursor:pointer;box-shadow:0 4px 12px rgba(192,57,43,0.3);">👴 簡易模式</button>
-    </div>
-    <!-- 簡易模式簽到退區塊 -->
+    <!-- 簡易模式（已停用） -->
     <div id="attEasySection" style="display:none;">
       <div class="easy-greeting">
         <div class="easy-name" id="attEasyGreetName">您好</div>
@@ -2026,84 +2022,95 @@ function _dlCSV(content, filename) {
       </div>
     </div>
     <div id="attMain" style="display:block;">
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num">✍</div>
-          <div class="section-title">簽到</div>
-          <div class="section-line"></div>
-        </div>
-        <div class="card">
-          <div class="row-2" style="margin-bottom:18px;">
-            <div class="field" style="margin-bottom:0;">
-              <label for="attDate">日期</label>
-              <input type="date" id="attDate">
+      <!-- ══ 簽到卡片 ══ -->
+      <div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);margin-bottom:16px;overflow:hidden;">
+        <!-- 橫幅標題 -->
+        <div style="background:linear-gradient(135deg,var(--red) 0%,#e74c3c 100%);padding:16px 18px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
-            <div class="field" style="margin-bottom:0;">
-              <label for="attCheckinTime">簽到時間 <span class="req">*</span><span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">（24小時制）</span></label>
-              <select id="attCheckinTime" style="width:100%;"></select>
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:white;letter-spacing:0.02em;">簽到登錄</div>
+              <div style="font-size:0.72rem;color:rgba(255,255,255,0.8);margin-top:1px;">Check In</div>
             </div>
           </div>
-          <div class="field">
-            <label>類別 <span class="req">*</span></label>
+        </div>
+        <!-- 表單內容 -->
+        <div style="padding:18px;display:flex;flex-direction:column;gap:14px;">
+          <!-- 日期 + 時間 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">日期</div>
+              <input type="date" id="attDate" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:0.88rem;background:white;">
+            </div>
+            <div>
+              <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">簽到時間 <span style="color:var(--red);">*</span></div>
+              <select id="attCheckinTime" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:0.88rem;background:white;"></select>
+            </div>
+          </div>
+          <!-- 類別 -->
+          <div>
+            <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">類別 <span style="color:var(--red);">*</span></div>
             <div class="duty-toggle">
               <button type="button" class="duty-btn active" id="attDutyOut" onclick="setAttDuty('協勤')">協勤</button>
               <button type="button" class="duty-btn" id="attDutyPub" onclick="setAttDuty('公差')">公差</button>
             </div>
             <input type="hidden" id="attDutyType" value="協勤">
           </div>
-          <div class="field" id="attOutingReasonField" style="display:none;">
-            <label>事由 <span class="req">*</span></label>
+          <!-- 事由（公差時顯示） -->
+          <div id="attOutingReasonField" style="display:none;">
+            <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">事由 <span style="color:var(--red);">*</span></div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <select id="attOutingReasonSel" style="flex:1;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;background:white;color:var(--text);">
+              <select id="attOutingReasonSel" style="flex:1;min-height:44px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.88rem;background:white;color:var(--text);">
                 <option value="">— 請選擇或新增事由 —</option>
               </select>
-              <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:44px;height:44px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.3rem;cursor:pointer;line-height:1;">＋</button>
-              <button type="button" onclick="deleteOutingReason('attOutingReasonSel')" style="flex-shrink:0;width:44px;height:44px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;font-size:1.1rem;cursor:pointer;line-height:1;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
+              <button type="button" onclick="addOutingReason()" style="flex-shrink:0;width:40px;height:40px;background:var(--red);color:white;border:none;border-radius:8px;font-size:1.2rem;cursor:pointer;">＋</button>
+              <button type="button" onclick="deleteOutingReason('attOutingReasonSel')" style="flex-shrink:0;width:40px;height:40px;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
             </div>
           </div>
-          <div class="field">
-            <label>分隊別 <span class="req">*</span></label>
-            <select id="attUnitSel" onchange="filterAttMembers()" style="width:100%;">
+          <!-- 分隊別 -->
+          <div>
+            <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">分隊別 <span style="color:var(--red);">*</span></div>
+            <select id="attUnitSel" onchange="filterAttMembers()" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:0.88rem;background:white;">
               <option value="">請選擇分隊</option>
             </select>
           </div>
-          <div class="field">
-            <label for="attMemberSel">義消成員 <span class="req">*</span></label>
-            <select id="attMemberSel">
+          <!-- 義消成員 -->
+          <div>
+            <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">義消成員 <span style="color:var(--red);">*</span></div>
+            <select id="attMemberSel" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:0.88rem;background:white;">
               <option value="">— 請選擇 —</option>
             </select>
           </div>
-          <div class="field">
-            <label>簽到簽名 <span class="req">*</span></label>
+          <!-- 簽到簽名 -->
+          <div>
+            <div style="font-size:0.75rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">簽到簽名 <span style="color:var(--red);">*</span></div>
             <div class="sig-wrap">
               <canvas id="attCheckinCanvas"></canvas>
               <div class="sig-footer">
-                <span>請用滑鼠或手指於上方簽名</span>
+                <span>請用手指於上方簽名</span>
                 <div class="sig-footer-btns">
-                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;flex:1;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l3-1 7-7-2-2-7 7-1 3z"/><path d="M10 4l2 2"/></svg>管理員代填</button>
-                  <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckinCanvas',_sigCheckinSetHasSig)"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>全螢幕</button>
+                  <button type="button" onclick="fillAdminSig('checkin')" class="admin-fill-btn" style="display:none;flex:1;"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l3-1 7-7-2-2-7 7-1 3z"/><path d="M10 4l2 2"/></svg>管理員代填</button>
+                  <button type="button" class="sig-fullscreen-btn" style="flex:1;" onclick="openSigFullscreen('attCheckinCanvas',_sigCheckinSetHasSig)"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>全螢幕</button>
                   <button type="button" class="btn-clear" style="flex:1;" onclick="clearAttCanvas('checkin')">清除重簽</button>
                 </div>
               </div>
             </div>
           </div>
-          <div class="submit-section">
-            <button type="button" class="btn-checkin" onclick="doCheckin()">確認簽到</button>
-          </div>
+          <!-- 送出按鈕 -->
+          <button type="button" onclick="doCheckin()" style="width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:13px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">確認簽到</button>
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-head">
-          <div class="section-num" style="font-size:0.8rem;">名</div>
-          <div class="section-title">已簽到名單</div>
-          <div class="section-line"></div>
-          <span style="font-size:0.75rem;color:var(--text-light);">點擊成員進行簽退</span>
+      <!-- ══ 已簽到名單 ══ -->
+      <div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);overflow:hidden;">
+        <div style="padding:14px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--text);">已簽到名單</div>
+          <div style="font-size:0.72rem;color:var(--text-light);">點擊成員進行簽退</div>
         </div>
-        <div class="member-list-card">
-          <div id="attCheckinList">
-            <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
-          </div>
+        <div id="attCheckinList" style="padding:10px 14px;">
+          <div class="member-empty"><span class="empty-icon">📋</span>尚無人簽到</div>
         </div>
       </div>
       <div class="site-footer-placeholder"></div>
