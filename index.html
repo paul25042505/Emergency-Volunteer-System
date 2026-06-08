@@ -14396,7 +14396,7 @@ function showGongchaForm(doc) {
     + '<div><div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:4px;">任務日期 <span style="color:var(--red);">*</span></div><input id="_gcDate" type="date" value="'+(doc.date||'')+'" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;"></div>'
     + (function(){
         const sel = (id,val)=>{
-          const seStyle='flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;background:white;text-align:center;';
+          const seStyle='flex:1;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;background:white;text-align:center;text-align-last:center;-webkit-text-align-last:center;';
           let o='<select id="'+id+'" style="'+seStyle+'"><option value="" style="color:#aaa;">—</option>';
           for(let h=0;h<24;h++)for(let m=0;m<60;m+=30){
             const hh=String(h).padStart(2,'0'),mm=String(m).padStart(2,'0'),t=hh+':'+mm;
