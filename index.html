@@ -7688,7 +7688,7 @@ async function doAttQuery() {
   } catch(e) {
     document.getElementById('aqLoadingMsg').style.display = 'none';
     alert('無法取得資料：' + e.message);
-    btn.textContent = '查　詢'; btn.disabled = false;
+    if (btn) { btn.textContent = '查　詢'; btn.disabled = false; }
     return;
   }
   const dateFrom   = document.getElementById('aqDateFrom').value;
@@ -7723,7 +7723,7 @@ async function doAttQuery() {
   _applyAttQuerySort();
   renderAttQueryResults();
   document.getElementById('aqLoadingMsg').style.display = 'none';
-  btn.textContent = '查　詢'; btn.disabled = false;
+  if (btn) { btn.textContent = '查　詢'; btn.disabled = false; }
 }
 
 // ── 打卡查詢：日期 chip 與類別 chip ──
@@ -8055,68 +8055,91 @@ function aqCopyCheckinSig() {
   img.src = src;
 }
 
+function _confirmModal(msg, onConfirm, confirmLabel, dangerColor) {
+  const existing = document.getElementById('_confirmModalEl');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = '_confirmModalEl';
+  m.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);';
+  m.innerHTML = `
+    <div style="background:white;border-radius:16px;width:calc(100% - 48px);max-width:340px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+      <div style="padding:20px 18px 14px;font-size:0.9rem;color:var(--text-dark);line-height:1.6;white-space:pre-line;">${msg}</div>
+      <div style="display:flex;border-top:1px solid var(--border);">
+        <button id="_confCancel" style="flex:1;padding:14px;background:none;border:none;border-right:1px solid var(--border);font-size:0.95rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
+        <button id="_confOk" style="flex:1;padding:14px;background:none;border:none;font-size:0.95rem;font-weight:700;color:${dangerColor||'var(--red)'};cursor:pointer;font-family:'Noto Sans TC',sans-serif;">${confirmLabel||'確定'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  document.getElementById('_confCancel').onclick = () => m.remove();
+  document.getElementById('_confOk').onclick = () => { m.remove(); onConfirm(); };
+}
+
 async function deleteOwnAtt(idx) {
   const r = aqFiltered[idx];
-  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  if (!r || !r.id) { _confirmModal('找不到紀錄 ID，請重新查詢。', ()=>{}, '確定'); return; }
   const label = `${r.date||''} ${r.memberName||''} ${r.checkinTime||''}簽到`;
-  if (!confirm(`確定刪除「${label}」這筆簽到退紀錄？\n此操作無法復原。`)) return;
-  try {
-    await fbDelete(COL_ATTEND, r.id);
-    await doAttQuery();
-  } catch(e) { alert('刪除失敗：'+e.message); }
+  _confirmModal(`確定刪除「${label}」這筆簽到退紀錄？\n此操作無法復原。`, async () => {
+    try {
+      await fbDelete(COL_ATTEND, r.id);
+      await doAttQuery();
+    } catch(e) { _confirmModal('刪除失敗：' + e.message, ()=>{}, '確定', '#333'); }
+  }, '刪除');
 }
 
 async function deleteOwnOut(idx) {
   const recs = filteredRecords;
   const r = recs[idx];
-  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  if (!r || !r.id) { _confirmModal('找不到紀錄 ID，請重新查詢。', ()=>{}, '確定'); return; }
   const label = `${r.date||''} ${r.memberName||''} ${r.timeOut||''}出勤`;
-  if (!confirm(`確定刪除「${label}」這筆出勤紀錄？\n此操作無法復原。`)) return;
-  try {
-    await fbDelete(COL_OUTING, r.id);
-    await doQuery();
-  } catch(e) { alert('刪除失敗：'+e.message); }
+  _confirmModal(`確定刪除「${label}」這筆出勤紀錄？\n此操作無法復原。`, async () => {
+    try {
+      await fbDelete(COL_OUTING, r.id);
+      await doQuery();
+    } catch(e) { _confirmModal('刪除失敗：' + e.message, ()=>{}, '確定', '#333'); }
+  }, '刪除');
 }
 
 async function requestDeleteAtt(idx) {
   const r = aqFiltered[idx];
-  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  if (!r || !r.id) { _confirmModal('找不到紀錄 ID，請重新查詢。', ()=>{}, '確定'); return; }
   const label = `${r.date||''} ${r.memberName||''} 簽到 ${r.checkinTime||''}`;
-  if (!confirm(`超過 24 小時的紀錄需送審才能刪除。\n\n申請刪除「${label}」？\n審核通過後將由承辦人執行刪除。`)) return;
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  try {
-    await fbAdd(COL_CORRECTION, {
-      type: 'attendance', requestType: 'delete', docId: r.id,
-      memberName: r.memberName||'', date: r.date||'', checkinTime: r.checkinTime||'',
-      originals: { checkinTime: r.checkinTime, checkoutTime: r.checkoutTime, dutyType: r.dutyType },
-      correctedFields: {}, reasonTags: '申請刪除', reason: '',
-      status: 'pending',
-      submittedBy: usr.memberName||usr.name||'',
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    alert('✅ 刪除申請已送出，承辦人審核後執行。');
-  } catch(e) { alert('送出失敗：'+e.message); }
+  _confirmModal(`超過 24 小時的紀錄需送審才能刪除。\n\n申請刪除「${label}」？\n審核通過後將由承辦人執行刪除。`, async () => {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    try {
+      await fbAdd(COL_CORRECTION, {
+        type: 'attendance', requestType: 'delete', docId: r.id,
+        memberName: r.memberName||'', date: r.date||'', checkinTime: r.checkinTime||'',
+        originals: { checkinTime: r.checkinTime, checkoutTime: r.checkoutTime, dutyType: r.dutyType },
+        correctedFields: {}, reasonTags: '申請刪除', reason: '',
+        status: 'pending',
+        submittedBy: usr.memberName||usr.name||'',
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      _confirmModal('✅ 刪除申請已送出，承辦人審核後執行。', ()=>{}, '確定', '#16A34A');
+    } catch(e) { _confirmModal('送出失敗：' + e.message, ()=>{}, '確定', '#333'); }
+  }, '申請刪除');
 }
 
 async function requestDeleteOut(idx) {
   const recs = filteredRecords;
   const r = recs[idx];
-  if (!r || !r.id) { alert('找不到紀錄 ID'); return; }
+  if (!r || !r.id) { _confirmModal('找不到紀錄 ID，請重新查詢。', ()=>{}, '確定'); return; }
   const label = `${r.date||''} ${r.memberName||''} 出勤 ${r.timeOut||''}`;
-  if (!confirm(`超過 24 小時的紀錄需送審才能刪除。\n\n申請刪除「${label}」？\n審核通過後將由承辦人執行刪除。`)) return;
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  try {
-    await fbAdd(COL_CORRECTION, {
-      type: 'outing', requestType: 'delete', docId: r.id,
-      memberName: r.memberName||'', date: r.date||'', timeOut: r.timeOut||'',
-      originals: { timeOut: r.timeOut, timeBack: r.timeBack, address: r.address, caseType: r.caseType },
-      correctedFields: {}, reasonTags: '申請刪除', reason: '',
-      status: 'pending',
-      submittedBy: usr.memberName||usr.name||'',
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    alert('✅ 刪除申請已送出，承辦人審核後執行。');
-  } catch(e) { alert('送出失敗：'+e.message); }
+  _confirmModal(`超過 24 小時的紀錄需送審才能刪除。\n\n申請刪除「${label}」？\n審核通過後將由承辦人執行刪除。`, async () => {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+    try {
+      await fbAdd(COL_CORRECTION, {
+        type: 'outing', requestType: 'delete', docId: r.id,
+        memberName: r.memberName||'', date: r.date||'', timeOut: r.timeOut||'',
+        originals: { timeOut: r.timeOut, timeBack: r.timeBack, address: r.address, caseType: r.caseType },
+        correctedFields: {}, reasonTags: '申請刪除', reason: '',
+        status: 'pending',
+        submittedBy: usr.memberName||usr.name||'',
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      _confirmModal('✅ 刪除申請已送出，承辦人審核後執行。', ()=>{}, '確定', '#16A34A');
+    } catch(e) { _confirmModal('送出失敗：' + e.message, ()=>{}, '確定', '#333'); }
+  }, '申請刪除');
 }
 
 async function saveAttEdit() {
