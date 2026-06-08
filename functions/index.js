@@ -1,5 +1,5 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
-const { onCall }            = require('firebase-functions/v2/https');
+const { onRequest }         = require('firebase-functions/v2/https');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
@@ -36,10 +36,12 @@ exports.onNewFeedback = onDocumentCreated(
   }
 );
 
-// ── 推播：廣播（HTTP Callable）→ 客戶端直接呼叫 ───────────────────────
-exports.sendBroadcast = onCall({ region: 'asia-east1' }, async (request) => {
-  const { title, body, requestedBy } = request.data;
-  if (!title || !body) throw new Error('title and body are required');
+// ── 推播：廣播（HTTP Request）→ 客戶端用 fetch 直接呼叫 ──────────────
+exports.sendBroadcast = onRequest({ region: 'asia-east1', cors: true }, async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
+
+  const { title, body, requestedBy } = req.body;
+  if (!title || !body) { res.status(400).json({ error: 'title and body are required' }); return; }
 
   const db = getFirestore();
   const snap = await db.collection('pushSubscriptions').get();
@@ -50,21 +52,21 @@ exports.sendBroadcast = onCall({ region: 'asia-east1' }, async (request) => {
   });
 
   const uniqueTokens = [...new Set(tokens)];
-  if (!uniqueTokens.length) return { status: 'no_tokens', count: 0 };
+  if (!uniqueTokens.length) {
+    res.json({ status: 'no_tokens', count: 0 });
+    return;
+  }
 
   await _sendMulticast(uniqueTokens, { title, body });
 
-  // 記錄到 broadcastRequests
   await db.collection('broadcastRequests').add({
-    title, body,
-    status: 'sent',
+    title, body, status: 'sent',
     createdBy: requestedBy || '管理員',
-    createdAt: new Date(),
-    sentAt: new Date(),
+    createdAt: new Date(), sentAt: new Date(),
     recipientCount: uniqueTokens.length,
   });
 
-  return { status: 'sent', count: uniqueTokens.length };
+  res.json({ status: 'sent', count: uniqueTokens.length });
 });
 
 // ── 工具函式 ──────────────────────────────────────────────────────────
