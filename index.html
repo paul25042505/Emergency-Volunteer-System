@@ -12297,6 +12297,22 @@ async function createConfirmTask() {
       createdBy: usr.memberName || '',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    // 同步寫入公告
+    const annTitle = `📋 ${month} ${unit} 上月紀錄確認`;
+    const annBody  = note || `請 ${unit} 成員完成 ${month} 出勤紀錄確認`;
+    const now2 = new Date();
+    fbAdd('announcements', {
+      title: annTitle, body: annBody,
+      text: `${annTitle}\n${annBody}`,
+      type: 'confirm',
+      audience: 'all',
+      active: true, pinned: false, urgent: false,
+      startDate: now2.toISOString().slice(0, 10),
+      endDate: new Date(now2.getTime() + 30 * 86400000).toISOString().slice(0, 10),
+      createdAt: now2,
+      createdBy: usr.memberName || '管理員',
+      relatedUnit: unit,
+    }).catch(() => {});
     status.style.color = '#1a6b35';
     status.textContent = '✅ 確認任務已建立，成員登入時將看到通知';
     document.getElementById('confirmNote').value = '';
