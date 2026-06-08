@@ -17,8 +17,8 @@ messaging.onBackgroundMessage(payload => {
   const n = payload.notification || {};
   self.registration.showNotification(n.title || '新通知', {
     body: n.body || '',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: '/Emergency-Volunteer-System/icon-192.png',
+    badge: '/Emergency-Volunteer-System/icon-192.png',
     data: payload.data || {},
     vibrate: [200, 100, 200],
   });
@@ -32,7 +32,7 @@ self.addEventListener('notificationclick', event => {
       for (const c of list) {
         if ('focus' in c) return c.focus();
       }
-      return clients.openWindow('/');
+      return clients.openWindow('/Emergency-Volunteer-System/');
     })
   );
 });
