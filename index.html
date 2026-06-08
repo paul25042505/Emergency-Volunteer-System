@@ -11381,6 +11381,12 @@ async function _initFCM() {
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
     await _fcmDebug(token ? 'token OK: ' + token.substring(0,20) + '...' : 'token null');
     await _savePushSubscription(token);
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data?.type === 'SW_PUSH') {
+        _showToast('📡 SW收到push：' + (event.data.title || ''));
+        _updateBellBadge();
+      }
+    });
     messaging.onMessage(payload => {
       _showToast('🔔 onMessage fired');
       const n = payload.notification || {};
