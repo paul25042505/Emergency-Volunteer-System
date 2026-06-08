@@ -896,9 +896,9 @@ tr:hover td { background: #fdfcfb; }
 #noticePanelBg { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
 #noticePanelCard {
   position: absolute; top: 0; left: 0; right: 0;
-  background: #ffffff; border-radius: 0 0 24px 24px;
-  max-height: 82vh; display: flex; flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  background: #f2f2f7; border-radius: 0 0 28px 28px;
+  max-height: 86vh; display: flex; flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
   animation: noticePanelDown 0.28s cubic-bezier(0.4,0,0.2,1);
 }
 @keyframes noticePanelDown {
@@ -906,31 +906,53 @@ tr:hover td { background: #fdfcfb; }
   to   { transform: translateY(0); }
 }
 #noticePanelHead {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 20px 14px;
-  padding-top: calc(20px + env(safe-area-inset-top, 0px));
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  padding: calc(env(safe-area-inset-top,0px) + 18px) 20px 0;
+  flex-shrink: 0; background: #f2f2f7;
 }
-#noticePanelList { overflow-y: auto; flex: 1; }
+#noticePanelTopRow {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+#noticePanelTabs {
+  display: flex; gap: 6px; padding: 0 0 14px;
+}
+.notice-tab-btn {
+  flex: 1; padding: 9px 0; border: none; border-radius: 12px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.18s;
+  position: relative;
+}
+.notice-tab-btn.active { background: #ffffff; color: var(--red); box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+.notice-tab-btn:not(.active) { background: transparent; color: var(--text-light); }
+.notice-tab-dot {
+  position: absolute; top: 7px; right: 12px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red); display: none;
+}
+#noticePanelList { overflow-y: auto; flex: 1; padding: 0 12px 16px; }
 .notice-card {
   display: flex; align-items: flex-start; gap: 12px;
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  padding: 13px 14px; background: #fff; border-radius: 14px;
+  margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
+.notice-card.unread { background: #fff; border-left: 3px solid var(--red); }
 .notice-card-icon {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; flex-shrink: 0;
+  flex-shrink: 0;
 }
 .notice-card-body { flex: 1; min-width: 0; }
-.notice-card-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 3px; color: var(--text); }
+.notice-card-title { font-weight: 600; font-size: 0.87rem; margin-bottom: 3px; color: var(--text); line-height: 1.35; }
+.notice-card-title.unread-title { font-weight: 700; }
 .notice-card-preview {
   font-size: 0.76rem; color: var(--text-mid); white-space: pre-wrap;
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  line-height: 1.4;
 }
-.notice-card-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.notice-card-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .notice-tag {
-  font-size: 0.6rem; border-radius: 10px; padding: 1px 7px; font-weight: 600;
+  font-size: 0.6rem; border-radius: 8px; padding: 2px 7px; font-weight: 600;
+}
+.notice-unread-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-left: auto;
 }
 
 </style>
@@ -1199,11 +1221,23 @@ function _dlCSV(content, filename) {
   <div id="noticePanelBg" onclick="closeNoticePanel()"></div>
   <div id="noticePanelCard">
     <div id="noticePanelHead">
-      <div>
-        <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);">通知中心</div>
-        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.12em;margin-top:1px;">NOTIFICATION CENTER</div>
+      <div id="noticePanelTopRow">
+        <div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:1.1rem;font-weight:700;color:var(--text);">通知中心</div>
+          <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.12em;margin-top:1px;">NOTIFICATION CENTER</div>
+        </div>
+        <button onclick="closeNoticePanel()" style="background:rgba(0,0,0,0.06);border:none;width:32px;height:32px;border-radius:50%;font-size:0.9rem;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
-      <button onclick="closeNoticePanel()" style="background:var(--card-bg);border:none;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;">✕</button>
+      <div id="noticePanelTabs">
+        <button class="notice-tab-btn active" id="noticeTab-msg" onclick="switchNoticeTab('msg')">
+          訊息通知
+          <span class="notice-tab-dot" id="noticeTabDot-msg"></span>
+        </button>
+        <button class="notice-tab-btn" id="noticeTab-ann" onclick="switchNoticeTab('ann')">
+          公告
+          <span class="notice-tab-dot" id="noticeTabDot-ann"></span>
+        </button>
+      </div>
     </div>
     <div id="noticePanelList">
       <div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>
@@ -10821,12 +10855,83 @@ function _updateBellBadge() {
   } catch(e) {}
 }
 
+const _NOTICE_SVG = {
+  broadcast: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>`,
+  correction: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  feedback:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  system:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  urgent:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+};
+const _NOTICE_META = {
+  broadcast: { bg: '#fff3e0', clr: '#e65100', tag: '廣播通知', tagBg: '#fff3e0', tagClr: '#e65100' },
+  correction: { bg: '#e3f2fd', clr: '#1565c0', tag: '修正申請', tagBg: '#e3f2fd', tagClr: '#1565c0' },
+  feedback:   { bg: '#f3e5f5', clr: '#6a1b9a', tag: '意見回饋', tagBg: '#f3e5f5', tagClr: '#6a1b9a' },
+  system:     { bg: '#e8f5e9', clr: '#2e7d32', tag: '系統公告', tagBg: '#e8f5e9', tagClr: '#2e7d32' },
+  urgent:     { bg: '#ffebee', clr: '#c62828', tag: '緊急通知', tagBg: '#ffebee', tagClr: '#c62828' },
+};
+
+let _noticeAllDocs = [];
+let _noticeLastSeen = 0;
+let _noticeTab = 'msg';
+
+function _buildNoticeCard(d) {
+  const ts      = d.createdAt?.toMillis?.() ?? 0;
+  const unread  = ts > _noticeLastSeen;
+  const lines   = (d.text||'').split('\n');
+  const title   = d.title || lines[0] || '通知';
+  const preview = d.body  || lines.slice(1).join('\n').trim();
+  let t = d.urgent ? 'urgent' : (d.type || 'system');
+  if (!_NOTICE_META[t]) t = 'system';
+  const meta = { ..._NOTICE_META[t] };
+  if (d.pinned) meta.tag = '📌 置頂';
+  const dateStr = d.createdAt
+    ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+    : (d.startDate||'').replace(/-/g,'/');
+  return `<div class="notice-card${unread?' unread':''}">
+    <div class="notice-card-icon" style="background:${meta.bg};color:${meta.clr};">${_NOTICE_SVG[t]||_NOTICE_SVG.system}</div>
+    <div class="notice-card-body">
+      <div class="notice-card-title${unread?' unread-title':''}">${title}</div>
+      ${preview ? `<div class="notice-card-preview">${preview}</div>` : ''}
+      <div class="notice-card-meta">
+        <span class="notice-tag" style="background:${meta.tagBg};color:${meta.tagClr};">${meta.tag}</span>
+        <span style="font-size:0.6rem;color:var(--text-light);">${dateStr}</span>
+        ${unread ? '<span style="font-size:0.6rem;background:var(--red);color:white;border-radius:4px;padding:1px 5px;font-weight:600;">未讀</span>' : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function _renderNoticeTab() {
+  const list = document.getElementById('noticePanelList');
+  // 訊息通知 = broadcast / correction / feedback；公告 = system (+ urgent pinned)
+  const msgTypes = ['broadcast', 'correction', 'feedback'];
+  const filtered = _noticeAllDocs.filter(d =>
+    _noticeTab === 'msg' ? msgTypes.includes(d.type || 'system') : !msgTypes.includes(d.type || 'system')
+  );
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-light);font-size:0.82rem;">${_noticeTab==='msg'?'目前沒有訊息通知':'目前沒有公告'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(_buildNoticeCard).join('');
+}
+
+function switchNoticeTab(tab) {
+  _noticeTab = tab;
+  ['msg','ann'].forEach(t => {
+    document.getElementById('noticeTab-'+t)?.classList.toggle('active', t === tab);
+  });
+  _renderNoticeTab();
+}
+
 async function openNoticePanel() {
-  const lastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
+  _noticeLastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
   localStorage.setItem('bellLastSeen', Date.now().toString());
   document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'none');
   const panel = document.getElementById('noticePanel');
   panel.style.display = 'block';
+  // reset to msg tab
+  _noticeTab = 'msg';
+  switchNoticeTab('msg');
   const list = document.getElementById('noticePanelList');
   list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入中…</div>';
   try {
@@ -10834,7 +10939,7 @@ async function openNoticePanel() {
     const isAdm = u.isAdmin || u.isOfficer;
     const today = new Date().toLocaleDateString('sv');
     const docs  = await fbList(COL_ANNOUNCE);
-    const active = docs
+    _noticeAllDocs = docs
       .filter(d => {
         if (d.active === false) return false;
         if ((d.startDate||'') > today || (d.endDate||'9999') < today) return false;
@@ -10848,52 +10953,15 @@ async function openNoticePanel() {
         const tb = b.createdAt?.toMillis?.() ?? 0;
         return tb - ta;
       });
-    if (!active.length) {
-      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">目前沒有通知</div>';
-      return;
-    }
-    list.innerHTML = active.map(d => {
-      const ts      = d.createdAt?.toMillis?.() ?? 0;
-      const unread  = ts > lastSeen;
-      const lines   = (d.text||'').split('\n');
-      const title   = d.title || lines[0] || '通知';
-      const preview = d.body  || lines.slice(1).join('\n').trim();
-      const type    = d.type || 'system';
-      const svgMap = {
-        broadcast: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>`,
-        correction: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
-        feedback:   `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-        system:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
-        urgent:     `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-      };
-      const iconBgMap  = { broadcast: '#fff3e0', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
-      const iconClrMap = { broadcast: '#e65100', correction: '#1565c0', feedback: '#6a1b9a', system: '#2e7d32' };
-      const tagMap     = { broadcast: '廣播通知', correction: '修正申請', feedback: '意見回饋', system: '系統公告' };
-      const tagBgMap   = { broadcast: '#fff3e0', correction: '#e3f2fd', feedback: '#f3e5f5', system: '#e8f5e9' };
-      const tagClrMap  = { broadcast: '#e65100', correction: '#1565c0', feedback: '#6a1b9a', system: '#2e7d32' };
-      let effectiveType = type;
-      if (d.urgent) { effectiveType = 'urgent'; iconBgMap.urgent = '#ffebee'; iconClrMap.urgent = '#c62828'; tagMap.urgent = '緊急通知'; tagBgMap.urgent = '#ffebee'; tagClrMap.urgent = '#c62828'; }
-      if (d.pinned) { tagMap[effectiveType] = '📌 置頂'; }
-      const iconSvg = svgMap[effectiveType] || svgMap.system;
-      const iconBg  = iconBgMap[effectiveType]  || '#e8f5e9';
-      const iconClr = iconClrMap[effectiveType] || '#2e7d32';
-      const tag     = tagMap[effectiveType]     || '系統公告';
-      const tagBg   = tagBgMap[effectiveType]   || '#e8f5e9';
-      const tagClr  = tagClrMap[effectiveType]  || '#2e7d32';
-      const dateStr = d.createdAt ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : (d.startDate||'').replace(/-/g,'/');
-      return `<div class="notice-card">
-        <div class="notice-card-icon" style="background:${iconBg};color:${iconClr};">${iconSvg}</div>
-        <div class="notice-card-body">
-          <div class="notice-card-title" style="${unread ? 'font-weight:700;color:var(--text);' : ''}">${title}</div>
-          ${preview ? `<div class="notice-card-preview">${preview}</div>` : ''}
-          <div class="notice-card-meta">
-            <span class="notice-tag" style="background:${tagBg};color:${tagClr};">${tag}</span>
-            <span style="font-size:0.6rem;color:var(--text-light);">${dateStr}</span>
-            ${unread ? '<span style="font-size:0.6rem;background:var(--red);color:white;border-radius:4px;padding:1px 5px;">未讀</span>' : ''}
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+    // update tab unread dots
+    const msgTypes = ['broadcast', 'correction', 'feedback'];
+    const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && (d.createdAt?.toMillis?.()??0) > _noticeLastSeen);
+    const hasUnreadAnn = _noticeAllDocs.some(d => !msgTypes.includes(d.type||'system') && (d.createdAt?.toMillis?.()??0) > _noticeLastSeen);
+    const dotMsg = document.getElementById('noticeTabDot-msg');
+    const dotAnn = document.getElementById('noticeTabDot-ann');
+    if (dotMsg) dotMsg.style.display = hasUnreadMsg ? 'block' : 'none';
+    if (dotAnn) dotAnn.style.display = hasUnreadAnn ? 'block' : 'none';
+    _renderNoticeTab();
   } catch(e) {
     list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);font-size:0.82rem;">載入失敗</div>';
   }
