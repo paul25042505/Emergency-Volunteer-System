@@ -14228,11 +14228,17 @@ async function initDutyPage() {
     if (_userUnit) { unitSel.value = _userUnit; filterDutyMembers(); }
   }
 
-  // 預設顯示當月，並捲動到今天
+  // 每次進入頁面都重設為清單視圖並捲動到今天
   const now = new Date();
   _dutyYear  = now.getFullYear();
   _dutyMonth = now.getMonth();
-  if (_dutyView === 'month') renderDutyCalSkeleton(); // 月視圖才顯示骨架屏
+  _dutyView = 'list';
+  ['month','list','gongcha','meeting'].forEach(t => {
+    const btn = document.getElementById('dutySub-'+t);
+    if (btn) { if (t==='list') btn.classList.add('active'); else btn.classList.remove('active'); }
+  });
+  const monthNav = document.getElementById('dutyMonthNav');
+  if (monthNav) monthNav.style.display = 'flex';
   await loadDutyData();
   onDutyTimeChange();
   setTimeout(() => scrollToDutyDate(now.toLocaleDateString('sv')), 150);
