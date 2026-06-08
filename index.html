@@ -141,6 +141,8 @@ body {
 /* 首頁時隱藏 header，內頁才顯示 */
 body.page-home .header { display: none !important; }
 body.page-home #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
+body.page-more #appScroll { padding-top: env(safe-area-inset-top, 0px) !important; }
+body.page-more .header    { display: none !important; }
 /* custom header 在 flex 流中，#appScroll 不需要 padding-top */
 body.page-ops #appScroll    { padding-top: 0 !important; }
 body.page-duty #appScroll   { padding-top: 0 !important; }
@@ -5230,12 +5232,14 @@ function navTo(pageId, fromHistory) {
   // 首頁：隱藏 header；勤務頁：隱藏 header；其他頁：顯示 header + 返回按鈕
   const isHome   = pageId === 'dashboardPage';
   const isDuty   = pageId === 'dutyPage';
+  const isMore   = pageId === 'morePage';
   const opsPages = ['attendancePage','formPage','attQueryPage','queryPage'];
   const mngPages = ['myCorrectionsPage','reportPage','statsPage','gongchaPage'];
   const isOps    = opsPages.includes(pageId);
   const isManage = mngPages.includes(pageId);
   document.body.classList.toggle('page-home',   isHome);
   document.body.classList.toggle('page-duty',   isDuty);
+  document.body.classList.toggle('page-more',   isMore);
   document.body.classList.toggle('page-ops',    isOps);
   document.body.classList.toggle('page-manage', isManage);
   // custom header 在 flex 流中，不需要手動設定 padding-top
