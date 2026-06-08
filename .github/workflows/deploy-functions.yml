@@ -26,4 +26,4 @@ jobs:
         run: cd functions && npm install
 
       - name: Deploy Firebase Functions
-        run: npx firebase-tools@latest deploy --only functions --project rescue-volunteer-a33f1 --non-interactive
+        run: npx firebase-tools@latest deploy --only functions --project rescue-volunteer-a33f1 --non-interactive --force
