@@ -11608,29 +11608,34 @@ async function initSystemInfoPage() {
         return;
       }
       const SHOW_INIT = 3;
+      let _clUid = 0;
       function _renderDoc(d, idx, total) {
         const isLatest = !!d.isLatest;
         const ver   = d.version || '';
         const date  = d.date    || '';
         const title = d.title   || '';
+        const uid   = 'clv' + (++_clUid);
         const dot   = isLatest
           ? `<div style="position:absolute;left:-20px;top:14px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid white;box-shadow:0 0 0 2px var(--red);"></div>`
           : `<div style="position:absolute;left:-17px;top:16px;width:8px;height:8px;border-radius:50%;background:#D1D5DB;border:2px solid white;"></div>`;
         const itemsHtml = _renderItems(d.items, isLatest ? 'var(--red)' : '#9CA3AF');
+        const hasItems  = !!itemsHtml;
         return `<div style="position:relative;margin-bottom:${idx < total-1 ? '20px' : '0'};">
           ${dot}
           <div style="background:${isLatest?'white':'#FAFAFA'};border-radius:10px;border:${isLatest?'1.5px solid #FECACA':'1px solid #F3F4F6'};overflow:hidden;${isLatest?'box-shadow:0 2px 12px rgba(224,49,49,0.1);':''}">
-            <div style="padding:12px 14px;${isLatest?'border-bottom:1px solid #FEE2E2;':'border-bottom:1px solid #F3F4F6;'}">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <div style="display:flex;align-items:center;gap:8px;">
+            <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:${hasItems?'pointer':'default'};"
+              ${hasItems ? `onclick="var b=document.getElementById('${uid}');var a=document.getElementById('${uid}arr');if(b.style.display==='none'){b.style.display='block';a.style.transform='rotate(180deg)'}else{b.style.display='none';a.style.transform=''}"` : ''}>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <span style="font-size:0.95rem;font-weight:800;color:${isLatest?'var(--red)':'#374151'};letter-spacing:-0.01em;">${ver}</span>
                   ${isLatest ? '<span style="font-size:0.65rem;font-weight:700;background:var(--red);color:white;border-radius:20px;padding:2px 8px;">最新</span>' : ''}
+                  <span style="font-size:0.72rem;color:#9CA3AF;white-space:nowrap;">${date}</span>
                 </div>
-                <span style="font-size:0.75rem;color:#9CA3AF;white-space:nowrap;">${date}</span>
+                ${title ? `<div style="font-size:0.8rem;color:#6B7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>` : ''}
               </div>
-              ${title ? `<div style="font-size:0.8rem;color:#6B7280;margin-top:3px;">${title}</div>` : ''}
+              ${hasItems ? `<svg id="${uid}arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>` : ''}
             </div>
-            ${itemsHtml ? `<div style="padding:0 14px 6px;">${itemsHtml}</div>` : ''}
+            ${hasItems ? `<div id="${uid}" style="display:none;padding:0 14px 6px;border-top:1px solid ${isLatest?'#FEE2E2':'#F3F4F6'};">${itemsHtml}</div>` : ''}
           </div>
         </div>`;
       }
