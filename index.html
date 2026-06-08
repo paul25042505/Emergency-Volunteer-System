@@ -7066,10 +7066,20 @@ async function initAttendancePage() {
     if (_userUnit) {
       unitSel.value = _userUnit;
       filterAttMembers();
-      // 預設選登入者
+      // 預設選登入者（memberName → name → members 陣列比對）
       const _memberSel = document.getElementById('attMemberSel');
-      const _userName  = _u.memberName || '';
-      if (_memberSel && _userName) _memberSel.value = _userName;
+      const _myName = (_u.memberName || _u.name || '').trim();
+      if (_memberSel && _myName) {
+        // 直接嘗試設定
+        _memberSel.value = _myName;
+        // 若選項還沒找到（members 可能還在載入），等一下再試
+        if (!_memberSel.value) {
+          setTimeout(() => {
+            filterAttMembers();
+            _memberSel.value = _myName;
+          }, 400);
+        }
+      }
     }
   }
 
@@ -7079,6 +7089,16 @@ async function initAttendancePage() {
   loadOutingReasons();
   } // end if (!_attPageInited)
 
+  // 每次進入都重新預設自己的分隊和姓名
+  const _u2 = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _myName2 = (_u2.memberName || _u2.name || '').trim();
+  const _unitSel2 = document.getElementById('attUnitSel');
+  const _memSel2  = document.getElementById('attMemberSel');
+  if (_unitSel2 && _u2.unit && !_u2.isAdmin) {
+    _unitSel2.value = _u2.unit;
+    filterAttMembers();
+    if (_memSel2 && _myName2) _memSel2.value = _myName2;
+  }
   // 每次進入都更新今日在線名單（即時資料）
   await loadTodayCheckins();
   // 只在沒有進行簽退時才重置顯示（避免覆蓋使用者已點的簽退畫面）
