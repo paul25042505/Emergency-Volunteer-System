@@ -12944,37 +12944,34 @@ async function loadAdminCaseTypes() {
 async function addCaseType() {
   const inp = document.getElementById('newCaseTypeInput');
   const name = (inp?.value || '').trim();
-  if (!name) { alert('請輸入案由名稱'); return; }
-  if (_caseTypesList.includes(name)) { alert('已有相同的案由'); return; }
+  if (!name) { _confirmModal('請輸入案由名稱', ()=>{}, '確定', '#333'); return; }
+  if (_caseTypesList.includes(name)) { _confirmModal('已有相同的案由', ()=>{}, '確定', '#333'); return; }
   try {
     await fbAdd(COL_CASETYPES, { name, order: _caseTypesList.length });
     inp.value = '';
     await loadAdminCaseTypes();
-  } catch(e) { alert('新增失敗：' + e.message); }
+  } catch(e) { _confirmModal('新增失敗：' + e.message, ()=>{}, '確定', '#333'); }
 }
 
 async function deleteCaseType(name) {
-  if (!confirm('確定刪除「' + name + '」？')) return;
-  try {
-    // 先找現有 doc
-    let doc = _caseTypeDocs.find(d => d.name === name);
-    if (!doc) {
-      // 預設值尚未存入 Firestore，先把所有預設值寫入，再刪除指定的
-      const all = await fbList(COL_CASETYPES);
-      if (all.length === 0) {
-        // 寫入全部預設值（排除要刪的那個）
-        const toAdd = DEFAULT_CASE_TYPES.filter(n => n !== name);
-        await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
-        await loadAdminCaseTypes();
-        return;
+  _confirmModal('確定刪除「' + name + '」？', async () => {
+    try {
+      let doc = _caseTypeDocs.find(d => d.name === name);
+      if (!doc) {
+        const all = await fbList(COL_CASETYPES);
+        if (all.length === 0) {
+          const toAdd = DEFAULT_CASE_TYPES.filter(n => n !== name);
+          await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
+          await loadAdminCaseTypes();
+          return;
+        }
+        await loadCaseTypes();
+        doc = _caseTypeDocs.find(d => d.name === name);
       }
-      // 有 doc 但快取過期，重新載入
-      await loadCaseTypes();
-      doc = _caseTypeDocs.find(d => d.name === name);
-    }
-    if (doc) await fbDelete(COL_CASETYPES, doc.id);
-    await loadAdminCaseTypes();
-  } catch(e) { alert('刪除失敗：' + e.message); }
+      if (doc) await fbDelete(COL_CASETYPES, doc.id);
+      await loadAdminCaseTypes();
+    } catch(e) { _confirmModal('刪除失敗：' + e.message, ()=>{}, '確定', '#333'); }
+  }, '刪除');
 }
 
 
