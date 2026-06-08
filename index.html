@@ -10963,10 +10963,16 @@ async function saveAnnounceForm() {
       await Promise.all(allDocs.filter(d => d.pinned && d.id !== id)
         .map(d => fbUpdate(COL_ANNOUNCE, d.id, { pinned: false })));
     }
-    const data = { text, startDate:start, endDate:end, urgent, pinned, active:true,
-                   updatedAt: new Date().toLocaleString('sv').replace('T',' ') };
-    if (id) { await fbSet(COL_ANNOUNCE, id, data); }
-    else    { await fbAdd(COL_ANNOUNCE, data); }
+    const lines = text.split('\n');
+    const title = lines[0] || text;
+    const body  = lines.slice(1).join('\n').trim();
+    const base  = { text, title, body, startDate:start, endDate:end, urgent, pinned,
+                    active:true, type:'system', audience:'all' };
+    if (id) {
+      await fbSet(COL_ANNOUNCE, id, { ...base, updatedAt: new Date().toLocaleString('sv').replace('T',' ') });
+    } else {
+      await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date() });
+    }
     hideAnnounceForm();
     await loadAdminAnnouncements();
     loadAnnouncement();
