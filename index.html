@@ -4624,7 +4624,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 記憶上次登入（最多3筆，用於快速登入頭像）
   try {
     const stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]');
-    const entry = { name, email, title: title || '', isAdmin: isAdmin||false, isOfficer: isOfficer||false, role: role||'member', ts: Date.now() };
+    const _u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const entry = { name, email, title: title || '', isAdmin: isAdmin||false, isOfficer: isOfficer||false, role: role||'member', unit: _u.unit || '', ts: Date.now() };
     const filtered = stored.filter(u => u.email !== email);
     filtered.unshift(entry);
     localStorage.setItem('evs_recent_users', JSON.stringify(filtered.slice(0, 3)));
