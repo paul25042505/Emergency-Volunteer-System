@@ -9383,48 +9383,49 @@ async function loadCaseStats() {
     document.getElementById('caseTopLabel').textContent = topType[0] + ' 件數';
     document.getElementById('caseOverviewGrid').style.display = 'grid';
 
-    // Charts
-    if (_casePieChart) { _casePieChart.destroy(); _casePieChart = null; }
-    if (_caseBarChart) { _caseBarChart.destroy(); _caseBarChart = null; }
+    // ── 圓餅圖（SVG doughnut）──
+    const pieEl = document.getElementById('casePagePieChart');
+    if (pieEl) {
+      const sz = 140, cx = sz/2, cy = sz/2, R = 54, r = 32;
+      let startAngle = -Math.PI / 2;
+      let paths = '';
+      counts.forEach((v, i) => {
+        const angle = (v / total) * Math.PI * 2;
+        const endAngle = startAngle + angle;
+        const x1 = cx + R * Math.cos(startAngle), y1 = cy + R * Math.sin(startAngle);
+        const x2 = cx + R * Math.cos(endAngle),   y2 = cy + R * Math.sin(endAngle);
+        const ix1 = cx + r * Math.cos(startAngle), iy1 = cy + r * Math.sin(startAngle);
+        const ix2 = cx + r * Math.cos(endAngle),   iy2 = cy + r * Math.sin(endAngle);
+        const large = angle > Math.PI ? 1 : 0;
+        paths += `<path d="M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} L${ix2.toFixed(2)},${iy2.toFixed(2)} A${r},${r} 0 ${large} 0 ${ix1.toFixed(2)},${iy1.toFixed(2)} Z" fill="${colors[i]}" stroke="#fff" stroke-width="1.5"/>`;
+        startAngle = endAngle;
+      });
+      pieEl.innerHTML = `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" style="display:block;margin:0 auto;">${paths}<text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="14" font-weight="700" fill="#333" font-family="'Noto Serif TC',serif">${total}</text></svg>`;
+    }
 
+    // 圖例
     const legend = document.getElementById('casePageLegend');
     if (legend) legend.innerHTML = labels.map((l,i) => `<span style="display:flex;align-items:center;gap:3px;white-space:nowrap;"><span style="width:9px;height:9px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>${l}</span>`).join('');
 
-    document.getElementById('caseChartsArea').style.display = 'grid';
+    // ── 橫條圖（純 HTML）──
+    const barEl = document.getElementById('casePageBarChart');
+    if (barEl) {
+      const maxVal = counts[0] || 1;
+      barEl.innerHTML = labels.map((l, i) => {
+        const pct = (counts[i] / maxVal * 100).toFixed(0);
+        return `<div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:0.78rem;color:#333;font-family:'Noto Sans TC',sans-serif;">${l}</span>
+            <span style="font-size:0.78rem;font-weight:700;color:${colors[i]};">${counts[i]}</span>
+          </div>
+          <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
+            <div style="height:8px;background:${colors[i]};border-radius:4px;width:${pct}%;transition:width 0.4s ease;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
 
-    // 等 layout 完成後再畫 chart，雙 rAF 確保 offsetWidth 正確
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const pieEl = document.getElementById('casePagePieChart');
-      if (pieEl && typeof Chart !== 'undefined') {
-        const sz = Math.max(pieEl.offsetWidth || 280, 120);
-        pieEl.innerHTML = `<canvas id="casePagePieCanvas" width="${sz}" height="${sz}" style="display:block;margin:0 auto;max-width:100%;"></canvas>`;
-        const ctx = document.getElementById('casePagePieCanvas')?.getContext('2d');
-        if (ctx) _casePieChart = new Chart(ctx, {
-          type: 'doughnut',
-          data: { labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] },
-          options: { plugins:{ legend:{ display:false } }, cutout:'58%', animation:{ duration:500 } }
-        });
-      }
-      const barEl = document.getElementById('casePageBarChart');
-      if (barEl && typeof Chart !== 'undefined') {
-        const bh = Math.max(labels.length * 36, 100);
-        barEl.innerHTML = `<canvas id="casePageBarCanvas" height="${bh}" style="width:100%;display:block;"></canvas>`;
-        const ctx2 = document.getElementById('casePageBarCanvas')?.getContext('2d');
-        if (ctx2) _caseBarChart = new Chart(ctx2, {
-          type: 'bar',
-          data: { labels, datasets:[{ data:counts, backgroundColor:colors, borderRadius:6, borderWidth:0 }] },
-          options: {
-            indexAxis: 'y',
-            plugins: { legend:{ display:false } },
-            scales: {
-              x: { grid:{ display:false }, ticks:{ font:{ size:11 } } },
-              y: { ticks:{ font:{ size:11 } } }
-            },
-            animation: { duration:500 }
-          }
-        });
-      }
-    }));
+    document.getElementById('caseChartsArea').style.display = 'grid';
 
     // Detail table
     const tbody = document.getElementById('casePageTableBody');
