@@ -1334,7 +1334,13 @@ function _dlCSV(content, filename) {
     </div>
   </div>
   <div style="display:flex;gap:10px;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
-    <button onclick="navTo('attendancePage')" id="opsSub-attendance" class="duty-sub-card active">
+    <button onclick="navTo('dutyOverviewPage')" id="opsSub-overview" class="duty-sub-card">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      勤務總覽
+    </button>
+    <button onclick="navTo('attendancePage')" id="opsSub-attendance" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
@@ -1579,50 +1585,6 @@ function _dlCSV(content, filename) {
       <span id="dashMyMonthAtt"></span><span id="dashMyMonthOut"></span><span id="dashMyMonthSvc"></span>
     </div>
 
-    <!-- 今日概況 -->
-    <div style="margin-bottom:20px;">
-      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日概況</div><div class="sec-pill-line"></div></div>
-      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
-        <div class="stat-card">
-          <div class="stat-num" id="dashTodayAtt">—</div>
-          <div class="stat-label">今日協勤筆數</div>
-        </div>
-        <div class="stat-card" onclick="showDashCheckinList()" style="cursor:pointer;position:relative;">
-          <div class="stat-num" id="dashTodayMembers">—</div>
-          <div class="stat-label">今日簽到人數</div>
-        </div>
-        <div class="stat-card" onclick="showDashOnlineList()" style="cursor:pointer;position:relative;">
-          <div class="stat-num" style="color:var(--red);" id="dashTodaySignin">—</div>
-          <div class="stat-label">目前在線人數</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 本月累積 -->
-    <div style="margin-bottom:20px;">
-      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">本月累積</div><div class="sec-pill-line"></div></div>
-      <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthTotalOut">—</div>
-          <div class="stat-label">協勤總筆數</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthTotalHours">—</div>
-          <div class="stat-label">備勤總時數</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="dashMonthTotalSvc">—</div>
-          <div class="stat-label">服務總人次</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 今日班表 -->
-    <div id="todayScheduleSection" style="display:none;margin-bottom:20px;">
-      <div class="sec-pill"><div class="sec-pill-bar"></div><div class="sec-pill-title">今日班表</div><div class="sec-pill-line"></div></div>
-      <div id="todayScheduleList"></div>
-    </div>
-
     <!-- 保留舊容器 ID 供 JS 相容 -->
     <div style="display:none;">
       <div id="dashInfoGrid"></div>
@@ -1633,6 +1595,74 @@ function _dlCSV(content, filename) {
     <div style="height:20px;"></div>
   </div>
 </div>
+<!-- ══════ PAGE：勤務總覽 ══════ -->
+<div class="page" id="dutyOverviewPage">
+  <div class="form-wrap" style="padding-top:16px;">
+
+    <!-- 今日日期英雄卡 -->
+    <div style="background:linear-gradient(145deg,#0d1f35 0%,#122d4e 55%,#1a3f6b 100%);border-radius:22px;padding:22px 20px 20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(13,31,53,0.35);position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-20px;top:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;">
+        <div>
+          <div id="dutyOverviewDateLine" style="font-size:0.68rem;color:rgba(255,255,255,0.5);letter-spacing:0.12em;margin-bottom:4px;"></div>
+          <div id="dutyOverviewDayNum" style="font-size:3rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.14em;">TODAY'S DUTY</div>
+          <div style="font-size:0.82rem;font-weight:700;color:rgba(255,255,255,0.8);margin-top:2px;">今日概況</div>
+        </div>
+      </div>
+      <!-- 今日三格 KPI -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
+        <div style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:66px;">
+          <div style="font-size:1.9rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashTodayAtt">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">協勤筆數</div>
+        </div>
+        <div onclick="showDashCheckinList()" style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:66px;">
+          <div style="font-size:1.9rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashTodayMembers">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">已簽到 ›</div>
+        </div>
+        <div onclick="showDashOnlineList()" style="padding:14px 6px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:66px;">
+          <div style="font-size:1.9rem;font-weight:900;color:#ff8a8a;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashTodaySignin">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">在線 ›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 本月累積 -->
+    <div style="background:white;border-radius:18px;padding:16px 16px 14px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+      <div style="font-family:'Noto Serif TC',serif;font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.06em;">本月累積</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:#fdf5f5;border-radius:12px;overflow:hidden;">
+        <div style="padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:62px;">
+          <div style="font-size:1.6rem;font-weight:900;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashMonthTotalOut">—</div>
+          <div style="font-size:0.58rem;color:var(--text-light);letter-spacing:0.04em;margin-top:4px;">協勤筆數</div>
+        </div>
+        <div style="padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:62px;">
+          <div style="font-size:1.6rem;font-weight:900;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashMonthTotalHours">—</div>
+          <div style="font-size:0.58rem;color:var(--text-light);letter-spacing:0.04em;margin-top:4px;">時數(h)</div>
+        </div>
+        <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:62px;">
+          <div style="font-size:1.6rem;font-weight:900;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashMonthTotalSvc">—</div>
+          <div style="font-size:0.58rem;color:var(--text-light);letter-spacing:0.04em;margin-top:4px;">服務人次</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日班表 -->
+    <div id="todayScheduleSection" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px;">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);">今日班表</div>
+        <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.06em;">依時間排序</div>
+      </div>
+      <div id="todayScheduleList">
+        <div class="query-empty"><span class="empty-icon">📅</span>載入中...</div>
+      </div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
 <!-- ══════ PAGE 1：協勤案件登錄 ══════ -->
 <div class="page" id="formPage">
   <div class="form-wrap">
@@ -5375,6 +5405,7 @@ async function refreshCurrentPage() {
     case 'formPage':        await initFormPage(); break;
     case 'membersPage':     await initMembersPage(); break;
     case 'queryPage':       await updateQueryMemberSelect(); break;
+    case 'dutyOverviewPage': await initDutyOverviewPage(); break;
     case 'attendancePage':  await initAttendancePage(); break;
     case 'statsPage':       await initStatsPage(); break;
     case 'reportPage':      await initReportPage(); break;
@@ -5486,6 +5517,7 @@ function hideLoading() {
 // ── Tab 對應表 ──
 const _tabForPage = {
   dashboardPage:      'home',
+  dutyOverviewPage:   'duty',
   attendancePage:     'duty',   formPage:           'duty',
   attQueryPage:       'duty',   queryPage:          'duty',
   dutyPage:           'schedule',
@@ -5534,7 +5566,7 @@ function goBack() {
     navTo(prev);
     return;
   }
-  const tabDefault = { more: 'morePage', manage: 'membersPage', home: 'dashboardPage', duty: 'attendancePage', schedule: 'dutyPage' };
+  const tabDefault = { more: 'morePage', manage: 'membersPage', home: 'dashboardPage', duty: 'dutyOverviewPage', schedule: 'dutyPage' };
   const tab = _tabForPage[window._currentPageId] || 'more';
   navTo(tabDefault[tab] || 'morePage');
 }
@@ -5582,7 +5614,7 @@ function navTo(pageId, fromHistory) {
   // 同步各 header 的子選單 active 狀態
   if (isOps) {
     document.querySelectorAll('#opsCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const opsBtnMap = { attendancePage:'opsSub-attendance', formPage:'opsSub-form', attQueryPage:'opsSub-attquery', queryPage:'opsSub-query' };
+    const opsBtnMap = { dutyOverviewPage:'opsSub-overview', attendancePage:'opsSub-attendance', formPage:'opsSub-form', attQueryPage:'opsSub-attquery', queryPage:'opsSub-query' };
     const ob = document.getElementById(opsBtnMap[pageId]);
     if (ob) ob.classList.add('active');
   }
@@ -5622,6 +5654,7 @@ function navTo(pageId, fromHistory) {
     membersPage:    ['成員管理', 'Member Management'],
     queryPage:      ['協勤紀錄查詢', 'Attendance Query'],
     attendancePage: ['簽到簽退登錄', 'Sign In / Sign Out'],
+    dutyOverviewPage: ['勤務總覽', 'Duty Overview'],
     statsPage:      ['協勤統計', 'Attendance Statistics'],
     reportPage:     ['報表匯出', 'Reports'],
     attQueryPage:   ['簽到/退記錄查詢', 'Attendance Log'],
@@ -5657,6 +5690,7 @@ function navTo(pageId, fromHistory) {
     document.getElementById('attCheckoutView').style.display = 'none';
     _nav(initAttendancePage);
   }
+  else if (pageId === 'dutyOverviewPage') _nav(initDutyOverviewPage);
   else if (pageId === 'statsPage') _nav(initStatsPage);
   else if (pageId === 'reportPage') _nav(initReportPage);
   else if (pageId === 'itemsPage')  _nav(initItemsPage);
@@ -6064,20 +6098,63 @@ function _showDashStatModal(title, bodyHtml) {
 
 function _applyDashDuty(dutyDocs, todayStr) {
   const todayDuty = (dutyDocs||[]).filter(d => d.date === todayStr).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
-  const sec  = document.getElementById('todayScheduleSection');
   const list = document.getElementById('todayScheduleList');
-  if (!sec || !list) return;
-  sec.style.display = '';
-  list.innerHTML = todayDuty.length
-    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">${todayDuty.map(d=>`
-        <div style="background:white;border-radius:10px;padding:14px 12px;box-shadow:0 1px 6px rgba(0,0,0,0.08);border:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.88rem;flex-shrink:0;">${(d.memberName||'?').charAt(0)}</div>
-            <div style="min-width:0;"><div style="font-weight:600;font-size:0.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div><div style="font-size:0.7rem;color:var(--text-light);">${d.unit||''}</div></div>
-          </div>
-          <div style="background:var(--warm);border-radius:6px;padding:5px 8px;text-align:center;"><span style="font-size:0.8rem;font-weight:600;color:var(--red);">${d.start||'?'} － ${d.end||'?'}</span></div>
-        </div>`).join('')}</div>`
-    : '<div style="background:white;border-radius:10px;padding:18px;text-align:center;color:var(--text-light);font-size:0.85rem;box-shadow:0 1px 6px rgba(0,0,0,0.06);border:1px solid var(--border);">今日無排班人員</div>';
+  if (!list) return;
+  if (!todayDuty.length) {
+    list.innerHTML = `<div style="background:white;border-radius:14px;padding:22px 16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.06);color:var(--text-light);font-size:0.85rem;">📅 今日無排班人員</div>`;
+    return;
+  }
+  list.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;">
+    ${todayDuty.map(d => `
+      <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--red),#e74c3c);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0;">${(d.memberName||'?').charAt(0)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.memberName||'—'}</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">${d.unit||''}</div>
+        </div>
+        <div style="background:#fff3f3;border-radius:10px;padding:7px 12px;text-align:center;flex-shrink:0;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--red);white-space:nowrap;">${d.start||'?'} − ${d.end||'?'}</div>
+          ${d.dutyType ? `<div style="font-size:0.6rem;color:var(--text-light);margin-top:2px;">${d.dutyType}</div>` : ''}
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+
+async function initDutyOverviewPage() {
+  // 顯示日期
+  const today   = new Date();
+  const todayStr = today.toLocaleDateString('sv');
+  const monthStr = todayStr.substring(0, 7);
+  const DAYS  = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const dateEl = document.getElementById('dutyOverviewDateLine');
+  const dayEl  = document.getElementById('dutyOverviewDayNum');
+  if (dateEl) dateEl.textContent = `${today.getFullYear()}年${MONTHS[today.getMonth()]}　${DAYS[today.getDay()]}`;
+  if (dayEl)  dayEl.textContent  = String(today.getDate()).padStart(2,'0') + '日';
+
+  // 立即用 stale cache 顯示（零等待）
+  const _su = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  const _me = _su.memberName || _su.name || '';
+  const staleAtt  = _C.peek(COL_ATTEND);
+  const staleOut  = _C.peek(COL_OUTING);
+  const staleDuty = _C.peek('dutySchedule');
+  if (staleAtt && staleOut) _applyDashStats(staleAtt, staleOut, todayStr, monthStr, _me);
+  if (staleDuty)            _applyDashDuty(staleDuty, todayStr);
+  else document.getElementById('todayScheduleList').innerHTML =
+    `<div style="background:white;border-radius:14px;padding:22px 16px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.06);color:var(--text-light);font-size:0.85rem;">📅 今日無排班人員</div>`;
+
+  // 背景更新
+  try {
+    const [attDocs, outDocs, dutyDocs] = await Promise.all([
+      Promise.race([fbList(COL_ATTEND,'date','asc'), new Promise((_,r)=>setTimeout(()=>r(new Error('t')),8000))]),
+      Promise.race([fbList(COL_OUTING,'date','asc'), new Promise((_,r)=>setTimeout(()=>r(new Error('t')),8000))]),
+      Promise.race([fbList('dutySchedule','date','asc'), new Promise((_,r)=>setTimeout(()=>r(new Error('t')),8000))]),
+    ]);
+    _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
+    _applyDashDuty(dutyDocs, todayStr);
+  } catch(e) {
+    console.warn('initDutyOverviewPage fetch error', e);
+  }
 }
 
 // 計算尚未全部領取的物品數，更新角標
