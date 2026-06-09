@@ -9322,45 +9322,46 @@ async function initCaseStatsPage() {
 
 let _casePieChart = null, _caseBarChart = null;
 async function loadCaseStats() {
-  const year = document.getElementById('caseYear')?.value;
-  const month = document.getElementById('caseMonth')?.value;
+  const year  = document.getElementById('caseYear')?.value  || '';
+  const month = document.getElementById('caseMonth')?.value || '';
   const filterUnit = document.getElementById('caseUnit')?.value || '';
-  if (!year || !month) { const el=document.getElementById('caseEmptyMsg'); if(el){el.style.display='flex';const ic=el.querySelector('.empty-icon');if(ic)ic.textContent='⚠️';} return; }
 
+  // 簡化 empty state — 直接操作 innerHTML
   const emptyEl = document.getElementById('caseEmptyMsg');
-  const setEmpty = (icon, text) => {
-    if (!emptyEl) return;
-    emptyEl.style.display = 'flex';
-    const iconEl = emptyEl.querySelector('.empty-icon');
-    if (iconEl) iconEl.textContent = icon;
-    // 更新文字節點（第一個 text node）
-    const textNode = Array.from(emptyEl.childNodes).find(n => n.nodeType === 3);
-    if (textNode) textNode.textContent = text;
-    else emptyEl.appendChild(document.createTextNode(text));
+  const showEmpty = (icon, text) => {
+    ['caseOverviewGrid','caseChartsArea','caseDetailCard'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.innerHTML = `<span class="empty-icon">${icon}</span>${text}`; }
   };
-  document.getElementById('caseOverviewGrid').style.display = 'none';
-  document.getElementById('caseChartsArea').style.display = 'none';
-  document.getElementById('caseDetailCard').style.display = 'none';
-  setEmpty('⏳', '載入中…');
+
+  if (!year || !month) { showEmpty('⚠️', '篩選條件未設定'); return; }
+
+  showEmpty('⏳', '載入中…');
 
   const westernYear = parseInt(year) + 1911;
   const mm = String(month).padStart(2, '0');
-  const startDate = `${westernYear}-${mm}-01`;
-  const endDate   = `${westernYear}-${mm}-31`;
+  const monthStr = `${westernYear}-${mm}`;
 
   try {
+    // 優先用 stale cache（即使 TTL 已過），避免卡在網路等待
+    let allOut = _C.peek(COL_OUTING);
+    if (!allOut || !allOut.length) {
+      allOut = await Promise.race([
+        fbList(COL_OUTING, 'date', 'asc'),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000)),
+      ]);
+    }
     await loadMembers();
-    // 用快取版 fbList 拉全部，再前端依月份 filter
-    const allOut = await fbList(COL_OUTING, 'date', 'asc');
-    const monthStr = `${westernYear}-${mm}`;
-    let docs = (allOut || []).filter(r => (r.date||'').startsWith(monthStr));
+
+    let docs = (allOut || []).filter(r => (r.date || '').startsWith(monthStr));
     if (filterUnit) docs = docs.filter(d => {
-      const u = d.unit || (members.find(m=>m.name===d.memberName)||{}).unit || '';
+      const u = d.unit || (members.find(m => m.name === d.memberName) || {}).unit || '';
       return u === filterUnit;
     });
 
     if (!docs.length) {
-      setEmpty('📊', '本月無協勤案件資料');
+      showEmpty('📊', `${westernYear}年${parseInt(month)}月無協勤案件資料`);
       return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
@@ -9430,7 +9431,7 @@ async function loadCaseStats() {
     document.getElementById('caseDetailTitle').textContent = `${year}年${month}月 案由明細${filterUnit?' — '+filterUnit:''}`;
     document.getElementById('caseDetailCard').style.display = 'block';
   } catch(e) {
-    setEmpty('⚠️', '載入失敗，請重新整理');
+    showEmpty('⚠️', '載入失敗：' + (e.message||'請重新整理'));
     console.error('loadCaseStats error:', e);
   }
 }
