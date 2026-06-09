@@ -1529,6 +1529,7 @@ function _dlCSV(content, filename) {
 
     <!-- 天氣卡片 -->
     <div class="dash-hero" id="dashWeatherCard">
+      <canvas id="weatherCardCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:20px;opacity:0.55;"></canvas>
       <!-- 日期 & 時間列 -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
         <div id="dashInfoDate" style="font-size:0.75rem;opacity:0.82;letter-spacing:0.04em;line-height:1.5;"></div>
@@ -5931,6 +5932,7 @@ async function loadDashWeather() {
       }
       card.style.background = bg;
       card.style.boxShadow = shadow;
+      _startWeatherCardAnim(code);
     })(code);
 
     document.getElementById('dashInfoWeather').style.display = '';
@@ -11018,6 +11020,237 @@ async function _trimLoginLog(maxCount) {
     toDelete.forEach(d => batch.delete(d.ref));
     await batch.commit();
   } catch(e) {}
+}
+
+// ── 天氣卡片動畫 ──
+var _wcRaf = null;
+function _stopWeatherCardAnim() {
+  if (_wcRaf) { cancelAnimationFrame(_wcRaf); _wcRaf = null; }
+  const cv = document.getElementById('weatherCardCanvas');
+  if (cv) { const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height); }
+}
+function _startWeatherCardAnim(code) {
+  _stopWeatherCardAnim();
+  const cv = document.getElementById('weatherCardCanvas');
+  if (!cv) return;
+  const card = document.getElementById('dashWeatherCard');
+  cv.width  = card ? card.offsetWidth  : 340;
+  cv.height = card ? card.offsetHeight : 160;
+  const W = cv.width, H = cv.height;
+  const ctx = cv.getContext('2d');
+
+  // ── 晴天：旋轉光芒 ──
+  if (code <= 1) {
+    let angle = 0;
+    const rays = 12, cx = W * 0.88, cy = H * 0.12, R = H * 0.9;
+    function drawSun() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle);
+      for (let i = 0; i < rays; i++) {
+        const a = (i / rays) * Math.PI * 2;
+        const grad = ctx.createLinearGradient(0, 0, Math.cos(a) * R, Math.sin(a) * R);
+        grad.addColorStop(0,   'rgba(255,220,80,0.55)');
+        grad.addColorStop(0.4, 'rgba(255,200,50,0.18)');
+        grad.addColorStop(1,   'rgba(255,200,50,0)');
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        const spread = 0.12;
+        ctx.arc(0, 0, R, a - spread, a + spread);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+      ctx.restore();
+      angle += 0.003;
+      _wcRaf = requestAnimationFrame(drawSun);
+    }
+    drawSun(); return;
+  }
+
+  // ── 部分多雲：緩慢漂移雲 ──
+  if (code <= 2) {
+    const clouds = Array.from({length: 3}, (_, i) => ({
+      x: (i / 3) * W + Math.random() * 60,
+      y: H * (0.08 + i * 0.12),
+      r: 22 + Math.random() * 18,
+      speed: 0.12 + Math.random() * 0.12,
+      alpha: 0.08 + Math.random() * 0.1,
+    }));
+    function drawClouds() {
+      ctx.clearRect(0, 0, W, H);
+      clouds.forEach(c => {
+        ctx.save();
+        ctx.globalAlpha = c.alpha;
+        const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r * 2.2);
+        g.addColorStop(0, 'rgba(255,255,255,0.9)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.ellipse(c.x, c.y, c.r * 2.2, c.r, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        c.x += c.speed;
+        if (c.x - c.r * 2 > W) c.x = -c.r * 2;
+      });
+      _wcRaf = requestAnimationFrame(drawClouds);
+    }
+    drawClouds(); return;
+  }
+
+  // ── 陰天：緩慢深色雲層 ──
+  if (code === 3) {
+    const clouds = Array.from({length: 4}, (_, i) => ({
+      x: (i / 4) * W * 1.2 - 20,
+      y: H * (0.05 + i * 0.1),
+      r: 30 + Math.random() * 25,
+      speed: 0.08 + Math.random() * 0.08,
+      alpha: 0.12 + Math.random() * 0.1,
+    }));
+    function drawDarkClouds() {
+      ctx.clearRect(0, 0, W, H);
+      clouds.forEach(c => {
+        ctx.save(); ctx.globalAlpha = c.alpha;
+        const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r * 2.5);
+        g.addColorStop(0, 'rgba(160,170,180,0.9)');
+        g.addColorStop(1, 'rgba(120,140,160,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.ellipse(c.x, c.y, c.r * 2.5, c.r * 1.1, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        c.x += c.speed;
+        if (c.x - c.r * 3 > W) c.x = -c.r * 2;
+      });
+      _wcRaf = requestAnimationFrame(drawDarkClouds);
+    }
+    drawDarkClouds(); return;
+  }
+
+  // ── 霧：水平飄動霧氣 ──
+  if (code <= 48) {
+    const layers = Array.from({length: 5}, (_, i) => ({
+      x: Math.random() * W,
+      y: H * (0.15 + i * 0.16),
+      w: W * (0.6 + Math.random() * 0.5),
+      h: 18 + Math.random() * 14,
+      speed: (Math.random() < 0.5 ? 1 : -1) * (0.15 + Math.random() * 0.2),
+      alpha: 0.08 + Math.random() * 0.1,
+    }));
+    function drawFog() {
+      ctx.clearRect(0, 0, W, H);
+      layers.forEach(l => {
+        ctx.save(); ctx.globalAlpha = l.alpha;
+        const g = ctx.createLinearGradient(l.x, 0, l.x + l.w, 0);
+        g.addColorStop(0, 'rgba(200,210,220,0)');
+        g.addColorStop(0.3, 'rgba(200,210,220,0.9)');
+        g.addColorStop(0.7, 'rgba(200,210,220,0.9)');
+        g.addColorStop(1, 'rgba(200,210,220,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.ellipse(l.x + l.w / 2, l.y, l.w / 2, l.h, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        l.x += l.speed;
+        if (l.x > W) l.x = -l.w;
+        if (l.x + l.w < 0) l.x = W;
+      });
+      _wcRaf = requestAnimationFrame(drawFog);
+    }
+    drawFog(); return;
+  }
+
+  // ── 雨（毛毛雨/小中大雨/陣雨）：落雨滴 ──
+  if (code <= 82) {
+    const heavy = code >= 65;
+    const count = heavy ? 55 : code >= 61 ? 38 : 22;
+    const drops = Array.from({length: count}, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      len: (heavy ? 10 : 7) + Math.random() * 8,
+      speed: (heavy ? 5 : 3.5) + Math.random() * 4,
+      alpha: 0.25 + Math.random() * 0.4,
+      width: 0.6 + Math.random() * 0.8,
+    }));
+    const wind = heavy ? 1.6 : 0.9;
+    function drawRain() {
+      ctx.clearRect(0, 0, W, H);
+      drops.forEach(d => {
+        ctx.save();
+        ctx.globalAlpha = d.alpha;
+        ctx.strokeStyle = '#a8d8f0';
+        ctx.lineWidth = d.width;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x + wind * (d.len / d.speed), d.y + d.len);
+        ctx.stroke();
+        ctx.restore();
+        d.x += wind; d.y += d.speed;
+        if (d.y > H || d.x > W) { d.x = Math.random() * W; d.y = -d.len; }
+      });
+      _wcRaf = requestAnimationFrame(drawRain);
+    }
+    drawRain(); return;
+  }
+
+  // ── 雪：飄雪花 ──
+  if (code <= 75) {
+    const flakes = Array.from({length: 35}, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: 1.5 + Math.random() * 2.5,
+      speed: 0.6 + Math.random() * 1.2,
+      drift: (Math.random() - 0.5) * 0.4,
+      alpha: 0.4 + Math.random() * 0.5,
+    }));
+    function drawSnow() {
+      ctx.clearRect(0, 0, W, H);
+      flakes.forEach(f => {
+        ctx.save(); ctx.globalAlpha = f.alpha;
+        ctx.fillStyle = '#e8f4ff';
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        f.y += f.speed; f.x += f.drift;
+        if (f.y > H) { f.y = -f.r; f.x = Math.random() * W; }
+        if (f.x > W) f.x = 0; if (f.x < 0) f.x = W;
+      });
+      _wcRaf = requestAnimationFrame(drawSnow);
+    }
+    drawSnow(); return;
+  }
+
+  // ── 雷陣雨：雨 + 隨機閃電 ──
+  const drops2 = Array.from({length: 50}, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    len: 12 + Math.random() * 10, speed: 6 + Math.random() * 5,
+    alpha: 0.3 + Math.random() * 0.4, width: 0.7 + Math.random() * 0.9,
+  }));
+  let _lightningAlpha = 0, _lightningTimer = 0;
+  function drawThunder() {
+    ctx.clearRect(0, 0, W, H);
+    // flash overlay
+    if (_lightningAlpha > 0) {
+      ctx.save(); ctx.globalAlpha = _lightningAlpha;
+      ctx.fillStyle = 'rgba(200,220,255,1)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+      _lightningAlpha = Math.max(0, _lightningAlpha - 0.06);
+    }
+    // rain
+    drops2.forEach(d => {
+      ctx.save(); ctx.globalAlpha = d.alpha;
+      ctx.strokeStyle = '#90c4e8'; ctx.lineWidth = d.width;
+      ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + 2.2, d.y + d.len); ctx.stroke();
+      ctx.restore();
+      d.x += 2.2; d.y += d.speed;
+      if (d.y > H || d.x > W) { d.x = Math.random() * W; d.y = -d.len; }
+    });
+    // lightning bolt
+    if (_lightningAlpha > 0.3) {
+      const bx = W * 0.3 + Math.random() * W * 0.4;
+      ctx.save(); ctx.strokeStyle = 'rgba(230,240,255,0.9)'; ctx.lineWidth = 1.5; ctx.globalAlpha = _lightningAlpha;
+      ctx.beginPath(); ctx.moveTo(bx, 0);
+      let ly = 0, lx = bx;
+      while (ly < H * 0.6) { lx += (Math.random() - 0.5) * 20; ly += 12 + Math.random() * 10; ctx.lineTo(lx, ly); }
+      ctx.stroke(); ctx.restore();
+    }
+    _lightningTimer++;
+    if (_lightningTimer > 60 + Math.random() * 120) { _lightningAlpha = 0.4 + Math.random() * 0.3; _lightningTimer = 0; }
+    _wcRaf = requestAnimationFrame(drawThunder);
+  }
+  drawThunder();
 }
 
 // ── 登入頁雨效 ──
