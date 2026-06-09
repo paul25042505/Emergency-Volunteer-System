@@ -9328,23 +9328,41 @@ async function loadCaseStats() {
   if (!year || !month) return;
 
   const emptyEl = document.getElementById('caseEmptyMsg');
+  const setEmpty = (icon, text) => {
+    if (!emptyEl) return;
+    emptyEl.style.display = 'flex';
+    const iconEl = emptyEl.querySelector('.empty-icon');
+    if (iconEl) iconEl.textContent = icon;
+    // 更新文字節點（第一個 text node）
+    const textNode = Array.from(emptyEl.childNodes).find(n => n.nodeType === 3);
+    if (textNode) textNode.textContent = text;
+    else emptyEl.appendChild(document.createTextNode(text));
+  };
   document.getElementById('caseOverviewGrid').style.display = 'none';
   document.getElementById('caseChartsArea').style.display = 'none';
   document.getElementById('caseDetailCard').style.display = 'none';
-  if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.querySelector('.empty-icon').textContent = '⏳'; emptyEl.childNodes[1] && (emptyEl.childNodes[1].textContent = '載入中...'); }
+  setEmpty('⏳', '載入中…');
 
   const westernYear = parseInt(year) + 1911;
-  const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
+  const mm = String(month).padStart(2, '0');
+  const startDate = `${westernYear}-${mm}-01`;
+  const endDate   = `${westernYear}-${mm}-31`;
 
   try {
-    const [outDocs] = await Promise.all([fbList(COL_OUTING, 'date', 'asc'), loadMembers()]);
-    let docs = outDocs.filter(r => (r.date||'').startsWith(monthStr));
+    await loadMembers();
+    // 直接用日期範圍查詢，不再拉全部資料
+    let outDocs = await fbQuery(COL_OUTING, [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
+    if (!outDocs) outDocs = [];
+    let docs = outDocs;
     const memberUnitMap = {};
     members.forEach(m => { memberUnitMap[m.name] = m.unit||''; });
-    if (filterUnit) docs = docs.filter(d => (memberUnitMap[d.memberName]||'') === filterUnit);
+    if (filterUnit) docs = docs.filter(d => {
+      const u = d.unit || memberUnitMap[d.memberName] || '';
+      return u === filterUnit;
+    });
 
     if (!docs.length) {
-      if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.querySelector('.empty-icon').textContent = '📊'; }
+      setEmpty('📊', '本月無協勤案件資料');
       return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
@@ -9377,23 +9395,24 @@ async function loadCaseStats() {
     setTimeout(() => {
       const pieEl = document.getElementById('casePagePieChart');
       if (pieEl) {
-        const sz = Math.min(pieEl.offsetWidth, 160);
-        pieEl.innerHTML = `<canvas id="casePagePieCanvas" width="${sz}" height="${sz}" style="display:block;margin:0 auto;"></canvas>`;
+        const sz = Math.max(pieEl.offsetWidth || 140, 80);
+        const szCap = Math.min(sz, 160);
+        pieEl.innerHTML = `<canvas id="casePagePieCanvas" width="${szCap}" height="${szCap}" style="display:block;margin:0 auto;max-width:100%;"></canvas>`;
         const ctx = document.getElementById('casePagePieCanvas')?.getContext('2d');
         if (ctx && typeof Chart !== 'undefined') {
-          _casePieChart = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] }, options:{ plugins:{ legend:{ display:false } }, cutout:'60%' } });
+          _casePieChart = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] }, options:{ plugins:{ legend:{ display:false } }, cutout:'60%', animation:{ duration:600 } } });
         }
       }
       const barEl = document.getElementById('casePageBarChart');
       if (barEl) {
-        const bh = Math.max(labels.length * 28, 80);
-        barEl.innerHTML = `<canvas id="casePageBarCanvas" height="${bh}" style="width:100%;"></canvas>`;
+        const bh = Math.max(labels.length * 32, 80);
+        barEl.innerHTML = `<canvas id="casePageBarCanvas" height="${bh}" style="width:100%;display:block;"></canvas>`;
         const ctx2 = document.getElementById('casePageBarCanvas')?.getContext('2d');
         if (ctx2 && typeof Chart !== 'undefined') {
-          _caseBarChart = new Chart(ctx2, { type:'bar', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderRadius:4, borderWidth:0 }] }, options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false }, ticks:{ font:{ size:10 } } }, y:{ ticks:{ font:{ size:10 } } } } } });
+          _caseBarChart = new Chart(ctx2, { type:'bar', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderRadius:4, borderWidth:0 }] }, options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false }, ticks:{ font:{ size:10 } } }, y:{ ticks:{ font:{ size:10 } } } }, animation:{ duration:600 } } });
         }
       }
-    }, 80);
+    }, 120);
 
     // Detail table
     const tbody = document.getElementById('casePageTableBody');
@@ -9413,8 +9432,8 @@ async function loadCaseStats() {
     document.getElementById('caseDetailTitle').textContent = `${year}年${month}月 案由明細${filterUnit?' — '+filterUnit:''}`;
     document.getElementById('caseDetailCard').style.display = 'block';
   } catch(e) {
-    if (emptyEl) { emptyEl.style.display = 'flex'; }
-    console.error(e);
+    setEmpty('⚠️', '載入失敗，請重新整理');
+    console.error('loadCaseStats error:', e);
   }
 }
 
