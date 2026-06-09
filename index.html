@@ -2453,7 +2453,7 @@ function _dlCSV(content, filename) {
       </div>
 
       <!-- KPI 條 -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;">
         <div style="min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px 10px;background:rgba(13,26,46,0.55);">
           <div style="font-size:1.75rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;" id="asTotalSessions">—</div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">總場次</div>
@@ -2461,10 +2461,6 @@ function _dlCSV(content, filename) {
         <div style="min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px 10px;background:rgba(13,26,46,0.55);">
           <div style="font-size:1.75rem;font-weight:900;color:#60a5fa;font-family:'Noto Serif TC',serif;line-height:1;" id="asAvgRate">—</div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">平均出席率</div>
-        </div>
-        <div style="min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px 10px;background:rgba(13,26,46,0.55);">
-          <div style="font-size:1.1rem;font-weight:900;color:#7effd4;font-family:'Noto Serif TC',serif;line-height:1;text-align:center;" id="asTopPerson">—</div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">出席最多</div>
         </div>
       </div>
     </div>
@@ -3237,77 +3233,159 @@ function _dlCSV(content, filename) {
     </div>
 
     <div id="adminSec-announce" style="display:none;padding:0 0 20px;">
-      <div style="background:linear-gradient(135deg,#e03131 0%,#c0392b 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#e03131 0%,#c0392b 100%);border-radius:16px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
         <div style="flex:1;">
           <div style="font-size:1rem;font-weight:700;color:white;">公告管理</div>
-          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">發布與編輯公告</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">通知中心與推播紀錄</div>
         </div>
-        <button onclick="showAnnounceForm(null)" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">＋ 新增</button>
       </div>
 
-      <!-- 新增/編輯表單 -->
-      <div id="announceForm" style="display:none;background:var(--warm);border-radius:10px;padding:16px;margin-bottom:16px;">
-        <input type="hidden" id="anFormId">
-        <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:0.78rem;">標題 <span class="req">*</span></label>
-          <input type="text" id="anFormTitle" placeholder="公告標題..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;">
-        </div>
-        <div class="field" style="margin-bottom:10px;">
-          <label style="font-size:0.78rem;">內容</label>
-          <textarea id="anFormText" rows="3" placeholder="公告內容（選填）..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:vertical;"></textarea>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div class="field" style="margin:0;">
-            <label style="font-size:0.78rem;">開始日期 <span class="req">*</span></label>
-            <input type="date" id="anFormStart" style="width:100%;">
+      <!-- Tab Bar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:16px;">
+        <button id="annTab-notice" onclick="switchAnnTab('notice')"
+          style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:white;color:var(--red);box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+          🔔 通知中心
+        </button>
+        <button id="annTab-push" onclick="switchAnnTab('push')"
+          style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:transparent;color:#64748b;">
+          📤 推播紀錄
+        </button>
+      </div>
+
+      <!-- ── Tab: 通知中心 ── -->
+      <div id="annPanel-notice">
+        <button onclick="showAnnounceForm(null)"
+          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:var(--red);font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:14px;">
+          ＋ 新增公告
+        </button>
+        <!-- 新增/編輯表單 -->
+        <div id="announceForm" style="display:none;background:var(--warm);border-radius:14px;padding:18px;margin-bottom:16px;border:1px solid #fde8e8;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:14px;" id="anFormHeading">新增公告</div>
+          <input type="hidden" id="anFormId">
+          <div class="field" style="margin-bottom:12px;">
+            <label style="font-size:0.75rem;font-weight:600;color:var(--text-light);letter-spacing:0.04em;">標題 <span class="req">*</span></label>
+            <input type="text" id="anFormTitle" placeholder="公告標題…" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;margin-top:4px;">
           </div>
-          <div class="field" style="margin:0;">
-            <label style="font-size:0.78rem;">結束日期 <span class="req">*</span></label>
-            <input type="date" id="anFormEnd" style="width:100%;">
+          <div class="field" style="margin-bottom:12px;">
+            <label style="font-size:0.75rem;font-weight:600;color:var(--text-light);letter-spacing:0.04em;">內容</label>
+            <textarea id="anFormText" rows="3" placeholder="公告內容（選填）…" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:vertical;margin-top:4px;"></textarea>
           </div>
-        </div>
-        <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;font-weight:400;">
-            <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> 🚨 緊急公告（彈窗顯示）
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;font-weight:400;">
-            <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂顯示
-          </label>
-        </div>
-        <div style="background:#f0f4ff;border:1px solid #c7d7ff;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
-          <div style="font-size:0.78rem;font-weight:600;color:#1a237e;margin-bottom:8px;">🔔 手機推播</div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushNone" value="none" checked style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 不發送推播
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushAll" value="all" style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 發送給全部訂閱成員
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushAdmin" value="admin" style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 僅發送給管理員／承辦人
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-              <input type="radio" name="anFormPushTarget" id="anFormPushMember" value="member" style="accent-color:var(--red);" onchange="toggleAnFormMember()"> 發送給特定成員
-            </label>
-            <div id="anFormMemberRow" style="display:none;padding-left:22px;">
-              <input type="text" id="anFormMemberName" list="anFormMemberList" placeholder="輸入成員姓名"
-                style="width:100%;padding:7px 10px;border:1px solid #c7d7ff;border-radius:6px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;">
-              <datalist id="anFormMemberList"></datalist>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:var(--text-light);">開始日期 <span class="req">*</span></label>
+              <input type="date" id="anFormStart" style="width:100%;margin-top:4px;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:var(--text-light);">結束日期 <span class="req">*</span></label>
+              <input type="date" id="anFormEnd" style="width:100%;margin-top:4px;">
             </div>
           </div>
+          <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
+              <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> 🚨 緊急（彈窗顯示）
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
+              <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂
+            </label>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="saveAnnounceForm()" class="btn-search" style="flex:1;min-height:unset;">發布公告</button>
+            <button onclick="hideAnnounceForm()" class="btn-reset" style="min-height:unset;">取消</button>
+          </div>
+          <div id="anFormStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="saveAnnounceForm()" class="btn-search" style="flex:1;min-height:unset;">發布公告</button>
-          <button onclick="hideAnnounceForm()" class="btn-reset" style="min-height:unset;">取消</button>
+        <!-- 公告列表 -->
+        <div id="adminAnnounceList">
+          <div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>
         </div>
-        <div id="anFormStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
       </div>
 
-      <!-- 公告列表 -->
-      <div id="adminAnnounceList">
-        <div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>
+      <!-- ── Tab: 推播紀錄 ── -->
+      <div id="annPanel-push" style="display:none;">
+        <button onclick="showPushForm()"
+          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#1e3a8a;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:14px;">
+          📤 發送新推播
+        </button>
+
+        <!-- 推播表單 -->
+        <div id="pushForm" style="display:none;border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.10);">
+          <!-- 表單 Header -->
+          <div style="background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 100%);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:0.92rem;font-weight:700;color:white;">發送推播通知</div>
+              <div style="font-size:0.68rem;color:rgba(255,255,255,0.65);margin-top:1px;">選擇收件人並填寫內容</div>
+            </div>
+            <button onclick="hidePushForm()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:5px 10px;color:white;cursor:pointer;font-size:0.8rem;font-family:'Noto Sans TC',sans-serif;">✕</button>
+          </div>
+          <div style="background:white;padding:18px;">
+            <!-- 標題 -->
+            <div style="margin-bottom:14px;">
+              <label style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;display:block;margin-bottom:5px;">推播標題 <span style="color:var(--red);">*</span></label>
+              <input type="text" id="pfTitle" placeholder="請輸入推播標題…"
+                style="width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;outline:none;transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'">
+            </div>
+            <!-- 內容 -->
+            <div style="margin-bottom:14px;">
+              <label style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;display:block;margin-bottom:5px;">推播內容</label>
+              <textarea id="pfBody" rows="2" placeholder="推播內文（選填）…"
+                style="width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:none;outline:none;transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+            </div>
+            <!-- 收件人 -->
+            <div style="margin-bottom:16px;">
+              <label style="font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.04em;display:block;margin-bottom:8px;">收件人 <span style="color:var(--red);">*</span></label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                <button id="pfTargBtn-all" onclick="setPfTarget('all')"
+                  style="padding:7px 14px;border-radius:20px;border:1.5px solid #3b82f6;background:#3b82f6;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+                  全體成員
+                </button>
+                <button id="pfTargBtn-admin" onclick="setPfTarget('admin')"
+                  style="padding:7px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+                  管理員／承辦
+                </button>
+                <button id="pfTargBtn-members" onclick="setPfTarget('members')"
+                  style="padding:7px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+                  指定人員
+                </button>
+              </div>
+              <!-- 指定人員選擇器 -->
+              <div id="pfMemberPicker" style="display:none;">
+                <div style="position:relative;margin-bottom:8px;">
+                  <input type="text" id="pfMemberSearch" placeholder="搜尋成員姓名…" oninput="filterPfMembers()"
+                    style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;outline:none;">
+                  <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <span id="pfSelectedCount" style="font-size:0.72rem;color:#64748b;">已選 0 人</span>
+                  <div style="display:flex;gap:8px;">
+                    <button onclick="pfSelectAll()" style="font-size:0.7rem;color:#3b82f6;background:none;border:none;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">全選</button>
+                    <button onclick="pfClearAll()" style="font-size:0.7rem;color:#64748b;background:none;border:none;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">清除</button>
+                  </div>
+                </div>
+                <div id="pfMemberList"
+                  style="max-height:180px;overflow-y:auto;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+                </div>
+              </div>
+            </div>
+            <!-- 傳送按鈕 -->
+            <button onclick="sendManualPush()" id="pfSendBtn"
+              style="width:100%;padding:13px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border:none;border-radius:12px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">
+              📤 發送推播
+            </button>
+            <div id="pfStatus" style="font-size:0.8rem;text-align:center;margin-top:10px;min-height:18px;"></div>
+          </div>
+        </div>
+
+        <!-- 推播紀錄列表 -->
+        <div id="adminPushLogList">
+          <div class="query-empty"><span class="empty-icon">📤</span>載入中...</div>
+        </div>
       </div>
+
     </div>
 
     <div id="adminSec-feedback" style="display:none;padding:0 0 20px;">
@@ -12345,7 +12423,7 @@ function showAnnounceForm(doc) {
   document.getElementById('anFormEnd').value     = doc ? (doc.endDate||nextWeek) : nextWeek;
   document.getElementById('anFormUrgent').checked = doc ? !!doc.urgent : false;
   document.getElementById('anFormPinned').checked = doc ? !!doc.pinned : false;
-  document.getElementById('anFormPushNone').checked = true;
+  document.getElementById('anFormHeading').textContent = doc ? '編輯公告' : '新增公告';
   document.getElementById('anFormStatus').textContent = '';
   document.getElementById('announceForm').style.display = '';
   document.getElementById('announceForm').scrollIntoView({ behavior:'smooth', block:'nearest' });
@@ -12396,25 +12474,10 @@ async function saveAnnounceForm() {
     }
     const base  = { text, title, body, startDate:start, endDate:end, urgent, pinned,
                     active:true, type:'system', audience:'all' };
-    const pushTarget = document.querySelector('input[name="anFormPushTarget"]:checked')?.value || 'none';
     if (id) {
       await fbSet(COL_ANNOUNCE, id, { ...base, updatedAt: new Date().toLocaleString('sv').replace('T',' ') });
     } else {
       await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date() });
-    }
-    if (!id && pushTarget !== 'none') {
-      const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-      const payload = { title, body: body || title, requestedBy: usr.name || '管理員', skipAnnouncement: true, pushTarget };
-      if (pushTarget === 'member') {
-        const memberName = document.getElementById('anFormMemberName')?.value.trim();
-        if (!memberName) { status.style.color='var(--red)'; status.textContent='請輸入成員姓名'; if (btn) { btn.textContent='發布公告'; btn.disabled=false; } return; }
-        payload.targetMember = memberName;
-      }
-      fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {});
     }
     hideAnnounceForm();
     await loadAdminAnnouncements();
@@ -12527,6 +12590,200 @@ async function loadAdminAnnouncements() {
   } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：'+e.message+'</div>'; }
 }
 
+
+// ── 公告管理 Tab 切換 ──
+function switchAnnTab(tab) {
+  ['notice','push'].forEach(t => {
+    const panel = document.getElementById('annPanel-' + t);
+    const btn   = document.getElementById('annTab-' + t);
+    if (!panel || !btn) return;
+    const active = t === tab;
+    panel.style.display = active ? '' : 'none';
+    btn.style.background = active ? 'white' : 'transparent';
+    btn.style.color = active ? 'var(--red)' : '#64748b';
+    btn.style.boxShadow = active ? '0 1px 4px rgba(0,0,0,0.1)' : 'none';
+  });
+  if (tab === 'push') loadPushLog();
+}
+
+const COL_PUSH_LOG = 'pushLogs';
+let _pfTarget = 'all';
+
+function showPushForm() {
+  document.getElementById('pfTitle').value = '';
+  document.getElementById('pfBody').value = '';
+  document.getElementById('pfStatus').textContent = '';
+  setPfTarget('all');
+  document.getElementById('pushForm').style.display = '';
+  document.getElementById('pushForm').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  // 預載成員列表
+  _loadPfMembers();
+}
+
+function hidePushForm() {
+  document.getElementById('pushForm').style.display = 'none';
+}
+
+function setPfTarget(t) {
+  _pfTarget = t;
+  ['all','admin','members'].forEach(k => {
+    const btn = document.getElementById('pfTargBtn-' + k);
+    if (!btn) return;
+    const active = k === t;
+    btn.style.background = active ? '#3b82f6' : 'white';
+    btn.style.color = active ? 'white' : '#64748b';
+    btn.style.borderColor = active ? '#3b82f6' : '#e2e8f0';
+  });
+  const picker = document.getElementById('pfMemberPicker');
+  if (picker) picker.style.display = t === 'members' ? '' : 'none';
+}
+
+let _pfAllMembers = [];
+async function _loadPfMembers() {
+  try {
+    const docs = await fbList('whitelist');
+    _pfAllMembers = docs.map(d => d.memberName || '').filter(Boolean).sort();
+    _renderPfMemberList(_pfAllMembers);
+  } catch(e) {}
+}
+
+function _renderPfMemberList(names) {
+  const el = document.getElementById('pfMemberList');
+  if (!el) return;
+  el.innerHTML = names.map(n => `
+    <label style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid #f1f5f9;cursor:pointer;">
+      <input type="checkbox" class="pfMemberChk" value="${n}" style="accent-color:#3b82f6;width:16px;height:16px;flex-shrink:0;" onchange="updatePfCount()">
+      <span style="font-size:0.84rem;color:var(--text);">${n}</span>
+    </label>`).join('');
+}
+
+function filterPfMembers() {
+  const q = document.getElementById('pfMemberSearch')?.value.toLowerCase() || '';
+  const filtered = _pfAllMembers.filter(n => n.toLowerCase().includes(q));
+  _renderPfMemberList(filtered);
+}
+
+function pfSelectAll() {
+  document.querySelectorAll('.pfMemberChk').forEach(c => c.checked = true);
+  updatePfCount();
+}
+function pfClearAll() {
+  document.querySelectorAll('.pfMemberChk').forEach(c => c.checked = false);
+  updatePfCount();
+}
+function updatePfCount() {
+  const n = document.querySelectorAll('.pfMemberChk:checked').length;
+  const el = document.getElementById('pfSelectedCount');
+  if (el) el.textContent = `已選 ${n} 人`;
+}
+
+async function sendManualPush() {
+  const title = document.getElementById('pfTitle')?.value.trim();
+  const body  = document.getElementById('pfBody')?.value.trim();
+  const statusEl = document.getElementById('pfStatus');
+  const sendBtn  = document.getElementById('pfSendBtn');
+  if (!title) { statusEl.style.color='var(--red)'; statusEl.textContent='請填入推播標題'; return; }
+
+  let targetNames = [];
+  if (_pfTarget === 'members') {
+    targetNames = [...document.querySelectorAll('.pfMemberChk:checked')].map(c => c.value);
+    if (!targetNames.length) { statusEl.style.color='var(--red)'; statusEl.textContent='請選擇至少一位收件人'; return; }
+  }
+
+  sendBtn.textContent = '傳送中…'; sendBtn.disabled = true;
+  statusEl.style.color = '#64748b'; statusEl.textContent = '正在發送…';
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const sentAt = new Date().toLocaleString('sv').replace('T',' ');
+  const logData = {
+    title, body: body || '', target: _pfTarget, targetNames,
+    sentAt, sentBy: usr.memberName || usr.name || '管理員',
+    status: 'pending', successCount: 0, failCount: 0
+  };
+
+  let logId;
+  try { logId = (await fbAdd(COL_PUSH_LOG, logData)).id; } catch(e) {}
+
+  try {
+    const payload = {
+      title, body: body || title,
+      requestedBy: usr.memberName || usr.name || '管理員',
+      skipAnnouncement: true,
+      pushTarget: _pfTarget === 'members' ? 'member' : _pfTarget,
+    };
+    if (_pfTarget === 'members' && targetNames.length === 1) {
+      payload.targetMember = targetNames[0];
+    } else if (_pfTarget === 'members') {
+      payload.targetMembers = targetNames;
+    }
+
+    const res = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const ok = res.ok;
+    const result = ok ? await res.json().catch(() => ({})) : {};
+    const successCount = result.successCount ?? (ok ? (targetNames.length || 1) : 0);
+    const failCount    = result.failCount    ?? (ok ? 0 : (targetNames.length || 1));
+
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount, failCount });
+
+    statusEl.style.color = ok ? '#16a34a' : 'var(--red)';
+    statusEl.textContent = ok
+      ? `✅ 推播成功傳送（${successCount} 筆）`
+      : `❌ 推播傳送失敗（伺服器回應 ${res.status}）`;
+
+    if (ok) {
+      setTimeout(() => { hidePushForm(); loadPushLog(); }, 1500);
+    }
+  } catch(e) {
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: targetNames.length || 1 }).catch(()=>{});
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = '❌ 傳送失敗：' + e.message;
+  } finally {
+    sendBtn.textContent = '📤 發送推播'; sendBtn.disabled = false;
+  }
+}
+
+async function loadPushLog() {
+  const el = document.getElementById('adminPushLogList');
+  if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>載入中…</div>';
+  try {
+    const docs = await fbList(COL_PUSH_LOG, 'sentAt', 'desc');
+    if (!docs.length) {
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>尚無推播紀錄</div>';
+      return;
+    }
+    el.innerHTML = docs.map(d => {
+      const statusColor = d.status === 'ok' ? '#16a34a' : d.status === 'fail' ? '#dc2626' : '#f59e0b';
+      const statusLabel = d.status === 'ok' ? '成功' : d.status === 'fail' ? '失敗' : '處理中';
+      const statusIcon  = d.status === 'ok' ? '✅' : d.status === 'fail' ? '❌' : '⏳';
+      const targetLabel = d.target === 'all' ? '全體成員' : d.target === 'admin' ? '管理員／承辦' : `指定成員（${(d.targetNames||[]).length} 人）`;
+      const names = (d.targetNames||[]).join('、');
+      return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${statusColor};">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <div style="font-size:0.87rem;font-weight:700;color:var(--text);flex:1;">${d.title||'—'}</div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <span style="font-size:0.9rem;">${statusIcon}</span>
+            <span style="font-size:0.72rem;font-weight:700;color:${statusColor};">${statusLabel}</span>
+          </div>
+        </div>
+        ${d.body ? `<div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">${d.body}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+          <span style="font-size:0.68rem;background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:20px;">📣 ${targetLabel}</span>
+          ${d.status==='ok' ? `<span style="font-size:0.68rem;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;">✔ ${d.successCount||0} 筆送達</span>` : ''}
+          ${d.status==='fail'&&d.failCount ? `<span style="font-size:0.68rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;">✘ ${d.failCount} 筆失敗</span>` : ''}
+        </div>
+        ${names ? `<div style="font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">收件人：${names}</div>` : ''}
+        <div style="font-size:0.68rem;color:#94a3b8;">${d.sentAt||''} 由 ${d.sentBy||'—'} 發送</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
+  }
+}
 
 // ════════════════════════════════════════
 // 成員管理頁（公開瀏覽）
@@ -18546,7 +18803,6 @@ async function loadAttendStats() {
   if (!docs.length) {
     document.getElementById('asTotalSessions').textContent = '0';
     document.getElementById('asAvgRate').textContent = '—';
-    document.getElementById('asTopPerson').textContent = '—';
     body.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>' + year + '年查無定訓紀錄</div>';
     return;
   }
@@ -18565,11 +18821,8 @@ async function loadAttendStats() {
   const avgRate = total > 0 && members.length > 0
     ? Math.round(totalAttendees / (total * members.length) * 100) + '%'
     : '—';
-  const topPerson = members.length ? members[0][0] : '—';
-
   document.getElementById('asTotalSessions').textContent = total;
   document.getElementById('asAvgRate').textContent = avgRate;
-  document.getElementById('asTopPerson').textContent = topPerson;
 
   // 渲染排名列表
   const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
