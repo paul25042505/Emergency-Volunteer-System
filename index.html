@@ -10331,6 +10331,7 @@ function adminShowSection(sectionId) {
     _setAdminBadge('adminSec-feedback', 0);
   }
   if (sectionId === 'adminSec-pushctrl') loadAdminPushCtrl();
+  if (sectionId === 'adminSec-confirm') initConfirmSection();
   if (sectionId === 'adminSec-loginlog') {
     const df = document.getElementById('loginLogFrom');
     const dt = document.getElementById('loginLogTo');
@@ -12333,6 +12334,7 @@ async function initConfirmSection() {
   const el   = document.getElementById('confirmMonth');
   if (el) el.value = y + '-' + m;
   // 分隊選單
+  await loadUnits();
   const uSel = document.getElementById('confirmUnit');
   if (uSel) {
     uSel.innerHTML = '<option value="">請選擇分隊</option>' +
