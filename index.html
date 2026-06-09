@@ -626,7 +626,7 @@ tr:hover td { background: #fdfcfb; }
 }
 .login-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
 .login-hint {
-  font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-top: 16px;
+  font-size: 0.7rem; color: rgba(255,255,255,0.72); margin-top: 16px;
   line-height: 1.7; letter-spacing: 0.04em;
 }
 .login-error {
@@ -1074,7 +1074,7 @@ function _dlCSV(content, filename) {
     <!-- ── 快速登入頭像 ── -->
     <div id="quickLoginAvatars" style="display:none;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:6px;"></div>
     <div id="quickLoginOther" style="display:none;text-align:center;margin-bottom:14px;">
-      <button onclick="showGoogleLogin()" style="background:none;border:1px solid var(--border);border-radius:20px;color:var(--text-mid);font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:5px 14px;">切換帳號 / 其他人登入</button>
+      <button onclick="showGoogleLogin()" style="background:none;border:1px solid rgba(255,255,255,0.45);border-radius:20px;color:rgba(255,255,255,0.85);font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:5px 14px;">切換帳號 / 其他人登入</button>
     </div>
     <!-- Google 登入按鈕 -->
     <div id="googleLoginSection">
@@ -1117,7 +1117,7 @@ function _dlCSV(content, filename) {
       <div id="tempPassError" style="display:none;font-size:0.78rem;color:#b94a3a;margin-top:8px;text-align:center;"></div>
     </div>
 
-    <div class="login-hint">
+    <div class="login-hint" style="color:rgba(255,255,255,0.7);">
       僅限授權義消成員登入<br>
       如無法登入請聯絡管理員
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
