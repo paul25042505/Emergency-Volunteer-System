@@ -2671,8 +2671,8 @@ function _dlCSV(content, filename) {
         <div style="font-size:1.8rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="caseTypeNum">0</div>
         <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">案由數</div>
       </div>
-      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <div style="font-size:1.1rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="caseTopType">—</div>
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="font-size:1.6rem;font-weight:900;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1.2;word-break:break-all;" id="caseTopType">—</div>
         <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">最多案由</div>
       </div>
       <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
@@ -2682,7 +2682,7 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- Charts -->
-    <div id="caseChartsArea" style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+    <div id="caseChartsArea" style="display:none;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">
       <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
         <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">案由分布</div>
         <div id="casePagePieChart"></div>
@@ -9392,27 +9392,39 @@ async function loadCaseStats() {
 
     document.getElementById('caseChartsArea').style.display = 'grid';
 
-    setTimeout(() => {
+    // 等 layout 完成後再畫 chart，雙 rAF 確保 offsetWidth 正確
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       const pieEl = document.getElementById('casePagePieChart');
-      if (pieEl) {
-        const sz = Math.max(pieEl.offsetWidth || 140, 80);
-        const szCap = Math.min(sz, 160);
-        pieEl.innerHTML = `<canvas id="casePagePieCanvas" width="${szCap}" height="${szCap}" style="display:block;margin:0 auto;max-width:100%;"></canvas>`;
+      if (pieEl && typeof Chart !== 'undefined') {
+        const sz = Math.max(pieEl.offsetWidth || 280, 120);
+        pieEl.innerHTML = `<canvas id="casePagePieCanvas" width="${sz}" height="${sz}" style="display:block;margin:0 auto;max-width:100%;"></canvas>`;
         const ctx = document.getElementById('casePagePieCanvas')?.getContext('2d');
-        if (ctx && typeof Chart !== 'undefined') {
-          _casePieChart = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] }, options:{ plugins:{ legend:{ display:false } }, cutout:'60%', animation:{ duration:600 } } });
-        }
+        if (ctx) _casePieChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: { labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] },
+          options: { plugins:{ legend:{ display:false } }, cutout:'58%', animation:{ duration:500 } }
+        });
       }
       const barEl = document.getElementById('casePageBarChart');
-      if (barEl) {
-        const bh = Math.max(labels.length * 32, 80);
+      if (barEl && typeof Chart !== 'undefined') {
+        const bh = Math.max(labels.length * 36, 100);
         barEl.innerHTML = `<canvas id="casePageBarCanvas" height="${bh}" style="width:100%;display:block;"></canvas>`;
         const ctx2 = document.getElementById('casePageBarCanvas')?.getContext('2d');
-        if (ctx2 && typeof Chart !== 'undefined') {
-          _caseBarChart = new Chart(ctx2, { type:'bar', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderRadius:4, borderWidth:0 }] }, options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false }, ticks:{ font:{ size:10 } } }, y:{ ticks:{ font:{ size:10 } } } }, animation:{ duration:600 } } });
-        }
+        if (ctx2) _caseBarChart = new Chart(ctx2, {
+          type: 'bar',
+          data: { labels, datasets:[{ data:counts, backgroundColor:colors, borderRadius:6, borderWidth:0 }] },
+          options: {
+            indexAxis: 'y',
+            plugins: { legend:{ display:false } },
+            scales: {
+              x: { grid:{ display:false }, ticks:{ font:{ size:11 } } },
+              y: { ticks:{ font:{ size:11 } } }
+            },
+            animation: { duration:500 }
+          }
+        });
       }
-    }, 120);
+    }));
 
     // Detail table
     const tbody = document.getElementById('casePageTableBody');
