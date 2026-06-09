@@ -9350,14 +9350,12 @@ async function loadCaseStats() {
 
   try {
     await loadMembers();
-    // 直接用日期範圍查詢，不再拉全部資料
-    let outDocs = await fbQuery(COL_OUTING, [['date','>=',startDate],['date','<=',endDate]], 'date', 'asc');
-    if (!outDocs) outDocs = [];
-    let docs = outDocs;
-    const memberUnitMap = {};
-    members.forEach(m => { memberUnitMap[m.name] = m.unit||''; });
+    // 用快取版 fbList 拉全部，再前端依月份 filter
+    const allOut = await fbList(COL_OUTING, 'date', 'asc');
+    const monthStr = `${westernYear}-${mm}`;
+    let docs = (allOut || []).filter(r => (r.date||'').startsWith(monthStr));
     if (filterUnit) docs = docs.filter(d => {
-      const u = d.unit || memberUnitMap[d.memberName] || '';
+      const u = d.unit || (members.find(m=>m.name===d.memberName)||{}).unit || '';
       return u === filterUnit;
     });
 
