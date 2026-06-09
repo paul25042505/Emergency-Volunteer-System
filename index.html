@@ -12361,6 +12361,7 @@ async function createConfirmTask() {
 
   // 顯示預覽 modal
   const defTitle = `📋 ${month} ${unit} 上月紀錄確認`;
+  const defNote  = note || '請於每月5日前完成確認';
   const defBody  = note || `請 ${unit} 成員於每月5日前完成 ${month} 出勤紀錄確認`;
 
   const overlay = document.createElement('div');
@@ -12398,7 +12399,7 @@ async function createConfirmTask() {
       <div style="display:flex;gap:10px;">
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()"
           style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
-        <button id="bpSendBtn" onclick="_confirmCreateTask('${month}','${unit}','${note.replace(/'/g,"\\'")}')"
+        <button id="bpSendBtn" onclick="_confirmCreateTask('${month}','${unit}','${defNote.replace(/'/g,"\\'")}')"
           style="flex:2;padding:12px;border:none;border-radius:10px;background:#2e7d32;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 發起並通知成員</button>
       </div>
     </div>`;
