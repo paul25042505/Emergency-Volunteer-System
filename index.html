@@ -1254,11 +1254,11 @@ function _dlCSV(content, filename) {
       </div>
       <div id="noticePanelTabs">
         <button class="notice-tab-btn active" id="noticeTab-msg" onclick="switchNoticeTab('msg')">
-          訊息通知
+          推播訊息
           <span class="notice-tab-dot" id="noticeTabDot-msg"></span>
         </button>
         <button class="notice-tab-btn" id="noticeTab-ann" onclick="switchNoticeTab('ann')">
-          公告
+          系統公告
           <span class="notice-tab-dot" id="noticeTabDot-ann"></span>
         </button>
       </div>
@@ -3100,7 +3100,7 @@ function _dlCSV(content, filename) {
         <option value="adminSec-units"      id="adminSelOpt-units">🏢 分隊管理</option>
         <option value="adminSec-wl">👤 成員帳號</option>
         <option value="adminSec-casetypes">🏷 案由管理</option>
-        <option value="adminSec-announce"   id="adminSelOpt-announce">📢 公告管理</option>
+        <option value="adminSec-announce"   id="adminSelOpt-announce">📢 訊息管理</option>
         <option value="adminSec-feedback">💬 意見回饋</option>
         <option value="adminSec-correction">修正申請</option>
         <option value="adminSec-schedule">📅 定訓行事曆</option>
@@ -3238,8 +3238,8 @@ function _dlCSV(content, filename) {
       <div style="background:linear-gradient(135deg,#e03131 0%,#c0392b 100%);border-radius:16px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
         <div style="flex:1;">
-          <div style="font-size:1rem;font-weight:700;color:white;">公告管理</div>
-          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">通知中心與推播紀錄</div>
+          <div style="font-size:1rem;font-weight:700;color:white;">訊息管理</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">系統公告與推播訊息</div>
         </div>
       </div>
 
@@ -3247,11 +3247,11 @@ function _dlCSV(content, filename) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:16px;">
         <button id="annTab-push" onclick="switchAnnTab('push')"
           style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:transparent;color:#64748b;">
-          📤 推播紀錄
+          📤 推播訊息
         </button>
         <button id="annTab-notice" onclick="switchAnnTab('notice')"
           style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:white;color:var(--red);box-shadow:0 1px 4px rgba(0,0,0,0.1);">
-          🔔 通知中心
+          📢 系統公告
         </button>
       </div>
 
@@ -10906,7 +10906,7 @@ function _buildAdminMenu() {
   const items = [
     { id:'adminSec-wl',         icon:'👤', label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
     { id:'adminSec-casetypes',  icon:'🏷', label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
-    { id:'adminSec-announce',   icon:'📢', label:'公告管理',   sub:'發布與編輯公告',     color:'#c0392b' },
+    { id:'adminSec-announce',   icon:'📢', label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b' },
     { id:'adminSec-feedback',   icon:'💬', label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
     { id:'adminSec-correction', icon:'📝', label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
     { id:'adminSec-schedule',   icon:'📅', label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
