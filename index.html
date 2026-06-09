@@ -1395,6 +1395,12 @@ function _dlCSV(content, filename) {
       </div>
       協勤統計
     </button>
+    <button onclick="navTo('caseStatsPage')" id="manageSub-casestats" class="duty-sub-card">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      案件統計
+    </button>
     <button onclick="navTo('gongchaPage')" id="manageSub-gongcha" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
@@ -2533,25 +2539,27 @@ function _dlCSV(content, filename) {
 <div class="page" id="statsPage">
   <div class="query-wrap">
 
-    <!-- Header -->
-    <div style="margin-bottom:20px;">
-      <div style="font-family:'Noto Serif TC',serif;font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:0.05em;">協勤統計</div>
-      <div style="font-size:0.65rem;color:var(--text-light);letter-spacing:0.14em;margin-top:2px;">DUTY STATISTICS</div>
-    </div>
-
-    <!-- Filter card -->
-    <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;">
+    <!-- Header banner -->
+    <div style="background:linear-gradient(135deg,#C1121F 0%,#8b1a0e 100%);border-radius:16px;padding:22px 20px 20px;margin-bottom:20px;box-shadow:0 6px 24px rgba(193,18,31,0.28);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:1.2rem;font-weight:700;color:white;letter-spacing:0.08em;">協勤統計</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.65);letter-spacing:0.12em;margin-top:2px;">DUTY STATISTICS</div>
+        </div>
+        <div style="font-size:2rem;opacity:0.9;">📋</div>
+      </div>
+      <!-- Filter -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <div style="position:relative;">
-          <div style="font-size:0.6rem;color:var(--text-light);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">年份</div>
-          <div style="background:#f2f2f7;border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
-            <div style="font-size:1.05rem;font-weight:800;color:var(--text);font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">年份</div>
+          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
             <select id="statsYear" onchange="document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
           </div>
         </div>
         <div style="position:relative;">
-          <div style="font-size:0.6rem;color:var(--text-light);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">月份</div>
-          <div style="background:var(--red);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">月份</div>
+          <div style="background:rgba(255,255,255,0.25);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
             <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
             <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value+'月';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
@@ -2562,9 +2570,9 @@ function _dlCSV(content, filename) {
           </div>
         </div>
         <div style="position:relative;">
-          <div style="font-size:0.6rem;color:var(--text-light);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">分隊別</div>
-          <div style="background:#f2f2f7;border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
-            <div style="font-size:0.78rem;font-weight:700;color:var(--text);line-height:1.2;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="statsUnitDisplay">全部</div>
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">分隊別</div>
+          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:0.78rem;font-weight:700;color:white;line-height:1.2;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="statsUnitDisplay">全部</div>
             <select id="statsUnit" onchange="document.getElementById('statsUnitDisplay').textContent=this.value||'全部';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="">全部分隊</option>
             </select>
@@ -2600,47 +2608,110 @@ function _dlCSV(content, filename) {
 
     <div id="statsEmptyMsg" class="query-empty"><span class="empty-icon">📈</span>載入中...</div>
 
-    <!-- 案由統計 -->
-    <div class="section" id="caseStatsSection" style="display:none;margin-top:8px;">
-      <div class="section-head">
-        <div class="section-num">🏷</div>
-        <div class="section-title">案由統計</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="stats-row" id="caseStatsOverview" style="margin-bottom:16px;grid-template-columns:repeat(2,1fr);"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="caseChartsGrid">
-        <div class="result-card" style="padding:16px;">
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">案由分布</div>
-          <div id="caseTypePieChart" style="width:100%;"></div>
-          <div id="caseTypeLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;font-size:0.75rem;"></div>
+    <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：案件統計 ══════ -->
+<div class="page" id="caseStatsPage">
+  <div class="query-wrap">
+
+    <!-- Header banner -->
+    <div style="background:linear-gradient(135deg,#C1121F 0%,#8b1a0e 100%);border-radius:16px;padding:22px 20px 20px;margin-bottom:20px;box-shadow:0 6px 24px rgba(193,18,31,0.28);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:1.2rem;font-weight:700;color:white;letter-spacing:0.08em;">案件統計</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.65);letter-spacing:0.12em;margin-top:2px;">CASE STATISTICS</div>
         </div>
-        <div class="result-card" style="padding:16px;">
-          <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">各類型案件數</div>
-          <div id="caseTypeBarChart" style="width:100%;"></div>
+        <div style="font-size:2rem;opacity:0.9;">📊</div>
+      </div>
+      <!-- Filter -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="position:relative;">
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">年份</div>
+          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseYearDisplay">—</div>
+            <select id="caseYear" onchange="document.getElementById('caseYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
+          </div>
         </div>
-      </div>
-      <div class="result-card" id="caseUnitCompareCard" style="padding:16px;margin-bottom:16px;display:none;">
-        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:0.05em;">各分隊案由比較</div>
-        <canvas id="caseUnitChart" style="max-height:280px;"></canvas>
-      </div>
-      <div class="result-card" style="padding:0;">
-        <div class="result-head"><h3>案由明細</h3></div>
-        <div class="result-table-wrap">
-          <table style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr>
-                <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案由</th>
-                <th style="padding:10px 12px;background:var(--warm);text-align:center;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">案件數</th>
-                <th style="padding:10px 12px;background:var(--warm);text-align:center;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">佔比</th>
-                <th style="padding:10px 12px;background:var(--warm);text-align:left;font-size:0.78rem;color:var(--text-mid);border-bottom:1px solid var(--border);">佔比圖</th>
-              </tr>
-            </thead>
-            <tbody id="caseTypeTableBody"></tbody>
-          </table>
+        <div style="position:relative;">
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">月份</div>
+          <div style="background:rgba(255,255,255,0.25);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseMonthDisplay">—</div>
+            <select id="caseMonth" onchange="document.getElementById('caseMonthDisplay').textContent=this.value+'月';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+            </select>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.6);font-weight:600;letter-spacing:0.1em;margin-bottom:6px;text-align:center;">分隊別</div>
+          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
+            <div style="font-size:0.78rem;font-weight:700;color:white;line-height:1.2;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="caseUnitDisplay">全部</div>
+            <select id="caseUnit" onchange="document.getElementById('caseUnitDisplay').textContent=this.value||'全部';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+              <option value="">全部分隊</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Overview cards -->
+    <div id="caseOverviewGrid" style="display:none;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;">
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="caseTotalNum">0</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">案件總數</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="caseTypeNum">0</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">案由數</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.1rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="caseTopType">—</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;">最多案由</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;" id="caseTopCount">0</div>
+        <div style="font-size:0.62rem;color:var(--text-light);margin-top:6px;letter-spacing:0.06em;" id="caseTopLabel">最多件數</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div id="caseChartsArea" style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">案由分布</div>
+        <div id="casePagePieChart"></div>
+        <div id="casePageLegend" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;font-size:0.72rem;"></div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">各類型案件數</div>
+        <div id="casePageBarChart"></div>
+      </div>
+    </div>
+
+    <!-- Detail table -->
+    <div id="caseDetailCard" style="display:none;background:white;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow:hidden;margin-bottom:16px;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.92rem;font-weight:700;color:var(--text);" id="caseDetailTitle">案由明細</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="padding:10px 14px;background:#fafafa;text-align:left;font-size:0.75rem;color:var(--text-mid);border-bottom:1px solid var(--border);font-weight:600;">案由</th>
+              <th style="padding:10px 14px;background:#fafafa;text-align:center;font-size:0.75rem;color:var(--text-mid);border-bottom:1px solid var(--border);font-weight:600;">案件數</th>
+              <th style="padding:10px 14px;background:#fafafa;text-align:center;font-size:0.75rem;color:var(--text-mid);border-bottom:1px solid var(--border);font-weight:600;">佔比</th>
+              <th style="padding:10px 14px;background:#fafafa;text-align:left;font-size:0.75rem;color:var(--text-mid);border-bottom:1px solid var(--border);font-weight:600;">佔比圖</th>
+            </tr>
+          </thead>
+          <tbody id="casePageTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="caseEmptyMsg" class="query-empty"><span class="empty-icon">📊</span>載入中...</div>
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -5308,6 +5379,7 @@ async function refreshCurrentPage() {
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
     case 'gongchaPage':        await loadGongchaStats(); break;
+    case 'caseStatsPage':    await loadCaseStats(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
     case 'systemInfoPage':  await initSystemInfoPage(); break;
@@ -5412,6 +5484,7 @@ const _tabForPage = {
   dutyPage:           'schedule',
   myCorrectionsPage:  'more',   reportPage:         'manage',
   statsPage:          'manage', gongchaPage:        'manage',
+  caseStatsPage:      'manage',
   morePage:           'more',
   feedbackPage:       'more',   meetingPage:        'more',
   adminPage:          'more',
@@ -5508,7 +5581,7 @@ function navTo(pageId, fromHistory) {
   }
   if (isManage) {
     document.querySelectorAll('#manageCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', gongchaPage:'manageSub-gongcha', reportPage:'manageSub-report' };
+    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', reportPage:'manageSub-report' };
     const mb = document.getElementById(mngBtnMap[pageId]);
     if (mb) mb.classList.add('active');
   }
@@ -5550,6 +5623,7 @@ function navTo(pageId, fromHistory) {
     meetingPage:    ['定訓與公告', 'Training & Announcements'],
     myCorrectionsPage: ['我的申請記錄', 'My Requests'],
     gongchaPage:    ['公差英雄榜', 'Merit Leaderboard'],
+    caseStatsPage:   ['案件統計', 'Case Statistics'],
     morePage:       ['更多', 'More'],
     feedbackPage:   ['意見回饋', 'Feedback'],
     adminPage:      ['管理員後台', 'Admin Panel'],
@@ -9101,7 +9175,6 @@ async function loadStats() {
 
     if (!monthAtt.length && !monthOut.length) {
       document.getElementById('statsEmptyMsg').textContent = `${year} 年 ${month} 月查無資料`;
-      document.getElementById('caseStatsSection').style.display = 'none';
       return;
     }
 
