@@ -1050,6 +1050,7 @@ function _dlCSV(content, filename) {
 <div id="loginScreen">
   <div id="loginBg"></div>
   <canvas id="rainCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.38;"></canvas>
+  <canvas id="lightningCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;"></canvas>
   <canvas id="loginLightsCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.55;"></canvas>
 
   <!-- 系統標題 -->
@@ -11252,6 +11253,134 @@ function _startWeatherCardAnim(code) {
   }
   drawThunder();
 }
+
+// ── 登入頁閃電效果 ──
+(function() {
+  function startLightning() {
+    const cv = document.getElementById('lightningCanvas');
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+
+    function resize() {
+      cv.width  = cv.offsetWidth  || window.innerWidth;
+      cv.height = cv.offsetHeight || window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let running = true;
+    const screen = document.getElementById('loginScreen');
+    if (screen) {
+      new MutationObserver(() => { running = screen.style.display !== 'none'; })
+        .observe(screen, { attributes: true, attributeFilter: ['style'] });
+    }
+
+    // 每道閃電是一組折線 + 分支
+    function makeBolt(x0, y0, x1, y1, depth) {
+      const segs = [];
+      function split(ax, ay, bx, by, d) {
+        if (d === 0) { segs.push([ax, ay, bx, by]); return; }
+        const mx = (ax + bx) / 2 + (Math.random() - 0.5) * (Math.abs(bx - ax) * 0.8 + 40);
+        const my = (ay + by) / 2 + (Math.random() - 0.5) * 10;
+        split(ax, ay, mx, my, d - 1);
+        split(mx, my, bx, by, d - 1);
+        // random branch
+        if (d >= 2 && Math.random() < 0.35) {
+          const brx = mx + (Math.random() - 0.3) * 60;
+          const bry = my + (my - ay) * (0.4 + Math.random() * 0.4);
+          split(mx, my, brx, bry, d - 1);
+        }
+      }
+      split(x0, y0, x1, y1, depth);
+      return segs;
+    }
+
+    // 閃電事件佇列
+    let events = [];
+    let nextEventIn = 1500 + Math.random() * 3000;
+    let lastTime = performance.now();
+
+    function scheduleNext() {
+      nextEventIn = 1200 + Math.random() * 4000;
+    }
+
+    function spawnBolt() {
+      const W = cv.width, H = cv.height;
+      const x0 = W * 0.1 + Math.random() * W * 0.8;
+      const x1 = x0 + (Math.random() - 0.5) * W * 0.4;
+      const segs = makeBolt(x0, 0, x1, H * (0.4 + Math.random() * 0.5), 4);
+      // 有時候連閃 2-3 次
+      const flashes = Math.random() < 0.4 ? (Math.random() < 0.5 ? 2 : 3) : 1;
+      events.push({ segs, life: 1.0, flashes, flashCount: 0, flashPause: 0 });
+    }
+
+    function draw(now) {
+      if (!running) { requestAnimationFrame(draw); return; }
+      const dt = now - lastTime;
+      lastTime = now;
+
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // 排程新閃電
+      nextEventIn -= dt;
+      if (nextEventIn <= 0) { spawnBolt(); scheduleNext(); }
+
+      events = events.filter(e => {
+        if (e.flashPause > 0) { e.flashPause -= dt; return true; }
+
+        // 畫閃電本體
+        const alpha = e.life;
+        e.segs.forEach(([ax, ay, bx, by], i) => {
+          const w = i === 0 ? 2.5 : 1.2;
+          // 外光暈
+          ctx.save();
+          ctx.globalAlpha = alpha * 0.25;
+          ctx.strokeStyle = '#8ec8ff';
+          ctx.lineWidth = w + 5;
+          ctx.shadowColor = '#6ab4ff';
+          ctx.shadowBlur = 18;
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+          ctx.restore();
+          // 主線
+          ctx.save();
+          ctx.globalAlpha = alpha * 0.9;
+          ctx.strokeStyle = '#ddf0ff';
+          ctx.lineWidth = w;
+          ctx.shadowColor = '#aaddff';
+          ctx.shadowBlur = 8;
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+          ctx.restore();
+        });
+
+        // 全畫面淡藍閃光
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.07;
+        ctx.fillStyle = 'rgba(180,220,255,1)';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.restore();
+
+        e.life -= dt * 0.012;
+        if (e.life <= 0) {
+          e.flashCount++;
+          if (e.flashCount < e.flashes) {
+            e.life = 0.7 + Math.random() * 0.4;
+            e.flashPause = 60 + Math.random() * 120; // 短暫間隔再閃
+            return true;
+          }
+          return false; // 移除
+        }
+        return true;
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    requestAnimationFrame(t => { lastTime = t; draw(t); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startLightning);
+  else startLightning();
+})();
 
 // ── 登入頁雨效 ──
 (function() {
