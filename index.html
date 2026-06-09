@@ -2629,15 +2629,15 @@ function _dlCSV(content, filename) {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
-          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
-            <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseYearDisplay">—</div>
+          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseYearDisplay">—</div>
             <select id="caseYear" onchange="document.getElementById('caseYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
           </div>
         </div>
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
-          <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
-            <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseMonthDisplay">—</div>
+          <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseMonthDisplay">—</div>
             <select id="caseMonth" onchange="document.getElementById('caseMonthDisplay').textContent=this.value?this.value+'月':'全年';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="">全年</option>
               <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
@@ -2649,31 +2649,31 @@ function _dlCSV(content, filename) {
         </div>
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">分隊別</div>
-          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
-            <div style="font-size:0.78rem;font-weight:700;color:white;line-height:1.2;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="caseUnitDisplay">全部</div>
+          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="caseUnitDisplay">全部</div>
             <select id="caseUnit" onchange="document.getElementById('caseUnitDisplay').textContent=this.value||'全部';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="">全部分隊</option>
             </select>
           </div>
         </div>
       </div>
-      <!-- KPI strip -->
+      <!-- KPI strip：固定高度 + flexbox 讓標籤靠底對齊 -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
-        <div style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);">
-          <div style="font-size:2.2rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;" id="caseTotalNum">—</div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.6);margin-top:5px;letter-spacing:0.06em;">案件數</div>
+        <div style="padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.75rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="caseTotalNum">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;">案件數</div>
         </div>
-        <div style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);">
-          <div style="font-size:2.2rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;" id="caseTypeNum">—</div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.6);margin-top:5px;letter-spacing:0.06em;">案由數</div>
+        <div style="padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.75rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="caseTypeNum">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;">案由數</div>
         </div>
-        <div style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:center;">
-          <div style="font-size:2rem;font-weight:900;color:#ffd580;font-family:'Noto Serif TC',serif;line-height:1;word-break:break-all;text-align:center;" id="caseTopType">—</div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.6);margin-top:5px;letter-spacing:0.06em;">最多案由</div>
+        <div style="padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.5rem;font-weight:900;color:#ffd580;font-family:'Noto Serif TC',serif;line-height:1.1;flex:1;display:flex;align-items:center;word-break:break-all;text-align:center;" id="caseTopType">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;">最多案由</div>
         </div>
-        <div style="padding:14px 6px;text-align:center;">
-          <div style="font-size:2.2rem;font-weight:900;color:#ffd580;font-family:'Noto Serif TC',serif;line-height:1;" id="caseTopCount">—</div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.6);margin-top:5px;letter-spacing:0.06em;" id="caseTopLabel">最多件數</div>
+        <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.75rem;font-weight:900;color:#ffd580;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="caseTopCount">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;" id="caseTopLabel">最多件數</div>
         </div>
       </div>
     </div>
