@@ -5379,7 +5379,7 @@ async function refreshCurrentPage() {
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
     case 'gongchaPage':        await loadGongchaStats(); break;
-    case 'caseStatsPage':    await loadCaseStats(); break;
+    case 'caseStatsPage':    await initCaseStatsPage(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
     case 'systemInfoPage':  await initSystemInfoPage(); break;
@@ -5561,7 +5561,7 @@ function navTo(pageId, fromHistory) {
   const isDuty   = pageId === 'dutyPage';
   const isMore   = pageId === 'morePage';
   const opsPages = ['attendancePage','formPage','attQueryPage','queryPage'];
-  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage'];
+  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage'];
   const isOps    = opsPages.includes(pageId);
   const isManage = mngPages.includes(pageId);
   document.body.classList.toggle('page-home',   isHome);
@@ -9233,12 +9233,142 @@ async function loadStats() {
     document.getElementById('statsTableCard').style.display = 'block';
     document.getElementById('statsEmptyMsg').style.display = 'none';
 
-    renderCaseTypeStats(monthOut, filterUnit, memberUnitMap, year, month);
+    // renderCaseTypeStats removed — see caseStatsPage
   } catch(e) {
     document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
   }
 }
 
+
+let _caseStatsInited = false;
+async function initCaseStatsPage() {
+  if (!_caseStatsInited) {
+    _caseStatsInited = true;
+    const now = new Date();
+    const yr = now.getFullYear();
+    const yrSel = document.getElementById('caseYear');
+    if (yrSel) {
+      yrSel.innerHTML = '';
+      for (let y = yr; y >= yr - 5; y--) {
+        const roc = y - 1911;
+        const opt = document.createElement('option');
+        opt.value = roc; opt.textContent = roc + ' 年';
+        if (y === yr) opt.selected = true;
+        yrSel.appendChild(opt);
+      }
+      document.getElementById('caseYearDisplay').textContent = (yr - 1911).toString();
+    }
+    const mSel = document.getElementById('caseMonth');
+    if (mSel) {
+      mSel.value = now.getMonth() + 1;
+      document.getElementById('caseMonthDisplay').textContent = (now.getMonth() + 1) + '月';
+    }
+    await loadUnits();
+    const uSel = document.getElementById('caseUnit');
+    if (uSel && uSel.options.length <= 1) {
+      _unitsList.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; uSel.appendChild(o); });
+    }
+  }
+  await loadCaseStats();
+}
+
+let _casePieChart = null, _caseBarChart = null;
+async function loadCaseStats() {
+  const year = document.getElementById('caseYear')?.value;
+  const month = document.getElementById('caseMonth')?.value;
+  const filterUnit = document.getElementById('caseUnit')?.value || '';
+  if (!year || !month) return;
+
+  const emptyEl = document.getElementById('caseEmptyMsg');
+  document.getElementById('caseOverviewGrid').style.display = 'none';
+  document.getElementById('caseChartsArea').style.display = 'none';
+  document.getElementById('caseDetailCard').style.display = 'none';
+  if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.querySelector('.empty-icon').textContent = '⏳'; emptyEl.childNodes[1] && (emptyEl.childNodes[1].textContent = '載入中...'); }
+
+  const westernYear = parseInt(year) + 1911;
+  const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
+
+  try {
+    const [outDocs] = await Promise.all([fbList(COL_OUTING, 'date', 'asc'), loadMembers()]);
+    let docs = outDocs.filter(r => (r.date||'').startsWith(monthStr));
+    const memberUnitMap = {};
+    members.forEach(m => { memberUnitMap[m.name] = m.unit||''; });
+    if (filterUnit) docs = docs.filter(d => (memberUnitMap[d.memberName]||'') === filterUnit);
+
+    if (!docs.length) {
+      if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.querySelector('.empty-icon').textContent = '📊'; }
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const typeCount = {};
+    docs.forEach(d => { const t = (d.caseType||'').trim()||'未分類'; typeCount[t] = (typeCount[t]||0)+1; });
+    const total = docs.length;
+    const sorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
+    const labels = sorted.map(e=>e[0]);
+    const counts = sorted.map(e=>e[1]);
+    const colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
+    const topType = sorted[0];
+
+    document.getElementById('caseTotalNum').textContent = total;
+    document.getElementById('caseTypeNum').textContent = sorted.length;
+    document.getElementById('caseTopType').textContent = topType[0];
+    document.getElementById('caseTopCount').textContent = topType[1];
+    document.getElementById('caseTopLabel').textContent = topType[0] + ' 件數';
+    document.getElementById('caseOverviewGrid').style.display = 'grid';
+
+    // Charts
+    if (_casePieChart) { _casePieChart.destroy(); _casePieChart = null; }
+    if (_caseBarChart) { _caseBarChart.destroy(); _caseBarChart = null; }
+
+    const legend = document.getElementById('casePageLegend');
+    if (legend) legend.innerHTML = labels.map((l,i) => `<span style="display:flex;align-items:center;gap:3px;white-space:nowrap;"><span style="width:9px;height:9px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>${l}</span>`).join('');
+
+    document.getElementById('caseChartsArea').style.display = 'grid';
+
+    setTimeout(() => {
+      const pieEl = document.getElementById('casePagePieChart');
+      if (pieEl) {
+        const sz = Math.min(pieEl.offsetWidth, 160);
+        pieEl.innerHTML = `<canvas id="casePagePieCanvas" width="${sz}" height="${sz}" style="display:block;margin:0 auto;"></canvas>`;
+        const ctx = document.getElementById('casePagePieCanvas')?.getContext('2d');
+        if (ctx && typeof Chart !== 'undefined') {
+          _casePieChart = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] }, options:{ plugins:{ legend:{ display:false } }, cutout:'60%' } });
+        }
+      }
+      const barEl = document.getElementById('casePageBarChart');
+      if (barEl) {
+        const bh = Math.max(labels.length * 28, 80);
+        barEl.innerHTML = `<canvas id="casePageBarCanvas" height="${bh}" style="width:100%;"></canvas>`;
+        const ctx2 = document.getElementById('casePageBarCanvas')?.getContext('2d');
+        if (ctx2 && typeof Chart !== 'undefined') {
+          _caseBarChart = new Chart(ctx2, { type:'bar', data:{ labels, datasets:[{ data:counts, backgroundColor:colors, borderRadius:4, borderWidth:0 }] }, options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ display:false }, ticks:{ font:{ size:10 } } }, y:{ ticks:{ font:{ size:10 } } } } } });
+        }
+      }
+    }, 80);
+
+    // Detail table
+    const tbody = document.getElementById('casePageTableBody');
+    if (tbody) {
+      tbody.innerHTML = sorted.map((e,i) => {
+        const pct = total > 0 ? (e[1]/total*100).toFixed(1) : 0;
+        return `<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 14px;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:8px;">
+            <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;display:inline-block;"></span>${e[0]}
+          </td>
+          <td style="padding:10px 14px;text-align:center;font-size:0.88rem;font-weight:700;color:var(--red);">${e[1]}</td>
+          <td style="padding:10px 14px;text-align:center;font-size:0.82rem;color:var(--text-mid);">${pct}%</td>
+          <td style="padding:10px 14px;"><div style="height:6px;background:#f0f0f0;border-radius:3px;min-width:60px;"><div style="height:6px;background:${colors[i]};border-radius:3px;width:${pct}%;"></div></div></td>
+        </tr>`;
+      }).join('');
+    }
+    document.getElementById('caseDetailTitle').textContent = `${year}年${month}月 案由明細${filterUnit?' — '+filterUnit:''}`;
+    document.getElementById('caseDetailCard').style.display = 'block';
+  } catch(e) {
+    if (emptyEl) { emptyEl.style.display = 'flex'; }
+    console.error(e);
+  }
+}
 
 async function initItemsPage() {
   const container = document.getElementById('itemsList');
