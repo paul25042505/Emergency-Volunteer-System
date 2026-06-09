@@ -12260,9 +12260,13 @@ function _renderNoticeTab() {
   const list = document.getElementById('noticePanelList');
   // 訊息通知 = broadcast / correction / feedback；公告 = system (+ urgent pinned)
   const msgTypes = ['broadcast', 'correction', 'feedback'];
-  const filtered = _noticeAllDocs.filter(d =>
-    _noticeTab === 'msg' ? msgTypes.includes(d.type || 'system') : !msgTypes.includes(d.type || 'system')
-  );
+  const _me = (JSON.parse(sessionStorage.getItem('rescue_user') || '{}')).memberName || '';
+  const filtered = _noticeAllDocs.filter(d => {
+    if (_noticeTab === 'msg' ? !msgTypes.includes(d.type || 'system') : msgTypes.includes(d.type || 'system')) return false;
+    // 指定成員的推播：只顯示給收件人
+    if (d.targetMembers && d.targetMembers.length && !d.targetMembers.includes(_me)) return false;
+    return true;
+  });
   if (!filtered.length) {
     list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-light);font-size:0.82rem;">${_noticeTab==='msg'?'目前沒有訊息通知':'目前沒有公告'}</div>`;
     return;
@@ -12294,7 +12298,9 @@ function _applyNoticeDocs(docs, u) {
       return _tsMillis(b.createdAt) - _tsMillis(a.createdAt);
     });
   const msgTypes = ['broadcast', 'correction', 'feedback'];
-  const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
+  const _meUnread = (JSON.parse(sessionStorage.getItem('rescue_user') || '{}')).memberName || '';
+  const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen
+    && !(d.targetMembers && d.targetMembers.length && !d.targetMembers.includes(_meUnread)));
   const hasUnreadAnn = _noticeAllDocs.some(d => !msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen);
   const dotMsg = document.getElementById('noticeTabDot-msg');
   const dotAnn = document.getElementById('noticeTabDot-ann');
@@ -12808,6 +12814,17 @@ async function sendManualPush() {
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount, failCount });
 
     if (ok) {
+      // 寫入 COL_ANNOUNCE 讓通知中心「推播訊息」tab 顯示
+      const today = new Date().toLocaleDateString('sv');
+      const usr2  = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+      await fbAdd(COL_ANNOUNCE, {
+        title, body: body || '', text: body ? `${title}\n${body}` : title,
+        type: 'broadcast', active: true, audience: _pfTarget,
+        targetMembers: _pfTarget === 'members' ? targetNames : [],
+        startDate: today, endDate: today,
+        createdAt: new Date(), sentBy: usr2.memberName || '管理員',
+      }).catch(() => {});
+      loadAnnouncement();
       statusEl.style.color = '#16a34a';
       statusEl.textContent = `✅ 推播成功傳送（${successCount} 筆）`;
       setTimeout(() => { hidePushForm(); loadPushLog(); }, 1500);
