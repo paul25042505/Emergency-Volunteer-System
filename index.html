@@ -15792,15 +15792,8 @@ async function _confirmBroadcast() {
   if (btn) { btn.disabled = true; btn.textContent = '發送中…'; }
   try {
     const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    const resp = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, body, requestedBy: usr.name || '管理員', skipAnnouncement: true }),
-    });
-    const result = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(result.error || `HTTP ${resp.status}`);
-    // 客戶端直接寫入公告，讓本地快取同步更新
     const now = new Date();
+    // 寫入公告管理（不加 _pushed，讓 onNewAnnouncement Cloud Function 自動推播）
     await fbAdd(COL_ANNOUNCE, {
       title, body, text: `${title}\n${body}`,
       type: 'broadcast', audience: 'all',
@@ -15808,14 +15801,9 @@ async function _confirmBroadcast() {
       startDate: now.toLocaleDateString('sv'),
       endDate: new Date(now.getTime() + 30 * 86400000).toLocaleDateString('sv'),
       createdAt: now, createdBy: usr.name || '管理員',
-      _pushed: true,
-    }).catch(() => {});
+    });
     document.getElementById('broadcastPreviewOverlay')?.remove();
-    const count = result.count || 0;
-    _showToast(count > 0 ? `✅ 推播已發送給 ${count} 位訂閱成員` : '⚠️ 目前沒有訂閱成員');
-    // 強制顯示鈴鐺紅點（清除 lastSeen 讓新公告顯示為未讀）
-    localStorage.removeItem('bellLastSeen');
-    document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'block');
+    _showToast('✅ 廣播已寫入公告管理，推播由系統自動發送');
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '🔔 發送推播'; }
     alert('發送失敗：' + e.message);
