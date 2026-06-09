@@ -10961,6 +10961,46 @@ async function _trimLoginLog(maxCount) {
   } catch(e) {}
 }
 
+// ── 登入頁警車爆閃效果 ──
+(function() {
+  function startStrobes() {
+    const screen = document.getElementById('loginScreen');
+    if (!screen) return;
+    const zones = [
+      { pos: 'top:0;left:0',     colors: ['rgba(40,120,255,VAL)', 'rgba(255,255,255,VAL)'], size: 'width:60%;height:50%' },
+      { pos: 'top:0;right:0',    colors: ['rgba(220,30,30,VAL)',  'rgba(255,255,255,VAL)'], size: 'width:60%;height:50%' },
+      { pos: 'bottom:0;left:0',  colors: ['rgba(220,30,30,VAL)',  'rgba(40,120,255,VAL)'],  size: 'width:60%;height:40%' },
+      { pos: 'bottom:0;right:0', colors: ['rgba(40,120,255,VAL)', 'rgba(220,30,30,VAL)'],   size: 'width:60%;height:40%' },
+    ];
+    const els = zones.map(z => {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:absolute;' + z.pos + ';' + z.size + ';pointer-events:none;z-index:0;opacity:0;mix-blend-mode:screen;transition:opacity 0.03s;';
+      screen.appendChild(el);
+      return { el, colors: z.colors };
+    });
+    let running = true;
+    const obs = new MutationObserver(() => { running = !screen || screen.style.display !== 'none'; });
+    obs.observe(screen, { attributes: true, attributeFilter: ['style'] });
+    function flash() {
+      if (!running) { setTimeout(flash, 200); return; }
+      const numFlash = 1 + Math.floor(Math.random() * 3);
+      const shuffled = [...els].sort(() => Math.random() - 0.5).slice(0, numFlash);
+      shuffled.forEach(z => {
+        const col = z.colors[Math.floor(Math.random() * z.colors.length)];
+        const alpha = 0.20 + Math.random() * 0.35;
+        const cx = Math.random() < 0.5 ? 'top left' : 'bottom right';
+        z.el.style.background = 'radial-gradient(ellipse at ' + cx + ', ' + col.replace('VAL', String(alpha.toFixed(2))) + ', transparent 75%)';
+        z.el.style.opacity = '1';
+        setTimeout(() => { z.el.style.opacity = '0'; }, 25 + Math.random() * 65);
+      });
+      setTimeout(flash, 35 + Math.random() * 140);
+    }
+    flash();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startStrobes);
+  else startStrobes();
+})();
+
 // ── 登入頁霓虹燈 canvas 動畫 ──
 (function() {
   function startLoginLights() {
