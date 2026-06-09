@@ -52,7 +52,7 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  height: 100%;
+  height: var(--app-height, 100%);
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
@@ -568,9 +568,9 @@ tr:hover td { background: #fdfcfb; }
 /* ── Login Screen ── */
 #loginScreen {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  position: fixed; inset: 0;
+  position: fixed; top: 0; left: 0; right: 0; height: var(--app-height, 100%);
   z-index: 9999; padding: 0 20px 0; overflow: hidden;
-  justify-content: flex-end; padding-bottom: 80px;
+  justify-content: flex-end; padding-bottom: max(env(safe-area-inset-bottom, 20px), 20px);
 }
 #loginScreen::before {
   content: ''; position: absolute; inset: 0;
@@ -1043,6 +1043,19 @@ function _dlCSV(content, filename) {
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+<script>
+// 在 CSS 渲染前設好 --app-height，確保 browser 模式下 body 高度等於 window.innerHeight
+(function(){
+  function _setH(){
+    var h = window.innerHeight + 'px';
+    document.documentElement.style.setProperty('--app-height', h);
+  }
+  _setH();
+  window.addEventListener('resize', _setH);
+  // orientationchange 後需再次更新
+  window.addEventListener('orientationchange', function(){ setTimeout(_setH, 300); });
+})();
+</script>
 </head>
 <body>
 
