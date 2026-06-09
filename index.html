@@ -3291,6 +3291,26 @@ function _dlCSV(content, filename) {
               <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂
             </label>
           </div>
+          <!-- 推播選項 -->
+          <div style="background:#f0f4ff;border:1px solid #c7d7ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0;" id="anFormPushToggleLabel">
+              <input type="checkbox" id="anFormPushToggle" style="accent-color:#1e3a8a;width:15px;height:15px;" onchange="toggleAnFormPush()">
+              <span style="font-size:0.82rem;font-weight:600;color:#1a237e;">📤 同時發送 FCM 推播通知</span>
+            </label>
+            <div id="anFormPushOpts" style="display:none;margin-top:10px;display:none;">
+              <div style="font-size:0.72rem;color:#475569;margin-bottom:6px;">推播對象</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button id="anPushBtn-all" onclick="setAnPushTarget('all')"
+                  style="padding:6px 13px;border-radius:20px;border:1.5px solid #1e3a8a;background:#1e3a8a;color:white;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+                  全體成員
+                </button>
+                <button id="anPushBtn-admin" onclick="setAnPushTarget('admin')"
+                  style="padding:6px 13px;border-radius:20px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+                  管理員／承辦
+                </button>
+              </div>
+            </div>
+          </div>
           <div style="display:flex;gap:8px;">
             <button onclick="saveAnnounceForm()" class="btn-search" style="flex:1;min-height:unset;">發布公告</button>
             <button onclick="hideAnnounceForm()" class="btn-reset" style="min-height:unset;">取消</button>
@@ -12431,12 +12451,33 @@ function showAnnounceForm(doc) {
   document.getElementById('anFormPinned').checked = doc ? !!doc.pinned : false;
   document.getElementById('anFormHeading').textContent = doc ? '編輯公告' : '新增公告';
   document.getElementById('anFormStatus').textContent = '';
+  const pushToggle = document.getElementById('anFormPushToggle');
+  if (pushToggle) { pushToggle.checked = false; toggleAnFormPush(); }
+  _anPushTarget = 'all'; setAnPushTarget('all');
   document.getElementById('announceForm').style.display = '';
   document.getElementById('announceForm').scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
 function hideAnnounceForm() {
   document.getElementById('announceForm').style.display = 'none';
+}
+
+let _anPushTarget = 'all';
+function toggleAnFormPush() {
+  const on = document.getElementById('anFormPushToggle')?.checked;
+  const opts = document.getElementById('anFormPushOpts');
+  if (opts) opts.style.display = on ? '' : 'none';
+}
+function setAnPushTarget(t) {
+  _anPushTarget = t;
+  ['all','admin'].forEach(k => {
+    const btn = document.getElementById('anPushBtn-' + k);
+    if (!btn) return;
+    const active = k === t;
+    btn.style.background = active ? '#1e3a8a' : 'white';
+    btn.style.color = active ? 'white' : '#64748b';
+    btn.style.borderColor = active ? '#1e3a8a' : '#e2e8f0';
+  });
 }
 
 function toggleAnFormMember() {
@@ -12485,6 +12526,36 @@ async function saveAnnounceForm() {
     } else {
       await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date() });
     }
+
+    // FCM 推播（新增時才推，編輯不重複推）
+    const doPush = !id && document.getElementById('anFormPushToggle')?.checked;
+    if (doPush) {
+      const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+      const sentAt = new Date().toLocaleString('sv').replace('T',' ');
+      const logId = await fbAdd(COL_PUSH_LOG, {
+        title, body: body || '', target: _anPushTarget, targetNames: [],
+        sentAt, sentBy: usr.memberName || usr.name || '管理員',
+        status: 'pending', successCount: 0, failCount: 0, source: 'announce'
+      }).catch(() => null);
+      fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body: body || title, requestedBy: usr.memberName || '管理員', skipAnnouncement: true, pushTarget: _anPushTarget }),
+      }).then(async res => {
+        if (!logId) return;
+        let result = {};
+        try { result = await res.json(); } catch(e) {}
+        const ok = res.ok;
+        await fbUpdate(COL_PUSH_LOG, logId, {
+          status: ok ? 'ok' : 'fail',
+          successCount: result.successCount ?? (ok ? 1 : 0),
+          failCount:    result.failCount    ?? (ok ? 0 : 1),
+        }).catch(() => {});
+      }).catch(async () => {
+        if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1 }).catch(() => {});
+      });
+    }
+
     hideAnnounceForm();
     await loadAdminAnnouncements();
     loadAnnouncement();
