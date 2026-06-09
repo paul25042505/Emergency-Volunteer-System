@@ -11009,7 +11009,7 @@ function _buildNoticeCard(d) {
   const meta = { ..._NOTICE_META[t] };
   if (d.pinned) meta.tag = '📌 置頂';
   const dateStr = ts > 0
-    ? new Date(ts).toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', hour12: false })
+    ? (() => { const dt = new Date(ts); const y=dt.getFullYear(), mo=String(dt.getMonth()+1).padStart(2,'0'), day=String(dt.getDate()).padStart(2,'0'), h=String(dt.getHours()).padStart(2,'0'), mi=String(dt.getMinutes()).padStart(2,'0'); return `${y}/${mo}/${day} ${h}:${mi}`; })()
     : (d.startDate||'').replace(/-/g,'/');
   return `<div class="notice-card${unread?' unread':''}">
     <div class="notice-card-icon" style="background:${meta.bg};color:${meta.clr};">${_NOTICE_SVG[t]||_NOTICE_SVG.system}</div>
@@ -12446,6 +12446,80 @@ async function _confirmCreateTask(month, unit, note) {
   }
 }
 
+async function _remindPendingConfirm(task, pendNames) {
+  const defTitle = `⏰ 提醒：${task.month} ${task.unit} 紀錄確認`;
+  const defBody  = `以下成員尚未完成確認，請盡快回覆：${pendNames.join('、')}`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'broadcastPreviewOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📣 催促未回應成員</div>
+        <button onclick="document.getElementById('broadcastPreviewOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);">✕</button>
+      </div>
+      <div style="background:#fff8e1;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;color:#e65100;">
+        未回應成員（${pendNames.length} 人）：${pendNames.join('、')}
+      </div>
+      <div style="background:#f2f2f7;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+        <img src="/Emergency-Volunteer-System/icon-192.png" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0;">
+          <div id="bpTitlePreview" style="font-size:0.88rem;font-weight:700;color:#1c1c1e;font-family:'Noto Sans TC',sans-serif;">${defTitle}</div>
+          <div style="font-size:0.88rem;font-weight:700;color:#1c1c1e;font-family:'Noto Sans TC',sans-serif;margin:1px 0 3px;">from 救護義消系統</div>
+          <div id="bpBodyPreview" style="font-size:0.85rem;color:#1c1c1e;line-height:1.4;font-family:'Noto Sans TC',sans-serif;">${defBody}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:4px;">標題</div>
+        <input id="bpTitleInput" type="text" value="${defTitle.replace(/"/g,'&quot;')}" maxlength="60"
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;box-sizing:border-box;outline:none;"
+          oninput="document.getElementById('bpTitlePreview').textContent=this.value">
+      </div>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:4px;">內容</div>
+        <textarea id="bpBodyInput" rows="3" maxlength="200"
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;resize:none;box-sizing:border-box;outline:none;"
+          oninput="document.getElementById('bpBodyPreview').textContent=this.value">${defBody}</textarea>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:14px;">推播對象：${task.unit} 未回應的 ${pendNames.length} 位成員（依姓名查訂閱）</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('broadcastPreviewOverlay').remove()"
+          style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
+        <button id="bpSendBtn" onclick="_sendRemindPush(${JSON.stringify(pendNames).replace(/"/g,'&quot;')})"
+          style="flex:2;padding:12px;border:none;border-radius:10px;background:#e65100;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">📣 發送催促推播</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function _sendRemindPush(pendNames) {
+  const title = document.getElementById('bpTitleInput')?.value?.trim();
+  const body  = document.getElementById('bpBodyInput')?.value?.trim();
+  if (!title || !body) return alert('標題與內容不能空白');
+  const btn = document.getElementById('bpSendBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '發送中…'; }
+  try {
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    // 逐一對每位未回應成員發送個人推播
+    let sentCount = 0;
+    for (const memberName of pendNames) {
+      const resp = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body, requestedBy: usr.name || '管理員', skipAnnouncement: true, pushTarget: 'member', targetMember: memberName }),
+      });
+      if (resp.ok) sentCount++;
+    }
+    document.getElementById('broadcastPreviewOverlay')?.remove();
+    _showToast(`✅ 已對 ${sentCount} 位未回應成員發送催促推播`);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '📣 發送催促推播'; }
+    alert('發送失敗：' + e.message);
+  }
+}
+
 async function loadAdminConfirmTasks() {
   const el = document.getElementById('adminConfirmTaskList');
   if (!el) return;
@@ -12539,17 +12613,26 @@ async function loadAdminConfirmTasks() {
 
       // 操作按鈕
       const foot = document.createElement('div');
-      foot.style.cssText = 'padding:10px 14px;background:var(--cream);display:flex;gap:8px;';
+      foot.style.cssText = 'padding:10px 14px;background:var(--cream);display:flex;gap:8px;flex-wrap:wrap;';
       if (task.status === 'active') {
         const closeBtn = document.createElement('button');
         closeBtn.textContent = '關閉任務';
-        closeBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);';
+        closeBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;';
         closeBtn.onclick = () => closeConfirmTask(task.id);
         foot.appendChild(closeBtn);
+
+        if (pendCount > 0) {
+          const remindBtn = document.createElement('button');
+          remindBtn.textContent = `📣 催促未回應 (${pendCount} 人)`;
+          remindBtn.style.cssText = 'background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:#e65100;font-family:\'Noto Sans TC\',sans-serif;font-weight:600;';
+          const pendNames = unitMembers.filter(m => !responses.find(r => r.memberName === m.name)).map(m => m.name);
+          remindBtn.onclick = () => _remindPendingConfirm(task, pendNames);
+          foot.appendChild(remindBtn);
+        }
       }
       const delBtn = document.createElement('button');
       delBtn.textContent = '刪除';
-      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:#b94a3a;';
+      delBtn.style.cssText = 'background:none;border:1px solid #f5c6c6;border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;';
       delBtn.onclick = () => deleteConfirmTask(task.id, task.month);
       foot.appendChild(delBtn);
 
