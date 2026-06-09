@@ -5889,6 +5889,48 @@ async function loadDashWeather() {
     set('dashWeatherRain',     (c.precipitation_probability ?? '—') + '%');
     set('dashWeatherUV',       uv + ' ' + uvLabel);
 
+    // 依天氣主題換背景
+    (function applyWeatherTheme(code) {
+      const card = document.getElementById('dashWeatherCard');
+      if (!card) return;
+      let bg, shadow, textShadow = '';
+      if (code === 0) {
+        // 晴天 — 暖橙金
+        bg = 'linear-gradient(145deg,#e67e22 0%,#f39c12 55%,#f1c40f 100%)';
+        shadow = '0 8px 28px rgba(230,126,34,0.45)';
+      } else if (code <= 2) {
+        // 大致晴/部分多雲 — 天藍
+        bg = 'linear-gradient(145deg,#1e90ff 0%,#1976D2 55%,#0d6efd 100%)';
+        shadow = '0 8px 28px rgba(30,144,255,0.40)';
+      } else if (code === 3) {
+        // 陰天 — 鐵灰
+        bg = 'linear-gradient(145deg,#546e7a 0%,#455a64 55%,#37474f 100%)';
+        shadow = '0 8px 28px rgba(69,90,100,0.45)';
+      } else if (code <= 48) {
+        // 霧/濃霧 — 霧灰藍
+        bg = 'linear-gradient(145deg,#78909c 0%,#607d8b 55%,#546e7a 100%)';
+        shadow = '0 8px 28px rgba(96,125,139,0.45)';
+      } else if (code <= 65) {
+        // 毛毛雨 / 小中大雨 — 深藍雨
+        bg = 'linear-gradient(145deg,#1a237e 0%,#283593 45%,#1565C0 100%)';
+        shadow = '0 8px 28px rgba(26,35,126,0.50)';
+      } else if (code <= 75) {
+        // 雪 — 淡冰藍
+        bg = 'linear-gradient(145deg,#4fc3f7 0%,#29b6f6 50%,#0288d1 100%)';
+        shadow = '0 8px 28px rgba(41,182,246,0.40)';
+      } else if (code <= 82) {
+        // 陣雨/強陣雨 — 深藍灰
+        bg = 'linear-gradient(145deg,#1a3a5c 0%,#1e3a5f 50%,#263238 100%)';
+        shadow = '0 8px 28px rgba(26,58,92,0.55)';
+      } else {
+        // 雷陣雨 — 暗紫電
+        bg = 'linear-gradient(145deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)';
+        shadow = '0 8px 28px rgba(15,52,96,0.65)';
+      }
+      card.style.background = bg;
+      card.style.boxShadow = shadow;
+    })(code);
+
     document.getElementById('dashInfoWeather').style.display = '';
   } catch(e) {
     const el = document.getElementById('dashInfoWeather');
