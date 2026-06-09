@@ -9290,27 +9290,27 @@ async function loadStats() {
 
 let _caseStatsInited = false;
 async function initCaseStatsPage() {
+  const now = new Date();
+  const yr = now.getFullYear();
+  const yrSel = document.getElementById('caseYear');
+  if (yrSel && !_caseStatsInited) {
+    yrSel.innerHTML = '';
+    for (let y = yr; y >= yr - 5; y--) {
+      const roc = y - 1911;
+      const opt = document.createElement('option');
+      opt.value = String(roc); opt.textContent = roc + ' 年';
+      yrSel.appendChild(opt);
+    }
+    yrSel.value = String(yr - 1911);
+    document.getElementById('caseYearDisplay').textContent = String(yr - 1911);
+  }
+  const mSel = document.getElementById('caseMonth');
+  if (mSel && !_caseStatsInited) {
+    mSel.value = String(now.getMonth() + 1);
+    document.getElementById('caseMonthDisplay').textContent = (now.getMonth() + 1) + '月';
+  }
   if (!_caseStatsInited) {
     _caseStatsInited = true;
-    const now = new Date();
-    const yr = now.getFullYear();
-    const yrSel = document.getElementById('caseYear');
-    if (yrSel) {
-      yrSel.innerHTML = '';
-      for (let y = yr; y >= yr - 5; y--) {
-        const roc = y - 1911;
-        const opt = document.createElement('option');
-        opt.value = roc; opt.textContent = roc + ' 年';
-        if (y === yr) opt.selected = true;
-        yrSel.appendChild(opt);
-      }
-      document.getElementById('caseYearDisplay').textContent = (yr - 1911).toString();
-    }
-    const mSel = document.getElementById('caseMonth');
-    if (mSel) {
-      mSel.value = now.getMonth() + 1;
-      document.getElementById('caseMonthDisplay').textContent = (now.getMonth() + 1) + '月';
-    }
     await loadUnits();
     const uSel = document.getElementById('caseUnit');
     if (uSel && uSel.options.length <= 1) {
@@ -9325,7 +9325,7 @@ async function loadCaseStats() {
   const year = document.getElementById('caseYear')?.value;
   const month = document.getElementById('caseMonth')?.value;
   const filterUnit = document.getElementById('caseUnit')?.value || '';
-  if (!year || !month) return;
+  if (!year || !month) { const el=document.getElementById('caseEmptyMsg'); if(el){el.style.display='flex';const ic=el.querySelector('.empty-icon');if(ic)ic.textContent='⚠️';} return; }
 
   const emptyEl = document.getElementById('caseEmptyMsg');
   const setEmpty = (icon, text) => {
