@@ -789,6 +789,7 @@ tr:hover td { background: #fdfcfb; }
   width: 120px; height: 120px; border-radius: 50%;
   background: rgba(255,255,255,0.04); pointer-events: none;
 }
+#dashHourlyScroll::-webkit-scrollbar { display: none; }
 .dash-wth-cell {
   background: rgba(255,255,255,0.12);
   border-radius: 12px; padding: 8px 4px;
@@ -1592,6 +1593,16 @@ function _dlCSV(content, filename) {
         </div>
       </div>
     </div>
+
+    <!-- 每小時天氣概況 -->
+    <div id="dashHourlyForecast" style="display:none;margin-bottom:4px;">
+      <div style="font-size:0.7rem;opacity:0.55;letter-spacing:0.08em;margin-bottom:8px;padding-left:2px;">每小時概況</div>
+      <div id="dashHourlyScroll"
+        style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;
+               scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+      </div>
+    </div>
+
     <!-- 備勤統計（保留 IDs，隱藏） -->
     <div style="display:none;">
       <span id="dashMonthHours"></span><span id="dashHeroDateLine"></span>
@@ -5909,6 +5920,8 @@ async function loadDashWeather() {
       '?latitude=24.21&longitude=120.70' +
       '&current=temperature_2m,apparent_temperature,weathercode,relative_humidity_2m,' +
       'precipitation_probability,uv_index' +
+      '&hourly=temperature_2m,weathercode,precipitation_probability' +
+      '&forecast_days=1' +
       '&timezone=Asia%2FTaipei'
     );
     const data = await res.json();
@@ -5987,6 +6000,48 @@ async function loadDashWeather() {
     })(code);
 
     document.getElementById('dashInfoWeather').style.display = '';
+
+    // ── 每小時概況 ──
+    (function renderHourly(h) {
+      const scroll = document.getElementById('dashHourlyScroll');
+      const wrap   = document.getElementById('dashHourlyForecast');
+      if (!scroll || !wrap || !h) return;
+      const now = new Date();
+      const curHour = now.getHours();
+      const times = h.time || [];
+      const temps  = h.temperature_2m || [];
+      const codes  = h.weathercode || [];
+      const rains  = h.precipitation_probability || [];
+
+      // 從當前小時起取 12 小時
+      const items = [];
+      for (let i = 0; i < times.length && items.length < 12; i++) {
+        const hh = parseInt(times[i].slice(11, 13), 10);
+        if (hh < curHour) continue;
+        items.push({ hh, temp: temps[i], code: codes[i], rain: rains[i] });
+      }
+      if (!items.length) { wrap.style.display = 'none'; return; }
+
+      scroll.innerHTML = items.map(({ hh, temp, code, rain }) => {
+        const m = weatherMap.slice().reverse().find(([v]) => code >= v) || [0, '🌤', '—'];
+        const label = hh === curHour ? '現在' : hh + ':00';
+        const isNow = hh === curHour;
+        const rainPct = rain != null ? rain : 0;
+        const rainColor = rainPct >= 60 ? '#60a5fa' : rainPct >= 30 ? '#93c5fd' : 'rgba(255,255,255,0.4)';
+        return `<div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;
+                  padding:10px 10px 8px;border-radius:14px;min-width:60px;
+                  background:${isNow ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.10)'};
+                  border:1px solid ${isNow ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)'};
+                  backdrop-filter:blur(6px);">
+          <div style="font-size:0.62rem;color:rgba(255,255,255,${isNow?'0.95':'0.6'});font-weight:${isNow?700:400};margin-bottom:6px;">${label}</div>
+          <div style="font-size:1.35rem;line-height:1;margin-bottom:5px;">${m[1]}</div>
+          <div style="font-size:0.82rem;font-weight:700;color:white;margin-bottom:5px;">${Math.round(temp)}°</div>
+          <div style="font-size:0.6rem;color:${rainColor};">${rainPct}%</div>
+        </div>`;
+      }).join('');
+
+      wrap.style.display = '';
+    })(data.hourly);
   } catch(e) {
     const el = document.getElementById('dashInfoWeather');
     if (el) el.style.display = 'none';
