@@ -12560,6 +12560,16 @@ async function saveAnnounceForm() {
           successCount: result.successCount ?? (ok ? 1 : 0),
           failCount:    result.failCount    ?? (ok ? 0 : 1),
         }).catch(() => {});
+        // 舊版 Cloud Function 不支援 skipAnnouncement，會多寫一筆 broadcast，改回 system
+        if (ok) {
+          try {
+            const cutoff = new Date(Date.now() - 30000);
+            const extras = await fbQuery(COL_ANNOUNCE, [['type','==','broadcast'],['createdAt','>=',cutoff]]);
+            for (const e of extras) {
+              if (e.title === title) await fbUpdate(COL_ANNOUNCE, e.id, { type: 'system', _fixedFrom: 'announce' }).catch(() => {});
+            }
+          } catch(_) {}
+        }
       }).catch(async () => {
         if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1 }).catch(() => {});
       });
