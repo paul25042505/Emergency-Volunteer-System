@@ -2551,17 +2551,17 @@ function _dlCSV(content, filename) {
         </div>
       </div>
       <!-- Filters -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
-        <div style="position:relative;">
-          <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.12em;margin-bottom:5px;text-align:center;">年份</div>
-          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:10px;padding:9px 4px;text-align:center;position:relative;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
+          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
             <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
             <select id="statsYear" onchange="document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
           </div>
         </div>
-        <div style="position:relative;">
-          <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.12em;margin-bottom:5px;text-align:center;">月份</div>
-          <div style="background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:9px 4px;text-align:center;position:relative;">
+        <div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
+          <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
             <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
             <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value?this.value+'月':'全年';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="">全年</option>
@@ -2572,29 +2572,29 @@ function _dlCSV(content, filename) {
             </select>
           </div>
         </div>
-        <div style="position:relative;">
-          <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.12em;margin-bottom:5px;text-align:center;">分隊別</div>
-          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:10px;padding:9px 4px;text-align:center;position:relative;">
-            <div style="font-size:0.78rem;font-weight:700;color:white;line-height:1.2;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="statsUnitDisplay">全部</div>
+        <div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">分隊別</div>
+          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="statsUnitDisplay">全部</div>
             <select id="statsUnit" onchange="document.getElementById('statsUnitDisplay').textContent=this.value||'全部';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="">全部分隊</option>
             </select>
           </div>
         </div>
       </div>
-      <!-- KPI strip inside hero -->
+      <!-- KPI strip -->
       <div id="statsOverview" style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
-        <div style="padding:14px 6px;text-align:center;">
-          <div style="font-size:2.4rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;font-variant-numeric:tabular-nums;" id="statsTotal">—</div>
-          <div style="font-size:0.56rem;color:rgba(255,255,255,0.5);margin-top:5px;letter-spacing:0.08em;">協勤案件</div>
+        <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsTotal">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">協勤案件</div>
         </div>
-        <div style="padding:14px 6px;text-align:center;border-left:1px solid rgba(255,255,255,0.12);border-right:1px solid rgba(255,255,255,0.12);">
-          <div style="font-size:2.4rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;font-variant-numeric:tabular-nums;" id="statsMemCount">—</div>
-          <div style="font-size:0.56rem;color:rgba(255,255,255,0.5);margin-top:5px;letter-spacing:0.08em;">協勤人數</div>
+        <div style="padding:12px 4px 10px;text-align:center;border-left:1px solid rgba(255,255,255,0.12);border-right:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsMemCount">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">協勤人數</div>
         </div>
-        <div style="padding:14px 6px;text-align:center;">
-          <div style="font-size:2.4rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;font-variant-numeric:tabular-nums;" id="statsTotalHours">—</div>
-          <div style="font-size:0.56rem;color:rgba(255,255,255,0.5);margin-top:5px;letter-spacing:0.08em;">總時數(h)</div>
+        <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsTotalHours">—</div>
+          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">總時數(h)</div>
         </div>
       </div>
     </div>
