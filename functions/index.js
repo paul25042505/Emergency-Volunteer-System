@@ -324,6 +324,38 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   }
 );
 
+// ── 每日 03:00：清理 90 天以上的舊資料，控制儲存費用 ──────────────────
+exports.scheduleDailyCleanup = onSchedule(
+  { schedule: '0 3 * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const cutoff = new Date(Date.now() - 90 * 86400000); // 90 天前
+
+    const COLS = ['loginLogs', 'changelogs', 'announcements', 'pushLogs', 'autoNotifLog', 'broadcastRequests'];
+    let total = 0;
+
+    for (const col of COLS) {
+      let snap;
+      try {
+        snap = await db.collection(col).where('createdAt', '<', cutoff).limit(400).get();
+      } catch (_) {
+        // autoNotifLog 用 sentAt
+        snap = await db.collection(col).where('sentAt', '<', cutoff).limit(400).get().catch(() => null);
+        if (!snap) continue;
+      }
+      if (snap.empty) continue;
+
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit().catch(() => {});
+      total += snap.size;
+      console.log(`cleanup ${col}: deleted ${snap.size}`);
+    }
+
+    console.log(`scheduleDailyCleanup: total deleted ${total}`);
+  }
+);
+
 // ── 工具函式 ──────────────────────────────────────────────────────────
 
 function _dateStr(d) {
