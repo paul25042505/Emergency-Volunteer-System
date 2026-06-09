@@ -11876,7 +11876,8 @@ async function submitFeedback() {
   if (!unit) { alert('請選擇分隊別'); return; }
   if (!body) { alert('請填寫意見內容'); return; }
   const isAnon   = document.getElementById('fbAnon').checked;
-  const category = document.getElementById('fbCategory').value;
+  const catRadio = document.querySelector('.fb-cat-btn input[type="radio"]:checked');
+  const category = catRadio ? catRadio.value : '其他';
   const name     = isAnon ? '匿名' : (document.getElementById('fbName')?.value||'匿名');
   const timeStr  = new Date().toLocaleString('sv').replace('T',' ');
   const btn    = document.querySelector('#feedbackPage .btn-submit');
