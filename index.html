@@ -3321,7 +3321,7 @@ function _dlCSV(content, filename) {
           <div><label style="font-size:0.78rem;">確認月份 <span class="req">*</span></label><input type="month" id="confirmMonth" style="width:100%;min-height:42px;padding:10px 13px;border:1px solid var(--border);border-radius:4px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;"></div>
           <div><label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label><select id="confirmUnit" style="width:100%;"><option value="">請選擇分隊</option></select></div>
         </div>
-        <div style="margin-bottom:12px;"><label style="font-size:0.78rem;">通知說明（選填）</label><input type="text" id="confirmNote" placeholder="例：請於5/10前完成確認" style="width:100%;"></div>
+        <div style="margin-bottom:12px;"><label style="font-size:0.78rem;">通知說明（選填）</label><input type="text" id="confirmNote" placeholder="例：請於每月5日前完成確認" style="width:100%;"></div>
         <button onclick="createConfirmTask()" class="btn-search" style="width:100%;">✅ 發起確認任務並通知成員</button>
         <div id="confirmCreateStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
       </div>
@@ -12361,7 +12361,7 @@ async function createConfirmTask() {
 
   // 顯示預覽 modal
   const defTitle = `📋 ${month} ${unit} 上月紀錄確認`;
-  const defBody  = note || `請 ${unit} 成員完成 ${month} 出勤紀錄確認`;
+  const defBody  = note || `請 ${unit} 成員於每月5日前完成 ${month} 出勤紀錄確認`;
 
   const overlay = document.createElement('div');
   overlay.id = 'broadcastPreviewOverlay';
