@@ -12708,7 +12708,7 @@ async function sendManualPush() {
   };
 
   let logId;
-  try { logId = (await fbAdd(COL_PUSH_LOG, logData)).id; } catch(e) {}
+  try { logId = await fbAdd(COL_PUSH_LOG, logData); } catch(e) {}
 
   try {
     const payload = {
@@ -12729,24 +12729,26 @@ async function sendManualPush() {
       body: JSON.stringify(payload),
     });
     const ok = res.ok;
-    const result = ok ? await res.json().catch(() => ({})) : {};
+    let result = {};
+    try { result = await res.json(); } catch(e) {}
     const successCount = result.successCount ?? (ok ? (targetNames.length || 1) : 0);
     const failCount    = result.failCount    ?? (ok ? 0 : (targetNames.length || 1));
 
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount, failCount });
 
-    statusEl.style.color = ok ? '#16a34a' : 'var(--red)';
-    statusEl.textContent = ok
-      ? `✅ 推播成功傳送（${successCount} 筆）`
-      : `❌ 推播傳送失敗（伺服器回應 ${res.status}）`;
-
     if (ok) {
+      statusEl.style.color = '#16a34a';
+      statusEl.textContent = `✅ 推播成功傳送（${successCount} 筆）`;
       setTimeout(() => { hidePushForm(); loadPushLog(); }, 1500);
+    } else {
+      let errMsg = result.error || result.message || '';
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = `❌ 推播失敗（HTTP ${res.status}${errMsg ? '：' + errMsg : ''}）`;
     }
   } catch(e) {
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: targetNames.length || 1 }).catch(()=>{});
     statusEl.style.color = 'var(--red)';
-    statusEl.textContent = '❌ 傳送失敗：' + e.message;
+    statusEl.textContent = '❌ 網路錯誤：' + e.message;
   } finally {
     sendBtn.textContent = '📤 發送推播'; sendBtn.disabled = false;
   }
@@ -12783,12 +12785,20 @@ async function loadPushLog() {
           ${d.status==='fail'&&d.failCount ? `<span style="font-size:0.68rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;">✘ ${d.failCount} 筆失敗</span>` : ''}
         </div>
         ${names ? `<div style="font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">收件人：${names}</div>` : ''}
-        <div style="font-size:0.68rem;color:#94a3b8;">${d.sentAt||''} 由 ${d.sentBy||'—'} 發送</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">
+          <div style="font-size:0.68rem;color:#94a3b8;">${d.sentAt||''} 由 ${d.sentBy||'—'} 發送</div>
+          <button onclick="deletePushLog('${d.id}')" style="background:none;border:none;color:#cbd5e1;font-size:0.7rem;cursor:pointer;padding:2px 4px;font-family:'Noto Sans TC',sans-serif;" title="刪除此筆紀錄">刪除</button>
+        </div>
       </div>`;
     }).join('');
   } catch(e) {
     el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
+}
+
+async function deletePushLog(id) {
+  if (!confirm('確定刪除此筆推播紀錄？')) return;
+  try { await fbDelete(COL_PUSH_LOG, id); loadPushLog(); } catch(e) { alert('刪除失敗：' + e.message); }
 }
 
 // ════════════════════════════════════════
