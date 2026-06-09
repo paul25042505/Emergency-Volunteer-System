@@ -3450,46 +3450,6 @@ function _dlCSV(content, filename) {
 <div class="page" id="morePage">
   <div class="form-wrap" style="padding-top:16px;">
 
-    <!-- 年度個人統計英雄卡 -->
-    <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 18px;margin-bottom:14px;box-shadow:0 8px 32px rgba(13,33,55,0.35);position:relative;overflow:hidden;">
-      <!-- 背景裝飾圈 -->
-      <div style="position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
-      <div style="position:absolute;right:20px;bottom:-40px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
-      <!-- 標題 -->
-      <div style="font-size:0.68rem;color:rgba(255,255,255,0.55);letter-spacing:0.14em;margin-bottom:6px;">年度累計協勤</div>
-      <!-- 大字時數 -->
-      <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:16px;">
-        <div id="moreStatHours" style="font-size:3.8rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;">—</div>
-        <div style="font-size:1.1rem;color:rgba(255,255,255,0.7);margin-bottom:8px;font-weight:600;">小時</div>
-      </div>
-      <!-- 三欄小統計 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:16px;">
-        <div style="padding:12px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);">
-          <div id="moreStatCount" style="font-size:1.55rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;">—</div>
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.55);margin-top:4px;letter-spacing:0.06em;">出勤次數</div>
-        </div>
-        <div style="padding:12px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);">
-          <div id="moreStatSvc" style="font-size:1.55rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;">—</div>
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.55);margin-top:4px;letter-spacing:0.06em;">救出人數</div>
-        </div>
-        <div style="padding:12px 6px;text-align:center;">
-          <div id="moreStatYears" style="font-size:1.1rem;font-weight:900;color:#7edcff;font-family:'Noto Serif TC',serif;line-height:1.2;word-break:break-all;">—</div>
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.55);margin-top:4px;letter-spacing:0.06em;">服務年資</div>
-        </div>
-      </div>
-      <!-- 快速連結 Pills -->
-      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-        <button onclick="navTo('statsPage')" style="flex-shrink:0;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:white;padding:6px 14px;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;">📊 年度統計</button>
-        <button onclick="navTo('gongchaPage')" style="flex-shrink:0;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:white;padding:6px 14px;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;">🏅 公差統計</button>
-        <button onclick="navTo('caseStatsPage')" style="flex-shrink:0;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:white;padding:6px 14px;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;">📋 案件統計</button>
-        <button onclick="navTo('attQueryPage')" style="flex-shrink:0;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:white;padding:6px 14px;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;">🕐 協勤時數</button>
-        <button onclick="navTo('queryPage')" style="flex-shrink:0;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:white;padding:6px 14px;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;white-space:nowrap;">🔍 案件查詢</button>
-      </div>
-    </div>
-
-    <!-- 年度案由統計卡片 -->
-    <div id="moreCaseGrid" style="display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;"></div>
-
     <!-- 使用者簡介卡片 -->
     <div id="moreUserCard" onclick="navTo('profilePage')" style="display:flex;align-items:center;gap:14px;background:white;border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:14px;cursor:pointer;">
       <div id="moreAvatar" style="width:52px;height:52px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;flex-shrink:0;">?</div>
@@ -12749,83 +12709,6 @@ function _initMorePage() {
   if (Notification.permission === 'granted' && !_adminNotifReady) {
     _adminNotifReady = true;
     _startNotifListeners();
-  }
-  _loadMoreStats(u.name || u.memberName || '');
-}
-
-async function _loadMoreStats(myName) {
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  if (!myName) return;
-
-  const now = new Date();
-  const yearStr = String(now.getFullYear());
-
-  try {
-    // 從 stale cache 先拿，避免等待
-    let attDocs = _C.peek(COL_ATTEND) || [];
-    let outDocs  = _C.peek(COL_OUTING) || [];
-    if (!attDocs.length || !outDocs.length) {
-      [attDocs, outDocs] = await Promise.all([
-        attDocs.length ? Promise.resolve(attDocs) : Promise.race([fbList(COL_ATTEND,'date','asc'), new Promise((_,r)=>setTimeout(()=>r(new Error('t')),8000))]).catch(()=>[]),
-        outDocs.length ? Promise.resolve(outDocs) : Promise.race([fbList(COL_OUTING,'date','asc'), new Promise((_,r)=>setTimeout(()=>r(new Error('t')),8000))]).catch(()=>[]),
-      ]);
-    }
-
-    // 當年本人的簽到記錄
-    const myAtt = attDocs.filter(r => (r.memberName||'') === myName && (r.date||'').startsWith(yearStr));
-    const totalHours = myAtt.reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
-    const totalSvc   = myAtt.reduce((s, r) => s + (parseInt(r.service)||parseInt(r.serviceCount)||0), 0);
-    const attCount   = myAtt.length;
-
-    set('moreStatHours', totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1));
-    set('moreStatCount', attCount);
-    set('moreStatSvc',   totalSvc);
-
-    // 服務年資：從最早的出勤記錄推算
-    const allMyAtt = attDocs.filter(r => (r.memberName||'') === myName);
-    const allMyOut = outDocs.filter(r => (r.memberName||'') === myName);
-    const allDates = [...allMyAtt.map(r=>r.date||''), ...allMyOut.map(r=>r.date||'')].filter(Boolean).sort();
-    if (allDates.length) {
-      const first = new Date(allDates[0]+'T00:00');
-      const diffMs = now - first;
-      const totalMonths = Math.floor(diffMs / (1000*60*60*24*30.44));
-      const yrs = Math.floor(totalMonths / 12);
-      const mos = totalMonths % 12;
-      set('moreStatYears', yrs > 0 ? `${yrs}年${mos}個月` : `${mos}個月`);
-    } else {
-      set('moreStatYears', '—');
-    }
-
-    // 當年案由統計
-    const myOut = outDocs.filter(r => (r.memberName||'') === myName && (r.date||'').startsWith(yearStr));
-    if (myOut.length) {
-      const typeCount = {};
-      myOut.forEach(r => { const t = (r.caseType||'').trim() || '未分類'; typeCount[t] = (typeCount[t]||0)+1; });
-      const sorted = Object.entries(typeCount).sort((a,b)=>b[1]-a[1]);
-      const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
-      const grid = document.getElementById('moreCaseGrid');
-      if (grid) {
-        grid.style.display = 'grid';
-        grid.innerHTML = sorted.map(([type, cnt], i) => {
-          const bg = COLORS[i % COLORS.length];
-          const icon = type.includes('急病')||type.includes('救護') ? '🚑'
-            : type.includes('火災')||type.includes('救火') ? '🔥'
-            : type.includes('路倒') ? '🏃'
-            : type.includes('車禍')||type.includes('交通') ? '🚗'
-            : type.includes('溺水') ? '🌊'
-            : type.includes('心肺')||type.includes('CPR') ? '❤️'
-            : type.includes('外傷')||type.includes('受傷') ? '🩹'
-            : '📋';
-          return `<div style="background:white;border-radius:16px;padding:14px 10px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.07);border-top:3px solid ${bg};">
-            <div style="font-size:1.6rem;margin-bottom:4px;">${icon}</div>
-            <div style="font-size:1.7rem;font-weight:900;color:${bg};font-family:'Noto Serif TC',serif;line-height:1;">${cnt}</div>
-            <div style="font-size:0.62rem;color:#888;margin-top:5px;line-height:1.3;word-break:break-all;">${type}</div>
-          </div>`;
-        }).join('');
-      }
-    }
-  } catch(e) {
-    console.warn('_loadMoreStats error', e);
   }
 }
 
