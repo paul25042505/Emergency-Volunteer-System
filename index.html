@@ -4992,6 +4992,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   navTo('dashboardPage', true);
   // 鈴鐺紅點：所有使用者登入後即啟動即時監聽
   setTimeout(_updateBellBadge, 500);
+  // 自動通知排程（管理員/幹部才執行）
+  if (isAdmin || isOfficer) setTimeout(_startAutoNotifScheduler, 4000);
 }
 
 // ── 檢查既有 session（重新整理不需再登入）──
@@ -12259,7 +12261,7 @@ function _buildNoticeCard(d) {
 function _renderNoticeTab() {
   const list = document.getElementById('noticePanelList');
   // 訊息通知 = broadcast / correction / feedback；公告 = system (+ urgent pinned)
-  const msgTypes = ['broadcast', 'correction', 'feedback'];
+  const msgTypes = ['broadcast', 'confirm'];
   const _me = (JSON.parse(sessionStorage.getItem('rescue_user') || '{}')).memberName || '';
   const filtered = _noticeAllDocs.filter(d => {
     if (_noticeTab === 'msg' ? !msgTypes.includes(d.type || 'system') : msgTypes.includes(d.type || 'system')) return false;
@@ -12297,7 +12299,7 @@ function _applyNoticeDocs(docs, u) {
       if (p !== 0) return p;
       return _tsMillis(b.createdAt) - _tsMillis(a.createdAt);
     });
-  const msgTypes = ['broadcast', 'correction', 'feedback'];
+  const msgTypes = ['broadcast', 'confirm'];
   const _meUnread = (JSON.parse(sessionStorage.getItem('rescue_user') || '{}')).memberName || '';
   const hasUnreadMsg = _noticeAllDocs.some(d => msgTypes.includes(d.type||'system') && _tsMillis(d.createdAt) > _noticeLastSeen
     && !(d.targetMembers && d.targetMembers.length && !d.targetMembers.includes(_meUnread)));
@@ -12856,7 +12858,9 @@ async function loadPushLog() {
       const statusColor = d.status === 'ok' ? '#16a34a' : d.status === 'fail' ? '#dc2626' : '#f59e0b';
       const statusLabel = d.status === 'ok' ? '成功' : d.status === 'fail' ? '失敗' : '處理中';
       const statusIcon  = d.status === 'ok' ? '✅' : d.status === 'fail' ? '❌' : '⏳';
-      const targetLabel = d.target === 'all' ? '全體成員' : d.target === 'admin' ? '管理員／承辦' : `指定成員（${(d.targetNames||[]).length} 人）`;
+      const targetLabel = d.target === 'all' ? '全體成員' : d.target === 'admin' ? '管理員／承辦' : `指定成員（${(d.targetNames||d.targetMembers||[]).length} 人）`;
+      const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務','announce':'📢 系統公告'};
+      const sourceLabel = d.source ? (sourceMap[d.source] || null) : null;
       const names = (d.targetNames||[]).join('、');
       return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${statusColor};">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
@@ -12869,6 +12873,7 @@ async function loadPushLog() {
         ${d.body ? `<div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">${d.body}</div>` : ''}
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
           <span style="font-size:0.68rem;background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:20px;">📣 ${targetLabel}</span>
+          ${sourceLabel ? `<span style="font-size:0.68rem;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:20px;">${sourceLabel}</span>` : ''}
           ${d.status==='ok' ? `<span style="font-size:0.68rem;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;">✔ ${d.successCount||0} 筆送達</span>` : ''}
           ${d.status==='fail'&&d.failCount ? `<span style="font-size:0.68rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;">✘ ${d.failCount} 筆失敗</span>` : ''}
         </div>
@@ -12888,6 +12893,142 @@ async function deletePushLog(id) {
   if (!confirm('確定刪除此筆推播紀錄？')) return;
   try { await fbDelete(COL_PUSH_LOG, id); loadPushLog(); } catch(e) { alert('刪除失敗：' + e.message); }
 }
+
+// ════════════════════════════════════════
+// 自動通知排程
+// ════════════════════════════════════════
+const COL_AUTO_NOTIF_LOG = 'autoNotifLog';
+let _autoNotifTimerId = null;
+
+function _startAutoNotifScheduler() {
+  _runAutoNotifications();
+  clearInterval(_autoNotifTimerId);
+  _autoNotifTimerId = setInterval(_runAutoNotifications, 10 * 60 * 1000);
+}
+
+async function _runAutoNotifications() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  if (!usr.isAdmin && !usr.isOfficer) return;
+
+  const now    = new Date();
+  const today  = now.toLocaleDateString('sv');
+  const hour   = now.getHours();
+  const minute = now.getMinutes();
+  const day    = now.getDate();
+  const month  = today.slice(0, 7);
+
+  let sentKeys = new Set();
+  try {
+    const logs = await fbList(COL_AUTO_NOTIF_LOG, 'sentAt', 'desc');
+    logs.forEach(l => sentKeys.add(l.key));
+  } catch(e) {}
+
+  const sent     = (key) => sentKeys.has(key);
+  const markSent = (key) => fbAdd(COL_AUTO_NOTIF_LOG, { key, sentAt: now.toLocaleString('sv').replace('T',' ') }).catch(() => {});
+
+  // ── 1. 明日排班提醒（每天 20:00–20:09）
+  if (hour === 20 && minute < 10) {
+    const tomorrowDate = new Date(now); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = tomorrowDate.toLocaleDateString('sv');
+    const key = `duty-tomorrow-${tomorrow}`;
+    if (!sent(key)) {
+      const dutyDocs = await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
+      const tmDuty   = dutyDocs.filter(d => d.date === tomorrow);
+      if (tmDuty.length) {
+        const names = [...new Set(tmDuty.map(d => d.memberName))];
+        const body  = tmDuty.map(d => `${d.memberName} ${d.start}–${d.end}`).join('、');
+        await _autoSendPush({ title: `📋 明日備勤提醒（${tomorrow}）`, body: `明日共 ${names.length} 位成員有備勤：${body}`, target: 'all', targetMembers: names, key, source: 'auto-duty-tomorrow' });
+        await markSent(key);
+      }
+    }
+  }
+
+  // ── 2. 排班前一小時通知
+  try {
+    const dutyDocs  = await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
+    const todayDuty = dutyDocs.filter(d => d.date === today);
+    for (const d of todayDuty) {
+      if (!d.start || !d.memberName) continue;
+      const [sh, sm] = d.start.split(':').map(Number);
+      const shiftStart = sh * 60 + sm;
+      const nowMin     = hour * 60 + minute;
+      if (nowMin >= shiftStart - 70 && nowMin < shiftStart - 50) {
+        const key = `duty-before1h-${today}-${d.start}-${d.memberName}`;
+        if (!sent(key)) {
+          await _autoSendPush({ title: `⏰ 備勤即將開始`, body: `${d.memberName}，您今日 ${d.start} 的備勤約 1 小時後開始，請準時到位。`, target: 'members', targetMembers: [d.memberName], key, source: 'auto-duty-before1h' });
+          await markSent(key);
+        }
+      }
+    }
+  } catch(e) {}
+
+  // ── 3. 排班結束一小時未簽退
+  try {
+    const dutyDocs  = await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
+    const attDocs   = await fbList(COL_ATTEND, 'date', 'asc').catch(() => []);
+    const todayDuty = dutyDocs.filter(d => d.date === today && d.end);
+    for (const d of todayDuty) {
+      if (!d.end || !d.memberName) continue;
+      const [eh, em] = d.end.split(':').map(Number);
+      const endMin = eh * 60 + em;
+      const nowMin = hour * 60 + minute;
+      if (nowMin >= endMin + 60 && nowMin < endMin + 70) {
+        const key = `duty-nosignout-${today}-${d.end}-${d.memberName}`;
+        if (!sent(key)) {
+          const att = attDocs.find(a => a.date === today && a.memberName === d.memberName && a.checkoutTime);
+          if (!att) {
+            await _autoSendPush({ title: `🔔 提醒簽退`, body: `${d.memberName}，您今日 ${d.end} 的備勤已結束超過一小時，請完成簽退。`, target: 'members', targetMembers: [d.memberName], key, source: 'auto-duty-nosignout' });
+            await markSent(key);
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // ── 4. 每月20日：下個月班表開放
+  if (day === 20) {
+    const key = `monthly-open-${month}`;
+    if (!sent(key)) {
+      const nextDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const nextMonthStr = `${nextDate.getFullYear()}年${nextDate.getMonth() + 1}月`;
+      await _autoSendPush({ title: `📅 ${nextMonthStr}班表開放排班`, body: `${nextMonthStr}的班表已開放，請登入系統完成排班安排。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-open' });
+      await markSent(key);
+    }
+  }
+
+  // ── 5. 每月1日：確認任務
+  if (day === 1) {
+    const key = `monthly-confirm-${month}`;
+    if (!sent(key)) {
+      await _autoSendPush({ title: `✅ 本月確認任務`, body: `${now.getMonth() + 1}月已開始，請確認本月的備勤與任務安排是否有問題。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-confirm' });
+      await markSent(key);
+    }
+  }
+}
+
+async function _autoSendPush({ title, body, target, targetMembers, key, source }) {
+  const today  = new Date().toLocaleDateString('sv');
+  const sentAt = new Date().toLocaleString('sv').replace('T', ' ');
+
+  const logId = await fbAdd(COL_PUSH_LOG, { title, body, target, targetMembers, sentAt, sentBy: '系統自動', status: 'pending', successCount: 0, failCount: 0, source }).catch(() => null);
+
+  const payload = { title, body: body || title, requestedBy: '系統自動', skipAnnouncement: true, pushTarget: target === 'members' ? 'member' : target };
+  if (target === 'members' && targetMembers.length === 1) payload.targetMember = targetMembers[0];
+  else if (target === 'members') payload.targetMembers = targetMembers;
+
+  try {
+    const res = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    let result = {}; try { result = await res.json(); } catch(e) {}
+    const ok = res.ok;
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount: result.successCount ?? (ok ? 1 : 0), failCount: result.failCount ?? (ok ? 0 : 1) }).catch(() => {});
+    if (ok) {
+      await fbAdd(COL_ANNOUNCE, { title, body, text: body ? `${title}\n${body}` : title, type: 'broadcast', active: true, audience: target, targetMembers: target === 'members' ? targetMembers : [], startDate: today, endDate: today, createdAt: new Date(), sentBy: '系統自動' }).catch(() => {});
+    }
+  } catch(e) {
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1 }).catch(() => {});
+  }
+}
+
 
 // ════════════════════════════════════════
 // 成員管理頁（公開瀏覽）
