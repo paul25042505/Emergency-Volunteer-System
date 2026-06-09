@@ -11906,31 +11906,56 @@ async function submitFeedback() {
 // 管理員後台意見回饋（依角色篩選）
 // ════════════════════════════════════════
 async function loadAdminFeedback() {
-  const el=document.getElementById('adminFeedbackList'); if(!el)return;
-  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
+  const el = document.getElementById('adminFeedbackList'); if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">💬</span>載入中...</div>';
   try {
-    let docs=await fbList(COL_FEEDBACK);
-    // 分隊承辦人只能看自己分隊
-    const u=JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-    if (!u.isAdmin) {
-      docs = docs.filter(d => d.unit === u.unit);
-    }
-    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);padding:16px;">尚無意見</div>';return;}
-    docs.sort((a,b)=>(b.time||'')>(a.time||'')?1:-1);
-    el.innerHTML = '';
-    el.insertAdjacentHTML('beforeend', docs.map(d=>`
-      <div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-          <input type="checkbox" class="fbChk" data-id="${d.id}" style="flex-shrink:0;">
-          <span style="font-size:0.78rem;background:var(--warm);border-radius:10px;padding:2px 10px;color:var(--text-mid);">${d.category||'其他'}</span>
-          ${d.unit?`<span style="font-size:0.72rem;color:#1a6b9a;">${d.unit}</span>`:''}
-          <span style="font-weight:500;font-size:0.88rem;">${d.name||'匿名'}</span>
-          <span style="font-size:0.75rem;color:var(--text-light);margin-left:auto;">${(d.time||'').substring(0,16)}</span>
-          <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:1px 8px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
-        </div>
-        <div style="font-size:0.85rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">${d.content||''}</div>
-      </div>`).join(''));
-  } catch(e){el.innerHTML='載入失敗：'+e.message;}
+    let docs = await fbList(COL_FEEDBACK);
+    const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (!u.isAdmin) docs = docs.filter(d => d.unit === u.unit);
+    if (!docs.length) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">💬</span>尚無意見回饋</div>'; return; }
+    docs.sort((a, b) => (b.time || '') > (a.time || '') ? 1 : -1);
+
+    const CAT_STYLE = {
+      '問題回報': { bg:'#FEF3C7', color:'#92400E', icon:'🐛' },
+      '功能建議': { bg:'#DCFCE7', color:'#166534', icon:'💡' },
+      '操作問題': { bg:'#E0F2FE', color:'#075985', icon:'❓' },
+      '其他':     { bg:'#F1F5F9', color:'#475569', icon:'💬' },
+    };
+
+    el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;">共 ${docs.length} 則意見</div>` +
+      docs.map(d => {
+        const cat = d.category || '其他';
+        const cs  = CAT_STYLE[cat] || CAT_STYLE['其他'];
+        const isAnon = !d.name || d.name === '匿名';
+        const avatar = isAnon ? '?' : d.name[0];
+        const avatarBg = isAnon ? '#94a3b8' : '#1565c0';
+        return `
+        <div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:14px 16px;margin-bottom:10px;position:relative;">
+          <!-- 頂部：選取 + 分類 + 時間 -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="checkbox" class="fbChk" data-id="${d.id}" style="flex-shrink:0;accent-color:#1565c0;">
+            <span style="font-size:0.72rem;font-weight:600;background:${cs.bg};color:${cs.color};border-radius:20px;padding:3px 10px;white-space:nowrap;">${cs.icon} ${cat}</span>
+            ${d.unit ? `<span style="font-size:0.7rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:3px 8px;white-space:nowrap;">🏢 ${d.unit}</span>` : ''}
+            <span style="font-size:0.72rem;color:var(--text-light);margin-left:auto;white-space:nowrap;">${(d.time||'').substring(0,16)}</span>
+          </div>
+          <!-- 中間：頭像 + 姓名 + 內容 -->
+          <div style="display:flex;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:${avatarBg};color:white;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;flex-shrink:0;">${avatar}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:4px;">${isAnon ? '匿名' : d.name}${d.email && !isAnon ? `<span style="font-size:0.68rem;color:var(--text-light);font-weight:400;margin-left:6px;">${d.email}</span>` : ''}</div>
+              <div style="font-size:0.85rem;color:#374151;line-height:1.65;white-space:pre-wrap;">${d.content || ''}</div>
+            </div>
+          </div>
+          <!-- 底部：刪除 -->
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid #f3f4f6;display:flex;justify-content:flex-end;">
+            <button onclick="adminDel('${COL_FEEDBACK}','${d.id}','意見',loadAdminFeedback)"
+              style="background:none;border:1px solid #fecaca;border-radius:8px;padding:5px 12px;font-size:0.75rem;color:#dc2626;cursor:pointer;font-family:'Noto Sans TC',sans-serif;display:flex;align-items:center;gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+  } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>'; }
 }
 
 
