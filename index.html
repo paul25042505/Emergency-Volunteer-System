@@ -1428,6 +1428,12 @@ function _dlCSV(content, filename) {
       </div>
       公差統計
     </button>
+    <button onclick="navTo('attendStatsPage')" id="manageSub-attendstats" class="duty-sub-card">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="23 21 23 19 19 19"/><line x1="21" y1="17" x1="17" y2="17"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      出席統計
+    </button>
     <button onclick="navTo('reportPage')" id="manageSub-report" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2422,6 +2428,53 @@ function _dlCSV(content, filename) {
       <button onclick="saveAttEdit()" class="btn-search" style="flex:1;">儲存</button>
       <button onclick="closeAttEdit()" class="btn-reset">取消</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：出席統計 ══════ -->
+<div class="page" id="attendStatsPage">
+  <div class="form-wrap" style="padding-top:16px;">
+
+    <!-- 英雄卡 -->
+    <div style="background:linear-gradient(145deg,#0d1a2e 0%,#1a3a5c 55%,#1e4d7a 100%);border-radius:22px;padding:22px 20px 20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(13,26,46,0.40);position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-24px;top:-24px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
+      <div style="position:absolute;left:-16px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
+
+      <!-- 標題 -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:1.15rem;font-weight:800;color:white;letter-spacing:0.04em;">出席統計</div>
+        <div style="font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-top:2px;">ATTENDANCE STATISTICS</div>
+      </div>
+
+      <!-- 篩選列 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        <select id="asYear" onchange="loadAttendStats()" style="height:42px;width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:white;padding:0 12px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;outline:none;text-align:center;"></select>
+        <select id="asUnit" onchange="loadAttendStats()" style="height:42px;width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:white;padding:0 12px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;outline:none;text-align:center;"><option value="" style="color:#333;">全部分隊</option></select>
+      </div>
+
+      <!-- KPI 條 -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;">
+        <div style="min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px 10px;background:rgba(13,26,46,0.55);">
+          <div style="font-size:1.75rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;" id="asTotalSessions">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">總場次</div>
+        </div>
+        <div style="min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px 10px;background:rgba(13,26,46,0.55);">
+          <div style="font-size:1.75rem;font-weight:900;color:#60a5fa;font-family:'Noto Serif TC',serif;line-height:1;" id="asAvgRate">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">平均出席率</div>
+        </div>
+        <div style="min-height:68px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 6px 10px;background:rgba(13,26,46,0.55);">
+          <div style="font-size:1.1rem;font-weight:900;color:#7effd4;font-family:'Noto Serif TC',serif;line-height:1;text-align:center;" id="asTopPerson">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">出席最多</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 出席排名列表 -->
+    <div id="attendStatsBody">
+      <div class="query-empty"><span class="empty-icon">📋</span>載入中…</div>
+    </div>
+
+    <div style="height:20px;"></div>
   </div>
 </div>
 
@@ -5446,6 +5499,7 @@ async function refreshCurrentPage() {
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
     case 'gongchaPage':        await loadGongchaStats(); break;
+    case 'attendStatsPage':    await loadAttendStats(); break;
     case 'caseStatsPage':    await initCaseStatsPage(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
@@ -5552,7 +5606,7 @@ const _tabForPage = {
   dutyPage:           'schedule',
   myCorrectionsPage:  'more',   reportPage:         'manage',
   statsPage:          'manage', gongchaPage:        'manage',
-  caseStatsPage:      'manage',
+  caseStatsPage:      'manage', attendStatsPage:    'manage',
   morePage:           'more',
   feedbackPage:       'more',   meetingPage:        'more',
   adminPage:          'more',
@@ -5629,7 +5683,7 @@ function navTo(pageId, fromHistory) {
   const isDuty   = pageId === 'dutyPage';
   const isMore   = pageId === 'morePage';
   const opsPages = ['dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage'];
-  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage'];
+  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage','attendStatsPage'];
   const isOps    = opsPages.includes(pageId);
   const isManage = mngPages.includes(pageId);
   document.body.classList.toggle('page-home',   isHome);
@@ -5649,7 +5703,7 @@ function navTo(pageId, fromHistory) {
   }
   if (isManage) {
     document.querySelectorAll('#manageCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', reportPage:'manageSub-report' };
+    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', attendStatsPage:'manageSub-attendstats', reportPage:'manageSub-report' };
     const mb = document.getElementById(mngBtnMap[pageId]);
     if (mb) mb.classList.add('active');
   }
@@ -5692,6 +5746,7 @@ function navTo(pageId, fromHistory) {
     meetingPage:    ['定訓與公告', 'Training & Announcements'],
     myCorrectionsPage: ['我的申請記錄', 'My Requests'],
     gongchaPage:    ['公差統計', 'Duty Statistics'],
+    attendStatsPage:['出席統計', 'Attendance Statistics'],
     caseStatsPage:   ['案件統計', 'Case Statistics'],
     morePage:       ['更多', 'More'],
     feedbackPage:   ['意見回饋', 'Feedback'],
@@ -5731,6 +5786,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'meetingPage')   _nav(loadMeetingPage);
   else if (pageId === 'myCorrectionsPage') _nav(loadMyCorrections);
   else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
+  else if (pageId === 'attendStatsPage')   _nav(loadAttendStats);
   else if (pageId === 'caseStatsPage')     _nav(initCaseStatsPage);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
@@ -18429,6 +18485,145 @@ async function loadGongchaStats() {
       <span style="font-size:0.62rem;background:${t.bg};color:${t.color};border-radius:20px;padding:3px 7px;font-weight:600;white-space:nowrap;flex-shrink:0;">${t.badge} ${t.label}</span>
     </div>`;
   }).join('') + `<div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:10px 0 16px;letter-spacing:0.04em;">💎 10次以上・🥇 7–9次・🥈 4–6次・🥉 1–3次・⭐ 蓄勢待發</div>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  出席統計
+// ══════════════════════════════════════════════════════
+async function loadAttendStats() {
+  const body = document.getElementById('attendStatsBody');
+  if (!body) return;
+  body.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>載入中…</div>';
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const isAdmin = usr.isAdmin || usr.isOfficer;
+  const userUnit = usr.unit || '';
+
+  // 初始化年份下拉
+  const yrSel = document.getElementById('asYear');
+  if (yrSel && !yrSel.options.length) {
+    const curY = new Date().getFullYear();
+    for (let y = curY; y >= curY - 4; y--) {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y + ' 年';
+      if (y === curY) o.selected = true;
+      yrSel.appendChild(o);
+    }
+  }
+
+  // 初始化分隊下拉
+  const unitSel = document.getElementById('asUnit');
+  if (unitSel && unitSel.options.length <= 1) {
+    (window._allUnits || []).forEach(u => {
+      const o = document.createElement('option'); o.value = u; o.textContent = u; o.style.color = '#333';
+      unitSel.appendChild(o);
+    });
+  }
+  // 非管理員鎖定分隊
+  if (!isAdmin && unitSel) {
+    unitSel.value = userUnit;
+    unitSel.disabled = true;
+  }
+
+  const year = yrSel ? yrSel.value : String(new Date().getFullYear());
+  const targetUnit = isAdmin ? (unitSel ? unitSel.value : '') : userUnit;
+
+  let docs;
+  try {
+    docs = await Promise.race([
+      fbList(COL_MEETING, 'date', 'asc'),
+      new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))
+    ]);
+  } catch(e) {
+    body.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗，請重試</div>';
+    return;
+  }
+
+  // 篩選年份 & 分隊
+  docs = docs.filter(d => (d.date || '').startsWith(year));
+  if (targetUnit) docs = docs.filter(d => (d.unit || '') === targetUnit);
+
+  if (!docs.length) {
+    document.getElementById('asTotalSessions').textContent = '0';
+    document.getElementById('asAvgRate').textContent = '—';
+    document.getElementById('asTopPerson').textContent = '—';
+    body.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>' + year + '年查無定訓紀錄</div>';
+    return;
+  }
+
+  // 計算每人出席次數
+  const countMap = {};
+  docs.forEach(d => {
+    (d.attendees || []).forEach(name => {
+      countMap[name] = (countMap[name] || 0) + 1;
+    });
+  });
+
+  const total = docs.length;
+  const members = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
+  const totalAttendees = docs.reduce((s, d) => s + (d.attendees || []).length, 0);
+  const avgRate = total > 0 && members.length > 0
+    ? Math.round(totalAttendees / (total * members.length) * 100) + '%'
+    : '—';
+  const topPerson = members.length ? members[0][0] : '—';
+
+  document.getElementById('asTotalSessions').textContent = total;
+  document.getElementById('asAvgRate').textContent = avgRate;
+  document.getElementById('asTopPerson').textContent = topPerson;
+
+  // 渲染排名列表
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+  const medals = ['🥇','🥈','🥉'];
+
+  body.innerHTML = `
+    <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--text);">出席人員排名</div>
+        <div style="font-size:0.72rem;color:var(--text-light);">共 ${members.length} 人・${total} 場</div>
+      </div>
+      ${members.map(([name, cnt], i) => {
+        const rate = Math.round(cnt / total * 100);
+        const medal = i < 3 ? medals[i] : '';
+        const barColor = rate >= 80 ? '#22c55e' : rate >= 50 ? '#3b82f6' : '#f59e0b';
+        return `<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+          <div style="width:28px;text-align:center;font-size:${medal ? '1.1rem' : '0.78rem'};color:var(--text-light);font-weight:700;flex:0 0 auto;">
+            ${medal || (i + 1)}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+              <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${name}</div>
+              <div style="font-size:0.78rem;font-weight:700;color:${barColor};">${cnt} 次
+                <span style="font-size:0.68rem;color:var(--text-light);font-weight:400;">(${rate}%)</span>
+              </div>
+            </div>
+            <div style="height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
+              <div style="height:100%;width:${rate}%;background:${barColor};border-radius:99px;transition:width 0.4s;"></div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:8px;">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--text);">場次詳情</div>
+      </div>
+      ${docs.slice().reverse().map(d => {
+        const cnt = (d.attendees || []).length;
+        const sessionRate = members.length ? Math.round(cnt / members.length * 100) : 0;
+        return `<div style="padding:11px 16px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;color:var(--text);">${d.title || '（無標題）'}</div>
+              <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">${d.date || ''}${d.unit ? '　' + d.unit : ''}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:0.85rem;font-weight:700;color:var(--red);">${cnt} 人</div>
+              <div style="font-size:0.65rem;color:var(--text-light);">出席率 ${sessionRate}%</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 </script>
