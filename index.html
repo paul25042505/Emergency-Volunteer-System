@@ -3305,10 +3305,16 @@ function _dlCSV(content, filename) {
 
       <!-- ── Tab: 推播紀錄 ── -->
       <div id="annPanel-push" style="display:none;">
-        <button onclick="showPushForm()"
-          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#1e3a8a;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:14px;">
-          📤 發送新推播
-        </button>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button onclick="showPushForm()"
+            style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#1e3a8a;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
+            📤 發送新推播
+          </button>
+          <button onclick="loadPushLog()" title="重新整理"
+            style="flex:0 0 auto;width:46px;display:flex;align-items:center;justify-content:center;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#64748b;cursor:pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
+        </div>
 
         <!-- 推播表單 -->
         <div id="pushForm" style="display:none;border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,0.10);">
