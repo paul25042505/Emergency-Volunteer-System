@@ -2549,7 +2549,6 @@ function _dlCSV(content, filename) {
           <div style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:900;color:white;letter-spacing:0.06em;line-height:1.1;">協勤統計</div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.45);letter-spacing:0.18em;margin-top:4px;">DUTY STATISTICS</div>
         </div>
-        <div style="width:44px;height:44px;background:rgba(255,255,255,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📋</div>
       </div>
       <!-- Filters -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;">
@@ -2564,7 +2563,8 @@ function _dlCSV(content, filename) {
           <div style="font-size:0.55rem;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.12em;margin-bottom:5px;text-align:center;">月份</div>
           <div style="background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.3);border-radius:10px;padding:9px 4px;text-align:center;position:relative;">
             <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
-            <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value+'月';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+            <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value?this.value+'月':'全年';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+              <option value="">全年</option>
               <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
               <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
               <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
@@ -2624,7 +2624,6 @@ function _dlCSV(content, filename) {
           <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">案件統計</div>
           <div style="font-size:0.6rem;color:rgba(255,255,255,0.55);letter-spacing:0.14em;margin-top:2px;">CASE STATISTICS</div>
         </div>
-        <div style="font-size:1.9rem;opacity:0.85;">📊</div>
       </div>
       <!-- Filters -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
@@ -2639,7 +2638,8 @@ function _dlCSV(content, filename) {
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
           <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
             <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseMonthDisplay">—</div>
-            <select id="caseMonth" onchange="document.getElementById('caseMonthDisplay').textContent=this.value+'月';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+            <select id="caseMonth" onchange="document.getElementById('caseMonthDisplay').textContent=this.value?this.value+'月':'全年';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+              <option value="">全年</option>
               <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
               <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
               <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
@@ -2727,7 +2727,6 @@ function _dlCSV(content, filename) {
           <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">公差統計</div>
           <div style="font-size:0.6rem;color:rgba(255,255,255,0.55);letter-spacing:0.14em;margin-top:2px;">DUTY STATISTICS</div>
         </div>
-        <div style="font-size:1.9rem;opacity:0.85;">🏅</div>
       </div>
       <!-- Filters -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
@@ -9178,9 +9177,8 @@ function initStatsPage() {
     }
     sel.value = curY;
     const yd = document.getElementById('statsYearDisplay'); if (yd) yd.textContent = curY;
-    const mo = new Date().getMonth() + 1;
-    document.getElementById('statsMonth').value = mo;
-    const md = document.getElementById('statsMonthDisplay'); if (md) md.textContent = mo + '月';
+    document.getElementById('statsMonth').value = '';
+    const md = document.getElementById('statsMonthDisplay'); if (md) md.textContent = '全年';
   }
   // 載入分隊選單
   loadUnits().then(() => {
@@ -9202,19 +9200,19 @@ async function loadStats() {
   const year  = document.getElementById('statsYear').value;
   const month = document.getElementById('statsMonth').value;
   const filterUnit = document.getElementById('statsUnit')?.value || '';
-  if (!year || !month) return;
+  if (!year) return;
 
   document.getElementById('statsEmptyMsg').textContent = '⏳ 載入中...';
   document.getElementById('statsEmptyMsg').style.display = 'block';
   document.getElementById('statsTableCard').style.display = 'none';
 
   const westernYear = parseInt(year) + 1911;
-  const monthStr = `${westernYear}-${String(month).padStart(2,'0')}`;
+  const prefix = month ? `${westernYear}-${String(month).padStart(2,'0')}` : `${westernYear}-`;
 
   try {
     const [attDocs, outDocs] = await Promise.all([fbList(COL_ATTEND, 'date', 'asc'), fbList(COL_OUTING, 'date', 'asc'), loadMembers()]);
-    let monthAtt = attDocs.filter(r => (r.date||'').startsWith(monthStr));
-    let monthOut = outDocs.filter(r => (r.date||'').startsWith(monthStr));
+    let monthAtt = attDocs.filter(r => (r.date||'').startsWith(prefix));
+    let monthOut = outDocs.filter(r => (r.date||'').startsWith(prefix));
 
     const memberUnitMap = {};
     members.forEach(m => { memberUnitMap[m.name] = m.unit||''; });
@@ -9225,7 +9223,7 @@ async function loadStats() {
     }
 
     if (!monthAtt.length && !monthOut.length) {
-      document.getElementById('statsEmptyMsg').textContent = `${year} 年 ${month} 月查無資料`;
+      document.getElementById('statsEmptyMsg').textContent = month ? `${year} 年 ${month} 月查無資料` : `${year} 年查無資料`;
       return;
     }
 
@@ -9308,8 +9306,8 @@ async function initCaseStatsPage() {
   }
   const mSel = document.getElementById('caseMonth');
   if (mSel && !_caseStatsInited) {
-    mSel.value = String(now.getMonth() + 1);
-    document.getElementById('caseMonthDisplay').textContent = (now.getMonth() + 1) + '月';
+    mSel.value = '';
+    document.getElementById('caseMonthDisplay').textContent = '全年';
   }
   if (!_caseStatsInited) {
     _caseStatsInited = true;
@@ -9337,13 +9335,12 @@ async function loadCaseStats() {
     if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.innerHTML = `<span class="empty-icon">${icon}</span>${text}`; }
   };
 
-  if (!year || !month) { showEmpty('⚠️', '篩選條件未設定'); return; }
+  if (!year) { showEmpty('⚠️', '篩選條件未設定'); return; }
 
   showEmpty('⏳', '載入中…');
 
   const westernYear = parseInt(year) + 1911;
-  const mm = String(month).padStart(2, '0');
-  const monthStr = `${westernYear}-${mm}`;
+  const monthStr = month ? `${westernYear}-${String(month).padStart(2,'0')}` : `${westernYear}-`;
 
   try {
     // 優先用 stale cache（即使 TTL 已過），避免卡在網路等待
@@ -9363,7 +9360,7 @@ async function loadCaseStats() {
     });
 
     if (!docs.length) {
-      showEmpty('📊', `${westernYear}年${parseInt(month)}月無協勤案件資料`);
+      showEmpty('📊', month ? `${westernYear}年${parseInt(month)}月無協勤案件資料` : `${westernYear}年無協勤案件資料`);
       return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
