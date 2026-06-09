@@ -6056,49 +6056,47 @@ async function loadDashWeather() {
 
       const tips = [];
 
-      // 雷雨
+      // 雷陣雨
       if (code >= 95) {
-        tips.push({ icon: '⚡', text: '雷電警戒，執勤時避免在空曠地帶或高處停留', color: 'rgba(253,224,71,0.18)', border: 'rgba(253,224,71,0.35)' });
+        tips.push({ icon: '⚡', text: '雷電天氣易致觸電、外傷案件，施救現場注意環境安全，勿在空曠處停留', color: 'rgba(253,224,71,0.18)', border: 'rgba(253,224,71,0.35)' });
       }
       // 大雨 / 強陣雨
       if (code >= 65 && code < 95) {
-        tips.push({ icon: '🌧', text: '強降雨出勤，行車速度放慢，注意路面積水', color: 'rgba(96,165,250,0.18)', border: 'rgba(96,165,250,0.35)' });
+        tips.push({ icon: '🌧', text: '大雨易增溺水、車禍案件，搬運傷患時注意地面濕滑，確保傷患保暖避免失溫', color: 'rgba(96,165,250,0.18)', border: 'rgba(96,165,250,0.35)' });
       } else if (code >= 51 && code < 65) {
-        tips.push({ icon: '☂️', text: '有雨，外出執勤請攜帶雨具', color: 'rgba(147,197,253,0.18)', border: 'rgba(147,197,253,0.30)' });
+        tips.push({ icon: '🌦', text: '雨天路滑，外傷案件出勤時注意自身站姿，搬運擔架前確認地面防滑', color: 'rgba(147,197,253,0.18)', border: 'rgba(147,197,253,0.30)' });
       } else if (rain >= 60) {
-        tips.push({ icon: '🌂', text: `今日降雨機率 ${rain}%，備好雨具再出門`, color: 'rgba(147,197,253,0.18)', border: 'rgba(147,197,253,0.30)' });
-      } else if (rain >= 30 && rain < 60) {
-        tips.push({ icon: '⛅', text: `降雨機率 ${rain}%，建議備傘以防萬一`, color: 'rgba(203,213,225,0.15)', border: 'rgba(203,213,225,0.25)' });
+        tips.push({ icon: '🌂', text: `今日降雨機率 ${rain}%，備妥防水裝備，雨中急救注意維持傷患體溫`, color: 'rgba(147,197,253,0.18)', border: 'rgba(147,197,253,0.30)' });
       }
       // 霧
       if (code >= 45 && code <= 48) {
-        tips.push({ icon: '🌫', text: '霧氣瀰漫，能見度低，行車保持安全距離並開霧燈', color: 'rgba(203,213,225,0.18)', border: 'rgba(203,213,225,0.30)' });
+        tips.push({ icon: '🌫', text: '能見度低，車禍案件風險升高，出勤時開啟警示燈，現場管制注意後方來車', color: 'rgba(203,213,225,0.18)', border: 'rgba(203,213,225,0.30)' });
       }
       // 高溫
       if (temp >= 36) {
-        tips.push({ icon: '🌡', text: `高溫 ${Math.round(temp)}°C，出勤注意防暑，多補充水分`, color: 'rgba(251,146,60,0.18)', border: 'rgba(251,146,60,0.35)' });
+        tips.push({ icon: '🌡', text: `高溫 ${Math.round(temp)}°C，中暑、熱衰竭案件增加，評估患者體溫時注意環境熱源，執勤人員也需補水防中暑`, color: 'rgba(251,146,60,0.18)', border: 'rgba(251,146,60,0.35)' });
       } else if (temp >= 32) {
-        tips.push({ icon: '☀️', text: `天氣炎熱 ${Math.round(temp)}°C，執勤注意補水，避免體力透支`, color: 'rgba(251,191,36,0.18)', border: 'rgba(251,191,36,0.30)' });
+        tips.push({ icon: '🔥', text: `氣溫 ${Math.round(temp)}°C，戶外案件注意患者是否有熱衰竭症狀，搬運途中避免長時間曝曬`, color: 'rgba(251,191,36,0.18)', border: 'rgba(251,191,36,0.30)' });
       }
       // 低溫
       if (temp <= 8) {
-        tips.push({ icon: '🧊', text: `低溫 ${Math.round(temp)}°C，注意保暖，警戒路面結冰`, color: 'rgba(186,230,253,0.18)', border: 'rgba(186,230,253,0.30)' });
+        tips.push({ icon: '❄️', text: `低溫 ${Math.round(temp)}°C，心肌梗塞、腦中風案件風險上升，評估患者時留意末梢循環，轉送過程確實保暖`, color: 'rgba(186,230,253,0.18)', border: 'rgba(186,230,253,0.30)' });
       } else if (temp <= 14) {
-        tips.push({ icon: '🧥', text: `氣溫偏低 ${Math.round(temp)}°C，出勤請多穿一件`, color: 'rgba(186,230,253,0.15)', border: 'rgba(186,230,253,0.25)' });
+        tips.push({ icon: '🧥', text: `氣溫偏低 ${Math.round(temp)}°C，老年及慢性病患者注意保暖，心血管急症出勤機率提高，備好相關裝備`, color: 'rgba(186,230,253,0.15)', border: 'rgba(186,230,253,0.25)' });
       }
       // 高紫外線
       if (uv >= 8) {
-        tips.push({ icon: '🕶', text: `紫外線極強（${uv}），執勤請做好防曬，避免長時間直曬`, color: 'rgba(251,146,60,0.18)', border: 'rgba(251,146,60,0.30)' });
+        tips.push({ icon: '☀️', text: `紫外線極強（指數 ${uv}），戶外長時間施救注意自身防曬，同時評估患者是否有曬傷或熱傷害`, color: 'rgba(251,146,60,0.18)', border: 'rgba(251,146,60,0.30)' });
       } else if (uv >= 6) {
-        tips.push({ icon: '🧴', text: `紫外線偏強（${uv}），戶外執勤建議塗防曬`, color: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.25)' });
+        tips.push({ icon: '🧴', text: `紫外線偏強（指數 ${uv}），戶外案件處置時留意患者皮膚狀況，執勤人員自身也需防曬`, color: 'rgba(251,191,36,0.15)', border: 'rgba(251,191,36,0.25)' });
       }
       // 高濕度
       if (humidity >= 88 && code < 51) {
-        tips.push({ icon: '💦', text: `濕度 ${humidity}%，悶熱感較重，注意體力消耗`, color: 'rgba(103,232,249,0.15)', border: 'rgba(103,232,249,0.25)' });
+        tips.push({ icon: '💦', text: `濕度 ${humidity}%，悶熱環境易誘發氣喘、呼吸困難案件，評估患者時注意呼吸道狀況，執勤人員注意體力`, color: 'rgba(103,232,249,0.15)', border: 'rgba(103,232,249,0.25)' });
       }
-      // 晴天好天氣
+      // 晴好天氣
       if (code <= 1 && temp >= 15 && temp <= 30 && rain < 20 && uv < 6) {
-        tips.push({ icon: '😊', text: '今日天氣良好，適合外出執勤，注意行車安全', color: 'rgba(134,239,172,0.15)', border: 'rgba(134,239,172,0.25)' });
+        tips.push({ icon: '✅', text: '天氣穩定，出勤環境良好，把握時機確認裝備備料，維持最佳應變狀態', color: 'rgba(134,239,172,0.15)', border: 'rgba(134,239,172,0.25)' });
       }
 
       if (!tips.length) { wrap.style.display = 'none'; return; }
