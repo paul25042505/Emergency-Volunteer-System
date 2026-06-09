@@ -5911,7 +5911,7 @@ function showDashOnlineList() {
   const todayStr = new Date().toLocaleDateString('sv');
   const docs = (window._dashAttDocs || []).filter(r => r.checkinTime && !r.checkoutTime && r.date === todayStr);
   const rows = [...new Map(docs.map(r => [r.memberName, r])).values()].sort((a,b)=>(a.memberName||'').localeCompare(b.memberName||''));
-  _showDashStatModal('目前在線人數（補簽）', rows.length ? rows.map(r =>
+  _showDashStatModal('目前在線人數', rows.length ? rows.map(r =>
     `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:0.9rem;color:var(--text-dark);">${r.memberName||'—'}</span>
       <span style="font-size:0.78rem;color:var(--text-mid);">簽到 ${r.checkinTime||'—'}</span>
