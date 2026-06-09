@@ -4754,6 +4754,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 登入後檢查待領物品（3秒後，確保 allItems 已載入）
   // 登入後 4 秒檢查確認任務
   setTimeout(() => checkConfirmTask().catch(() => {}), 4000);
+  // 登入後 5 秒檢查是否需要引導訂閱推播
+  setTimeout(_promptPushIfNeeded, 5000);
 
   setTimeout(async () => {
     if (!allItems || allItems.length === 0) {
@@ -11965,6 +11967,75 @@ function filterMemberList() {
 }
 
 // ════════════════════════════════════════
+// 強制引導訂閱推播（登入後若尚未決定）
+function _promptPushIfNeeded() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  if (document.getElementById('pushPromptModal')) return;
+
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'pushPromptModal';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);display:flex;align-items:flex-end;justify-content:center;font-family:"Noto Sans TC",sans-serif;backdrop-filter:blur(4px);';
+
+  const isIOSNoStandalone = isIOS && !isStandalone;
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;box-shadow:0 -8px 40px rgba(0,0,0,0.25);">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:2.8rem;line-height:1;margin-bottom:10px;">🔔</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#111;margin-bottom:8px;">開啟推播通知</div>
+        <div style="font-size:0.82rem;color:#555;line-height:1.7;">
+          協勤班表異動、新公告、確認任務提醒<br>
+          <strong style="color:#1D4ED8;">第一時間</strong>直接通知您，不漏接任何重要訊息
+        </div>
+      </div>
+      ${isIOSNoStandalone ? `
+        <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:0.78rem;color:#92400E;line-height:1.6;">
+          📱 iOS 裝置需先<strong>將本系統加入主畫面</strong>，才能接收推播通知
+        </div>
+        <button onclick="_showIOSInstallGuide();document.getElementById('pushPromptModal').remove();"
+          style="width:100%;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;border:none;border-radius:14px;padding:15px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:0.03em;">
+          📲 查看安裝步驟
+        </button>
+      ` : `
+        <button id="pushPromptEnableBtn"
+          style="width:100%;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;border:none;border-radius:14px;padding:15px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:0.03em;">
+          開啟推播通知
+        </button>
+      `}
+      <button onclick="document.getElementById('pushPromptModal').remove();"
+        style="width:100%;background:none;border:none;color:#9CA3AF;font-size:0.82rem;cursor:pointer;padding:8px;letter-spacing:0.02em;">
+        稍後再說
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // 點空白處關閉
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  if (!isIOSNoStandalone) {
+    const btn = document.getElementById('pushPromptEnableBtn');
+    if (btn) btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = '請求中…';
+      const perm = await Notification.requestPermission();
+      overlay.remove();
+      if (perm === 'granted') {
+        await _initFCM();
+        _startNotifListeners();
+        _updatePushToggleUI();
+      } else if (perm === 'denied') {
+        setTimeout(() => alert('推播通知已封鎖，如需開啟請至瀏覽器設定 → 通知，手動允許本站通知權限。'), 300);
+      }
+    });
+  }
+}
+
 // 推播通知（使用者端）
 // ════════════════════════════════════════
 function _updatePushToggleUI() {
