@@ -4,6 +4,7 @@ const { onSchedule }        = require('firebase-functions/v2/scheduler');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
+const { MetricServiceClient } = require('@google-cloud/monitoring');
 
 initializeApp();
 
@@ -321,6 +322,72 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
     await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
     await _markDuped(db, dedupKey);
     console.log(`scheduleMonthlyConfirmTask: notified for ${ym}`);
+  }
+);
+
+// ── 每小時：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────────
+exports.scheduleUsageMonitor = onSchedule(
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db      = getFirestore();
+    const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+    const client  = new MetricServiceClient();
+
+    // 今日 00:00 ~ 現在（Asia/Taipei）
+    const now  = new Date();
+    const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
+    const startOfDay = new Date(`${todayStr}T00:00:00+08:00`);
+
+    const [timeSeries] = await client.listTimeSeries({
+      name: `projects/${project}`,
+      filter: 'metric.type="firestore.googleapis.com/document/read_count"',
+      interval: {
+        startTime: { seconds: Math.floor(startOfDay.getTime() / 1000) },
+        endTime:   { seconds: Math.floor(now.getTime() / 1000) },
+      },
+      aggregation: {
+        alignmentPeriod: { seconds: 86400 },
+        perSeriesAligner: 'ALIGN_SUM',
+        crossSeriesReducer: 'REDUCE_SUM',
+        groupByFields: [],
+      },
+    }).catch(() => [[]]);
+
+    let todayReads = 0;
+    (timeSeries || []).forEach(ts => {
+      (ts.points || []).forEach(p => {
+        todayReads += Number(p.value?.int64Value || p.value?.doubleValue || 0);
+      });
+    });
+
+    const FREE_QUOTA  = 50000;
+    const pct         = Math.round((todayReads / FREE_QUOTA) * 100);
+    const locked      = pct >= 90;
+
+    await db.collection('settings').doc('dailyUsage').set({
+      date:       todayStr,
+      reads:      todayReads,
+      quota:      FREE_QUOTA,
+      pct,
+      locked,
+      updatedAt:  now,
+    }, { merge: false });
+
+    // 超過 90% 發推播通知管理員
+    if (locked) {
+      const dedupKey = `usage-alert-${todayStr}`;
+      const isDuped  = await db.collection('autoNotifLog').doc(dedupKey).get().then(d => d.exists);
+      if (!isDuped) {
+        const title = '⚠️ Firestore 讀取數超過 90%';
+        const body  = `今日已讀取 ${todayReads.toLocaleString()} 次（${pct}%），部分功能已鎖定。`;
+        const tokens = await _getAdminTokens(null);
+        if (tokens.length) await _sendMulticast(tokens, { title, body });
+        await db.collection('autoNotifLog').doc(dedupKey).set({ sentAt: now });
+        console.log(`scheduleUsageMonitor: alert sent, reads=${todayReads} (${pct}%)`);
+      }
+    }
+
+    console.log(`scheduleUsageMonitor: today reads=${todayReads} (${pct}%)`);
   }
 );
 

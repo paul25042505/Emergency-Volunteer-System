@@ -4629,6 +4629,12 @@ const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
 const _C_SKIP = new Set(['loginLog','loginLogs','feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
 async function fbList(col, orderByField, orderDir) {
+  // 讀取鎖定：超過 90% 時，非核心 collection 返回快取或空陣列
+  if (_usageLocked && _LOCK_COLS.has(col)) {
+    const cached = _C.peek(col);
+    if (cached) return cached;
+    return [];
+  }
   // 第一層：localStorage 新鮮快取（零等待，不需網路）
   if (!_C_SKIP.has(col) && _C.fresh(col)) return _C.peek(col);
 
@@ -4923,6 +4929,7 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
     localStorage.setItem('evs_recent_users', JSON.stringify(filtered.slice(0, 3)));
   } catch(e) {}
   _prefetchCaches(); // 第一件事：預熱快取，讓首頁資料秒到
+  _checkDailyUsage(); // 檢查今日讀取配額
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
@@ -12896,6 +12903,50 @@ async function deletePushLog(id) {
 
 // ════════════════════════════════════════
 // 自動通知排程
+// ── 每日讀取配額監控 ──────────────────────────────────────────────────
+let _usageLocked = false;
+// 被鎖定的 collection（讀取量大但非核心功能）
+const _LOCK_COLS = new Set(['loginLogs','loginLog','changelogs','broadcastRequests','correctionRequests','feedback','pushLogs','autoNotifLog']);
+
+async function _checkDailyUsage() {
+  try {
+    const doc = await fbGet('settings', 'dailyUsage');
+    if (!doc) return;
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+    if (doc.date !== today) return; // 昨天的資料，忽略
+    _applyUsageLock(doc.pct, doc.reads, doc.quota);
+  } catch(e) {}
+}
+
+function _applyUsageLock(pct, reads, quota) {
+  _usageLocked = pct >= 90;
+  let bar = document.getElementById('_usageBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = '_usageBar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;padding:8px 16px;font-size:0.82rem;text-align:center;font-weight:600;transition:all .3s;';
+    document.body.appendChild(bar);
+  }
+  if (pct >= 100) {
+    bar.style.display = 'block';
+    bar.style.background = '#c0392b';
+    bar.style.color = '#fff';
+    bar.textContent = `🚫 今日 Firestore 讀取已達上限（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），部分功能已暫停。`;
+  } else if (pct >= 90) {
+    bar.style.display = 'block';
+    bar.style.background = '#e67e22';
+    bar.style.color = '#fff';
+    bar.textContent = `⚠️ 今日讀取數已達 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），非必要功能已鎖定。`;
+  } else if (pct >= 70) {
+    bar.style.display = 'block';
+    bar.style.background = '#f1c40f';
+    bar.style.color = '#333';
+    bar.textContent = `📊 今日讀取數 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），請留意用量。`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
 // ════════════════════════════════════════
 const COL_AUTO_NOTIF_LOG = 'autoNotifLog';
 let _autoNotifTimerId = null;
