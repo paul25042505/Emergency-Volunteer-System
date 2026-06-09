@@ -1,10 +1,15 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onRequest }         = require('firebase-functions/v2/https');
+const { onSchedule }        = require('firebase-functions/v2/scheduler');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
+const { MetricServiceClient } = require('@google-cloud/monitoring');
 
 initializeApp();
+
+const REGION = 'asia-east1';
+const TZ     = 'Asia/Taipei';
 
 // ── 推播：公告管理新增資料 → 自動推播對應對象 ────────────────────────
 // _pushed: true 代表此公告由其他函式已推播，跳過避免重複
@@ -95,7 +100,7 @@ exports.onNewFeedback = onDocumentCreated(
 );
 
 // ── 推播：廣播（HTTP Request）→ 客戶端用 fetch 直接呼叫 ──────────────
-exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: 'public' }, async (req, res) => {
+exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
   const { title, body, requestedBy, skipAnnouncement, pushTarget } = req.body;
@@ -161,7 +166,316 @@ exports.broadcastPush = onRequest({ region: 'asia-east1', cors: true, invoker: '
   }
 });
 
+// ══════════════════════════════════════════════════════════════════════
+// ── 排程自動通知 ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+
+// ── 1. 每日 20:00：通知明日有排班的人員 ──────────────────────────────
+exports.scheduleDutyTomorrowReminder = onSchedule(
+  { schedule: '0 20 * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+    const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
+    const dedupKey = `duty-tomorrow-${tomorrow}`;
+
+    if (await _isDuped(db, dedupKey)) return;
+
+    const snap = await db.collection('dutySchedule').where('date', '==', tomorrow).get();
+    if (snap.empty) { await _markDuped(db, dedupKey); return; }
+
+    const memberMap = {};
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (!d.memberName) return;
+      if (!memberMap[d.memberName]) memberMap[d.memberName] = [];
+      memberMap[d.memberName].push(`${d.start || ''}～${d.end || ''}`);
+    });
+
+    const members = Object.keys(memberMap);
+    if (!members.length) { await _markDuped(db, dedupKey); return; }
+
+    const title = '📅 明日排班提醒';
+    for (const memberName of members) {
+      const shifts = memberMap[memberName].join('、');
+      const body = `您明日（${tomorrow}）有排班：${shifts}，請準時出勤。`;
+      const tokens = await _getMemberTokens(db, memberName);
+      if (tokens.length) await _sendMulticast(tokens, { title, body });
+      await _writeAutoNotif(db, { title, body, targetMembers: [memberName], dedupKey: `${dedupKey}-${memberName}` });
+    }
+
+    await _markDuped(db, dedupKey);
+    console.log(`scheduleDutyTomorrowReminder: notified ${members.length} members for ${tomorrow}`);
+  }
+);
+
+// ── 2. 每 10 分鐘：排班前 1 小時通知當事人 ──────────────────────────
+exports.scheduleDutyBeforeReminder = onSchedule(
+  { schedule: '*/10 * * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+    const today = _dateStr(now);
+
+    // start 在 50～70 分鐘後
+    const loStr = _timeStr(new Date(now.getTime() + 50 * 60000));
+    const hiStr = _timeStr(new Date(now.getTime() + 70 * 60000));
+
+    const snap = await db.collection('dutySchedule').where('date', '==', today).get();
+    const targets = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (!d.start || !d.memberName) return;
+      if (d.start >= loStr && d.start <= hiStr) targets.push(d);
+    });
+
+    for (const d of targets) {
+      const dedupKey = `duty-before1h-${today}-${d.start}-${d.memberName}`;
+      if (await _isDuped(db, dedupKey)) continue;
+
+      const title = '⏰ 即將出勤提醒';
+      const body  = `您今日 ${d.start} 的班次即將開始，請準備出勤。`;
+      const tokens = await _getMemberTokens(db, d.memberName);
+      if (tokens.length) await _sendMulticast(tokens, { title, body });
+      await _writeAutoNotif(db, { title, body, targetMembers: [d.memberName], dedupKey });
+    }
+  }
+);
+
+// ── 3. 每 10 分鐘：班次結束後 1 小時未簽退者通知 ─────────────────────
+exports.scheduleNoSignoutReminder = onSchedule(
+  { schedule: '*/10 * * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+    const today = _dateStr(now);
+
+    // end 在 60～70 分鐘前
+    const loStr = _timeStr(new Date(now.getTime() - 70 * 60000));
+    const hiStr = _timeStr(new Date(now.getTime() - 60 * 60000));
+
+    const snap = await db.collection('dutySchedule').where('date', '==', today).get();
+    const targets = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (!d.end || !d.memberName) return;
+      if (d.end >= loStr && d.end <= hiStr) targets.push(d);
+    });
+
+    for (const d of targets) {
+      const dedupKey = `duty-nosignout-${today}-${d.end}-${d.memberName}`;
+      if (await _isDuped(db, dedupKey)) continue;
+
+      const attSnap = await db.collection('attendance')
+        .where('date', '==', today)
+        .where('memberName', '==', d.memberName)
+        .get();
+      const hasCheckout = !attSnap.empty && attSnap.docs.some(doc => doc.data().checkoutTime);
+      if (hasCheckout) { await _markDuped(db, dedupKey); continue; }
+
+      const title = '🔔 請記得簽退';
+      const body  = `您今日 ${d.end} 的班次已結束超過 1 小時，請確認是否已簽退。`;
+      const tokens = await _getMemberTokens(db, d.memberName);
+      if (tokens.length) await _sendMulticast(tokens, { title, body });
+      await _writeAutoNotif(db, { title, body, targetMembers: [d.memberName], dedupKey });
+    }
+  }
+);
+
+// ── 4. 每月 20 日 09:00：開放下月排班通知 ────────────────────────────
+exports.scheduleMonthlyScheduleOpen = onSchedule(
+  { schedule: '0 9 20 * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const ym  = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+    const dedupKey = `monthly-open-${ym}`;
+
+    if (await _isDuped(db, dedupKey)) return;
+
+    const title = '📋 下月班表開放排班';
+    const body  = `${ym} 班表已開放，請盡快完成排班登記。`;
+    const tokens = await _getAllTokens(db);
+    if (tokens.length) await _sendMulticast(tokens, { title, body });
+    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+    await _markDuped(db, dedupKey);
+    console.log(`scheduleMonthlyScheduleOpen: notified for ${ym}`);
+  }
+);
+
+// ── 5. 每月 1 日 09:00：確認任務提醒 ─────────────────────────────────
+exports.scheduleMonthlyConfirmTask = onSchedule(
+  { schedule: '0 9 1 * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+    const ym  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const dedupKey = `monthly-confirm-${ym}`;
+
+    if (await _isDuped(db, dedupKey)) return;
+
+    const title = '✅ 請確認本月任務';
+    const body  = `${ym} 已開始，請確認本月班表與任務是否有問題。`;
+    const tokens = await _getAllTokens(db);
+    if (tokens.length) await _sendMulticast(tokens, { title, body });
+    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+    await _markDuped(db, dedupKey);
+    console.log(`scheduleMonthlyConfirmTask: notified for ${ym}`);
+  }
+);
+
+// ── 每小時：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────────
+exports.scheduleUsageMonitor = onSchedule(
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db      = getFirestore();
+    const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
+    const client  = new MetricServiceClient();
+
+    // 今日 00:00 ~ 現在（Asia/Taipei）
+    const now  = new Date();
+    const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
+    const startOfDay = new Date(`${todayStr}T00:00:00+08:00`);
+
+    const [timeSeries] = await client.listTimeSeries({
+      name: `projects/${project}`,
+      filter: 'metric.type="firestore.googleapis.com/document/read_count"',
+      interval: {
+        startTime: { seconds: Math.floor(startOfDay.getTime() / 1000) },
+        endTime:   { seconds: Math.floor(now.getTime() / 1000) },
+      },
+      aggregation: {
+        alignmentPeriod: { seconds: 86400 },
+        perSeriesAligner: 'ALIGN_SUM',
+        crossSeriesReducer: 'REDUCE_SUM',
+        groupByFields: [],
+      },
+    }).catch(() => [[]]);
+
+    let todayReads = 0;
+    (timeSeries || []).forEach(ts => {
+      (ts.points || []).forEach(p => {
+        todayReads += Number(p.value?.int64Value || p.value?.doubleValue || 0);
+      });
+    });
+
+    const FREE_QUOTA  = 50000;
+    const pct         = Math.round((todayReads / FREE_QUOTA) * 100);
+    const locked      = pct >= 90;
+
+    await db.collection('settings').doc('dailyUsage').set({
+      date:       todayStr,
+      reads:      todayReads,
+      quota:      FREE_QUOTA,
+      pct,
+      locked,
+      updatedAt:  now,
+    }, { merge: false });
+
+    // 超過 90% 發推播通知管理員
+    if (locked) {
+      const dedupKey = `usage-alert-${todayStr}`;
+      const isDuped  = await db.collection('autoNotifLog').doc(dedupKey).get().then(d => d.exists);
+      if (!isDuped) {
+        const title = '⚠️ Firestore 讀取數超過 90%';
+        const body  = `今日已讀取 ${todayReads.toLocaleString()} 次（${pct}%），部分功能已鎖定。`;
+        const tokens = await _getAdminTokens(null);
+        if (tokens.length) await _sendMulticast(tokens, { title, body });
+        await db.collection('autoNotifLog').doc(dedupKey).set({ sentAt: now });
+        console.log(`scheduleUsageMonitor: alert sent, reads=${todayReads} (${pct}%)`);
+      }
+    }
+
+    console.log(`scheduleUsageMonitor: today reads=${todayReads} (${pct}%)`);
+  }
+);
+
+// ── 每日 03:00：清理 90 天以上的舊資料，控制儲存費用 ──────────────────
+exports.scheduleDailyCleanup = onSchedule(
+  { schedule: '0 3 * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const cutoff = new Date(Date.now() - 90 * 86400000); // 90 天前
+
+    const COLS = ['loginLogs', 'changelogs', 'announcements', 'pushLogs', 'autoNotifLog', 'broadcastRequests'];
+    let total = 0;
+
+    for (const col of COLS) {
+      let snap;
+      try {
+        snap = await db.collection(col).where('createdAt', '<', cutoff).limit(400).get();
+      } catch (_) {
+        // autoNotifLog 用 sentAt
+        snap = await db.collection(col).where('sentAt', '<', cutoff).limit(400).get().catch(() => null);
+        if (!snap) continue;
+      }
+      if (snap.empty) continue;
+
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit().catch(() => {});
+      total += snap.size;
+      console.log(`cleanup ${col}: deleted ${snap.size}`);
+    }
+
+    console.log(`scheduleDailyCleanup: total deleted ${total}`);
+  }
+);
+
 // ── 工具函式 ──────────────────────────────────────────────────────────
+
+function _dateStr(d) {
+  return d.toLocaleDateString('sv-SE', { timeZone: TZ });
+}
+
+function _timeStr(d) {
+  return d.toLocaleTimeString('sv-SE', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+}
+
+async function _isDuped(db, key) {
+  const doc = await db.collection('autoNotifLog').doc(key).get();
+  return doc.exists;
+}
+
+async function _markDuped(db, key) {
+  await db.collection('autoNotifLog').doc(key).set({ sentAt: new Date() });
+}
+
+async function _getMemberTokens(db, memberName) {
+  const snap = await db.collection('pushSubscriptions').where('memberName', '==', memberName).get();
+  const tokens = [];
+  snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
+  return [...new Set(tokens)];
+}
+
+async function _getAllTokens(db) {
+  const snap = await db.collection('pushSubscriptions').get();
+  const tokens = [];
+  snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
+  return [...new Set(tokens)];
+}
+
+async function _writeAutoNotif(db, { title, body, targetMembers, dedupKey }) {
+  const now = new Date();
+  const today = _dateStr(now);
+  await db.collection('pushLogs').add({
+    title, body, type: 'auto', status: 'sent',
+    targetMembers: targetMembers || [],
+    createdAt: now, sentBy: 'system', dedupKey,
+  }).catch(() => {});
+  await db.collection('announcements').add({
+    title, body, text: `${title}\n${body}`,
+    type: 'broadcast',
+    audience: targetMembers && targetMembers.length ? 'members' : 'all',
+    targetMembers: targetMembers || [],
+    active: true, pinned: false, urgent: false,
+    startDate: today,
+    endDate: new Date(now.getTime() + 30 * 86400000).toLocaleDateString('sv-SE', { timeZone: TZ }),
+    createdAt: now, createdBy: 'system', _pushed: true,
+  }).catch(() => {});
+}
+
 async function _getAdminTokens(memberUnit) {
   const db = getFirestore();
   const snap = await db.collection('pushSubscriptions').get();
