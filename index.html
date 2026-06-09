@@ -12531,8 +12531,8 @@ async function loadAdminConfirmTasks() {
     }
     el.innerHTML = '';
     for (const task of tasks) {
-      // 取得該分隊成員名單
-      const unitMembers = members.filter(m => (m.unit || '') === task.unit);
+      // 取得該分隊成員名單（排除分隊承辦人）
+      const unitMembers = members.filter(m => (m.unit || '') === task.unit && m.role !== 'officer' && !m.isOfficer);
       const total = unitMembers.length;
       // 取得回應
       let responses = [];
