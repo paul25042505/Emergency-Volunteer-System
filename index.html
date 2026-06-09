@@ -1614,9 +1614,9 @@ function _dlCSV(content, filename) {
       </div>
       <!-- 今日三格 KPI -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
-        <div style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:66px;">
+        <div onclick="showDashTodayOutList()" style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:66px;">
           <div style="font-size:1.9rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashTodayAtt">—</div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">協勤筆數</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">協勤筆數 ›</div>
         </div>
         <div onclick="showDashCheckinList()" style="padding:14px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:66px;">
           <div style="font-size:1.9rem;font-weight:900;color:white;font-family:'Noto Serif TC',serif;line-height:1;flex:1;display:flex;align-items:center;" id="dashTodayMembers">—</div>
@@ -6029,6 +6029,7 @@ async function _bgSyncTitle(_su) {
 
 function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
   window._dashAttDocs = attDocs;
+  window._dashOutDocs = outDocs;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
   // 今日概況
@@ -6055,6 +6056,28 @@ function _applyDashStats(attDocs, outDocs, todayStr, monthStr, me) {
   set('dashMonthHours', myYearHours % 1 === 0 ? myYearHours : myYearHours.toFixed(1));
   set('dashMyMonthAtt', myYearAtt.length);
   set('dashMyMonthSvc', myYearAtt.reduce((s, r) => s + (parseInt(r.service)||0), 0));
+}
+
+function showDashTodayOutList() {
+  const todayStr = new Date().toLocaleDateString('sv');
+  const docs = (window._dashOutDocs || []).filter(r => (r.date||'') === todayStr)
+    .sort((a,b) => (a.timeOut||'').localeCompare(b.timeOut||''));
+  _showDashStatModal('今日協勤內容', docs.length ? docs.map((r,i) => {
+    const time = (r.timeOut && r.timeBack) ? `${r.timeOut} − ${r.timeBack}` : (r.timeOut || '—');
+    const loc  = [r.district, r.address].filter(Boolean).join(' ');
+    const svc  = r.serviceCount != null && r.serviceCount !== '' ? `服務 ${r.serviceCount} 人` : '';
+    return `<div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:0.68rem;font-weight:700;color:white;background:var(--red);border-radius:20px;padding:2px 9px;white-space:nowrap;">${r.caseType||'未分類'}</div>
+          ${svc ? `<div style="font-size:0.65rem;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:2px 8px;">${svc}</div>` : ''}
+        </div>
+        <div style="font-size:0.72rem;color:var(--text-mid);white-space:nowrap;">${time}</div>
+      </div>
+      <div style="font-size:0.82rem;font-weight:600;color:var(--text);">${r.memberName||'—'}</div>
+      ${loc ? `<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">📍 ${loc}</div>` : ''}
+    </div>`;
+  }).join('') : '<div style="padding:20px;text-align:center;color:var(--text-light);">今日尚無協勤紀錄</div>');
 }
 
 function showDashCheckinList() {
