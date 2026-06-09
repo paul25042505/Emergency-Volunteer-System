@@ -10709,47 +10709,41 @@ async function loadLoginLog() {
     const ROLE_LABEL = { admin:'系統管理員', officer:'分隊承辦人', member:'一般成員' };
     const ROLE_COLOR = { admin:'#856404', officer:'#084298', member:'#495057' };
     const ROLE_BG    = { admin:'#fff3cd', officer:'#cfe2ff', member:'#e9ecef' };
+    const METHOD_LABEL = { quick:'快速登入', tempPass:'臨時密碼', google:'Google' };
 
-    el.innerHTML = `
-      <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">共 ${docs.length} 筆登入紀錄</div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
-          <thead>
-            <tr>
-              <th style="background:var(--warm);padding:8px;border-bottom:1px solid var(--border);width:32px;text-align:center;">
-                <input type="checkbox" id="llCheckAll" onchange="toggleAllCheck('llChk',this.checked)" title="全選">
-              </th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">登入時間</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">姓名</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">分隊</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);white-space:nowrap;">角色</th>
-              <th style="background:var(--warm);padding:10px 12px;text-align:left;font-weight:600;color:var(--text-mid);border-bottom:1px solid var(--border);">Email</th>
-              <th style="background:var(--warm);padding:10px 8px;border-bottom:1px solid var(--border);"></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${docs.map((d,i) => {
-              const role = d.role || 'member';
-              const roleBg = ROLE_BG[role] || '#e9ecef';
-              const roleColor = ROLE_COLOR[role] || '#495057';
-              const roleLabel = ROLE_LABEL[role] || role;
-              return `<tr>
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;"><input type="checkbox" class="llChk" data-id="${d.id}"></td>
-                <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.loginAt||''}</td>
-                <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-weight:500;">${d.memberName||''}</td>
-                <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">${d.unit||''}</td>
-                <td style="padding:10px 12px;border-bottom:1px solid var(--border);">
-                  <span style="font-size:0.68rem;background:${roleBg};color:${roleColor};border-radius:10px;padding:2px 8px;font-weight:600;white-space:nowrap;">${roleLabel}</span>
-                </td>
-                <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.78rem;color:var(--text-light);">${d.email||''}</td>
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">
-                  <button onclick="adminDel('${COL_LOGINLOG}','${d.id}','登入紀錄',loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>`;
+    el.innerHTML =
+      `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:0.78rem;color:var(--text-light);">共 ${docs.length} 筆登入紀錄</span>
+        <label style="font-size:0.75rem;color:var(--text-mid);display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="llCheckAll" onchange="toggleAllCheck('llChk',this.checked)"> 全選
+        </label>
+      </div>` +
+      docs.map(d => {
+        const role = d.role || 'member';
+        const avatar = (d.memberName||'?')[0];
+        const avatarBg = role==='admin'?'#856404':role==='officer'?'#084298':'#37474f';
+        return `
+        <div style="background:white;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07);padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;">
+          <input type="checkbox" class="llChk" data-id="${d.id}" style="margin-top:3px;flex-shrink:0;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${avatarBg};color:white;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;flex-shrink:0;">${avatar}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+              <span style="font-size:0.88rem;font-weight:700;color:var(--text);">${d.memberName||'—'}</span>
+              <span style="font-size:0.68rem;background:${ROLE_BG[role]||'#e9ecef'};color:${ROLE_COLOR[role]||'#495057'};border-radius:10px;padding:2px 8px;font-weight:600;white-space:nowrap;">${ROLE_LABEL[role]||role}</span>
+              ${d.loginMethod && d.loginMethod !== 'google' ? `<span style="font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">${METHOD_LABEL[d.loginMethod]||d.loginMethod}</span>` : ''}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:0.75rem;color:var(--text-mid);">
+              ${d.unit ? `<span>🏢 ${d.unit}</span>` : '<span style="color:var(--text-light);">無分隊</span>'}
+              <span style="color:var(--text-light);">📧 ${d.email||'—'}</span>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">🕐 ${d.loginAt||''}</div>
+          </div>
+          <button onclick="adminDel('${COL_LOGINLOG}','${d.id}','登入紀錄',loadLoginLog)"
+            style="background:none;border:1px solid #fecaca;border-radius:6px;padding:4px 8px;color:#dc2626;cursor:pointer;flex-shrink:0;">
+            <svg style="width:13px;height:13px;display:block;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>
+          </button>
+        </div>`;
+      }).join('');
   } catch(e) {
     el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
