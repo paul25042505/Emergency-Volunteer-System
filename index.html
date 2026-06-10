@@ -3617,6 +3617,14 @@ function _dlCSV(content, filename) {
           <button onclick="_applyUsageLock(0, 0, 50000)" style="background:#2ecc71;color:white;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 恢復正常</button>
         </div>
       </div>
+      <div id="_usageTestStatus" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;display:none;">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:12px;">測試結果</div>
+        <div id="_usageTestLockState" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:0.88rem;font-weight:600;"></div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">受影響的 Collection：</div>
+        <div id="_usageTestCols" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">操作紀錄：</div>
+        <div id="_usageTestLog" style="font-size:0.78rem;color:var(--text-mid);background:#f8f9fa;border-radius:8px;padding:10px;max-height:120px;overflow-y:auto;white-space:pre-wrap;font-family:monospace;"></div>
+      </div>
     </div>
 
     <div id="adminSec-confirm" style="display:none;padding:0 0 20px;">
@@ -12974,6 +12982,45 @@ function _applyUsageLock(pct, reads, quota) {
   } else {
     bar.style.display = 'none';
   }
+  _updateUsageTestStatus(pct, reads, quota);
+}
+
+function _updateUsageTestStatus(pct, reads, quota) {
+  const panel = document.getElementById('_usageTestStatus');
+  if (!panel) return;
+  panel.style.display = 'block';
+
+  const stateEl = document.getElementById('_usageTestLockState');
+  const colsEl  = document.getElementById('_usageTestCols');
+  const logEl   = document.getElementById('_usageTestLog');
+
+  if (pct >= 90) {
+    stateEl.style.background = pct >= 100 ? '#fdecea' : '#fff3e0';
+    stateEl.style.color       = pct >= 100 ? '#c0392b' : '#e65100';
+    stateEl.textContent = pct >= 100
+      ? `🚫 鎖定狀態：已啟動（${pct}% — 全部停用）`
+      : `🔒 鎖定狀態：已啟動（${pct}% ≥ 90% 門檻）`;
+  } else {
+    stateEl.style.background = '#e8f5e9';
+    stateEl.style.color       = '#2e7d32';
+    stateEl.textContent = `✅ 鎖定狀態：未啟動（${pct}% < 90% 門檻）`;
+  }
+
+  colsEl.innerHTML = '';
+  _LOCK_COLS.forEach(col => {
+    const tag = document.createElement('span');
+    tag.style.cssText = `display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;font-family:monospace;` +
+      (_usageLocked
+        ? 'background:#fdecea;color:#c0392b;'
+        : 'background:#e8f5e9;color:#2e7d32;');
+    tag.textContent = (_usageLocked ? '🔒 ' : '✅ ') + col;
+    colsEl.appendChild(tag);
+  });
+
+  const ts = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+  const prev = logEl.textContent;
+  const line = `[${ts}] pct=${pct}%  reads=${(reads||0).toLocaleString()}  quota=${(quota||0).toLocaleString()}  _usageLocked=${_usageLocked}`;
+  logEl.textContent = line + (prev ? '\n' + prev : '');
 }
 
 // ════════════════════════════════════════
