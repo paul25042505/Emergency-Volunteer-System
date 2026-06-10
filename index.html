@@ -947,30 +947,30 @@ tr:hover td { background: #fdfcfb; }
 }
 
 /* ── 老花眼友善設計 ────────────────────────────────────────────────────
-   html font-size 從預設 16px 調為 17px（+6.25%），所有 rem 單位等比放大。
-   17px 兼顧老花可讀性，同時避免窄容器內名字被截斷。
+   不動 html font-size（保持 16px），避免小裝飾標籤（0.62rem、0.65rem）
+   被放大後在有限容器內溢出截斷。改以針對性調大重要閱讀元素。
    ─────────────────────────────────────────────────────────────────── */
-html { font-size: 17px; }
 
 /* 主要操作按鈕：確保最低觸控目標 48px，字體清楚 */
-.btn-submit  { min-height: 52px !important; font-size: 1.05rem !important; }
-.btn-search  { min-height: 48px !important; font-size: 1rem   !important; }
-.btn-reset   { min-height: 48px !important; font-size: 0.95rem !important; }
-.btn-add     { min-height: 48px !important; font-size: 0.95rem !important; }
+.btn-submit  { min-height: 52px !important; font-size: 1.1rem !important; }
+.btn-search  { min-height: 48px !important; font-size: 1.05rem !important; }
+.btn-reset   { min-height: 48px !important; font-size: 1rem   !important; }
+.btn-add     { min-height: 48px !important; font-size: 1rem   !important; }
 
 /* 輸入欄位高度加大，方便點擊 */
 input:not([type=checkbox]):not([type=radio]),
 select,
 textarea { min-height: 50px !important; }
 
-/* 標籤字體稍大，避免老花看不清 */
-label { font-size: 0.88rem; }
-.stat-label  { font-size: 0.82rem; }
+/* 表單標籤維持 16px（原始大小），確保可讀 */
+label { font-size: 1rem; }
+.stat-label  { font-size: 0.85rem; }
 .app-tab-lbl { font-size: 0.72rem !important; }
 
-/* 通知卡片正文不要太小 */
-.notice-card-title   { font-size: 0.95rem; }
-.notice-card-preview { font-size: 0.82rem; }
+/* 卡片主要欄位字體略放大 */
+.mq-card-name { font-size: 1.05rem !important; font-weight: 700; }
+.notice-card-title   { font-size: 1rem; }
+.notice-card-preview { font-size: 0.85rem; }
 
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
