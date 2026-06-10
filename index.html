@@ -3610,8 +3610,8 @@ function _dlCSV(content, filename) {
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;">點擊按鈕模擬 Firestore 讀取達 90%，確認哪些功能被鎖定無法使用。</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <button onclick="_applyUsageLock(90, 45000, 50000)" style="background:#e74c3c;color:white;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔒 模擬 90%（45,000 / 50,000）— 啟動鎖定</button>
-          <button onclick="_applyUsageLock(0, 0, 50000)" style="background:#2ecc71;color:white;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 恢復正常</button>
+          <button onclick="_testApplyLock(90, 45000, 50000)" style="background:#e74c3c;color:white;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔒 模擬 90%（45,000 / 50,000）— 啟動鎖定</button>
+          <button onclick="_testApplyLock(0, 0, 50000)" style="background:#2ecc71;color:white;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 恢復正常</button>
         </div>
       </div>
       <div id="_usageTestStatus" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;display:none;">
@@ -12953,6 +12953,23 @@ async function _checkDailyUsage() {
     if (doc.date !== today) return; // 昨天的資料，忽略
     _applyUsageLock(doc.pct, doc.reads, doc.quota);
   } catch(e) {}
+  // 恢復測試模擬鎖定（重新整理後保持狀態）
+  try {
+    const sim = sessionStorage.getItem('_usageLockSim');
+    if (sim) {
+      const { pct, reads, quota } = JSON.parse(sim);
+      _applyUsageLock(pct, reads, quota);
+    }
+  } catch(e) { sessionStorage.removeItem('_usageLockSim'); }
+}
+
+function _testApplyLock(pct, reads, quota) {
+  if (pct >= 90) {
+    sessionStorage.setItem('_usageLockSim', JSON.stringify({ pct, reads, quota }));
+  } else {
+    sessionStorage.removeItem('_usageLockSim');
+  }
+  _applyUsageLock(pct, reads, quota);
 }
 
 function _applyUsageLock(pct, reads, quota) {
