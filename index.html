@@ -6909,6 +6909,7 @@ let _sfOnConfirm = null;
 let _sfCtx = null;
 let _sfDrawing = false;
 let _sfLastX = 0, _sfLastY = 0;
+let _sfScrollY = 0;
 
 function _sfApplyOrientation() {
   const modal = document.getElementById('sigFullscreenModal');
@@ -6936,7 +6937,11 @@ function openSigFullscreen(targetCanvasId, onConfirm) {
   const modal = document.getElementById('sigFullscreenModal');
   const fsCanvas = document.getElementById('sigFullscreenCanvas');
   modal.classList.add('open');
+  _sfScrollY = window.scrollY;
+  document.body.style.top = `-${_sfScrollY}px`;
+  document.body.style.position = 'fixed';
   document.body.style.overflow = 'hidden';
+  document.body.style.width = '100%';
   _sfApplyOrientation();
   window.addEventListener('resize', _sfApplyOrientation);
   requestAnimationFrame(() => {
@@ -6956,7 +6961,11 @@ function closeSigFullscreen() {
   window.removeEventListener('resize', _sfApplyOrientation);
   const modal = document.getElementById('sigFullscreenModal');
   modal.classList.remove('open', 'sig-fs-rotated');
+  document.body.style.position = '';
+  document.body.style.top = '';
   document.body.style.overflow = '';
+  document.body.style.width = '';
+  window.scrollTo(0, _sfScrollY);
   _sfTargetCanvasId = null; _sfOnConfirm = null; _sfCtx = null;
 }
 
