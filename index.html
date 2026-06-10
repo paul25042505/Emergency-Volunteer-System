@@ -6977,8 +6977,16 @@ function confirmSigFullscreen() {
   const target = document.getElementById(_sfTargetCanvasId);
   if (target) {
     const tc = target.getContext('2d');
+    // Reset any DPR scale so we work in raw canvas pixel coordinates
+    tc.save();
+    tc.setTransform(1, 0, 0, 1, 0, 0);
     tc.clearRect(0, 0, target.width, target.height);
-    tc.drawImage(fsCanvas, 0, 0, target.width, target.height);
+    // Scale to fit (letterbox) so the full signature is visible
+    const scale = Math.min(target.width / fsCanvas.width, target.height / fsCanvas.height);
+    const dx = (target.width  - fsCanvas.width  * scale) / 2;
+    const dy = (target.height - fsCanvas.height * scale) / 2;
+    tc.drawImage(fsCanvas, dx, dy, fsCanvas.width * scale, fsCanvas.height * scale);
+    tc.restore();
   }
   if (_sfOnConfirm) _sfOnConfirm();
   closeSigFullscreen();
