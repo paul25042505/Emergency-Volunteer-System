@@ -333,10 +333,11 @@ exports.scheduleUsageMonitor = onSchedule(
     const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
     const client  = new MetricServiceClient();
 
-    // 今日 00:00 ~ 現在（Asia/Taipei）
+    // 今日 00:00 UTC ~ 現在（與 Firebase 帳單計算基準一致）
     const now  = new Date();
     const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
-    const startOfDay = new Date(`${todayStr}T00:00:00+08:00`);
+    const todayUTC = now.toISOString().slice(0, 10);
+    const startOfDay = new Date(`${todayUTC}T00:00:00Z`);
 
     const [timeSeries] = await client.listTimeSeries({
       name: `projects/${project}`,
