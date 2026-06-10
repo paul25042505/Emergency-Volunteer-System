@@ -12732,6 +12732,22 @@ async function loadAdminAnnouncements() {
       if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='🚨 緊急'; typeBadges.appendChild(b); }
       if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='📌 置頂'; typeBadges.appendChild(b); }
 
+      // 廣播對象標籤
+      const audMap = { all:'👥 全體成員', admin:'🔑 管理員／承辦', members:'👤 指定人員' };
+      const audClr = { all:'#1565c0', admin:'#4a148c', members:'#e65100' };
+      const audBg  = { all:'#e3f2fd', admin:'#f3e5f5', members:'#fff3e0' };
+      const aud = d.audience || (srcType === 'broadcast' ? 'all' : null);
+      if (aud) {
+        const audB = document.createElement('span');
+        audB.style.cssText = `font-size:0.68rem;background:${audBg[aud]||'#f5f5f5'};color:${audClr[aud]||'#555'};border-radius:10px;padding:2px 8px;font-weight:600;`;
+        let audLabel = audMap[aud] || aud;
+        if (aud === 'members' && d.targetMembers && d.targetMembers.length) {
+          audLabel += `（${d.targetMembers.join('、')}）`;
+        }
+        audB.textContent = audLabel;
+        typeBadges.appendChild(audB);
+      }
+
       const dateSpan = document.createElement('span');
       dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;white-space:nowrap;';
       dateSpan.textContent = `${d.startDate||''} ～ ${d.endDate||''}`;
