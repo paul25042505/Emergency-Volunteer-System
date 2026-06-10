@@ -4214,21 +4214,23 @@ function _dlCSV(content, filename) {
   <div style="padding:0;max-width:100%;">
 
     <!-- ── 月視圖 ── -->
-    <div id="dutyMonthView" class="duty-subview" style="display:none;padding:10px 10px;">
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
-        <div style="text-align:center;font-size:0.68rem;color:#c0392b;font-weight:600;padding:4px 0;">日</div>
-        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">一</div>
-        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">二</div>
-        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">三</div>
-        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">四</div>
-        <div style="text-align:center;font-size:0.68rem;color:var(--text-light);padding:4px 0;">五</div>
-        <div style="text-align:center;font-size:0.68rem;color:#3498db;padding:4px 0;">六</div>
+    <div id="dutyMonthView" class="duty-subview" style="display:none;padding:10px 12px 14px;">
+      <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+          <div style="text-align:center;font-size:0.72rem;color:var(--text-mid);font-weight:600;padding:8px 0;">一</div>
+          <div style="text-align:center;font-size:0.72rem;color:var(--text-mid);font-weight:600;padding:8px 0;">二</div>
+          <div style="text-align:center;font-size:0.72rem;color:var(--text-mid);font-weight:600;padding:8px 0;">三</div>
+          <div style="text-align:center;font-size:0.72rem;color:var(--text-mid);font-weight:600;padding:8px 0;">四</div>
+          <div style="text-align:center;font-size:0.72rem;color:var(--text-mid);font-weight:600;padding:8px 0;">五</div>
+          <div style="text-align:center;font-size:0.72rem;color:#3498db;font-weight:600;padding:8px 0;">六</div>
+          <div style="text-align:center;font-size:0.72rem;color:#c0392b;font-weight:600;padding:8px 0;">日</div>
+        </div>
+        <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
       </div>
-      <div id="dutyCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
-      <div id="dutyCalLegend" style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;font-size:0.68rem;color:var(--text-light);padding:8px 4px;background:white;border-radius:10px;">
-        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#7f8c8d;display:inline-block;flex-shrink:0;"></span>額滿</span>
+      <div id="dutyCalLegend" style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;font-size:0.68rem;color:var(--text-light);padding:4px 2px;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#95a5a6;display:inline-block;flex-shrink:0;"></span>額滿</span>
         <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#e67e22;display:inline-block;flex-shrink:0;"></span>部分已排</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#27ae60;display:inline-block;flex-shrink:0;"></span>尚有空位</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:50%;background:#2ecc71;display:inline-block;flex-shrink:0;"></span>尚有空位</span>
         <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#fef9f0;border:1px solid #f0c040;display:inline-block;flex-shrink:0;"></span>假日</span>
         <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:2px;background:#8e44ad;display:inline-block;flex-shrink:0;"></span>定訓</span>
       </div>
@@ -17607,7 +17609,7 @@ function dutyView(v, scrollToDate) {
 
 function renderDutyView() {
   const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  document.getElementById('dutyMonthLabel').textContent = _dutyYear + ' 年 ' + monthNames[_dutyMonth];
+  document.getElementById('dutyMonthLabel').innerHTML = `<div style="font-size:1rem;font-weight:800;color:var(--text);line-height:1.2;">${_dutyYear} 年 ${monthNames[_dutyMonth]}</div><div style="font-size:0.6rem;font-weight:700;color:#3498db;letter-spacing:0.1em;margin-top:1px;">MONTHLY OVERVIEW</div>`;
   document.getElementById('dutyMonthView').style.display = _dutyView==='month' ? '' : 'none';
   document.getElementById('dutyListView').style.display  = _dutyView==='list'  ? '' : 'none';
   document.getElementById('dutyGongchaView').style.display = _dutyView==='gongcha' ? '' : 'none';
@@ -18503,12 +18505,17 @@ function renderDutyCalendar() {
   if (!grid) return;
   grid.innerHTML = '';
   const today       = new Date().toLocaleDateString('sv');
-  const firstDay    = new Date(_dutyYear, _dutyMonth, 1).getDay();
+  // 週一為首日：(getDay()+6)%7 → 一=0 … 日=6
+  const firstDay    = (new Date(_dutyYear, _dutyMonth, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(_dutyYear, _dutyMonth+1, 0).getDate();
   const HOURS       = Array.from({length:16}, (_,i) => i+6);
+  const CELL_BORDER = '1px solid #e2e8f0';
 
-  for (let i = 0; i < firstDay; i++)
-    grid.appendChild(Object.assign(document.createElement('div'), {style:'min-height:60px;'}));
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement('div');
+    blank.style.cssText = `min-height:80px;border-right:${CELL_BORDER};border-bottom:${CELL_BORDER};background:#fafbfc;`;
+    grid.appendChild(blank);
+  }
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr    = _dutyYear + '-' + String(_dutyMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
@@ -18516,58 +18523,60 @@ function renderDutyCalendar() {
     const isHoliday  = isDutyHoliday(dateStr);
     const isAllowed  = isDutyDateAllowed(dateStr);
     const isTraining = HOURS.some(h => isDutyTrainingBlock(dateStr, h));
+    const dow        = (new Date(dateStr).getDay() + 6) % 7; // 0=Mon…6=Sun
+    const isSat      = dow === 5;
+    const isSun      = dow === 6;
 
     let totalCap = 0, totalFilled = 0;
     HOURS.forEach(h => { totalCap += getDutySlotCapacity(dateStr,h); totalFilled += getDutySlotCount(dateStr,h); });
-    const totalLeft = totalCap - totalFilled;
-    const isFull = totalLeft <= 0;
+    const isFull = totalCap > 0 && totalFilled >= totalCap;
     const pct    = totalCap > 0 ? totalFilled/totalCap : 0;
 
-    const tagBg = isFull ? '#7f8c8d' : pct > 0 ? '#e67e22' : '#27ae60';
-    const borderColor = isToday ? 'var(--red)' : isFull ? '#7f8c8d' : 'var(--border)';
-    const cellBg = !isAllowed ? '#f5f5f5' : isToday ? 'var(--red-faint)' : isHoliday ? '#fef9f0' : 'white';
+    const cellBg = !isAllowed ? '#f5f5f5' : isHoliday && !isToday ? '#fffbf0' : 'white';
 
     const cell = document.createElement('div');
-    cell.style.cssText = 'min-height:96px;border:1.5px solid ' + borderColor + ';border-radius:8px;padding:5px 3px;cursor:' + (isAllowed?'pointer':'default') + ';background:' + cellBg + ';position:relative;display:flex;flex-direction:column;align-items:center;opacity:' + (isAllowed?'1':'0.45') + ';';
+    cell.style.cssText = `min-height:80px;border-right:${CELL_BORDER};border-bottom:${CELL_BORDER};padding:5px 3px 4px;cursor:${isAllowed?'pointer':'default'};background:${cellBg};display:flex;flex-direction:column;align-items:center;opacity:${isAllowed?'1':'0.4'};`;
     if (isAllowed) cell.onclick = () => { dutyView('list', dateStr); };
 
-    const num = document.createElement('div');
-    num.style.cssText = 'font-size:0.88rem;font-weight:' + (isToday?'700':'500') + ';color:' + (isToday?'var(--red)':isHoliday?'#c0392b':'var(--text-mid)') + ';margin-bottom:3px;';
+    // 日期數字（今天加藍圈）
+    const numWrap = document.createElement('div');
+    numWrap.style.cssText = `width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;${isToday?'background:#3498db;':''}`;
+    const num = document.createElement('span');
+    num.style.cssText = `font-size:0.8rem;font-weight:${isToday?'700':'500'};color:${isToday?'white':isSun?'#c0392b':isSat?'#2980b9':isHoliday?'#c0392b':'var(--text)'};`;
     num.textContent = d;
-    cell.appendChild(num);
+    numWrap.appendChild(num);
+    cell.appendChild(numWrap);
 
-    if (isAllowed) {
-      const tag = document.createElement('div');
-      tag.style.cssText = 'font-size:0.65rem;background:' + tagBg + ';color:white;border-radius:4px;padding:2px 4px;font-weight:600;';
-      tag.textContent = totalLeft + '/' + totalCap;
-      cell.appendChild(tag);
+    // 容量小圓點
+    if (isAllowed && totalCap > 0) {
+      const dotColor = isFull ? '#95a5a6' : pct > 0 ? '#e67e22' : '#2ecc71';
+      const dot = document.createElement('div');
+      dot.style.cssText = `width:5px;height:5px;border-radius:50%;background:${dotColor};margin:1px 0 2px;flex-shrink:0;`;
+      cell.appendChild(dot);
     }
 
-    // 定訓標示（顯示後台設定的主題）
+    // 定訓標籤
     if (isTraining) {
       const topic = getDutyTrainingNote(dateStr);
       const tr = document.createElement('div');
-      tr.style.cssText = 'font-size:0.5rem;background:#8e44ad;color:white;border-radius:3px;padding:1px 3px;margin-top:1px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      tr.style.cssText = 'font-size:0.48rem;background:#8e44ad;color:white;border-radius:2px;padding:1px 3px;margin-bottom:1px;font-weight:600;width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
       tr.textContent = topic || '定訓';
       tr.title = topic || '定訓';
       cell.appendChild(tr);
     }
 
+    // 假日名稱
     if (isHoliday && !isToday) {
       const hName = getHolidayName(dateStr);
       if (hName) {
         const hn = document.createElement('div');
-        hn.style.cssText = 'font-size:0.52rem;color:#c0392b;line-height:1.2;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%;';
+        hn.style.cssText = 'font-size:0.48rem;color:#c0392b;line-height:1.2;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;width:100%;text-align:center;';
         hn.textContent = hName;
         cell.appendChild(hn);
-      } else {
-        const dot = document.createElement('div');
-        dot.style.cssText = 'width:4px;height:4px;border-radius:50%;background:#c0392b;margin-top:2px;';
-        cell.appendChild(dot);
       }
     }
 
-    // 當天已排人員姓名
+    // 已排人員姓名
     if (isAllowed) {
       const dayNames = [...new Set(
         _dutyDocs.filter(doc => doc.date === dateStr)
@@ -18576,10 +18585,10 @@ function renderDutyCalendar() {
       )];
       if (dayNames.length > 0) {
         const nm = document.createElement('div');
-        nm.style.cssText = 'margin-top:4px;width:100%;display:flex;flex-direction:column;gap:1px;align-items:center;';
+        nm.style.cssText = 'width:100%;display:flex;flex-direction:column;gap:1px;align-items:center;';
         dayNames.forEach(name => {
           const chip = document.createElement('div');
-          chip.style.cssText = 'font-size:0.5rem;color:var(--text-mid);background:rgba(0,0,0,0.06);border-radius:3px;padding:1px 3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.5;';
+          chip.style.cssText = 'font-size:0.52rem;color:#546e7a;background:rgba(52,152,219,0.1);border-radius:2px;padding:1px 2px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.5;text-align:center;';
           chip.textContent = name;
           nm.appendChild(chip);
         });
