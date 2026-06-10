@@ -3617,8 +3617,10 @@ function _dlCSV(content, filename) {
       <div id="_usageTestStatus" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;display:none;">
         <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:12px;">測試結果</div>
         <div id="_usageTestLockState" style="padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:0.88rem;font-weight:600;"></div>
-        <div style="font-size:0.82rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">受影響功能：</div>
-        <div id="_usageTestCols" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div style="font-size:0.82rem;font-weight:600;color:#c0392b;margin-bottom:8px;">🔒 鎖定功能（無法即時讀取）：</div>
+        <div id="_usageTestCols" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+        <div style="font-size:0.82rem;font-weight:600;color:#2e7d32;margin-bottom:8px;">✅ 仍可使用的功能：</div>
+        <div id="_usageTestAvail" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
     </div>
 
@@ -13009,40 +13011,63 @@ function _updateUsageTestStatus(pct, reads, quota) {
 
   const stateEl = document.getElementById('_usageTestLockState');
   const colsEl  = document.getElementById('_usageTestCols');
+  const availEl = document.getElementById('_usageTestAvail');
 
   if (_usageLocked) {
     stateEl.style.background = '#fdecea';
     stateEl.style.color      = '#c0392b';
-    stateEl.textContent      = '🔒 鎖定已啟動 — 下列功能無法即時讀取，將顯示快取或空白';
+    stateEl.textContent      = '🔒 鎖定已啟動 — 部分功能無法即時讀取，將顯示快取或空白';
   } else {
     stateEl.style.background = '#e8f5e9';
     stateEl.style.color      = '#2e7d32';
     stateEl.textContent      = '✅ 正常狀態 — 所有功能可正常讀取';
   }
 
-  const _LOCK_FEATURE_MAP = [
-    { cols: ['loginLogs','loginLog'],      icon: '🔐', label: '登入紀錄',     desc: '管理員後台 → 登入紀錄，無法查詢最新資料' },
-    { cols: ['changelogs'],                icon: '📋', label: '版本紀錄',     desc: '管理員後台 → 版本紀錄，無法顯示更新說明' },
-    { cols: ['correctionRequests'],        icon: '📝', label: '修正申請',     desc: '管理員後台 → 修正申請，待審清單可能不完整' },
-    { cols: ['feedback'],                  icon: '💬', label: '意見回饋',     desc: '管理員後台 → 意見回饋，無法載入最新回饋' },
-    { cols: ['broadcastRequests'],         icon: '📢', label: '推播請求記錄', desc: '推播控制台，歷史推播紀錄無法即時讀取' },
-    { cols: ['pushLogs'],                  icon: '🔔', label: '推播紀錄',     desc: '推播控制台，推播發送紀錄無法即時讀取' },
-    { cols: ['autoNotifLog'],              icon: '⏰', label: '自動通知紀錄', desc: '自動排程通知系統，已發送記錄無法即時確認' },
+  const LOCKED_FEATURES = [
+    { icon: '🔐', label: '登入紀錄',     desc: '管理員後台 → 登入紀錄，無法查詢最新資料' },
+    { icon: '📋', label: '版本紀錄',     desc: '管理員後台 → 版本紀錄，無法顯示更新說明' },
+    { icon: '📝', label: '修正申請',     desc: '管理員後台 → 修正申請，待審清單可能不完整' },
+    { icon: '💬', label: '意見回饋',     desc: '管理員後台 → 意見回饋，無法載入最新回饋' },
+    { icon: '📢', label: '推播請求記錄', desc: '推播控制台，歷史推播紀錄無法即時讀取' },
+    { icon: '🔔', label: '推播紀錄',     desc: '推播控制台，推播發送紀錄無法即時讀取' },
+    { icon: '⏰', label: '自動通知紀錄', desc: '自動排程通知系統，已發送記錄無法即時確認' },
   ];
 
-  colsEl.innerHTML = '';
-  _LOCK_FEATURE_MAP.forEach(f => {
+  const AVAIL_FEATURES = [
+    { icon: '👤', label: '成員帳號管理', desc: '查詢、新增、編輯成員資料與權限' },
+    { icon: '📊', label: '出勤紀錄',     desc: '申請出勤、查詢出勤記錄' },
+    { icon: '🚗', label: '公差申請',     desc: '公差申請與查詢' },
+    { icon: '📅', label: '定訓行事曆',   desc: '查看、管理定訓排程' },
+    { icon: '📣', label: '系統公告',     desc: '查看與發布系統公告' },
+    { icon: '🏢', label: '分隊管理',     desc: '分隊資料新增與刪除' },
+    { icon: '🔑', label: '臨時密碼',     desc: '建立成員臨時登入密碼' },
+    { icon: '✅', label: '確認任務',     desc: '上月紀錄確認作業' },
+    { icon: '🏷', label: '案由管理',     desc: '案由類別新增與刪除' },
+  ];
+
+  const makeRow = (f, locked) => {
+    const bg    = locked ? '#fdecea' : '#e8f5e9';
+    const color = locked ? '#c0392b' : '#2e7d32';
+    const sub   = locked ? '#922b21' : '#1e8449';
+    const ico   = locked ? '🔒' : '✅';
     const row = document.createElement('div');
-    row.style.cssText = `display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;` +
-      (_usageLocked ? 'background:#fdecea;' : 'background:#e8f5e9;');
+    row.style.cssText = `display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:${bg};`;
     row.innerHTML = `
-      <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">${_usageLocked ? '🔒' : '✅'}</div>
+      <div style="font-size:1rem;flex-shrink:0;margin-top:1px;">${ico}</div>
       <div>
-        <div style="font-size:0.86rem;font-weight:700;color:${_usageLocked ? '#c0392b' : '#2e7d32'};">${f.icon} ${f.label}</div>
-        <div style="font-size:0.76rem;color:${_usageLocked ? '#922b21' : '#1e8449'};margin-top:2px;">${f.desc}</div>
+        <div style="font-size:0.86rem;font-weight:700;color:${color};">${f.icon} ${f.label}</div>
+        <div style="font-size:0.76rem;color:${sub};margin-top:2px;">${f.desc}</div>
       </div>`;
-    colsEl.appendChild(row);
-  });
+    return row;
+  };
+
+  colsEl.innerHTML = '';
+  LOCKED_FEATURES.forEach(f => colsEl.appendChild(makeRow(f, true)));
+
+  if (availEl) {
+    availEl.innerHTML = '';
+    AVAIL_FEATURES.forEach(f => availEl.appendChild(makeRow(f, false)));
+  }
 }
 
 // ════════════════════════════════════════
