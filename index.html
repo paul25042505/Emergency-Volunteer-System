@@ -849,6 +849,7 @@ tr:hover td { background: #fdfcfb; }
 .duty-sub-card.active .duty-sub-card-icon { background: var(--red); }
 .duty-sub-card.active svg { stroke: white; }
 .duty-sub-card.active { color: var(--red); }
+.duty-sub-card span { display: block; line-height: 1.4; }
 .qa-item {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   flex-shrink: 0; cursor: pointer; min-width: 54px;
@@ -1373,7 +1374,8 @@ function _dlCSV(content, filename) {
       </button>
     </div>
   </div>
-  <div style="display:flex;gap:10px;padding:8px 16px 14px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
+  <div style="overflow-x:auto;scrollbar-width:none;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+    <div style="display:flex;gap:10px;padding:8px 16px 14px;">
     <button onclick="navTo('dutyOverviewPage')" id="opsSub-overview" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -1404,6 +1406,7 @@ function _dlCSV(content, filename) {
       </div>
       <span>案件查詢</span>
     </button>
+    </div>
   </div>
 </div>
 
@@ -1430,7 +1433,8 @@ function _dlCSV(content, filename) {
       </button>
     </div>
   </div>
-  <div style="display:flex;gap:10px;padding:8px 16px 14px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
+  <div style="overflow-x:auto;scrollbar-width:none;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+    <div style="display:flex;gap:10px;padding:8px 16px 14px;">
     <button onclick="navTo('membersPage')" id="manageSub-members" class="duty-sub-card active">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -1467,6 +1471,7 @@ function _dlCSV(content, filename) {
       </div>
       <span>報表匯出</span>
     </button>
+    </div>
   </div>
 </div>
 
@@ -1494,7 +1499,8 @@ function _dlCSV(content, filename) {
     </div>
   </div>
   <!-- ── 視圖切換（子選單，固定在 header 內）── -->
-  <div id="dutySubNav" style="display:flex;gap:10px;padding:8px 16px 14px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);overflow-x:auto;scrollbar-width:none;">
+  <div id="dutySubNav" style="overflow-x:auto;scrollbar-width:none;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+    <div style="display:flex;gap:10px;padding:8px 16px 14px;">
     <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card active">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
@@ -1519,6 +1525,7 @@ function _dlCSV(content, filename) {
       </div>
       <span>會議登記</span>
     </button>
+    </div>
   </div>
   <!-- ── 月份導覽（固定在 header 內，子選單下方）── -->
   <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
