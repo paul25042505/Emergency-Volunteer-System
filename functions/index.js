@@ -270,8 +270,9 @@ exports.scheduleNoSignoutReminder = onSchedule(
         .where('date', '==', today)
         .where('memberName', '==', d.memberName)
         .get();
+      const hasCheckin  = !attSnap.empty && attSnap.docs.some(doc => doc.data().checkinTime);
       const hasCheckout = !attSnap.empty && attSnap.docs.some(doc => doc.data().checkoutTime);
-      if (hasCheckout) { await _markDuped(db, dedupKey); continue; }
+      if (!hasCheckin || hasCheckout) { await _markDuped(db, dedupKey); continue; }
 
       const title = '🔔 請記得簽退';
       const body  = `您今日 ${d.end} 的班次已結束超過 1 小時，請確認是否已簽退。`;
