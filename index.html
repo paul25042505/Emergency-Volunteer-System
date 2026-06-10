@@ -13069,13 +13069,13 @@ function _renderUsageFeatureStatus() {
   panel.style.display = 'block';
 
   if (_usageLocked) {
+    stateEl.style.display = '';
     stateEl.style.background = '#fdecea'; stateEl.style.color = '#c0392b';
     stateEl.textContent = '🔒 鎖定中 — 下列功能暫時無法即時讀取';
     if (lockedSection) lockedSection.style.display = '';
     if (availTitle)    availTitle.textContent = '✅ 仍可使用的功能';
   } else {
-    stateEl.style.background = '#e8f5e9'; stateEl.style.color = '#2e7d32';
-    stateEl.textContent = '✅ 正常 — 所有功能均可即時讀取';
+    stateEl.style.display = 'none';
     if (lockedSection) lockedSection.style.display = 'none';
     if (availTitle)    availTitle.textContent = '✅ 所有功能狀態';
   }
