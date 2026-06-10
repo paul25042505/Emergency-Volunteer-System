@@ -12758,8 +12758,10 @@ async function loadAdminAnnouncements() {
       }
 
       const dateSpan = document.createElement('span');
-      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;white-space:nowrap;';
-      dateSpan.textContent = `${d.startDate||''} ～ ${d.endDate||''}`;
+      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;white-space:nowrap;text-align:right;line-height:1.6;';
+      const createdAt = d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate() : new Date(d.createdAt)) : null;
+      const sentStr = createdAt ? createdAt.toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+      dateSpan.innerHTML = `${d.startDate||''} ～ ${d.endDate||''}${sentStr ? `<br><span style="font-size:0.7rem;color:var(--text-light);">發送：${sentStr}</span>` : ''}`;
 
       head.appendChild(statusBadge); head.appendChild(typeBadges); head.appendChild(dateSpan);
 
