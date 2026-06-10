@@ -945,6 +945,32 @@ tr:hover td { background: #fdfcfb; }
   width: 7px; height: 7px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-left: auto;
 }
 
+/* ── 老花眼友善設計 ────────────────────────────────────────────────────
+   html font-size 從預設 16px 調為 18px，所有 rem 單位自動等比放大。
+   最小文字 0.72rem ≈ 13px、正文 0.88rem ≈ 16px。
+   ─────────────────────────────────────────────────────────────────── */
+html { font-size: 18px; }
+
+/* 主要操作按鈕：確保最低觸控目標 48px，字體清楚 */
+.btn-submit  { min-height: 52px !important; font-size: 1.05rem !important; }
+.btn-search  { min-height: 48px !important; font-size: 1rem   !important; }
+.btn-reset   { min-height: 48px !important; font-size: 0.95rem !important; }
+.btn-add     { min-height: 48px !important; font-size: 0.95rem !important; }
+
+/* 輸入欄位高度加大，方便點擊 */
+input:not([type=checkbox]):not([type=radio]),
+select,
+textarea { min-height: 50px !important; }
+
+/* 標籤字體稍大，避免老花看不清 */
+label { font-size: 0.9rem; }
+.stat-label  { font-size: 0.82rem; }
+.app-tab-lbl { font-size: 0.72rem !important; }
+
+/* 通知卡片正文不要太小 */
+.notice-card-title   { font-size: 0.95rem; }
+.notice-card-preview { font-size: 0.82rem; }
+
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
