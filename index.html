@@ -3608,22 +3608,17 @@ function _dlCSV(content, filename) {
         <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">配額警告測試</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">模擬不同用量狀態</div></div>
       </div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;">點擊下方按鈕模擬不同讀取用量，查看警告條與功能鎖定效果。</div>
+        <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;">點擊按鈕模擬 Firestore 讀取達 90%，確認哪些功能被鎖定無法使用。</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <button onclick="_applyUsageLock(50, 25000, 50000)" style="background:#f1c40f;color:#333;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">📊 模擬 50%（25,000 / 50,000）</button>
-          <button onclick="_applyUsageLock(70, 35000, 50000)" style="background:#e67e22;color:white;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">⚠️ 模擬 70%（35,000 / 50,000）</button>
-          <button onclick="_applyUsageLock(90, 45000, 50000)" style="background:#e74c3c;color:white;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔒 模擬 90%（45,000 / 50,000）— 功能鎖定</button>
-          <button onclick="_applyUsageLock(100, 50000, 50000)" style="background:#c0392b;color:white;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🚫 模擬 100%（50,000 / 50,000）— 全部停用</button>
-          <button onclick="_applyUsageLock(0, 0, 50000)" style="background:#2ecc71;color:white;border:none;border-radius:10px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 恢復正常</button>
+          <button onclick="_applyUsageLock(90, 45000, 50000)" style="background:#e74c3c;color:white;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔒 模擬 90%（45,000 / 50,000）— 啟動鎖定</button>
+          <button onclick="_applyUsageLock(0, 0, 50000)" style="background:#2ecc71;color:white;border:none;border-radius:10px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 恢復正常</button>
         </div>
       </div>
       <div id="_usageTestStatus" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;display:none;">
         <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:12px;">測試結果</div>
-        <div id="_usageTestLockState" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:0.88rem;font-weight:600;"></div>
-        <div style="font-size:0.82rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">受影響的 Collection：</div>
-        <div id="_usageTestCols" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
-        <div style="font-size:0.82rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">操作紀錄：</div>
-        <div id="_usageTestLog" style="font-size:0.78rem;color:var(--text-mid);background:#f8f9fa;border-radius:8px;padding:10px;max-height:120px;overflow-y:auto;white-space:pre-wrap;font-family:monospace;"></div>
+        <div id="_usageTestLockState" style="padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:0.88rem;font-weight:600;"></div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">受影響功能：</div>
+        <div id="_usageTestCols" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
     </div>
 
@@ -12993,35 +12988,40 @@ function _updateUsageTestStatus(pct, reads, quota) {
 
   const stateEl = document.getElementById('_usageTestLockState');
   const colsEl  = document.getElementById('_usageTestCols');
-  const logEl   = document.getElementById('_usageTestLog');
 
-  if (pct >= 90) {
-    stateEl.style.background = pct >= 100 ? '#fdecea' : '#fff3e0';
-    stateEl.style.color       = pct >= 100 ? '#c0392b' : '#e65100';
-    stateEl.textContent = pct >= 100
-      ? `🚫 鎖定狀態：已啟動（${pct}% — 全部停用）`
-      : `🔒 鎖定狀態：已啟動（${pct}% ≥ 90% 門檻）`;
+  if (_usageLocked) {
+    stateEl.style.background = '#fdecea';
+    stateEl.style.color      = '#c0392b';
+    stateEl.textContent      = '🔒 鎖定已啟動 — 下列功能無法即時讀取，將顯示快取或空白';
   } else {
     stateEl.style.background = '#e8f5e9';
-    stateEl.style.color       = '#2e7d32';
-    stateEl.textContent = `✅ 鎖定狀態：未啟動（${pct}% < 90% 門檻）`;
+    stateEl.style.color      = '#2e7d32';
+    stateEl.textContent      = '✅ 正常狀態 — 所有功能可正常讀取';
   }
 
-  colsEl.innerHTML = '';
-  _LOCK_COLS.forEach(col => {
-    const tag = document.createElement('span');
-    tag.style.cssText = `display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;font-family:monospace;` +
-      (_usageLocked
-        ? 'background:#fdecea;color:#c0392b;'
-        : 'background:#e8f5e9;color:#2e7d32;');
-    tag.textContent = (_usageLocked ? '🔒 ' : '✅ ') + col;
-    colsEl.appendChild(tag);
-  });
+  const _LOCK_FEATURE_MAP = [
+    { cols: ['loginLogs','loginLog'],      icon: '🔐', label: '登入紀錄',     desc: '管理員後台 → 登入紀錄，無法查詢最新資料' },
+    { cols: ['changelogs'],                icon: '📋', label: '版本紀錄',     desc: '管理員後台 → 版本紀錄，無法顯示更新說明' },
+    { cols: ['correctionRequests'],        icon: '📝', label: '修正申請',     desc: '管理員後台 → 修正申請，待審清單可能不完整' },
+    { cols: ['feedback'],                  icon: '💬', label: '意見回饋',     desc: '管理員後台 → 意見回饋，無法載入最新回饋' },
+    { cols: ['broadcastRequests'],         icon: '📢', label: '推播請求記錄', desc: '推播控制台，歷史推播紀錄無法即時讀取' },
+    { cols: ['pushLogs'],                  icon: '🔔', label: '推播紀錄',     desc: '推播控制台，推播發送紀錄無法即時讀取' },
+    { cols: ['autoNotifLog'],              icon: '⏰', label: '自動通知紀錄', desc: '自動排程通知系統，已發送記錄無法即時確認' },
+  ];
 
-  const ts = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-  const prev = logEl.textContent;
-  const line = `[${ts}] pct=${pct}%  reads=${(reads||0).toLocaleString()}  quota=${(quota||0).toLocaleString()}  _usageLocked=${_usageLocked}`;
-  logEl.textContent = line + (prev ? '\n' + prev : '');
+  colsEl.innerHTML = '';
+  _LOCK_FEATURE_MAP.forEach(f => {
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;` +
+      (_usageLocked ? 'background:#fdecea;' : 'background:#e8f5e9;');
+    row.innerHTML = `
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">${_usageLocked ? '🔒' : '✅'}</div>
+      <div>
+        <div style="font-size:0.86rem;font-weight:700;color:${_usageLocked ? '#c0392b' : '#2e7d32'};">${f.icon} ${f.label}</div>
+        <div style="font-size:0.76rem;color:${_usageLocked ? '#922b21' : '#1e8449'};margin-top:2px;">${f.desc}</div>
+      </div>`;
+    colsEl.appendChild(row);
+  });
 }
 
 // ════════════════════════════════════════
