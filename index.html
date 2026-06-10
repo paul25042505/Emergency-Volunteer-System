@@ -12752,10 +12752,18 @@ async function loadAdminAnnouncements() {
       }
 
       const dateSpan = document.createElement('span');
-      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;white-space:nowrap;text-align:right;line-height:1.6;';
-      const createdAt = d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate() : new Date(d.createdAt)) : null;
-      const sentStr = createdAt ? createdAt.toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-      dateSpan.innerHTML = `${d.startDate||''} ～ ${d.endDate||''}${sentStr ? `<br><span style="font-size:0.7rem;color:var(--text-light);">發送：${sentStr}</span>` : ''}`;
+      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-left:auto;white-space:nowrap;text-align:right;line-height:1.8;';
+      const _ts = d.createdAt;
+      let createdAt = null;
+      if (_ts) {
+        if (typeof _ts.toDate === 'function') createdAt = _ts.toDate();
+        else if (_ts.seconds) createdAt = new Date(_ts.seconds * 1000);
+        else createdAt = new Date(_ts);
+      }
+      const sentStr = createdAt && !isNaN(createdAt)
+        ? `${String(createdAt.getMonth()+1).padStart(2,'0')}/${String(createdAt.getDate()).padStart(2,'0')} ${String(createdAt.getHours()).padStart(2,'0')}:${String(createdAt.getMinutes()).padStart(2,'0')}`
+        : '';
+      dateSpan.innerHTML = `${d.startDate||''} ～ ${d.endDate||''}${sentStr ? `<br><span style="font-size:0.78rem;font-weight:600;color:#c0392b;">📤 發送：${sentStr}</span>` : ''}`;
 
       head.appendChild(statusBadge); head.appendChild(typeBadges); head.appendChild(dateSpan);
 
