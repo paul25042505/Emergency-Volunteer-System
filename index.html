@@ -10974,6 +10974,7 @@ function _buildAdminMenu() {
     { id:'adminSec-pushctrl',   icon:'🔔', label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
     { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
     { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
+    { id:'adminSec-usagetest',  icon:'🧪', label:'配額測試',   sub:'模擬不同用量狀態',   color:'#e65100', adminOnly:true },
   ];
   grid.innerHTML = items.filter(i => !i.adminOnly || isAdmin).map(i => `
     <button onclick="adminShowSection('${i.id}')" data-admin-sec="${i.id}" style="position:relative;background:white;border:1.5px solid #f0f0f0;border-radius:14px;padding:16px 12px;text-align:left;cursor:pointer;font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:block;width:100%;">
@@ -11022,7 +11023,7 @@ function _setAdminBadge(sectionId, count) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest'];
   const menuGrid = document.getElementById('adminMenuGrid');
   if (sectionId === 'menu') {
     allSecs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
