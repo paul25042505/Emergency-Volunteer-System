@@ -4490,14 +4490,6 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <!-- 出席統計 -->
-    <div id="meetingStatsWrap" style="display:none;margin-bottom:20px;">
-      <button onclick="toggleMeetingStats(this)" style="background:white;border:1px solid var(--border);border-radius:6px;padding:10px 20px;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;color:var(--text-mid);">📊 本年度出席統計</button>
-      <div id="meetingStatsPanel" style="display:none;background:white;border:1px solid var(--border);border-radius:8px;padding:18px;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <div id="meetingStatsContent"><div style="color:var(--text-light);padding:8px 0;">載入中...</div></div>
-      </div>
-    </div>
-
     <!-- 記錄列表 -->
     <div id="meetingList">
       <div class="query-empty"><span class="empty-icon">📒</span>載入中...</div>
@@ -15754,11 +15746,6 @@ async function loadMeetingPage() {
   // 顯示新增按鈕與統計按鈕（承辦人/管理員）
   const addWrap = document.getElementById('meetingAddWrap');
   if (addWrap) addWrap.style.display = '';
-  const statsWrap = document.getElementById('meetingStatsWrap');
-  if (statsWrap) statsWrap.style.display = '';
-  // 重置統計面板
-  const statsPanel = document.getElementById('meetingStatsPanel');
-  if (statsPanel) statsPanel.style.display = 'none';
 
   // 填分隊選單
   try { await loadUnits(); } catch(e) {}
