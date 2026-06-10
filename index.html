@@ -13255,48 +13255,6 @@ async function _runAutoNotifications() {
     }
   }
 
-  // ── 2. 排班前一小時通知
-  try {
-    const dutyDocs  = await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
-    const todayDuty = dutyDocs.filter(d => d.date === today);
-    for (const d of todayDuty) {
-      if (!d.start || !d.memberName) continue;
-      const [sh, sm] = d.start.split(':').map(Number);
-      const shiftStart = sh * 60 + sm;
-      const nowMin     = hour * 60 + minute;
-      if (nowMin >= shiftStart - 70 && nowMin < shiftStart - 50) {
-        const key = `duty-before1h-${today}-${d.start}-${d.memberName}`;
-        if (!sent(key)) {
-          await _autoSendPush({ title: `⏰ 備勤即將開始`, body: `${d.memberName}，您今日 ${d.start} 的備勤約 1 小時後開始，請準時到位。`, target: 'members', targetMembers: [d.memberName], key, source: 'auto-duty-before1h' });
-          await markSent(key);
-        }
-      }
-    }
-  } catch(e) {}
-
-  // ── 3. 排班結束一小時未簽退
-  try {
-    const dutyDocs  = await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
-    const attDocs   = await fbList(COL_ATTEND, 'date', 'asc').catch(() => []);
-    const todayDuty = dutyDocs.filter(d => d.date === today && d.end);
-    for (const d of todayDuty) {
-      if (!d.end || !d.memberName) continue;
-      const [eh, em] = d.end.split(':').map(Number);
-      const endMin = eh * 60 + em;
-      const nowMin = hour * 60 + minute;
-      if (nowMin >= endMin + 60 && nowMin < endMin + 70) {
-        const key = `duty-nosignout-${today}-${d.end}-${d.memberName}`;
-        if (!sent(key)) {
-          const att = attDocs.find(a => a.date === today && a.memberName === d.memberName && a.checkoutTime);
-          if (!att) {
-            await _autoSendPush({ title: `🔔 提醒簽退`, body: `${d.memberName}，您今日 ${d.end} 的備勤已結束超過一小時，請完成簽退。`, target: 'members', targetMembers: [d.memberName], key, source: 'auto-duty-nosignout' });
-            await markSent(key);
-          }
-        }
-      }
-    }
-  } catch(e) {}
-
   // ── 4. 每月20日：下個月班表開放
   if (day === 20) {
     const key = `monthly-open-${month}`;
