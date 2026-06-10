@@ -11400,6 +11400,10 @@ async function loadAdminPushCtrl() {
 async function loadLoginLog() {
   const el = document.getElementById('adminLoginLogList');
   if (!el) return;
+  if (_usageLocked) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔒</span>今日讀取配額已達 90%，登入紀錄暫時無法查詢。</div>';
+    return;
+  }
   el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
   try {
     const dateFrom = document.getElementById('loginLogFrom')?.value || '';
