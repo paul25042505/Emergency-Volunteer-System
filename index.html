@@ -6990,9 +6990,9 @@ function confirmSigFullscreen() {
     const vy = t.clientY - rect.top;
     const rotated = document.getElementById('sigFullscreenModal').classList.contains('sig-fs-rotated');
     if (rotated) {
-      // CW 90deg: convert visual → canvas coords
-      const cx = (rect.height - vy) * c.width  / rect.height;
-      const cy = vx * c.height / rect.width;
+      // CW 90deg: physicalX = vy, physicalY = elementHeight - vx
+      const cx = vy * c.width  / rect.height;
+      const cy = (rect.width - vx) * c.height / rect.width;
       return [cx, cy];
     }
     return [vx * c.width / rect.width, vy * c.height / rect.height];
@@ -8237,7 +8237,7 @@ function initAttCanvas(type) {
     const rect  = newCanvas.getBoundingClientRect();
     const w     = rect.width || (newCanvas.parentElement ? newCanvas.parentElement.getBoundingClientRect().width : 0) || 300;
     newCanvas.width  = w * ratio;
-    newCanvas.height = 160 * ratio;
+    newCanvas.height = (rect.height || 200) * ratio;
     ctx.scale(ratio, ratio);
     ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -10253,7 +10253,7 @@ function initClaimCanvas() {
   const rect   = newCanvas.getBoundingClientRect();
   const w      = rect.width || 300;
   newCanvas.width  = w * ratio;
-  newCanvas.height = 160 * ratio;
+  newCanvas.height = (rect.height || 200) * ratio;
   claimSigCtx.scale(ratio, ratio);
   claimSigCtx.strokeStyle = '#1a1a1a';
   claimSigCtx.lineWidth   = 2;
@@ -15456,7 +15456,7 @@ function easyInitCanvas(type) {
     const rect  = newCanvas.getBoundingClientRect();
     const w     = rect.width || 300;
     newCanvas.width  = w * ratio;
-    newCanvas.height = 160 * ratio;
+    newCanvas.height = (rect.height || 200) * ratio;
     ctx.scale(ratio, ratio);
     ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2.5;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
