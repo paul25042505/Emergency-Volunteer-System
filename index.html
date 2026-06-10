@@ -1465,6 +1465,12 @@ function _dlCSV(content, filename) {
       </div>
       <span>出席統計</span>
     </button>
+    <button onclick="navTo('hoursStatsPage')" id="manageSub-hoursstats" class="duty-sub-card">
+      <div class="duty-sub-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <span>時數統計</span>
+    </button>
     <button onclick="navTo('reportPage')" id="manageSub-report" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2505,6 +2511,61 @@ function _dlCSV(content, filename) {
     </div>
 
     <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- ══════ PAGE：時數統計 ══════ -->
+<div class="page" id="hoursStatsPage">
+  <div class="form-wrap" style="padding-top:16px;">
+
+    <!-- 英雄卡 -->
+    <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);border-radius:20px;padding:22px 20px 18px;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:rgba(255,255,255,0.04);border-radius:50%;pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;">時數統計</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-top:2px;">全體成員備勤時數總覽</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;">年度</label>
+          <select id="hsYear" onchange="loadHoursStats()" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:9px 12px;color:white;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;outline:none;"></select>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;">月份（留空＝全年）</label>
+          <select id="hsMonth" onchange="loadHoursStats()" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:9px 12px;color:white;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;outline:none;">
+            <option value="">全年</option>
+            <option value="01">1 月</option><option value="02">2 月</option><option value="03">3 月</option>
+            <option value="04">4 月</option><option value="05">5 月</option><option value="06">6 月</option>
+            <option value="07">7 月</option><option value="08">8 月</option><option value="09">9 月</option>
+            <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 合計卡 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:white;border-radius:14px;padding:14px 10px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div id="hsTotalHours" style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+        <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">總時數(h)</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:14px 10px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div id="hsTotalMembers" style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+        <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">參與人數</div>
+      </div>
+    </div>
+
+    <!-- 排行榜 -->
+    <div class="card" id="hsRankList">
+      <div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">請選擇年度</div>
+    </div>
+
+    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
@@ -4043,6 +4104,34 @@ function _dlCSV(content, filename) {
 <div class="page" id="profilePage">
   <div class="form-wrap">
 
+    <!-- Hero 卡片 -->
+    <div style="background:linear-gradient(135deg,#c0392b 0%,var(--red) 100%);border-radius:20px;padding:28px 20px 22px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-24px;right:-24px;width:110px;height:110px;background:rgba(255,255,255,0.06);border-radius:50%;pointer-events:none;"></div>
+      <div style="position:absolute;bottom:-30px;left:-14px;width:90px;height:90px;background:rgba(255,255,255,0.05);border-radius:50%;pointer-events:none;"></div>
+      <div id="profileAvatar" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;margin:0 auto 14px;border:3px solid rgba(255,255,255,0.35);color:white;position:relative;">?</div>
+      <div id="profileHeroName" style="font-size:1.3rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;margin-bottom:8px;letter-spacing:0.02em;">—</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+        <span id="profileHeroBadge" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:3px 14px;font-size:0.75rem;font-weight:600;color:white;">—</span>
+        <span id="profileHeroUnit" style="font-size:0.8rem;color:rgba(255,255,255,0.8);">—</span>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:white;border-radius:14px;padding:14px 6px 12px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+        <div id="profileStatMonthHours" style="font-size:1.5rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">本月時數</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:14px 6px 12px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+        <div id="profileStatYearHours" style="font-size:1.5rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">年度時數</div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:14px 6px 12px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+        <div id="profileStatYearCases" style="font-size:1.5rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+        <div style="font-size:0.6rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">年度案件</div>
+      </div>
+    </div>
+
     <!-- 上月紀錄確認區塊 -->
     <div id="profileConfirmSection" style="display:none;margin-bottom:16px;">
       <div style="background:linear-gradient(135deg,var(--red),#c0392b);border-radius:10px;padding:16px 18px;color:white;">
@@ -4204,6 +4293,18 @@ function _dlCSV(content, filename) {
     </div>
 
 
+
+    <!-- 歷年服務紀錄 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">4</div>
+        <div class="section-title">歷年服務紀錄</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card" id="profileHistoryCard">
+        <div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">載入中...</div>
+      </div>
+    </div>
 
     <div class="site-footer-placeholder"></div>
   </div>
@@ -5695,6 +5796,7 @@ async function refreshCurrentPage() {
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
     case 'gongchaPage':        await loadGongchaStats(); break;
     case 'attendStatsPage':    await loadAttendStats(); break;
+    case 'hoursStatsPage':     initHoursStatsPage(); break;
     case 'caseStatsPage':    await initCaseStatsPage(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
@@ -5878,7 +5980,7 @@ function navTo(pageId, fromHistory) {
   const isDuty   = pageId === 'dutyPage';
   const isMore   = pageId === 'morePage';
   const opsPages = ['dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage'];
-  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage','attendStatsPage'];
+  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage','attendStatsPage','hoursStatsPage'];
   const isOps    = opsPages.includes(pageId);
   const isManage = mngPages.includes(pageId);
   document.body.classList.toggle('page-home',   isHome);
@@ -5898,7 +6000,7 @@ function navTo(pageId, fromHistory) {
   }
   if (isManage) {
     document.querySelectorAll('#manageCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', attendStatsPage:'manageSub-attendstats', reportPage:'manageSub-report' };
+    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', attendStatsPage:'manageSub-attendstats', hoursStatsPage:'manageSub-hoursstats', reportPage:'manageSub-report' };
     const mb = document.getElementById(mngBtnMap[pageId]);
     if (mb) mb.classList.add('active');
   }
@@ -16328,11 +16430,24 @@ async function loadProfilePage() {
   const member = members.find(m => m.name === memberName) || {};
 
   // 填入基本資訊
+  const unitVal  = member.unit  || profile.unit  || usr.unit || '—';
+  const titleVal = member.title || profile.title || '—';
   document.getElementById('profileName').textContent  = memberName || '—';
-  document.getElementById('profileUnit').textContent  = member.unit  || profile.unit  || usr.unit || '—';
-  document.getElementById('profileTitle').textContent = member.title || profile.title || '—';
+  document.getElementById('profileUnit').textContent  = unitVal;
+  document.getElementById('profileTitle').textContent = titleVal;
   document.getElementById('profileEmail').textContent = email || '—';
   document.getElementById('profilePhone').value       = profile.phone || '';
+
+  // Hero 卡片
+  const avatarEl = document.getElementById('profileAvatar');
+  if (avatarEl) avatarEl.textContent = memberName ? memberName.charAt(0) : '?';
+  const el = id => document.getElementById(id);
+  if (el('profileHeroName')) el('profileHeroName').textContent = memberName || '—';
+  if (el('profileHeroBadge')) el('profileHeroBadge').textContent = titleVal;
+  if (el('profileHeroUnit')) el('profileHeroUnit').textContent = unitVal;
+
+  // Quick Stats + 歷年服務紀錄（背景非同步載入）
+  _loadProfileStats(memberName);
 
   // 證照
   const cert    = member.cert    || profile.cert    || '';
@@ -16388,6 +16503,69 @@ async function loadProfilePage() {
   // 編輯按鈕永遠開放，成員可隨時更新證照資訊
 }
 
+async function _loadProfileStats(memberName) {
+  if (!memberName) return;
+  const fmt = v => v % 1 === 0 ? String(v) : v.toFixed(1);
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  try {
+    await ensureFirebase();
+    const today    = new Date();
+    const monthStr = today.toISOString().substring(0, 7);
+    const yearStr  = today.toISOString().substring(0, 4);
+    const yearInt  = parseInt(yearStr);
+
+    const [attSnap, outSnap] = await Promise.all([
+      _fbDB.collection(COL_ATTEND).where('memberName', '==', memberName).get(),
+      _fbDB.collection(COL_OUTING).where('memberName', '==', memberName).get()
+    ]);
+    const allAtt = attSnap.docs.map(d => d.data());
+    const allOut = outSnap.docs.map(d => d.data());
+
+    // Quick stats
+    const monthH = allAtt.filter(r => (r.date||'').startsWith(monthStr))
+                         .reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+    const yearH  = allAtt.filter(r => (r.date||'').startsWith(yearStr))
+                         .reduce((s, r) => s + (parseFloat(r.hours)||0), 0);
+    const yearC  = allOut.filter(r => (r.date||'').startsWith(yearStr)).length;
+    set('profileStatMonthHours', fmt(monthH));
+    set('profileStatYearHours',  fmt(yearH));
+    set('profileStatYearCases',  yearC);
+
+    // 歷年服務紀錄（近4年）
+    const histCard = document.getElementById('profileHistoryCard');
+    if (!histCard) return;
+    const years = [yearInt, yearInt-1, yearInt-2, yearInt-3];
+    const rows = years.map(y => {
+      const ys  = String(y);
+      const att = allAtt.filter(r => (r.date||'').startsWith(ys));
+      const out = allOut.filter(r => (r.date||'').startsWith(ys));
+      return { year: ys, hours: att.reduce((s,r) => s+(parseFloat(r.hours)||0), 0), att: att.length, cases: out.length };
+    }).filter(d => d.hours > 0 || d.att > 0 || d.cases > 0);
+
+    if (rows.length === 0) {
+      histCard.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">暫無服務紀錄</div>';
+      return;
+    }
+    const maxH = Math.max(...rows.map(d => d.hours), 1);
+    histCard.innerHTML = rows.map((d, i) => `
+      <div style="padding:12px 2px;${i < rows.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+          <span style="font-size:0.9rem;font-weight:700;color:var(--text);">${d.year} 年</span>
+          <span style="font-size:1rem;font-weight:800;color:var(--red);">${fmt(d.hours)}<span style="font-size:0.7rem;font-weight:400;color:var(--text-light);margin-left:3px;">小時</span></span>
+        </div>
+        <div style="background:#f0f0f0;border-radius:6px;height:7px;overflow:hidden;margin-bottom:6px;">
+          <div style="background:linear-gradient(90deg,#c0392b,var(--red));border-radius:6px;height:7px;width:${Math.round(d.hours/maxH*100)}%;"></div>
+        </div>
+        <div style="display:flex;gap:16px;">
+          <span style="font-size:0.72rem;color:var(--text-light);">備勤 ${d.att} 次</span>
+          <span style="font-size:0.72rem;color:var(--text-light);">協勤 ${d.cases} 件</span>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    const histCard = document.getElementById('profileHistoryCard');
+    if (histCard) histCard.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">載入失敗</div>';
+  }
+}
 
 function profileShowCertEdit() {
   document.getElementById('profileCertView').style.display = 'none';
@@ -19270,6 +19448,84 @@ async function loadGongchaStats() {
 
 // ══════════════════════════════════════════════════════
 //  出席統計
+// ════════════════════════════════════════════════════════
+// 時數統計頁
+// ════════════════════════════════════════════════════════
+function initHoursStatsPage() {
+  const sel = document.getElementById('hsYear');
+  if (!sel || sel.options.length > 1) return;
+  const cur = new Date().getFullYear();
+  for (let y = cur; y >= cur - 4; y--) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = y + ' 年';
+    sel.appendChild(opt);
+  }
+  loadHoursStats();
+}
+
+async function loadHoursStats() {
+  const year  = document.getElementById('hsYear')?.value  || String(new Date().getFullYear());
+  const month = document.getElementById('hsMonth')?.value || '';
+  const prefix = month ? `${year}-${month}` : year;
+  const rankEl  = document.getElementById('hsRankList');
+  const totalH  = document.getElementById('hsTotalHours');
+  const totalM  = document.getElementById('hsTotalMembers');
+  if (rankEl) rankEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">載入中...</div>';
+
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_ATTEND).get();
+    const fmt = v => v % 1 === 0 ? String(v) : v.toFixed(1);
+
+    // 篩選符合期間的記錄
+    const rows = snap.docs.map(d => d.data()).filter(r => (r.date||'').startsWith(prefix));
+
+    // 依成員分組加總
+    const byMember = {};
+    rows.forEach(r => {
+      const n = r.memberName || '未知';
+      if (!byMember[n]) byMember[n] = { name: n, unit: r.unit||'', hours: 0, count: 0 };
+      byMember[n].hours += parseFloat(r.hours) || 0;
+      byMember[n].count += 1;
+    });
+
+    const sorted = Object.values(byMember).sort((a, b) => b.hours - a.hours);
+    const sumH = sorted.reduce((s, m) => s + m.hours, 0);
+
+    if (totalH) totalH.textContent = fmt(sumH);
+    if (totalM) totalM.textContent = sorted.length;
+
+    if (!rankEl) return;
+    if (sorted.length === 0) {
+      rankEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">此期間無備勤紀錄</div>';
+      return;
+    }
+
+    const maxH = Math.max(...sorted.map(m => m.hours), 1);
+    const medals = ['🥇','🥈','🥉'];
+    rankEl.innerHTML = sorted.map((m, i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 2px;${i < sorted.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
+        <div style="width:28px;text-align:center;font-size:${i < 3 ? '1.1rem' : '0.78rem'};color:var(--text-light);font-weight:700;flex-shrink:0;">${i < 3 ? medals[i] : i+1}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+            <div>
+              <span style="font-size:0.9rem;font-weight:700;color:var(--text);">${m.name}</span>
+              <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">${m.unit}</span>
+            </div>
+            <span style="font-size:0.92rem;font-weight:800;color:var(--red);flex-shrink:0;">${fmt(m.hours)}<span style="font-size:0.65rem;font-weight:400;color:var(--text-light);margin-left:2px;">h</span></span>
+          </div>
+          <div style="background:#f0f0f0;border-radius:4px;height:5px;overflow:hidden;">
+            <div style="background:linear-gradient(90deg,#c0392b,var(--red));border-radius:4px;height:5px;width:${Math.round(m.hours/maxH*100)}%;"></div>
+          </div>
+          <div style="font-size:0.68rem;color:var(--text-light);margin-top:3px;">備勤 ${m.count} 次</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    if (rankEl) rankEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">載入失敗</div>';
+  }
+}
+
 // ══════════════════════════════════════════════════════
 async function loadAttendStats() {
   const body = document.getElementById('attendStatsBody');
