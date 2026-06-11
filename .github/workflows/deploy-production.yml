@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy-pages:
     runs-on: ubuntu-latest
@@ -14,9 +18,45 @@ jobs:
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Deploy to gh-pages
-        run: git push --force origin HEAD:gh-pages
+      - name: Deploy root files to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          MAIN_COMMIT=$(git rev-parse --short HEAD)
+
+          # Save root files from main branch
+          cp index.html /tmp/deploy-index.html
+          cp firebase-messaging-sw.js /tmp/deploy-sw.js
+          cp icon-192.png /tmp/deploy-icon-192.png 2>/dev/null || true
+          cp icon-512.png /tmp/deploy-icon-512.png 2>/dev/null || true
+          cp manifest.json /tmp/deploy-manifest.json 2>/dev/null || true
+          cp firebase.json /tmp/deploy-firebase.json 2>/dev/null || true
+
+          # Switch to gh-pages branch (preserves preview/ folder)
+          git fetch origin gh-pages || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git checkout -b gh-pages origin/gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
+
+          # Copy root files from main (preview/ folder is untouched)
+          cp /tmp/deploy-index.html index.html
+          cp /tmp/deploy-sw.js firebase-messaging-sw.js
+          [ -f /tmp/deploy-icon-192.png ] && cp /tmp/deploy-icon-192.png icon-192.png
+          [ -f /tmp/deploy-icon-512.png ] && cp /tmp/deploy-icon-512.png icon-512.png
+          [ -f /tmp/deploy-manifest.json ] && cp /tmp/deploy-manifest.json manifest.json
+          [ -f /tmp/deploy-firebase.json ] && cp /tmp/deploy-firebase.json firebase.json
+
+          git add index.html firebase-messaging-sw.js icon-192.png icon-512.png manifest.json firebase.json
+          git diff --staged --quiet && echo "No changes to deploy" && exit 0
+          git commit -m "deploy: $MAIN_COMMIT"
+          git push origin gh-pages
 
   deploy-functions:
     runs-on: ubuntu-latest

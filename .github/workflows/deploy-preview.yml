@@ -10,6 +10,10 @@ on:
         required: true
         default: 'claude/ui-banking-redesign'
 
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
