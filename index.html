@@ -5092,7 +5092,7 @@ const _C = {
     members:1800, whitelist:1800,              // 成員：30 分鐘
     caseTypes:1800, units:3600,                // 案件類型/分隊：30/60 分鐘
     meetingTypes:1800, meetingLocations:1800,  // 會議類型/地點：30 分鐘
-    gongchaMissions:180, meetings:180,         // 公差/定訓：3 分鐘
+    gongchaMissions:900, meetings:900,         // 公差/定訓：15 分鐘（懶讀取，不需很短）
     settings:3600, changelog:3600,             // 設定/版本：60 分鐘
     loginLogs:120, loginLog:120,               // 登入紀錄：2 分鐘
   },
@@ -5121,16 +5121,18 @@ function _prefetchCaches() {
     ['dutySchedule'],
   ];
   const sideTargets = [
-    [COL_ANNOUNCE],
-    [COL_MEMBERS],
+    // 儀表板 todo 需要：保留 prefetch
     [COL_WHITELIST],
     [COL_ITEMS],
-    [COL_MEETING,          'date', 'desc'],
-    [COL_MEETING_EVENTS,   'date', 'desc'],
-    [COL_GONGCHA_MISSIONS, 'date', 'desc'],
-    [COL_CORRECTION],
-    [COL_CASETYPES],
-    [COL_SETTINGS],
+    [COL_MEETING,        'date', 'desc'],
+    [COL_MEETING_EVENTS, 'date', 'desc'],
+    // 以下改為懶讀取（開啟對應頁面時才觸發）
+    // COL_ANNOUNCE    → 鈴鐺有自己的 snapshot listener
+    // COL_MEMBERS     → loadMembers() 用 whitelist，此集合是備援
+    // COL_GONGCHA_MISSIONS → 只有公差頁才讀
+    // COL_CORRECTION  → dashboard 用直接 where 查詢，不走快取
+    // COL_CASETYPES   → 只有案件管理頁才讀
+    // COL_SETTINGS    → 單筆 fbGet，list prefetch 無用
   ];
   // 次要資料：靜默背景拉取（fbList 已自動快取）
   sideTargets.forEach(([col, ...args]) => { fbList(col, ...args).catch(() => {}); });
