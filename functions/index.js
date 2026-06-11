@@ -326,20 +326,26 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   }
 );
 
-// ── 每小時：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────────
+// ── 每 15 分鐘：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────
 exports.scheduleUsageMonitor = onSchedule(
-  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
+  { schedule: '*/15 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db      = getFirestore();
     const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
     const client  = new MetricServiceClient();
 
-    // 今日 00:00 UTC ~ 現在（與 Firebase 帳單計算基準一致）
-    const now  = new Date();
+    // Firebase 免費額度以太平洋時間午夜重置（PDT=UTC-7, PST=UTC-8）
+    // 計算當前太平洋時間的今日 00:00 UTC，以對齊 Firebase Console 顯示的數字
+    const now = new Date();
+    const month = now.getUTCMonth(); // 0=Jan
+    const isPDT = month >= 3 && month <= 9; // 4月~10月 PDT
+    const ptOffsetMs = (isPDT ? 7 : 8) * 3600000;
+    const ptMidnight = new Date(now.getTime() - ptOffsetMs);
+    ptMidnight.setUTCHours(0, 0, 0, 0);
+    const startOfDay = new Date(ptMidnight.getTime() + ptOffsetMs);
     const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
-    const todayUTC = now.toISOString().slice(0, 10);
-    const startOfDay = new Date(`${todayUTC}T00:00:00Z`);
 
+    const quotaPeriodSecs = Math.floor((now.getTime() - startOfDay.getTime()) / 1000);
     const [timeSeries] = await client.listTimeSeries({
       name: `projects/${project}`,
       filter: 'metric.type="firestore.googleapis.com/document/read_count"',
@@ -348,7 +354,7 @@ exports.scheduleUsageMonitor = onSchedule(
         endTime:   { seconds: Math.floor(now.getTime() / 1000) },
       },
       aggregation: {
-        alignmentPeriod: { seconds: 86400 },
+        alignmentPeriod: { seconds: quotaPeriodSecs || 86400 },
         perSeriesAligner: 'ALIGN_SUM',
         crossSeriesReducer: 'REDUCE_SUM',
         groupByFields: [],
