@@ -6489,7 +6489,33 @@ function startDashClock() {
 
 // ── 抓台中市潭子區天氣（Open-Meteo 免費 API，每 30 分鐘更新）──
 let _weatherTimer = null;
+const _WX_CACHE_KEY = 'dash_wx_v1';
+const _WX_TTL       = 30 * 60 * 1000; // 30 分鐘
+
+function _wxReadCache() {
+  try {
+    const s = localStorage.getItem(_WX_CACHE_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+function _wxWriteCache(data) {
+  try { localStorage.setItem(_WX_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+
 async function loadDashWeather() {
+  const cached = _wxReadCache();
+  // 有快取 → 立即顯示，不等網路
+  if (cached?.data) _renderDashWeather(cached.data);
+
+  const age = Date.now() - (cached?.ts || 0);
+  if (cached && age < _WX_TTL) {
+    // 快取未過期，排下次更新就好
+    clearTimeout(_weatherTimer);
+    _weatherTimer = setTimeout(loadDashWeather, _WX_TTL - age);
+    return;
+  }
+
+  // 背景 fetch（有快取時不阻塞 UI）
   try {
     const res = await fetch(
       'https://api.open-meteo.com/v1/forecast' +
@@ -6501,6 +6527,21 @@ async function loadDashWeather() {
       '&timezone=Asia%2FTaipei'
     );
     const data = await res.json();
+    _wxWriteCache(data);
+    _renderDashWeather(data);
+
+  } catch(e) {
+    if (!cached?.data) {
+      const el = document.getElementById('dashInfoWeather');
+      if (el) el.style.display = 'none';
+    }
+  }
+  clearTimeout(_weatherTimer);
+  _weatherTimer = setTimeout(loadDashWeather, 30 * 60 * 1000);
+}
+
+function _renderDashWeather(data) {
+  try {
     const c = data.current;
 
     const weatherMap = [
@@ -6619,13 +6660,7 @@ async function loadDashWeather() {
       wrap.style.display = '';
     })(data.hourly);
 
-  } catch(e) {
-    const el = document.getElementById('dashInfoWeather');
-    if (el) el.style.display = 'none';
-  }
-  // 每 30 分鐘自動更新
-  clearTimeout(_weatherTimer);
-  _weatherTimer = setTimeout(loadDashWeather, 30 * 60 * 1000);
+  } catch(e) {}
 }
 
 async function loadDashboard() {
