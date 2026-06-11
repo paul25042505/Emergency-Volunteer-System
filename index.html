@@ -4454,49 +4454,80 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<!-- ── 備勤快速新增 Modal（每日＋按鈕觸發） ── -->
-<!-- ── 備勤快速新增 Modal ── -->
-<div id="dutyQuickAddModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:72px 16px 16px;overflow-y:auto;">
-  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
-    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:4px;color:var(--text);">新增備勤</h3>
-    <div id="dutyQuickAddDate" style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;"></div>
-    <div class="field">
-      <label>分隊別 <span class="req">*</span></label>
-      <select id="qaUnit" style="width:100%;" onchange="filterQAMembers()"><option value="">請選擇分隊別</option></select>
+<!-- ── 備勤快速新增 Bottom Sheet ── -->
+<div id="dutyQuickAddModal" style="display:none;position:fixed;inset:0;z-index:400;align-items:flex-end;">
+  <div onclick="closeQuickAdd()" style="position:absolute;inset:0;background:rgba(0,0,0,0.4);"></div>
+  <div id="dutyQuickAddSheet" style="position:relative;width:100%;background:white;border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom,8px);max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0,0,1);">
+    <div style="display:flex;justify-content:center;padding:12px 0 6px;">
+      <div style="width:38px;height:4px;border-radius:2px;background:#d1d5db;"></div>
     </div>
-    <div class="field">
-      <label>義消姓名 <span class="req">*</span></label>
-      <select id="qaMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select>
+    <div style="padding:0 20px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <div>
+        <div style="font-size:1rem;font-weight:800;color:var(--text);letter-spacing:0.02em;">新增備勤</div>
+        <div id="dutyQuickAddDate" style="font-size:0.78rem;color:var(--text-mid);margin-top:3px;"></div>
+      </div>
+      <button onclick="closeQuickAdd()" style="background:#f3f4f6;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;color:var(--text-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
-    <div class="row-2">
-      <div class="field"><label>開始時間 <span class="req">*</span></label><select id="qaStart" style="width:100%;"></select></div>
-      <div class="field"><label>結束時間 <span class="req">*</span></label><select id="qaEnd" style="width:100%;"></select></div>
-    </div>
-    <div id="qaCapHint" style="display:none;margin-bottom:10px;padding:9px 12px;border-radius:6px;font-size:0.8rem;"></div>
-    <div style="display:flex;gap:10px;margin-top:8px;">
-      <button onclick="submitQuickAdd()" class="btn-search" style="flex:1;">新增備勤</button>
-      <button onclick="closeQuickAdd()" class="btn-reset">取消</button>
+    <div style="height:1px;background:#f3f4f6;margin:0 20px 16px;"></div>
+    <div style="padding:0 20px 4px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;letter-spacing:0.04em;">分隊別 <span class="req">*</span></label>
+          <select id="qaUnit" onchange="filterQAMembers()" style="width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:white;outline:none;"><option value="">請選擇</option></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;letter-spacing:0.04em;">義消姓名 <span class="req">*</span></label>
+          <select id="qaMember" style="width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:white;outline:none;"><option value="">—先選分隊—</option></select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;letter-spacing:0.04em;">開始時間 <span class="req">*</span></label>
+          <select id="qaStart" style="width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:white;outline:none;"></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;letter-spacing:0.04em;">結束時間 <span class="req">*</span></label>
+          <select id="qaEnd" style="width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:white;outline:none;"></select>
+        </div>
+      </div>
+      <div id="qaCapHint" style="display:none;margin-bottom:12px;padding:9px 12px;border-radius:8px;font-size:0.8rem;"></div>
+      <button onclick="submitQuickAdd()" style="width:100%;background:var(--red);color:white;border:none;border-radius:12px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.05em;margin-bottom:16px;">新增備勤</button>
     </div>
   </div>
 </div>
 
-<!-- ── 備勤編輯 Modal ── -->
-<div id="dutyEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:flex-start;justify-content:center;padding:72px 16px 16px;overflow-y:auto;">
-  <div style="background:white;border-radius:8px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
-    <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin-bottom:4px;color:var(--text);">編輯備勤</h3>
+<!-- ── 備勤編輯 Bottom Sheet ── -->
+<div id="dutyEditModal" style="display:none;position:fixed;inset:0;z-index:400;align-items:flex-end;">
+  <div onclick="closeDutyEdit()" style="position:absolute;inset:0;background:rgba(0,0,0,0.4);"></div>
+  <div id="dutyEditSheet" style="position:relative;width:100%;background:white;border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom,8px);max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0,0,1);">
+    <div style="display:flex;justify-content:center;padding:12px 0 6px;">
+      <div style="width:38px;height:4px;border-radius:2px;background:#d1d5db;"></div>
+    </div>
+    <div style="padding:0 20px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <div>
+        <div style="font-size:1rem;font-weight:800;color:var(--text);letter-spacing:0.02em;">編輯備勤</div>
+        <div id="editDutyInfo" style="font-size:0.78rem;color:var(--text-mid);margin-top:3px;"></div>
+      </div>
+      <button onclick="closeDutyEdit()" style="background:#f3f4f6;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:1rem;color:var(--text-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
     <input type="hidden" id="editDutyId">
-    <div id="editDutyInfo" style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;"></div>
-    <div class="row-2">
-      <div class="field"><label>開始時間 <span class="req">*</span></label><select id="editDutyStart" style="width:100%;"></select></div>
-      <div class="field"><label>結束時間 <span class="req">*</span></label><select id="editDutyEnd" style="width:100%;"></select></div>
-    </div>
-    <div id="editCapHint" style="display:none;margin-bottom:10px;padding:9px 12px;border-radius:6px;font-size:0.8rem;"></div>
-    <div style="display:flex;gap:10px;margin-top:8px;">
-      <button onclick="submitDutyEdit()" class="btn-search" style="flex:1;">儲存</button>
-      <button onclick="deleteDutyFromEdit()" style="flex:1;background:none;border:1px solid #f5c6c6;color:#b94a3a;border-radius:8px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">刪除</button>
-    </div>
-    <div style="margin-top:8px;">
-      <button onclick="closeDutyEdit()" class="btn-reset" style="width:100%;">取消</button>
+    <div style="height:1px;background:#f3f4f6;margin:0 20px 16px;"></div>
+    <div style="padding:0 20px 4px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;">開始時間 <span class="req">*</span></label>
+          <select id="editDutyStart" style="width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:white;outline:none;"></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;">結束時間 <span class="req">*</span></label>
+          <select id="editDutyEnd" style="width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:white;outline:none;"></select>
+        </div>
+      </div>
+      <div id="editCapHint" style="display:none;margin-bottom:12px;padding:9px 12px;border-radius:8px;font-size:0.8rem;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <button onclick="submitDutyEdit()" style="background:var(--red);color:white;border:none;border-radius:12px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">儲存</button>
+        <button onclick="deleteDutyFromEdit()" style="background:white;color:#b91c1c;border:1px solid #fecaca;border-radius:12px;padding:13px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">刪除</button>
+      </div>
     </div>
   </div>
 </div>
@@ -19245,11 +19276,13 @@ function openQuickAdd(dateStr) {
 
   const modal = document.getElementById('dutyQuickAddModal');
   modal.style.display = 'flex';
-  setTimeout(() => modal.querySelector('div').style.transform = 'translateY(0)', 10);
+  setTimeout(() => { document.getElementById('dutyQuickAddSheet').style.transform = 'translateY(0)'; }, 10);
 }
 
 function closeQuickAdd() {
-  document.getElementById('dutyQuickAddModal').style.display = 'none';
+  const sheet = document.getElementById('dutyQuickAddSheet');
+  if (sheet) sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => { document.getElementById('dutyQuickAddModal').style.display = 'none'; }, 290);
 }
 
 function filterQAMembers() {
@@ -19324,10 +19357,13 @@ function openDutyEdit(id, dateStr, memberName, start, end) {
   _buildTimeOptions('editDutyEnd',   7, 22, end);
   document.getElementById('editCapHint').style.display = 'none';
   document.getElementById('dutyEditModal').style.display = 'flex';
+  setTimeout(() => { document.getElementById('dutyEditSheet').style.transform = 'translateY(0)'; }, 10);
 }
 
 function closeDutyEdit() {
-  document.getElementById('dutyEditModal').style.display = 'none';
+  const sheet = document.getElementById('dutyEditSheet');
+  if (sheet) sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => { document.getElementById('dutyEditModal').style.display = 'none'; }, 290);
 }
 
 async function submitDutyEdit() {
