@@ -5086,7 +5086,7 @@ async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collecti
 // ── 本地快取（stale-while-revalidate）──
 const _C = {
   TTL: {
-    attendance:120, outingRecords:120,        // 簽到退/出勤：2 分鐘（頻繁寫入）
+    attendance:600, outingRecords:600,         // 簽到退/出勤：10 分鐘
     dutySchedule:900,                          // 排班：15 分鐘
     announcements:600, meetingEvents:300,      // 公告/會議：10/5 分鐘
     members:1800, whitelist:1800,              // 成員：30 分鐘
@@ -5112,14 +5112,23 @@ const _C = {
   invalidate(col) { try { localStorage.removeItem(this._k(col)); } catch(e) {} },
 };
 
+// 只抓最近 N 天的紀錄並存入快取（減少 document 讀取數）
+async function _prefetchRecent(col, orderField, orderDir, days) {
+  if (_C.fresh(col)) return _C.peek(col);
+  await ensureFirebase();
+  const cutoff = new Date(Date.now() - days * 86400000).toLocaleDateString('sv');
+  try {
+    let q = _fbDB.collection(col).where('date', '>=', cutoff).orderBy('date', orderDir || 'asc').limit(1000);
+    const snap = await q.get();
+    const data = snap.docs.map(d => ({id:d.id,...d.data()}));
+    _C.set(col, data);
+    return data;
+  } catch(e) { return null; }
+}
+
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
 // 回傳 Promise，等主要資料載入完畢才 resolve
 function _prefetchCaches() {
-  const mainTargets = [
-    [COL_ATTEND,   'date', 'asc'],
-    [COL_OUTING,   'date', 'asc'],
-    ['dutySchedule'],
-  ];
   const sideTargets = [
     // 儀表板 todo 需要：保留 prefetch
     [COL_WHITELIST],
@@ -5136,10 +5145,12 @@ function _prefetchCaches() {
   ];
   // 次要資料：靜默背景拉取（fbList 已自動快取）
   sideTargets.forEach(([col, ...args]) => { fbList(col, ...args).catch(() => {}); });
-  // 主要資料：等待完成後更新首頁
-  return Promise.all(
-    mainTargets.map(([col, ...args]) => fbList(col, ...args).catch(() => null))
-  ).then(([attDocs, outDocs, dutyDocs]) => {
+  // 主要資料：attendance/outing 只取近 90 天，dutySchedule 全取
+  return Promise.all([
+    _prefetchRecent(COL_ATTEND, 'date', 'asc', 90).catch(() => null),
+    _prefetchRecent(COL_OUTING, 'date', 'asc', 90).catch(() => null),
+    fbList('dutySchedule').catch(() => null),
+  ]).then(([attDocs, outDocs, dutyDocs]) => {
     if (attDocs && outDocs) {
       const today = new Date(), todayStr = today.toLocaleDateString('sv'), monthStr = todayStr.substring(0,7);
       const _me = (JSON.parse(sessionStorage.getItem('rescue_user')||'{}').memberName)||'';
