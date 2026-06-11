@@ -6602,7 +6602,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
   const myMember = (members || []).find(m => m.name === me);
   if (myMember?.certExp) {
     const diffDays = Math.floor((new Date(myMember.certExp) - Date.now()) / 86400000);
-    if (diffDays <= 30) {
+    if (diffDays <= 180) {
       const sub = diffDays < 0
         ? `憑證已於 ${myMember.certExp} 過期`
         : `還有 ${diffDays} 天到期（${myMember.certExp}）`;
