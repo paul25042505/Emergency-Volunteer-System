@@ -18920,6 +18920,8 @@ async function meetingAdminRsvp(id) {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
   function _render() {
+    const scrollEl = overlay.querySelector('[style*="overflow-y:auto"]');
+    const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
     const BtnStyle = (active, color, bg, border) =>
       `padding:6px 11px;border-radius:8px;border:1.5px solid ${active?border:'var(--border)'};background:${active?bg:'white'};color:${active?color:'var(--text-light)'};font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;`;
 
@@ -18958,6 +18960,9 @@ async function meetingAdminRsvp(id) {
           <button id="_arSave" style="width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">儲存</button>
         </div>
       </div>`;
+
+    const newScrollEl = overlay.querySelector('[style*="overflow-y:auto"]');
+    if (newScrollEl) newScrollEl.scrollTop = savedScroll;
 
     overlay.querySelector('#_arClose').onclick = () => overlay.remove();
 
