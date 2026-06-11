@@ -5145,10 +5145,10 @@ function _prefetchCaches() {
   ];
   // 次要資料：靜默背景拉取（fbList 已自動快取）
   sideTargets.forEach(([col, ...args]) => { fbList(col, ...args).catch(() => {}); });
-  // 主要資料：attendance/outing 只取近 90 天，dutySchedule 全取
+  // 主要資料：attendance/outing 只取近 30 天，dutySchedule 全取
   return Promise.all([
-    _prefetchRecent(COL_ATTEND, 'date', 'asc', 90).catch(() => null),
-    _prefetchRecent(COL_OUTING, 'date', 'asc', 90).catch(() => null),
+    _prefetchRecent(COL_ATTEND, 'date', 'asc', 30).catch(() => null),
+    _prefetchRecent(COL_OUTING, 'date', 'asc', 30).catch(() => null),
     fbList('dutySchedule').catch(() => null),
   ]).then(([attDocs, outDocs, dutyDocs]) => {
     if (attDocs && outDocs) {
