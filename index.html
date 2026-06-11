@@ -6566,16 +6566,53 @@ async function _renderDashTodo(me, attDocs, todayStr) {
   if (!card || !list) return;
 
   const items = [];
+  const su = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
 
-  const myToday = (attDocs || []).filter(r => r.memberName === me && r.date === todayStr);
-  if (myToday.some(r => r.checkinTime) && !myToday.some(r => r.checkoutTime)) {
-    items.push({ icon: '⚠️', text: '今日尚未完成簽退', bg: '#fff7ed', border: '#fed7aa', nav: 'attendancePage' });
+  // ① 未完成簽退（排班結束後才顯示）
+  const myToday    = (attDocs || []).filter(r => r.memberName === me && r.date === todayStr);
+  const hasCheckin  = myToday.some(r => r.checkinTime);
+  const hasCheckout = myToday.some(r => r.checkoutTime);
+  if (hasCheckin && !hasCheckout) {
+    const twNow      = new Date(Date.now() + 8 * 3600000);
+    const nowTimeStr = String(twNow.getUTCHours()).padStart(2,'0') + ':' + String(twNow.getUTCMinutes()).padStart(2,'0');
+    const dutyDocs   = _C.peek(COL_DUTY) || [];
+    const endPassed  = dutyDocs.some(d => d.date === todayStr && d.memberName === me && d.end && d.end <= nowTimeStr);
+    if (endPassed)
+      items.push({ em: '⏰', bg: '#fff3e0', title: '今日尚未完成簽退', sub: '排班已結束，請盡快完成簽退', nav: 'attendancePage' });
   }
 
+  // ② 物品待領取
+  const pendingItems = (allItems || []).filter(item =>
+    (item.recipients || []).some(r => r.name === me && !r.claimed)
+  );
+  if (pendingItems.length)
+    items.push({ em: '📦', bg: '#f3e8ff', title: `${pendingItems.length} 項物品待領取`, sub: pendingItems.map(i => i.itemName).join('、'), nav: 'itemsPage' });
+
+  // ③ 會議未回覆出席
+  const meetingDocs    = _C.peek(COL_MEETING_EVENTS) || [];
+  const myEmail        = su.email || '';
+  const upcomingNoReply = meetingDocs.filter(d =>
+    d.date >= todayStr && !(d.rsvp || []).some(r => r.email === myEmail)
+  );
+  if (upcomingNoReply.length)
+    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage' });
+
+  // ④ 急救憑證快到期（≤30 天）
+  const myMember = (members || []).find(m => m.name === me);
+  if (myMember?.certExp) {
+    const diffDays = Math.floor((new Date(myMember.certExp) - Date.now()) / 86400000);
+    if (diffDays <= 30) {
+      const sub = diffDays < 0
+        ? `憑證已於 ${myMember.certExp} 過期`
+        : `還有 ${diffDays} 天到期（${myMember.certExp}）`;
+      items.push({ em: '🩺', bg: '#fee2e2', title: '急救憑證即將到期', sub, nav: 'profilePage' });
+    }
+  }
+
+  // ⑤ 申請審核中　⑥ 出勤紀錄待確認
   try {
     await ensureFirebase();
-    const _su2 = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    const userUnit = _su2.unit || '';
+    const userUnit = su.unit || '';
     const [corrSnap, taskSnap] = await Promise.all([
       _fbDB.collection(COL_CORRECTION).where('memberName', '==', me).where('status', '==', 'pending').get(),
       userUnit
@@ -6583,9 +6620,8 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         : Promise.resolve({ empty: true, docs: [] }),
     ]);
     if (!corrSnap.empty)
-      items.push({ icon: '📋', text: `${corrSnap.size} 筆申請審核中`, bg: '#eff6ff', border: '#bfdbfe', nav: 'profilePage' });
+      items.push({ em: '📋', bg: '#dbeafe', title: `${corrSnap.size} 筆申請審核中`, sub: '點此查看申請進度', nav: 'profilePage' });
     if (!taskSnap.empty) {
-      // 只保留本人尚未回應的任務
       const pendingTasks = [];
       for (const doc of taskSnap.docs) {
         try {
@@ -6594,19 +6630,22 @@ async function _renderDashTodo(me, attDocs, todayStr) {
           if (!resp.exists) pendingTasks.push(doc.data().month);
         } catch(e) {}
       }
-      if (pendingTasks.length) {
-        items.push({ icon: '✅', text: `${pendingTasks.join('、')} 出勤紀錄待確認`, bg: '#f0fdf4', border: '#bbf7d0', nav: 'profilePage' });
-      }
+      if (pendingTasks.length)
+        items.push({ em: '✅', bg: '#dcfce7', title: `${pendingTasks.join('、')} 出勤紀錄待確認`, sub: '請至個人頁面確認出勤紀錄', nav: 'profilePage' });
     }
   } catch(e) {}
 
   if (!items.length) { card.style.display = 'none'; return; }
 
-  list.innerHTML = items.map(t =>
-    `<div onclick="navTo('${t.nav}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:${t.bg};border:1px solid ${t.border};cursor:pointer;" ontouchstart="">
-      <span style="font-size:0.9rem;flex:0 0 auto;">${t.icon}</span>
-      <span style="font-size:0.8rem;color:var(--text);flex:1;">${t.text}</span>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  const chevron = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  list.innerHTML = items.map((t, i) =>
+    `<div onclick="navTo('${t.nav}')" style="display:flex;align-items:center;gap:12px;padding:12px 0;${i < items.length - 1 ? 'border-bottom:1px solid #f3f4f6;' : ''}cursor:pointer;" ontouchstart="">
+      <div style="width:36px;height:36px;border-radius:10px;background:${t.bg};display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">${t.em}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);line-height:1.3;">${t.title}</div>
+        ${t.sub ? `<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.sub}</div>` : ''}
+      </div>
+      ${chevron}
     </div>`
   ).join('');
   card.style.display = '';
