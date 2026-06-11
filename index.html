@@ -18595,10 +18595,11 @@ async function renderDutyMeeting() {
       const leave  = rsvp.filter(r=>r.attend==='請假').length;
       const meat   = rsvp.filter(r=>r.food==='葷食').length;
       const veg    = rsvp.filter(r=>r.food==='素食').length;
-      const ended  = doc.date < now;
+      const ended    = doc.date < now;
+      const isLocked = !ended && !!(doc.rsvpDeadline) && new Date() > new Date(doc.rsvpDeadline);
 
-      const accentColor = ended ? '#95a5a6' : myRsvp ? '#27ae60' : '#2980b9';
-      const accentLight = ended ? '#f5f5f5' : myRsvp ? '#f0faf4' : '#eaf4ff';
+      const accentColor = ended ? '#95a5a6' : isLocked ? '#7f8c8d' : myRsvp ? '#27ae60' : '#2980b9';
+      const accentLight = ended ? '#f5f5f5' : isLocked ? '#f5f5f5' : myRsvp ? '#f0faf4' : '#eaf4ff';
 
       html += '<div style="background:white;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,0.09);margin-bottom:16px;overflow:hidden;">';
 
@@ -18617,7 +18618,7 @@ async function renderDutyMeeting() {
             + '</div>';
       html += '<div style="padding-top:2px;padding-right:'+(isAdmin?'64px':'0')+'">'
             +   '<div style="font-size:1.08rem;font-weight:800;color:white;line-height:1.3;letter-spacing:0.01em;">'+(doc.title||'（無標題）')+'</div>'
-            +   '<div style="font-size:0.72rem;color:rgba(255,255,255,0.85);margin-top:3px;">'+(doc.type||'會議')+(ended?' &nbsp;·&nbsp; 已結束':'')+'</div>'
+            +   '<div style="font-size:0.72rem;color:rgba(255,255,255,0.85);margin-top:3px;">'+(doc.type||'會議')+(ended?' &nbsp;·&nbsp; 已結束':isLocked?' &nbsp;·&nbsp; 🔒 登記已截止':doc.rsvpDeadline?' &nbsp;·&nbsp; ⏰ 截止 '+_fmtRsvpDeadline(doc.rsvpDeadline):'')+'</div>'
             + '</div>';
       html += '</div></div>';
 
@@ -18673,6 +18674,11 @@ async function renderDutyMeeting() {
       html += '<div style="padding:'+(rsvp.length?'0':'4px')+' 14px 14px;">';
       if (ended) {
         html += '<div style="background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.85rem;font-weight:600;color:#aaa;letter-spacing:0.04em;">會議已結束</div>';
+      } else if (isLocked) {
+        html += '<div style="display:flex;gap:8px;">';
+        if (isAdmin) html += '<button onclick="meetingBroadcast(\''+doc.id+'\')" style="flex:0 0 auto;background:#fff3e0;color:#e65100;border:1px solid #f0c080;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📢 廣播</button>';
+        html += '<div style="flex:1;background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.85rem;font-weight:600;color:#888;letter-spacing:0.04em;">🔒 登記已截止</div>';
+        html += '</div>';
       } else {
         html += '<div style="display:flex;gap:8px;">';
         if (isAdmin) html += '<button onclick="meetingBroadcast(\''+doc.id+'\')" style="flex:0 0 auto;background:#fff3e0;color:#e65100;border:1px solid #f0c080;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📢 廣播</button>';
@@ -18817,6 +18823,7 @@ async function meetingRsvp(id) {
   try { docs = await fbList(COL_MEETING_EVENTS); } catch(e) {}
   const doc = docs.find(d=>d.id===id);
   if (!doc) return;
+  if (doc.rsvpDeadline && new Date() > new Date(doc.rsvpDeadline)) return alert('登記截止時間已過，無法再填寫出席回覆。');
   const rsvp = doc.rsvp||[];
   const existing = rsvp.find(r=>r.email===u.email)||{};
   const overlay = document.createElement('div');
@@ -18879,6 +18886,7 @@ async function meetingUnrsvp(id) {
     const docs = await fbList(COL_MEETING_EVENTS);
     const doc = docs.find(d=>d.id===id);
     if (!doc) return;
+    if (doc.rsvpDeadline && new Date() > new Date(doc.rsvpDeadline)) return alert('登記截止時間已過，無法修改回覆。');
     const newRsvp = (doc.rsvp||[]).filter(r=>r.email!==u.email);
     await fbUpdate(COL_MEETING_EVENTS, id, {rsvp:newRsvp});
     renderDutyMeeting();
@@ -18892,6 +18900,11 @@ async function deleteMeetingEvent(id) {
 
 function _mfField(label, inputHtml) {
   return '<div><div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:4px;">' + label + '</div>' + inputHtml + '</div>';
+}
+function _fmtRsvpDeadline(dl) {
+  if (!dl) return '';
+  const d = new Date(dl);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 
 function showMeetingForm(doc) {
@@ -18925,6 +18938,7 @@ function showMeetingForm(doc) {
         return '<div style="display:flex;gap:8px;">'+mkSel('_mfTime',doc.time||'')+mkSel('_mfEndTime',doc.endTime||'')+'</div>'
           +'<div style="display:flex;gap:8px;margin-top:3px;"><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">開始</span><span style="flex:1;font-size:0.72rem;color:var(--text-light);text-align:center;">結束</span></div>';
       })())
+    + _mfField('登記截止時間 <span style="color:var(--text-light);font-weight:400;">（到時自動鎖定，不填則不限制）</span>', '<input id="_mfDeadline" type="datetime-local" value="'+(doc.rsvpDeadline||'')+'" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:9px;font-size:0.88rem;box-sizing:border-box;">')
     + '<div><div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;">地點</div>'
     +   '<div id="_mfLocTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>'
     +   '<div style="display:flex;gap:6px;">'
@@ -19112,8 +19126,9 @@ async function saveMeetingForm(editId, overlay) {
   const location = document.getElementById('_mfLocation').value.trim();
   const description = document.getElementById('_mfDesc').value.trim();
   const hasBento = !!(document.getElementById('_mfHasBento') || {checked:false}).checked;
+  const rsvpDeadline = (document.getElementById('_mfDeadline') || {}).value || '';
   if (!title||!date) return alert('請填寫標題與日期');
-  const data = {title,type,date,time,endTime,location,description,hasBento};
+  const data = {title,type,date,time,endTime,location,description,hasBento,rsvpDeadline};
   try {
     if (editId) { await fbUpdate(COL_MEETING_EVENTS,editId,data); }
     else { data.rsvp=[]; data.createdAt=new Date().toISOString(); await fbAdd(COL_MEETING_EVENTS,data); }
