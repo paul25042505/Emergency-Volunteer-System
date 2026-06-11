@@ -6585,8 +6585,18 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     if (!corrSnap.empty)
       items.push({ icon: '📋', text: `${corrSnap.size} 筆申請審核中`, bg: '#eff6ff', border: '#bfdbfe', nav: 'profilePage' });
     if (!taskSnap.empty) {
-      const months = taskSnap.docs.map(d => d.data().month).join('、');
-      items.push({ icon: '✅', text: `${months} 出勤紀錄待確認`, bg: '#f0fdf4', border: '#bbf7d0', nav: 'profilePage' });
+      // 只保留本人尚未回應的任務
+      const pendingTasks = [];
+      for (const doc of taskSnap.docs) {
+        try {
+          const resp = await _fbDB.collection('confirmTasks').doc(doc.id)
+            .collection('responses').doc(me).get();
+          if (!resp.exists) pendingTasks.push(doc.data().month);
+        } catch(e) {}
+      }
+      if (pendingTasks.length) {
+        items.push({ icon: '✅', text: `${pendingTasks.join('、')} 出勤紀錄待確認`, bg: '#f0fdf4', border: '#bbf7d0', nav: 'profilePage' });
+      }
     }
   } catch(e) {}
 
