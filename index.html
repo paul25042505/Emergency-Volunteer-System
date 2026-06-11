@@ -6207,6 +6207,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'myCorrectionsPage') _nav(loadMyCorrections);
   else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
   else if (pageId === 'attendStatsPage')   _nav(loadAttendStats);
+  else if (pageId === 'hoursStatsPage')    _nav(initHoursStatsPage);
   else if (pageId === 'caseStatsPage')     _nav(initCaseStatsPage);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
@@ -19792,13 +19793,15 @@ async function loadGongchaStats() {
 // ════════════════════════════════════════════════════════
 function initHoursStatsPage() {
   const sel = document.getElementById('hsYear');
-  if (!sel || sel.options.length > 1) return;
-  const cur = new Date().getFullYear();
-  for (let y = cur; y >= cur - 4; y--) {
-    const opt = document.createElement('option');
-    opt.value = String(y);
-    opt.textContent = y + ' 年';
-    sel.appendChild(opt);
+  if (!sel) return;
+  if (sel.options.length === 0) {
+    const cur = new Date().getFullYear();
+    for (let y = cur; y >= cur - 4; y--) {
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = y + ' 年';
+      sel.appendChild(opt);
+    }
   }
   loadHoursStats();
 }
