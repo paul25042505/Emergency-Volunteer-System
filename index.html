@@ -3041,30 +3041,25 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<!-- 領取簽名 Modal -->
-<div id="claimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:flex-start;justify-content:center;padding:72px 16px 16px;overflow-y:auto;">
-  <div style="background:white;border-radius:10px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);margin:auto;">
-    <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;" id="claimModalTitle">領取物品</div>
-    <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:20px;" id="claimModalSub"></div>
-    <div style="background:var(--warm);border-radius:5px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:var(--text-mid);">
-      領取人：<b id="claimModalName"></b>
+<!-- 領取簽名 Modal（全螢幕） -->
+<div id="claimModal" style="display:none;position:fixed;inset:0;z-index:500;background:#fff;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:52px;border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div>
+      <div style="font-size:0.97rem;font-weight:700;color:var(--text);" id="claimModalTitle">領取物品</div>
+      <div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;" id="claimModalSub"></div>
     </div>
-    <div class="field">
-      <label>領取簽名 <span class="req">*</span></label>
-      <div class="sig-wrap">
-        <canvas id="claimSigCanvas"></canvas>
-        <div class="sig-footer">
-          <span>請用滑鼠或手指於上方簽名</span>
-          <div class="sig-footer-btns">
-            <button type="button" class="btn-clear" style="flex:1;" onclick="clearClaimSig()">清除重簽</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:16px;">
-      <button onclick="submitClaim()" class="btn-search" style="flex:1;letter-spacing:0.1em;">確認領取</button>
-      <button onclick="closeClaimModal()" class="btn-reset">取消</button>
-    </div>
+    <button onclick="closeClaimModal()" style="background:rgba(0,0,0,0.06);border:none;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+  <div style="padding:8px 16px;background:#fdf5f5;border-bottom:1px solid var(--border);flex-shrink:0;font-size:0.82rem;color:var(--text-mid);">
+    領取人：<b id="claimModalName"></b>
+  </div>
+  <div style="flex:1;position:relative;background:#fafaf8;overflow:hidden;">
+    <canvas id="claimSigCanvas" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;"></canvas>
+    <div id="claimSigHint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.8rem;color:#bbb;pointer-events:none;white-space:nowrap;">請在此區域簽名</div>
+  </div>
+  <div style="display:flex;gap:10px;padding:10px 16px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;">
+    <button onclick="clearClaimSig()" style="flex:1;background:none;border:1.5px solid var(--border);border-radius:10px;padding:11px;font-size:0.9rem;cursor:pointer;color:var(--text-mid);font-family:'Noto Sans TC',sans-serif;">清除重簽</button>
+    <button id="claimSubmitBtn" onclick="submitClaim()" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:10px;padding:11px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.08em;">確認領取</button>
   </div>
 </div>
 
@@ -10398,6 +10393,12 @@ async function deleteItem(itemId, itemName) {
 
 
 // ── 領取 Modal ──
+var claimTargetItem = null;
+var claimTargetName = '';
+var claimHasSig = false;
+var claimSigCtx = null;
+var _claimScrollY = 0;
+
 function openClaimModal(itemId, memberName, itemName, note) {
   claimTargetItem = itemId;
   claimTargetName = memberName;
@@ -10405,18 +10406,16 @@ function openClaimModal(itemId, memberName, itemName, note) {
   document.getElementById('claimModalSub').textContent   = note || '';
   document.getElementById('claimModalName').textContent  = memberName;
   claimHasSig = false;
+  _claimScrollY = window.scrollY;
+  document.body.style.overflow = 'hidden';
   document.getElementById('claimModal').style.display = 'flex';
-  // 初始化簽名畫布
-  setTimeout(() => initClaimCanvas(), 100);
+  setTimeout(() => initClaimCanvas(), 80);
 }
-
-var claimTargetItem = null;
-var claimTargetName = '';
-var claimHasSig = false;
-var claimSigCtx = null;
 
 function closeClaimModal() {
   document.getElementById('claimModal').style.display = 'none';
+  document.body.style.overflow = '';
+  window.scrollTo(0, _claimScrollY);
   claimTargetItem = null;
   claimTargetName = '';
   claimHasSig = false;
@@ -10426,7 +10425,7 @@ async function submitClaim() {
   if (!claimHasSig) { alert('請先完成簽名'); return; }
   if (!claimTargetItem || !claimTargetName) { alert('資料錯誤，請重新開啟'); return; }
   const sig = document.getElementById('claimSigCanvas').toDataURL('image/png');
-  const btn = document.querySelector('#claimModal .btn-search');
+  const btn = document.getElementById('claimSubmitBtn');
   if (btn) { btn.textContent = '送出中...'; btn.disabled = true; }
   try {
     const itemDoc = await fbGet(COL_ITEMS, claimTargetItem);
@@ -10451,39 +10450,43 @@ async function submitClaim() {
 
 function initClaimCanvas() {
   const canvas = document.getElementById('claimSigCanvas');
-  const newCanvas = canvas.cloneNode(true);
+  const newCanvas = canvas.cloneNode(false);
   canvas.parentNode.replaceChild(newCanvas, canvas);
-  claimSigCtx  = newCanvas.getContext('2d');
-  claimHasSig  = false;
-  const ratio  = window.devicePixelRatio || 1;
-  const rect   = newCanvas.getBoundingClientRect();
-  const w      = rect.width || 300;
-  newCanvas.width  = w * ratio;
-  newCanvas.height = (rect.height || 200) * ratio;
+  claimHasSig = false;
+  const ratio = window.devicePixelRatio || 1;
+  newCanvas.width  = newCanvas.offsetWidth  * ratio;
+  newCanvas.height = newCanvas.offsetHeight * ratio;
+  claimSigCtx = newCanvas.getContext('2d');
   claimSigCtx.scale(ratio, ratio);
   claimSigCtx.strokeStyle = '#1a1a1a';
-  claimSigCtx.lineWidth   = 2;
+  claimSigCtx.lineWidth   = 2.5;
   claimSigCtx.lineCap     = 'round';
   claimSigCtx.lineJoin    = 'round';
+
+  const hint = document.getElementById('claimSigHint');
 
   function getPos(e) {
     const r = newCanvas.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
-    return { x: src.clientX - r.left, y: src.clientY - r.top };
+    return { x: (src.clientX - r.left) * (newCanvas.width / r.width / ratio),
+             y: (src.clientY - r.top)  * (newCanvas.height / r.height / ratio) };
   }
   let drawing = false;
-  newCanvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); });
-  newCanvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; });
+  newCanvas.addEventListener('mousedown',  e => { drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); if (hint) hint.style.display = 'none'; });
+  newCanvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; });
   newCanvas.addEventListener('mouseup',    () => drawing = false);
   newCanvas.addEventListener('mouseleave', () => drawing = false);
-  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); }, { passive: false });
+  newCanvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); claimSigCtx.beginPath(); claimSigCtx.moveTo(p.x, p.y); if (hint) hint.style.display = 'none'; }, { passive: false });
   newCanvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); claimSigCtx.lineTo(p.x, p.y); claimSigCtx.stroke(); claimHasSig = true; }, { passive: false });
   newCanvas.addEventListener('touchend',   () => drawing = false);
 }
 
 function clearClaimSig() {
-  if (claimSigCtx) claimSigCtx.clearRect(0, 0, claimSigCtx.canvas.width, claimSigCtx.canvas.height);
+  if (!claimSigCtx) return;
+  claimSigCtx.clearRect(0, 0, claimSigCtx.canvas.width / (window.devicePixelRatio||1), claimSigCtx.canvas.height / (window.devicePixelRatio||1));
   claimHasSig = false;
+  const hint = document.getElementById('claimSigHint');
+  if (hint) hint.style.display = 'block';
 }
 
 // ── 編輯領取人 Modal ──
