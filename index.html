@@ -4018,6 +4018,62 @@ function _dlCSV(content, filename) {
 </div>
 
 
+<!-- ══════ In-App Ebook Viewer ══════ -->
+<div id="ebookViewer" style="display:none;position:fixed;inset:0;background:#fff;z-index:250;flex-direction:column;">
+
+  <!-- 頂部 Header -->
+  <div style="display:flex;align-items:center;gap:4px;padding:calc(env(safe-area-inset-top,0px)+8px) 12px 8px;border-bottom:1px solid #e8e8e8;background:#fff;flex-shrink:0;">
+    <button onclick="closeEbookViewer()" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:8px;color:#555;display:flex;align-items:center;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span id="ebookViewerTitle" style="flex:1;text-align:center;font-size:0.88rem;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;"></span>
+    <button onclick="ebookShare()" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:8px;color:#555;display:flex;align-items:center;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </button>
+  </div>
+
+  <!-- 內容區（iframe + 擋住時的 overlay） -->
+  <div style="flex:1;position:relative;overflow:hidden;">
+    <iframe id="ebookFrame" style="width:100%;height:100%;border:none;" allow="fullscreen"></iframe>
+
+    <!-- 政府站擋住 iframe 時顯示 -->
+    <div id="ebookBlockedOverlay" style="display:none;position:absolute;inset:0;background:#f4f6f9;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;gap:14px;text-align:center;">
+      <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.4" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <div style="font-size:1rem;font-weight:800;color:#374151;">政府網站不支援內嵌</div>
+      <div style="font-size:0.78rem;color:#6b7280;line-height:1.6;">請點下方「瀏覽器」按鈕<br>在 Safari 開啟閱讀</div>
+      <button onclick="ebookOpenBrowser()" style="margin-top:6px;background:#1d4ed8;color:white;border:none;border-radius:12px;padding:13px 28px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;display:flex;align-items:center;gap:8px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        在 Safari 開啟
+      </button>
+    </div>
+  </div>
+
+  <!-- 底部工具列（仿 Safari） -->
+  <div style="display:flex;align-items:center;justify-content:space-around;padding:6px 8px calc(env(safe-area-inset-bottom,0px)+6px);border-top:1px solid #e8e8e8;background:#fff;flex-shrink:0;">
+    <button onclick="ebookGoBack()" style="background:none;border:none;cursor:pointer;padding:10px 14px;border-radius:10px;color:#555;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span style="font-size:0.6rem;color:#888;">返回</span>
+    </button>
+    <button onclick="ebookGoForward()" style="background:none;border:none;cursor:pointer;padding:10px 14px;border-radius:10px;color:#555;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <span style="font-size:0.6rem;color:#888;">前進</span>
+    </button>
+    <button onclick="ebookShare()" style="background:none;border:none;cursor:pointer;padding:10px 14px;border-radius:10px;color:#555;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <span style="font-size:0.6rem;color:#888;">分享</span>
+    </button>
+    <button onclick="ebookRefresh()" style="background:none;border:none;cursor:pointer;padding:10px 14px;border-radius:10px;color:#555;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <span style="font-size:0.6rem;color:#888;">重整</span>
+    </button>
+    <button onclick="ebookOpenBrowser()" style="background:none;border:none;cursor:pointer;padding:10px 14px;border-radius:10px;color:#555;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      <span style="font-size:0.6rem;color:#888;">瀏覽器</span>
+    </button>
+  </div>
+
+</div>
+
 <!-- ══════ PAGE：系統資訊 ══════ -->
 <div class="page" id="systemInfoPage">
   <div class="form-wrap" style="padding-top:16px;padding-bottom:40px;">
@@ -14080,8 +14136,80 @@ async function _removePushSubscription() {
 
 // ════════════════════════════════════════
 // ── 電子書：直接在瀏覽器開啟（政府網站封鎖 iframe）──────────
+let _ebookUrl = '';
+let _ebookBlockTimer = null;
+
 function openEbook(title, url) {
-  window.open(url, '_blank');
+  _ebookUrl = url;
+  document.getElementById('ebookViewerTitle').textContent = title;
+  document.getElementById('ebookBlockedOverlay').style.display = 'none';
+
+  const viewer = document.getElementById('ebookViewer');
+  viewer.style.display = 'flex';
+  _lockScroll();
+
+  const frame = document.getElementById('ebookFrame');
+  frame.src = url;
+
+  // Detect if iframe is blocked by X-Frame-Options:
+  // If cross-origin content loads OK, accessing contentDocument throws SecurityError.
+  // If blocked, contentDocument is accessible but body is empty.
+  clearTimeout(_ebookBlockTimer);
+  _ebookBlockTimer = setTimeout(() => {
+    try {
+      const body = frame.contentDocument && frame.contentDocument.body;
+      if (!body || body.innerHTML.trim() === '') {
+        document.getElementById('ebookBlockedOverlay').style.display = 'flex';
+      }
+    } catch(e) {
+      // SecurityError = cross-origin content loaded successfully, leave iframe visible
+    }
+  }, 2000);
+}
+
+function closeEbookViewer() {
+  clearTimeout(_ebookBlockTimer);
+  document.getElementById('ebookViewer').style.display = 'none';
+  document.getElementById('ebookFrame').src = '';
+  _unlockScroll();
+}
+
+function ebookShare() {
+  const title = document.getElementById('ebookViewerTitle').textContent;
+  if (navigator.share) {
+    navigator.share({ title, url: _ebookUrl }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(_ebookUrl).then(() => {
+      if (typeof showToast === 'function') showToast('已複製連結');
+    });
+  }
+}
+
+function ebookOpenBrowser() {
+  window.open(_ebookUrl, '_blank');
+}
+
+function ebookGoBack() {
+  try { document.getElementById('ebookFrame').contentWindow.history.back(); } catch(e) {}
+}
+
+function ebookGoForward() {
+  try { document.getElementById('ebookFrame').contentWindow.history.forward(); } catch(e) {}
+}
+
+function ebookRefresh() {
+  clearTimeout(_ebookBlockTimer);
+  const frame = document.getElementById('ebookFrame');
+  document.getElementById('ebookBlockedOverlay').style.display = 'none';
+  frame.src = frame.src;
+  _ebookBlockTimer = setTimeout(() => {
+    try {
+      const body = frame.contentDocument && frame.contentDocument.body;
+      if (!body || body.innerHTML.trim() === '') {
+        document.getElementById('ebookBlockedOverlay').style.display = 'flex';
+      }
+    } catch(e) {}
+  }, 2000);
 }
 
 // 意見回饋（改版）
