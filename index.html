@@ -1649,6 +1649,15 @@ function _dlCSV(content, filename) {
 
     </div>
 
+    <!-- 待辦提示 -->
+    <div id="dashTodoCard" style="display:none;margin-bottom:16px;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:0.9rem;">📌</span>
+        <span style="font-size:0.82rem;font-weight:700;color:var(--text);letter-spacing:0.04em;">待辦事項</span>
+      </div>
+      <div id="dashTodoList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
     <!-- 備勤統計（保留 IDs，隱藏） -->
     <div style="display:none;">
       <span id="dashMonthHours"></span><span id="dashHeroDateLine"></span>
@@ -6519,6 +6528,52 @@ async function loadDashboard() {
 
   // ③ 背景同步職稱（不阻塞任何渲染）
   _bgSyncTitle(_su).catch(() => {});
+
+  // ④ 待辦提示
+  _renderDashTodo(_me, staleAtt || [], todayStr).catch(() => {});
+}
+
+async function _renderDashTodo(me, attDocs, todayStr) {
+  if (!me) return;
+  const card = document.getElementById('dashTodoCard');
+  const list = document.getElementById('dashTodoList');
+  if (!card || !list) return;
+
+  const items = [];
+
+  const myToday = (attDocs || []).filter(r => r.memberName === me && r.date === todayStr);
+  if (myToday.some(r => r.checkinTime) && !myToday.some(r => r.checkoutTime)) {
+    items.push({ icon: '⚠️', text: '今日尚未完成簽退', bg: '#fff7ed', border: '#fed7aa', nav: 'attendancePage' });
+  }
+
+  try {
+    await ensureFirebase();
+    const _su2 = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const userUnit = _su2.unit || '';
+    const [corrSnap, taskSnap] = await Promise.all([
+      _fbDB.collection(COL_CORRECTION).where('memberName', '==', me).where('status', '==', 'pending').get(),
+      userUnit
+        ? _fbDB.collection('confirmTasks').where('unit', '==', userUnit).where('status', '==', 'active').get()
+        : Promise.resolve({ empty: true, docs: [] }),
+    ]);
+    if (!corrSnap.empty)
+      items.push({ icon: '📋', text: `${corrSnap.size} 筆申請審核中`, bg: '#eff6ff', border: '#bfdbfe', nav: 'profilePage' });
+    if (!taskSnap.empty) {
+      const months = taskSnap.docs.map(d => d.data().month).join('、');
+      items.push({ icon: '✅', text: `${months} 出勤紀錄待確認`, bg: '#f0fdf4', border: '#bbf7d0', nav: 'profilePage' });
+    }
+  } catch(e) {}
+
+  if (!items.length) { card.style.display = 'none'; return; }
+
+  list.innerHTML = items.map(t =>
+    `<div onclick="navTo('${t.nav}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:${t.bg};border:1px solid ${t.border};cursor:pointer;" ontouchstart="">
+      <span style="font-size:0.9rem;flex:0 0 auto;">${t.icon}</span>
+      <span style="font-size:0.8rem;color:var(--text);flex:1;">${t.text}</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`
+  ).join('');
+  card.style.display = '';
 }
 
 async function _bgSyncTitle(_su) {

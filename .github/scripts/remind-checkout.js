@@ -1,22 +1,18 @@
 // ══════════════════════════════════════════
 // 簽退提醒腳本
 // 每天台灣時間 22:00 執行
-// ① 明日班表提醒（LINE）
-// ② 今日未簽退提醒（LINE）
-// ③ 今日協勤統計（LINE）
-// ④ 個別 Email（未簽退者）
+// ① 個別 Email（未簽退者）
+// ② 個別推播（未簽退者）
 // ══════════════════════════════════════════
 
-const admin      = require('firebase-admin');
+const webpush   = require('web-push');
+const admin     = require('firebase-admin');
 const nodemailer = require('nodemailer');
-const https      = require('https');
 
-// ── 初始化 Firebase Admin ──
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
-// ── 設定 Gmail SMTP ──
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -25,39 +21,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ── LINE Messaging API ──
-const LINE_GROUP_ID     = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
-const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+webpush.setVapidDetails(
+  'mailto:paul25042505@gmail.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
 
-async function sendLineGroupMessage(text) {
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      to:       LINE_GROUP_ID,
-      messages: [{ type: 'text', text }],
-    });
-    const req = https.request({
-      hostname: 'api.line.me',
-      path:     '/v2/bot/message/push',
-      method:   'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`,
-      },
-    }, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode === 200) resolve(data);
-        else reject(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`));
-      });
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
-}
-
-// ── 台灣時間日期字串（offsetDays: 0=今日, 1=明日）──
 function getTWDateStr(offsetDays = 0) {
   const now = new Date();
   const tw  = new Date(now.getTime() + 8 * 60 * 60 * 1000);
@@ -70,25 +39,26 @@ function getTWDateStr(offsetDays = 0) {
 
 async function main() {
   const twHour = new Date(Date.now() + 8 * 3600000).getUTCHours();
-  // 若 GitHub Actions 延遲到隔天凌晨 0~5 點才執行，視為前一天夜間的補發
   const dateOffset = (twHour >= 0 && twHour < 6) ? -1 : 0;
-  const today    = getTWDateStr(dateOffset);
-  const tomorrow = getTWDateStr(dateOffset + 1);
+  const today = getTWDateStr(dateOffset);
 
-  console.log(`台灣時間：${twHour}:xx　日期偏移：${dateOffset}　今日：${today}　明日：${tomorrow}`);
-  console.log(`LINE_CHANNEL_ACCESS_TOKEN：${LINE_ACCESS_TOKEN ? '已設定 ✓' : '❌ 未設定！'}`);
-  if (!LINE_ACCESS_TOKEN) { console.error('❌ 缺少 LINE_CHANNEL_ACCESS_TOKEN，無法發送通知！'); process.exit(1); }
+  console.log(`台灣時間：${twHour}:xx　今日：${today}`);
 
-  // ── 讀取今日出勤紀錄 ──
   const attSnap = await db.collection('attendance')
     .where('date', '==', today)
     .get();
 
-  const allRecords    = attSnap.docs.map(d => d.data());
+  const allRecords  = attSnap.docs.map(d => d.data());
   const notCheckedOut = allRecords.filter(d => d.checkinTime && !d.checkoutTime);
-  const checkedOut    = allRecords.filter(d => d.checkinTime &&  d.checkoutTime);
 
-  // ── 讀取 whitelist（email）──
+  if (!notCheckedOut.length) {
+    console.log('今日所有人都已簽退，結束。');
+    return;
+  }
+
+  const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
+  console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
+
   const wlSnap = await db.collection('whitelist').get();
   const emailMap = {};
   wlSnap.docs.forEach(d => {
@@ -96,66 +66,14 @@ async function main() {
     if (data.memberName && data.email) emailMap[data.memberName] = data.email;
   });
 
+  const subsSnap = await db.collection('pushSubscriptions').get();
+  const subMap = {};
+  subsSnap.docs.forEach(d => {
+    const data = d.data();
+    if (data.memberName) subMap[data.memberName] = { id: d.id, ...data };
+  });
+
   const siteUrl = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
-
-  // ── 讀取明日班表 ──
-  const dutySnap = await db.collection('dutySchedule')
-    .where('date', '==', tomorrow)
-    .get();
-
-  // ── 組合單一每日通知（班表＋未簽退＋統計 → 1 則，節省配額）──
-  const sections = [];
-
-  if (!dutySnap.empty) {
-    const slots = dutySnap.docs
-      .map(d => d.data())
-      .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
-    const dutyLines = slots.map(d =>
-      `• ${d.memberName}　${d.start || '?'}～${d.end || '?'}${d.unit ? '　(' + d.unit + ')' : ''}`
-    );
-    sections.push(['📅 明日班表', `${tomorrow}`, ...dutyLines].join('\n'));
-  } else {
-    console.log(`明日（${tomorrow}）無排班，跳過班表提醒。`);
-  }
-
-  if (notCheckedOut.length) {
-    const names = notCheckedOut.map(d => d.memberName).filter(Boolean);
-    console.log(`共 ${names.length} 人尚未簽退：${names.join('、')}`);
-    sections.push(['⚠️ 未簽退提醒', ...names.map(n => `• ${n}`), '請盡快登入系統完成簽退。', siteUrl].join('\n'));
-  } else {
-    console.log('今日所有人都已簽退，不發送簽退提醒。');
-  }
-
-  if (checkedOut.length) {
-    const summaryLines = checkedOut.map(d =>
-      `• ${d.memberName}　${d.hours ?? 0}h　${d.count ?? 0}次　服務${d.service ?? 0}人`
-    );
-    sections.push(['📋 今日協勤統計', ...summaryLines].join('\n'));
-  }
-
-  if (sections.length === 0) {
-    console.log('今日無需發送任何 LINE 通知，結束。');
-  } else {
-    const combinedMsg = sections.join('\n\n') + '\n\n※ 本通知由系統自動發送，請勿回覆。';
-    try {
-      await sendLineGroupMessage(combinedMsg);
-      console.log('✅ LINE 每日通知已發送（1 則）');
-    } catch(err) {
-      const isQuota = err.message && err.message.includes('monthly limit');
-      if (isQuota) {
-        console.warn('⚠️ LINE 月度訊息配額已達上限，下個月自動重置。今日通知略過。');
-      } else {
-        console.error(`❌ LINE 通知失敗：${err.message}`);
-        process.exit(1);
-      }
-    }
-  }
-
-  // ── ④ 個別 Email（僅針對尚未簽退的人）──
-  if (!notCheckedOut.length) {
-    console.log('\n提醒完成！');
-    return;
-  }
 
   for (const rec of notCheckedOut) {
     const name  = rec.memberName || '';
@@ -198,6 +116,31 @@ async function main() {
       }
     } else {
       console.log(`  ⚠️ 無 Email 紀錄`);
+    }
+
+    const sub = subMap[name];
+    if (sub) {
+      const payload = JSON.stringify({
+        title: '⚠️ 尚未完成簽退',
+        body:  `您今日（${today}）有簽到紀錄，請盡快登入系統完成簽退`,
+        url:   siteUrl,
+        tag:   'checkout-reminder',
+      });
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload
+        );
+        console.log(`  ✅ 推播已送：${name}`);
+      } catch(err) {
+        console.log(`  ❌ 推播失敗：${err.message}`);
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await db.collection('pushSubscriptions').doc(sub.id).delete();
+          console.log(`     已移除失效訂閱`);
+        }
+      }
+    } else {
+      console.log(`  ⚠️ 無推播訂閱`);
     }
   }
 

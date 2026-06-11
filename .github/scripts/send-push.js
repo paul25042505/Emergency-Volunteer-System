@@ -1,12 +1,10 @@
 // ══════════════════════════════════════════
 // 定訓推播腳本
 // 每小時執行，依成員自訂時間推播
-// 同時發送 LINE 群組通知
 // ══════════════════════════════════════════
 
 const webpush = require('web-push');
 const admin   = require('firebase-admin');
-const https   = require('https');
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
@@ -17,37 +15,6 @@ webpush.setVapidDetails(
   process.env.VAPID_PUBLIC_KEY,
   process.env.VAPID_PRIVATE_KEY
 );
-
-const LINE_GROUP_ID     = 'C5de08dad8e68b88dcfb9a69eaca67bf7';
-const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-
-async function sendLineGroupMessage(text) {
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      to:       LINE_GROUP_ID,
-      messages: [{ type: 'text', text }],
-    });
-    const req = https.request({
-      hostname: 'api.line.me',
-      path:     '/v2/bot/message/push',
-      method:   'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`,
-      },
-    }, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode === 200) resolve(data);
-        else reject(new Error(`LINE API 錯誤 ${res.statusCode}：${data}`));
-      });
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
-}
 
 function getTWTimeInfo() {
   const now = new Date();
@@ -92,38 +59,6 @@ async function main() {
     return;
   }
 
-  // ── LINE 群組通知 ──
-  if (LINE_ACCESS_TOKEN) {
-    // 明天定訓 → 只在整點 20:00（value=20）發一次 LINE，避免每小時重複
-    if (!snapTmr.empty && currentHour === 20) {
-      const meetings = snapTmr.docs.map(d => d.data());
-      const titles   = meetings.map(m => m.topic || '定訓').join('、');
-      try {
-        await sendLineGroupMessage(
-          `🔔 明天有定訓！\n${tomorrow} ${titles}\n請準時出席，19:00 開始\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
-        );
-        console.log('✅ LINE 明天定訓通知已發送');
-      } catch(e) {
-        console.log(`❌ LINE 通知失敗：${e.message}`);
-      }
-    }
-
-    // 今天定訓 → 只在 08:00 發一次
-    if (!snapToday.empty && currentHour === 8) {
-      const meetings = snapToday.docs.map(d => d.data());
-      const titles   = meetings.map(m => m.topic || '定訓').join('、');
-      try {
-        await sendLineGroupMessage(
-          `🔔 今天有定訓！\n${today} ${titles}\n請準時出席，19:00 開始\nhttps://paul25042505.github.io/Emergency-Volunteer-System/`
-        );
-        console.log('✅ LINE 今天定訓通知已發送');
-      } catch(e) {
-        console.log(`❌ LINE 通知失敗：${e.message}`);
-      }
-    }
-  }
-
-  // ── 個別推播 ──
   const subsSnap = await db.collection('pushSubscriptions').get();
   if (subsSnap.empty) { console.log('沒有訂閱記錄。'); return; }
 
