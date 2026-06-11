@@ -18674,17 +18674,19 @@ async function renderDutyMeeting() {
       }
 
       // ══ 行動按鈕 ══
+      const adminFillBtn = isAdmin ? '<button onclick="meetingAdminRsvp(\''+doc.id+'\')" style="flex:0 0 auto;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📝 代填</button>' : '';
       html += '<div style="padding:'+(rsvp.length?'0':'4px')+' 14px 14px;">';
+      html += '<div style="display:flex;gap:8px;">';
       if (ended) {
-        html += '<div style="background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.85rem;font-weight:600;color:#aaa;letter-spacing:0.04em;">會議已結束</div>';
+        html += adminFillBtn;
+        html += '<div style="flex:1;background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.85rem;font-weight:600;color:#aaa;letter-spacing:0.04em;">會議已結束</div>';
       } else if (isLocked) {
-        html += '<div style="display:flex;gap:8px;">';
         if (isAdmin) html += '<button onclick="meetingBroadcast(\''+doc.id+'\')" style="flex:0 0 auto;background:#fff3e0;color:#e65100;border:1px solid #f0c080;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📢 廣播</button>';
+        html += adminFillBtn;
         html += '<div style="flex:1;background:#f5f5f5;border-radius:10px;padding:11px;text-align:center;font-size:0.85rem;font-weight:600;color:#888;letter-spacing:0.04em;">🔒 登記已截止</div>';
-        html += '</div>';
       } else {
-        html += '<div style="display:flex;gap:8px;">';
         if (isAdmin) html += '<button onclick="meetingBroadcast(\''+doc.id+'\')" style="flex:0 0 auto;background:#fff3e0;color:#e65100;border:1px solid #f0c080;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📢 廣播</button>';
+        html += adminFillBtn;
         if (myRsvp) {
           html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="flex:1;background:#f0faf4;color:#27ae60;border:1.5px solid #b7ebc8;border-radius:10px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'
                 + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>已回覆（修改）</button>';
@@ -18693,8 +18695,8 @@ async function renderDutyMeeting() {
           html += '<button onclick="meetingRsvp(\''+doc.id+'\')" style="flex:1;background:var(--red);color:white;border:none;border-radius:10px;padding:12px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'
                 + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>填寫出席回覆</button>';
         }
-        html += '</div>';
       }
+      html += '</div>';
       html += '</div>';
 
       html += '</div>';
@@ -18894,6 +18896,106 @@ async function meetingUnrsvp(id) {
     await fbUpdate(COL_MEETING_EVENTS, id, {rsvp:newRsvp});
     renderDutyMeeting();
   } catch(e) { alert('取消失敗：'+e.message); }
+}
+
+async function meetingAdminRsvp(id) {
+  const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  if (!u.isAdmin && !u.isOfficer) return;
+
+  let docs = [];
+  try { docs = await fbList(COL_MEETING_EVENTS); } catch(e) {}
+  const doc = docs.find(d => d.id === id);
+  if (!doc) return;
+
+  await loadMembers();
+  const userUnit = u.unit || '';
+  const relevant = (u.isAdmin ? members : members.filter(m => (m.unit||'') === userUnit))
+    .filter(m => m.title !== '分隊承辦人');
+
+  let rsvp = [...(doc.rsvp || [])];
+  const hasBento = !!doc.hasBento;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.4);';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  function _render() {
+    const BtnStyle = (active, color, bg, border) =>
+      `padding:6px 11px;border-radius:8px;border:1.5px solid ${active?border:'var(--border)'};background:${active?bg:'white'};color:${active?color:'var(--text-light)'};font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;`;
+
+    overlay.innerHTML = `
+      <div style="background:white;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 32px rgba(0,0,0,0.15);">
+        <div style="padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <div>
+            <div style="font-size:0.95rem;font-weight:700;color:var(--text);">📝 代填出席 — ${doc.title||''}</div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">${doc.date||''}</div>
+          </div>
+          <button id="_arClose" style="background:rgba(0,0,0,0.06);border:none;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="overflow-y:auto;flex:1;">
+          ${relevant.map(m => {
+            const r = rsvp.find(r => r.name === m.name);
+            const att = r ? r.attend : null;
+            const food = r ? (r.food||'') : '';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f4f4f4;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${m.name}</div>
+                <div style="font-size:0.68rem;color:var(--text-light);">${m.title||''}${m.unit?' · '+m.unit:''}</div>
+              </div>
+              <div style="display:flex;gap:5px;align-items:center;">
+                <button data-n="${m.name}" data-a="出席" style="${BtnStyle(att==='出席','#27ae60','#f0faf4','#b7ebc8')}">出席</button>
+                <button data-n="${m.name}" data-a="請假" style="${BtnStyle(att==='請假','#e67e22','#fff8f0','#f0c080')}">請假</button>
+                ${att ? `<button data-n="${m.name}" data-a="" style="padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:white;color:#bbb;font-size:0.78rem;cursor:pointer;" title="清除">✕</button>` : ''}
+              </div>
+              ${hasBento && att === '出席' ? `<div style="display:flex;gap:4px;">
+                <button data-n="${m.name}" data-f="葷食" style="${BtnStyle(food==='葷食','#5d4037','#efebe9','#bcaaa4')}">葷</button>
+                <button data-n="${m.name}" data-f="素食" style="${BtnStyle(food==='素食','#2e7d32','#e8f5e9','#a5d6a7')}">素</button>
+              </div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;">
+          <button id="_arSave" style="width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">儲存</button>
+        </div>
+      </div>`;
+
+    overlay.querySelector('#_arClose').onclick = () => overlay.remove();
+
+    overlay.querySelectorAll('button[data-n][data-a]').forEach(btn => {
+      btn.onclick = () => {
+        const name = btn.dataset.n, attend = btn.dataset.a;
+        const member = relevant.find(m => m.name === name);
+        if (attend) {
+          const idx = rsvp.findIndex(r => r.name === name);
+          const entry = { name, email: member?.email||'', unit: member?.unit||'', attend, food: rsvp[idx]?.food||'' };
+          if (idx >= 0) rsvp[idx] = entry; else rsvp.push(entry);
+        } else {
+          rsvp = rsvp.filter(r => r.name !== name);
+        }
+        _render();
+      };
+    });
+
+    overlay.querySelectorAll('button[data-n][data-f]').forEach(btn => {
+      btn.onclick = () => {
+        const name = btn.dataset.n, food = btn.dataset.f;
+        const idx = rsvp.findIndex(r => r.name === name);
+        if (idx >= 0) rsvp[idx] = { ...rsvp[idx], food };
+        _render();
+      };
+    });
+
+    overlay.querySelector('#_arSave').onclick = async () => {
+      try {
+        await fbUpdate(COL_MEETING_EVENTS, id, { rsvp });
+        overlay.remove();
+        renderDutyMeeting();
+      } catch(e) { alert('儲存失敗：' + e.message); }
+    };
+  }
+
+  _render();
+  document.body.appendChild(overlay);
 }
 
 async function deleteMeetingEvent(id) {
