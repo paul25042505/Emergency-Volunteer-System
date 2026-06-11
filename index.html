@@ -4457,7 +4457,7 @@ function _dlCSV(content, filename) {
 <!-- ── 備勤快速新增 Bottom Sheet ── -->
 <div id="dutyQuickAddModal" style="display:none;position:fixed;inset:0;z-index:400;align-items:flex-end;">
   <div onclick="closeQuickAdd()" style="position:absolute;inset:0;background:rgba(0,0,0,0.4);"></div>
-  <div id="dutyQuickAddSheet" style="position:relative;width:100%;background:white;border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom,8px);max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0,0,1);">
+  <div id="dutyQuickAddSheet" style="position:relative;width:100%;background:white;border-radius:20px 20px 0 0;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0,0,1);">
     <div style="display:flex;justify-content:center;padding:12px 0 6px;">
       <div style="width:38px;height:4px;border-radius:2px;background:#d1d5db;"></div>
     </div>
@@ -4491,7 +4491,7 @@ function _dlCSV(content, filename) {
         </div>
       </div>
       <div id="qaCapHint" style="display:none;margin-bottom:12px;padding:9px 12px;border-radius:8px;font-size:0.8rem;"></div>
-      <button onclick="submitQuickAdd()" style="width:100%;background:var(--red);color:white;border:none;border-radius:12px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.05em;margin-bottom:16px;">新增備勤</button>
+      <button onclick="submitQuickAdd()" style="width:100%;background:var(--red);color:white;border:none;border-radius:12px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.05em;">新增備勤</button>
     </div>
   </div>
 </div>
@@ -4499,7 +4499,7 @@ function _dlCSV(content, filename) {
 <!-- ── 備勤編輯 Bottom Sheet ── -->
 <div id="dutyEditModal" style="display:none;position:fixed;inset:0;z-index:400;align-items:flex-end;">
   <div onclick="closeDutyEdit()" style="position:absolute;inset:0;background:rgba(0,0,0,0.4);"></div>
-  <div id="dutyEditSheet" style="position:relative;width:100%;background:white;border-radius:20px 20px 0 0;padding-bottom:env(safe-area-inset-bottom,8px);max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0,0,1);">
+  <div id="dutyEditSheet" style="position:relative;width:100%;background:white;border-radius:20px 20px 0 0;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);max-height:80vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0,0,1);">
     <div style="display:flex;justify-content:center;padding:12px 0 6px;">
       <div style="width:38px;height:4px;border-radius:2px;background:#d1d5db;"></div>
     </div>
