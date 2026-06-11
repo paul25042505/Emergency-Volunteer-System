@@ -3907,48 +3907,122 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div id="referenceList" style="padding:0 16px;display:flex;flex-direction:column;gap:12px;">
+    <div id="referenceList" style="padding:0 16px;display:flex;flex-direction:column;gap:16px;">
 
-      <!-- 書卡 1 -->
-      <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
-        <div style="height:5px;background:linear-gradient(90deg,#1b5e20,#4caf50);"></div>
-        <div style="padding:16px 16px 14px;">
-          <div style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:44px;height:54px;background:linear-gradient(160deg,#1b5e20,#2e7d32);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(27,94,32,0.3);">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <!-- 書架排列 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;">
+
+        <!-- ── 書本 1：救護技術員教科書 ── -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div onclick="openEbook('救護技術員教科書','https://ebook.nfa.gov.tw/1140527/mobile/index.html')"
+               style="cursor:pointer;border-radius:8px;box-shadow:5px 5px 18px rgba(0,0,0,0.22);overflow:hidden;transform:perspective(400px) rotateY(-2deg);"
+               ontouchstart="this.style.transform='perspective(400px) rotateY(-2deg) scale(0.97)'"
+               ontouchend="this.style.transform='perspective(400px) rotateY(-2deg)'">
+            <!-- 書本體 -->
+            <div style="display:flex;height:260px;">
+              <!-- 書脊 -->
+              <div style="width:14px;background:linear-gradient(180deg,#4a0000 0%,#7f0000 50%,#5c0000 100%);flex-shrink:0;box-shadow:inset -2px 0 4px rgba(0,0,0,0.3);"></div>
+              <!-- 封面 -->
+              <div style="flex:1;background:linear-gradient(165deg,#7f0000 0%,#b71c1c 45%,#e53935 100%);padding:12px 10px 10px;display:flex;flex-direction:column;position:relative;overflow:hidden;">
+                <!-- 裝飾圓 -->
+                <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;"></div>
+                <div style="position:absolute;bottom:10px;left:-8px;width:60px;height:60px;border-radius:50%;background:rgba(0,0,0,0.12);pointer-events:none;"></div>
+                <!-- 政府徽章 -->
+                <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <span style="font-size:0.5rem;color:rgba(255,255,255,0.75);font-weight:700;letter-spacing:0.05em;">內政部消防署</span>
+                </div>
+                <!-- 主標題 -->
+                <div style="font-size:1.05rem;font-weight:900;color:white;line-height:1.25;font-family:'Noto Serif TC',serif;letter-spacing:0.06em;text-shadow:0 2px 6px rgba(0,0,0,0.35);">救護<br>技術員<br>教科書</div>
+                <!-- 圖示格 -->
+                <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;">
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  </div>
+                </div>
+                <!-- 年版 -->
+                <div style="margin-top:7px;font-size:0.52rem;color:rgba(255,255,255,0.5);letter-spacing:0.04em;text-align:right;">民國 114 年版</div>
+              </div>
             </div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:0.92rem;font-weight:800;color:var(--text);line-height:1.35;margin-bottom:4px;">救護技術員教科書</div>
-              <div style="font-size:0.72rem;color:var(--text-light);line-height:1.5;">消防署／民國 114 年版<br>EMT 基礎救護完整教材</div>
-            </div>
+            <!-- 書底光澤 -->
+            <div style="height:6px;background:linear-gradient(90deg,#3a0000 0%,#b71c1c 15%,#ef9a9a 50%,#b71c1c 85%,#3a0000 100%);"></div>
           </div>
-          <button onclick="openEbook('救護技術員教科書','https://ebook.nfa.gov.tw/1140527/mobile/index.html')" style="margin-top:14px;width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            開啟閱讀
-          </button>
-        </div>
-      </div>
-
-      <!-- 書卡 2 -->
-      <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
-        <div style="height:5px;background:linear-gradient(90deg,#0d47a1,#1976d2);"></div>
-        <div style="padding:16px 16px 14px;">
-          <div style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:44px;height:54px;background:linear-gradient(160deg,#0d47a1,#1565c0);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(13,71,161,0.3);">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            </div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:0.92rem;font-weight:800;color:var(--text);line-height:1.35;margin-bottom:4px;">教學用緊急醫療救護<br>單項技術操作手冊</div>
-              <div style="font-size:0.72rem;color:var(--text-light);line-height:1.5;">消防署／民國 114 年版<br>各項急救技術分項操作說明</div>
-            </div>
+          <!-- 書名 -->
+          <div style="text-align:center;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text);line-height:1.35;">救護技術員教科書</div>
+            <div style="font-size:0.62rem;color:var(--text-light);margin-top:2px;">點封面開啟 ↗</div>
           </div>
-          <button onclick="openEbook('緊急醫療救護操作手冊','https://ebook.nfa.gov.tw/1140526/mobile/index.html')" style="margin-top:14px;width:100%;background:linear-gradient(135deg,#0d47a1,#1565c0);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            開啟閱讀
-          </button>
         </div>
-      </div>
 
+        <!-- ── 書本 2：緊急醫療救護操作手冊 ── -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div onclick="openEbook('緊急醫療救護操作手冊','https://ebook.nfa.gov.tw/1140526/mobile/index.html')"
+               style="cursor:pointer;border-radius:8px;box-shadow:5px 5px 18px rgba(0,0,0,0.22);overflow:hidden;transform:perspective(400px) rotateY(-2deg);"
+               ontouchstart="this.style.transform='perspective(400px) rotateY(-2deg) scale(0.97)'"
+               ontouchend="this.style.transform='perspective(400px) rotateY(-2deg)'">
+            <div style="display:flex;height:260px;">
+              <!-- 書脊 -->
+              <div style="width:14px;background:linear-gradient(180deg,#01184a 0%,#0d47a1 50%,#01184a 100%);flex-shrink:0;box-shadow:inset -2px 0 4px rgba(0,0,0,0.3);"></div>
+              <!-- 封面 -->
+              <div style="flex:1;background:linear-gradient(165deg,#0a1628 0%,#0d47a1 50%,#1976d2 100%);padding:12px 10px 10px;display:flex;flex-direction:column;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.05);pointer-events:none;"></div>
+                <div style="position:absolute;bottom:10px;left:-8px;width:60px;height:60px;border-radius:50%;background:rgba(0,0,0,0.12);pointer-events:none;"></div>
+                <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <span style="font-size:0.5rem;color:rgba(255,255,255,0.75);font-weight:700;letter-spacing:0.05em;">內政部消防署</span>
+                </div>
+                <div style="font-size:0.95rem;font-weight:900;color:white;line-height:1.25;font-family:'Noto Serif TC',serif;letter-spacing:0.06em;text-shadow:0 2px 6px rgba(0,0,0,0.4);">緊急醫療<br>救護單項<br>技術操作<br>手冊</div>
+                <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;">
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.14);border-radius:4px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                </div>
+                <div style="margin-top:7px;font-size:0.52rem;color:rgba(255,255,255,0.5);letter-spacing:0.04em;text-align:right;">民國 114 年版</div>
+              </div>
+            </div>
+            <div style="height:6px;background:linear-gradient(90deg,#010f2e 0%,#0d47a1 15%,#90caf9 50%,#0d47a1 85%,#010f2e 100%);"></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text);line-height:1.35;">緊急醫療救護<br>單項技術操作手冊</div>
+            <div style="font-size:0.62rem;color:var(--text-light);margin-top:2px;">點封面開啟 ↗</div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <div class="site-footer-placeholder"></div>
