@@ -3907,16 +3907,68 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <div id="referenceList" style="background:white;">
-      <div style="padding:60px 20px;text-align:center;color:var(--text-light);">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <div style="font-size:0.88rem;font-weight:600;color:var(--text-mid);">尚無文件</div>
-        <div style="font-size:0.75rem;margin-top:4px;">管理員上傳後即可在此查閱</div>
+    <div id="referenceList" style="padding:0 16px;display:flex;flex-direction:column;gap:12px;">
+
+      <!-- 書卡 1 -->
+      <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
+        <div style="height:5px;background:linear-gradient(90deg,#1b5e20,#4caf50);"></div>
+        <div style="padding:16px 16px 14px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:44px;height:54px;background:linear-gradient(160deg,#1b5e20,#2e7d32);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(27,94,32,0.3);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:0.92rem;font-weight:800;color:var(--text);line-height:1.35;margin-bottom:4px;">救護技術員教科書</div>
+              <div style="font-size:0.72rem;color:var(--text-light);line-height:1.5;">消防署／民國 114 年版<br>EMT 基礎救護完整教材</div>
+            </div>
+          </div>
+          <button onclick="openEbook('救護技術員教科書','https://ebook.nfa.gov.tw/1140527/mobile/index.html')" style="margin-top:14px;width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            開啟閱讀
+          </button>
+        </div>
       </div>
+
+      <!-- 書卡 2 -->
+      <div style="background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
+        <div style="height:5px;background:linear-gradient(90deg,#0d47a1,#1976d2);"></div>
+        <div style="padding:16px 16px 14px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:44px;height:54px;background:linear-gradient(160deg,#0d47a1,#1565c0);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(13,71,161,0.3);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:0.92rem;font-weight:800;color:var(--text);line-height:1.35;margin-bottom:4px;">教學用緊急醫療救護<br>單項技術操作手冊</div>
+              <div style="font-size:0.72rem;color:var(--text-light);line-height:1.5;">消防署／民國 114 年版<br>各項急救技術分項操作說明</div>
+            </div>
+          </div>
+          <button onclick="openEbook('緊急醫療救護操作手冊','https://ebook.nfa.gov.tw/1140526/mobile/index.html')" style="margin-top:14px;width:100%;background:linear-gradient(135deg,#0d47a1,#1565c0);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            開啟閱讀
+          </button>
+        </div>
+      </div>
+
     </div>
 
     <div class="site-footer-placeholder"></div>
   </div>
+</div>
+
+<!-- ══════ 電子書全螢幕閱讀器 ══════ -->
+<div id="ebookOverlay" style="display:none;position:fixed;inset:0;z-index:500;flex-direction:column;background:#1a1a1a;">
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(env(safe-area-inset-top,0px)+10px);background:#1a1a1a;flex-shrink:0;">
+    <button onclick="closeEbook()" style="background:rgba(255,255,255,0.12);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      返回
+    </button>
+    <div id="ebookTitle" style="flex:1;font-size:0.88rem;font-weight:700;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+    <button onclick="openEbookExternal()" style="background:rgba(255,255,255,0.12);border:none;border-radius:8px;padding:8px 12px;color:rgba(255,255,255,0.8);font-size:0.78rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;flex-shrink:0;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      瀏覽器
+    </button>
+  </div>
+  <iframe id="ebookFrame" src="" style="flex:1;width:100%;border:none;background:white;" allow="fullscreen"></iframe>
 </div>
 
 <!-- ══════ PAGE：系統資訊 ══════ -->
@@ -13980,6 +14032,26 @@ async function _removePushSubscription() {
 }
 
 // ════════════════════════════════════════
+// ── 電子書閱讀器 ──────────────────────────────────────────
+let _ebookUrl = '';
+function openEbook(title, url) {
+  _ebookUrl = url;
+  document.getElementById('ebookTitle').textContent = title;
+  document.getElementById('ebookFrame').src = url;
+  const overlay = document.getElementById('ebookOverlay');
+  overlay.style.display = 'flex';
+  _lockScroll();
+}
+function closeEbook() {
+  const overlay = document.getElementById('ebookOverlay');
+  overlay.style.display = 'none';
+  document.getElementById('ebookFrame').src = '';
+  _unlockScroll();
+}
+function openEbookExternal() {
+  if (_ebookUrl) window.open(_ebookUrl, '_blank');
+}
+
 // 意見回饋（改版）
 // ════════════════════════════════════════
 function _initMorePage() {
