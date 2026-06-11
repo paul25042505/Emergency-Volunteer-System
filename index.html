@@ -5087,7 +5087,7 @@ async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collecti
 const _C = {
   TTL: {
     attendance:120, outingRecords:120,        // 簽到退/出勤：2 分鐘（頻繁寫入）
-    dutySchedule:300,                          // 排班：5 分鐘
+    dutySchedule:900,                          // 排班：15 分鐘
     announcements:600, meetingEvents:300,      // 公告/會議：10/5 分鐘
     members:1800, whitelist:1800,              // 成員：30 分鐘
     caseTypes:1800, units:3600,                // 案件類型/分隊：30/60 分鐘

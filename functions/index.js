@@ -533,37 +533,4 @@ async function _sendMulticast(tokens, notification) {
   return summary;
 }
 
-// ── 一次性清理：移除錯誤成員名稱 ─────────────────────────────────────────
-exports.removeGhostMember = onRequest(
-  { region: REGION },
-  async (req, res) => {
-    if (req.query.key !== 'remove-ghost-once') return res.status(403).send('forbidden');
-    const db = getFirestore();
-    const ghostName = '呂宥宥';
-    const results = [];
-
-    // 1. meetingRecords — 從 attendees 陣列移除
-    const mrSnap = await db.collection('meetingRecords').get();
-    for (const doc of mrSnap.docs) {
-      const attendees = doc.data().attendees || [];
-      if (attendees.includes(ghostName)) {
-        await doc.ref.update({ attendees: attendees.filter(n => n !== ghostName) });
-        results.push(`meetingRecords/${doc.id}: removed from attendees`);
-      }
-    }
-
-    // 2. meetingEvents — 從 rsvp 陣列移除
-    const meSnap = await db.collection('meetingEvents').get();
-    for (const doc of meSnap.docs) {
-      const rsvp = doc.data().rsvp || [];
-      const filtered = rsvp.filter(r => r.name !== ghostName);
-      if (filtered.length !== rsvp.length) {
-        await doc.ref.update({ rsvp: filtered });
-        results.push(`meetingEvents/${doc.id}: removed from rsvp`);
-      }
-    }
-
-    res.json({ ok: true, fixed: results });
-  }
-);
 
