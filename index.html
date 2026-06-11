@@ -1465,12 +1465,7 @@ function _dlCSV(content, filename) {
       </div>
       <span>出席統計</span>
     </button>
-    <button onclick="navTo('hoursStatsPage')" id="manageSub-hoursstats" class="duty-sub-card">
-      <div class="duty-sub-card-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-      <span>時數統計</span>
-    </button>
+
     <button onclick="navTo('reportPage')" id="manageSub-report" class="duty-sub-card">
       <div class="duty-sub-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2508,61 +2503,6 @@ function _dlCSV(content, filename) {
     </div>
 
     <div style="height:20px;"></div>
-  </div>
-</div>
-
-<!-- ══════ PAGE：時數統計 ══════ -->
-<div class="page" id="hoursStatsPage">
-  <div class="form-wrap" style="padding-top:16px;">
-
-    <!-- 英雄卡 -->
-    <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);border-radius:20px;padding:22px 20px 18px;margin-bottom:16px;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:rgba(255,255,255,0.04);border-radius:50%;pointer-events:none;"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div>
-          <div style="font-size:1.05rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;">時數統計</div>
-          <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-top:2px;">全體成員備勤時數總覽</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:0;">
-          <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;">年度</label>
-          <select id="hsYear" onchange="loadHoursStats()" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:9px 12px;color:white;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;outline:none;"></select>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <label style="display:block;font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;">月份（留空＝全年）</label>
-          <select id="hsMonth" onchange="loadHoursStats()" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:9px 12px;color:white;font-size:0.88rem;font-family:'Noto Sans TC',sans-serif;outline:none;">
-            <option value="">全年</option>
-            <option value="01">1 月</option><option value="02">2 月</option><option value="03">3 月</option>
-            <option value="04">4 月</option><option value="05">5 月</option><option value="06">6 月</option>
-            <option value="07">7 月</option><option value="08">8 月</option><option value="09">9 月</option>
-            <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- 合計卡 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-      <div style="background:white;border-radius:14px;padding:14px 10px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <div id="hsTotalHours" style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
-        <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">總時數(h)</div>
-      </div>
-      <div style="background:white;border-radius:14px;padding:14px 10px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <div id="hsTotalMembers" style="font-size:1.6rem;font-weight:800;color:var(--red);font-family:'Noto Serif TC',serif;line-height:1;">—</div>
-        <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.04em;margin-top:5px;">參與人數</div>
-      </div>
-    </div>
-
-    <!-- 排行榜 -->
-    <div class="card" id="hsRankList">
-      <div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">請選擇年度</div>
-    </div>
-
-    <div class="site-footer-placeholder"></div>
   </div>
 </div>
 
@@ -5918,7 +5858,7 @@ async function refreshCurrentPage() {
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
     case 'gongchaPage':        await loadGongchaStats(); break;
     case 'attendStatsPage':    await loadAttendStats(); break;
-    case 'hoursStatsPage':     initHoursStatsPage(); break;
+
     case 'caseStatsPage':    await initCaseStatsPage(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'adminPage':       await initAdminPage(); break;
@@ -6025,7 +5965,7 @@ const _tabForPage = {
   dutyPage:           'schedule',
   myCorrectionsPage:  'more',   reportPage:         'manage',
   statsPage:          'manage', gongchaPage:        'manage',
-  caseStatsPage:      'manage', attendStatsPage:    'manage', hoursStatsPage: 'manage',
+  caseStatsPage:      'manage', attendStatsPage:    'manage',
   morePage:           'more',
   feedbackPage:       'more',   meetingPage:        'more',
   adminPage:          'more',
@@ -6103,7 +6043,7 @@ function navTo(pageId, fromHistory) {
   const isDuty   = pageId === 'dutyPage';
   const isMore   = pageId === 'morePage';
   const opsPages = ['dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage'];
-  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage','attendStatsPage','hoursStatsPage'];
+  const mngPages = ['membersPage','reportPage','statsPage','gongchaPage','caseStatsPage','attendStatsPage'];
   const isOps    = opsPages.includes(pageId);
   const isManage = mngPages.includes(pageId);
   document.body.classList.toggle('page-home',   isHome);
@@ -6123,7 +6063,7 @@ function navTo(pageId, fromHistory) {
   }
   if (isManage) {
     document.querySelectorAll('#manageCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
-    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', attendStatsPage:'manageSub-attendstats', hoursStatsPage:'manageSub-hoursstats', reportPage:'manageSub-report' };
+    const mngBtnMap = { membersPage:'manageSub-members', statsPage:'manageSub-stats', caseStatsPage:'manageSub-casestats', gongchaPage:'manageSub-gongcha', attendStatsPage:'manageSub-attendstats', reportPage:'manageSub-report' };
     const mb = document.getElementById(mngBtnMap[pageId]);
     if (mb) mb.classList.add('active');
   }
@@ -6207,7 +6147,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'myCorrectionsPage') _nav(loadMyCorrections);
   else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
   else if (pageId === 'attendStatsPage')   _nav(loadAttendStats);
-  else if (pageId === 'hoursStatsPage')    _nav(initHoursStatsPage);
+
   else if (pageId === 'caseStatsPage')     _nav(initCaseStatsPage);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
@@ -19789,84 +19729,6 @@ async function loadGongchaStats() {
 // ══════════════════════════════════════════════════════
 //  出席統計
 // ════════════════════════════════════════════════════════
-// 時數統計頁
-// ════════════════════════════════════════════════════════
-function initHoursStatsPage() {
-  const sel = document.getElementById('hsYear');
-  if (!sel) return;
-  if (sel.options.length === 0) {
-    const cur = new Date().getFullYear();
-    for (let y = cur; y >= cur - 4; y--) {
-      const opt = document.createElement('option');
-      opt.value = String(y);
-      opt.textContent = y + ' 年';
-      sel.appendChild(opt);
-    }
-  }
-  loadHoursStats();
-}
-
-async function loadHoursStats() {
-  const year  = document.getElementById('hsYear')?.value  || String(new Date().getFullYear());
-  const month = document.getElementById('hsMonth')?.value || '';
-  const prefix = month ? `${year}-${month}` : year;
-  const rankEl  = document.getElementById('hsRankList');
-  const totalH  = document.getElementById('hsTotalHours');
-  const totalM  = document.getElementById('hsTotalMembers');
-  if (rankEl) rankEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">載入中...</div>';
-
-  try {
-    await ensureFirebase();
-    const snap = await _fbDB.collection(COL_ATTEND).get();
-    const fmt = v => v % 1 === 0 ? String(v) : v.toFixed(1);
-
-    // 篩選符合期間的記錄
-    const rows = snap.docs.map(d => d.data()).filter(r => (r.date||'').startsWith(prefix));
-
-    // 依成員分組加總
-    const byMember = {};
-    rows.forEach(r => {
-      const n = r.memberName || '未知';
-      if (!byMember[n]) byMember[n] = { name: n, unit: r.unit||'', hours: 0, count: 0 };
-      byMember[n].hours += parseFloat(r.hours) || 0;
-      byMember[n].count += 1;
-    });
-
-    const sorted = Object.values(byMember).sort((a, b) => b.hours - a.hours);
-    const sumH = sorted.reduce((s, m) => s + m.hours, 0);
-
-    if (totalH) totalH.textContent = fmt(sumH);
-    if (totalM) totalM.textContent = sorted.length;
-
-    if (!rankEl) return;
-    if (sorted.length === 0) {
-      rankEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">此期間無備勤紀錄</div>';
-      return;
-    }
-
-    const maxH = Math.max(...sorted.map(m => m.hours), 1);
-    const medals = ['🥇','🥈','🥉'];
-    rankEl.innerHTML = sorted.map((m, i) => `
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 2px;${i < sorted.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
-        <div style="width:28px;text-align:center;font-size:${i < 3 ? '1.1rem' : '0.78rem'};color:var(--text-light);font-weight:700;flex-shrink:0;">${i < 3 ? medals[i] : i+1}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
-            <div>
-              <span style="font-size:0.9rem;font-weight:700;color:var(--text);">${m.name}</span>
-              <span style="font-size:0.72rem;color:var(--text-light);margin-left:6px;">${m.unit}</span>
-            </div>
-            <span style="font-size:0.92rem;font-weight:800;color:var(--red);flex-shrink:0;">${fmt(m.hours)}<span style="font-size:0.65rem;font-weight:400;color:var(--text-light);margin-left:2px;">h</span></span>
-          </div>
-          <div style="background:#f0f0f0;border-radius:4px;height:5px;overflow:hidden;">
-            <div style="background:linear-gradient(90deg,#c0392b,var(--red));border-radius:4px;height:5px;width:${Math.round(m.hours/maxH*100)}%;"></div>
-          </div>
-          <div style="font-size:0.68rem;color:var(--text-light);margin-top:3px;">備勤 ${m.count} 次</div>
-        </div>
-      </div>`).join('');
-  } catch(e) {
-    if (rankEl) rankEl.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:20px;font-size:0.85rem;">載入失敗</div>';
-  }
-}
 
 // ══════════════════════════════════════════════════════
 async function loadAttendStats() {
