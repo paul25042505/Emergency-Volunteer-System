@@ -3895,18 +3895,6 @@ function _dlCSV(content, filename) {
 <div class="page" id="referencePage">
   <div class="form-wrap" style="padding:16px 0 40px;background:#F4F6F9;">
 
-    <div style="background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);margin:0 0 16px;padding:22px 20px;color:white;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        </div>
-        <div>
-          <div style="font-size:1.1rem;font-weight:700;">救護參考手冊</div>
-          <div style="font-size:0.72rem;color:rgba(255,255,255,0.65);margin-top:2px;">Emergency Reference Manual</div>
-        </div>
-      </div>
-    </div>
-
     <div id="referenceList" style="padding:0 16px;display:flex;flex-direction:column;gap:16px;">
 
       <!-- 書架排列 -->
@@ -6184,7 +6172,7 @@ function navTo(pageId, fromHistory) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
