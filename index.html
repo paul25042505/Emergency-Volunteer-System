@@ -5129,6 +5129,7 @@ async function _prefetchRecent(col, orderField, orderDir, days) {
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
 // 回傳 Promise，等主要資料載入完畢才 resolve
 function _prefetchCaches() {
+  if (_usageLocked) return Promise.resolve(); // 超過 90%，全部改為懶讀取
   const sideTargets = [
     // 儀表板 todo 需要：保留 prefetch
     [COL_WHITELIST],
@@ -5340,8 +5341,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
     filtered.unshift(entry);
     localStorage.setItem('evs_recent_users', JSON.stringify(filtered.slice(0, 3)));
   } catch(e) {}
-  _prefetchCaches(); // 第一件事：預熱快取，讓首頁資料秒到
-  _checkDailyUsage(); // 檢查今日讀取配額
+  // 先確認今日讀取配額，超過 90% 則跳過 prefetch 全改懶讀取
+  _checkDailyUsage().then(() => { if (!_usageLocked) _prefetchCaches(); }).catch(() => { _prefetchCaches(); });
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
@@ -5565,7 +5566,8 @@ async function quickLoginAs(idx) {
     if (ltBar) ltBar.style.width = pct + '%';
   }, 80);
   await Promise.race([
-    _prefetchCaches(),
+    // 先檢查用量，超過 90% 跳過 prefetch
+    _checkDailyUsage().catch(()=>{}).then(() => _usageLocked ? null : _prefetchCaches()),
     new Promise(r => setTimeout(r, 5000)), // 最多等 5 秒
   ]);
   clearInterval(iv);
