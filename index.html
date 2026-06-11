@@ -4553,23 +4553,13 @@ function _dlCSV(content, filename) {
 
       <div class="field">
         <label>分隊 <span class="req">*</span></label>
-        <select id="meetingUnit" onchange="meetingLoadAttendees()">
+        <select id="meetingUnit">
           <option value="">請選擇分隊</option>
         </select>
       </div>
       <div class="field">
         <label>會議內容 <span class="req">*</span></label>
         <textarea id="meetingContent" style="min-height:220px;line-height:1.8;" placeholder="請貼上或輸入會議記錄內容..."></textarea>
-      </div>
-      <div class="field">
-        <label>與會人員</label>
-        <div id="meetingAttendeesHint" style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;">請先選擇分隊</div>
-        <div id="meetingAttendeesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px;max-height:240px;overflow-y:auto;background:#fafaf8;border:1px solid var(--border);border-radius:6px;padding:10px;min-height:44px;"></div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-          <button type="button" onclick="meetingCheckAll(true)" style="background:none;border:1px solid var(--border);border-radius:5px;padding:4px 12px;font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">全選</button>
-          <button type="button" onclick="meetingCheckAll(false)" style="background:none;border:1px solid var(--border);border-radius:5px;padding:4px 12px;font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">清除</button>
-          <span id="meetingAttCount" style="font-size:0.78rem;color:var(--text-light);margin-left:auto;"></span>
-        </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:6px;">
         <button onclick="meetingSave()" style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:13px;font-size:0.95rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">儲存</button>
@@ -16040,8 +16030,7 @@ async function meetingSave() {
   if (!content) { alert('請填入會議內容'); return; }
 
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const attendees = Array.from(document.querySelectorAll('.meeting-att-chk:checked')).map(c => c.value);
-  const data = { title, date, unit, content, attendees, updatedBy: usr.memberName || usr.name || '' };
+  const data = { title, date, unit, content, updatedBy: usr.memberName || usr.name || '' };
 
   const saveBtn = document.querySelector('#meetingForm button');
   saveBtn.textContent = '儲存中...'; saveBtn.disabled = true;
@@ -19723,7 +19712,7 @@ async function loadAttendStats() {
   let docs;
   try {
     docs = await Promise.race([
-      fbList(COL_MEETING, 'date', 'asc'),
+      fbList(COL_MEETING_EVENTS, 'date', 'asc'),
       new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))
     ]);
   } catch(e) {
@@ -19731,61 +19720,57 @@ async function loadAttendStats() {
     return;
   }
 
-  // 篩選年份 & 分隊
-  docs = docs.filter(d => (d.date || '').startsWith(year));
+  // 篩選年份 & 分隊（只計有 rsvp 資料的場次）
+  docs = docs.filter(d => (d.date || '').startsWith(year) && (d.rsvp || []).length > 0);
   if (targetUnit) docs = docs.filter(d => (d.unit || '') === targetUnit);
 
   if (!docs.length) {
     document.getElementById('asTotalSessions').textContent = '0';
     document.getElementById('asAvgRate').textContent = '—';
-    body.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>' + year + '年查無定訓紀錄</div>';
+    body.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>' + year + '年查無會議出席紀錄</div>';
     return;
   }
 
-  // 計算每人出席次數
+  // 計算每人出席次數（只算 attend === '出席'）
   const countMap = {};
   docs.forEach(d => {
-    (d.attendees || []).forEach(name => {
-      countMap[name] = (countMap[name] || 0) + 1;
+    (d.rsvp || []).filter(r => r.attend === '出席').forEach(r => {
+      const name = r.name || '';
+      if (name) countMap[name] = (countMap[name] || 0) + 1;
     });
   });
 
   const total = docs.length;
-  const members = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
-  const totalAttendees = docs.reduce((s, d) => s + (d.attendees || []).length, 0);
-  const avgRate = total > 0 && members.length > 0
-    ? Math.round(totalAttendees / (total * members.length) * 100) + '%'
+  const memberList = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
+  const totalAttendees = docs.reduce((s, d) => s + (d.rsvp || []).filter(r => r.attend === '出席').length, 0);
+  const uniqueCount = memberList.length;
+  const avgRate = total > 0 && uniqueCount > 0
+    ? Math.round(totalAttendees / (total * uniqueCount) * 100) + '%'
     : '—';
   document.getElementById('asTotalSessions').textContent = total;
   document.getElementById('asAvgRate').textContent = avgRate;
 
-  // 渲染排名列表
-  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
   const medals = ['🥇','🥈','🥉'];
 
   body.innerHTML = `
     <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:16px;">
       <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:0.82rem;font-weight:700;color:var(--text);">出席人員排名</div>
-        <div style="font-size:0.72rem;color:var(--text-light);">共 ${members.length} 人・${total} 場</div>
+        <div style="font-size:0.72rem;color:var(--text-light);">共 ${uniqueCount} 人・${total} 場</div>
       </div>
-      ${members.map(([name, cnt], i) => {
+      ${memberList.map(([name, cnt], i) => {
         const rate = Math.round(cnt / total * 100);
         const medal = i < 3 ? medals[i] : '';
         const barColor = rate >= 80 ? '#22c55e' : rate >= 50 ? '#3b82f6' : '#f59e0b';
         return `<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
-          <div style="width:28px;text-align:center;font-size:${medal ? '1.1rem' : '0.78rem'};color:var(--text-light);font-weight:700;flex:0 0 auto;">
-            ${medal || (i + 1)}
-          </div>
+          <div style="width:28px;text-align:center;font-size:${medal ? '1.1rem' : '0.78rem'};color:var(--text-light);font-weight:700;flex:0 0 auto;">${medal || (i+1)}</div>
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
               <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${name}</div>
-              <div style="font-size:0.78rem;font-weight:700;color:${barColor};">${cnt} 次
-                <span style="font-size:0.68rem;color:var(--text-light);font-weight:400;">(${rate}%)</span>
-              </div>
+              <div style="font-size:0.78rem;font-weight:700;color:${barColor};">${cnt} 次<span style="font-size:0.68rem;color:var(--text-light);font-weight:400;margin-left:3px;">(${rate}%)</span></div>
             </div>
             <div style="height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
-              <div style="height:100%;width:${rate}%;background:${barColor};border-radius:99px;transition:width 0.4s;"></div>
+              <div style="height:100%;width:${rate}%;background:${barColor};border-radius:99px;"></div>
             </div>
           </div>
         </div>`;
@@ -19796,8 +19781,9 @@ async function loadAttendStats() {
         <div style="font-size:0.82rem;font-weight:700;color:var(--text);">場次詳情</div>
       </div>
       ${docs.slice().reverse().map(d => {
-        const cnt = (d.attendees || []).length;
-        const sessionRate = members.length ? Math.round(cnt / members.length * 100) : 0;
+        const attended = (d.rsvp || []).filter(r => r.attend === '出席').length;
+        const replied  = (d.rsvp || []).length;
+        const sessionRate = replied ? Math.round(attended / replied * 100) : 0;
         return `<div style="padding:11px 16px;border-bottom:1px solid var(--border);">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
@@ -19805,8 +19791,8 @@ async function loadAttendStats() {
               <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">${d.date || ''}${d.unit ? '　' + d.unit : ''}</div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:0.85rem;font-weight:700;color:var(--red);">${cnt} 人</div>
-              <div style="font-size:0.65rem;color:var(--text-light);">出席率 ${sessionRate}%</div>
+              <div style="font-size:0.85rem;font-weight:700;color:var(--red);">${attended} 人出席</div>
+              <div style="font-size:0.65rem;color:var(--text-light);">回覆 ${replied} 人・出席率 ${sessionRate}%</div>
             </div>
           </div>
         </div>`;
