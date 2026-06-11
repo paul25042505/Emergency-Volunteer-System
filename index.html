@@ -5844,7 +5844,7 @@ async function refreshCurrentPage() {
     case 'dashboardPage':   await loadDashboard(); break;
     case 'formPage':        await initFormPage(); break;
     case 'membersPage':     await initMembersPage(); break;
-    case 'queryPage':       await updateQueryMemberSelect(); qSetDateChip('today', document.querySelector('#qDateChips .mq-chip')); break;
+    case 'queryPage':       await updateQueryMemberSelect(); break;
     case 'dutyOverviewPage': await initDutyOverviewPage(); break;
     case 'attendancePage':  await initAttendancePage(); break;
     case 'statsPage':       await initStatsPage(); break;
@@ -7911,12 +7911,6 @@ let _queryPageInited = false;
 async function updateQueryMemberSelect() {
   try { await Promise.all([loadMembers(), loadUnits()]); } catch(e) {}
   if (_queryPageInited) return; _queryPageInited = true;
-  const _now = new Date();
-  const _m1 = new Date(_now.getFullYear(), _now.getMonth(), 1).toLocaleDateString('sv');
-  const _m2 = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toLocaleDateString('sv');
-  const _df = document.getElementById('qDateFrom'), _dt = document.getElementById('qDateTo');
-  if (_df && !_df.value) _df.value = _m1;
-  if (_dt && !_dt.value) _dt.value = _m2;
 
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const isAdmin   = usr.isAdmin   || false;
@@ -7938,8 +7932,10 @@ async function updateQueryMemberSelect() {
 
   filterQueryMembers();
   populateCaseTypeSelect();
-  // 自動查詢本月資料
-  setTimeout(doQuery, 100);
+  // 預設日期設為今天（對齊 active 的今天 chip），不自動執行查詢
+  qSetDateChip('today');
+  const initMsg = document.getElementById('queryInitMsg');
+  if (initMsg) initMsg.style.display = '';
 }
 
 function filterQueryMembers() {
