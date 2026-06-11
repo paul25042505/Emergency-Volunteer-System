@@ -19286,6 +19286,26 @@ async function deleteDuty(id) {
 // ── 每日快速新增 ──
 let _qaDate = '';
 
+function _initSheetDrag(sheetId, closeFn) {
+  const sheet = document.getElementById(sheetId);
+  if (!sheet || sheet._dragInited) return;
+  sheet._dragInited = true;
+  let startY = 0;
+  sheet.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) sheet.style.transform = 'translateY(' + dy + 'px)';
+  }, { passive: true });
+  sheet.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - startY;
+    sheet.style.transition = 'transform 0.28s cubic-bezier(0.32,0,0,1)';
+    if (dy > 80) { closeFn(); } else { sheet.style.transform = 'translateY(0)'; }
+  }, { passive: true });
+}
+
 function _buildTimeOptions(selId, from, to, def) {
   const sel = document.getElementById(selId);
   if (!sel) return;
@@ -19324,6 +19344,7 @@ function openQuickAdd(dateStr) {
   const modal = document.getElementById('dutyQuickAddModal');
   modal.style.display = 'flex';
   setTimeout(() => { document.getElementById('dutyQuickAddSheet').style.transform = 'translateY(0)'; }, 10);
+  _initSheetDrag('dutyQuickAddSheet', closeQuickAdd);
 }
 
 function closeQuickAdd() {
@@ -19405,6 +19426,7 @@ function openDutyEdit(id, dateStr, memberName, start, end) {
   document.getElementById('editCapHint').style.display = 'none';
   document.getElementById('dutyEditModal').style.display = 'flex';
   setTimeout(() => { document.getElementById('dutyEditSheet').style.transform = 'translateY(0)'; }, 10);
+  _initSheetDrag('dutyEditSheet', closeDutyEdit);
 }
 
 function closeDutyEdit() {
