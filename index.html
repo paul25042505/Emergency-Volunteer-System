@@ -13491,24 +13491,25 @@ function _applyUsageLock(pct, reads, quota) {
   if (!bar) {
     bar = document.createElement('div');
     bar.id = '_usageBar';
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;padding:8px 16px;font-size:0.82rem;text-align:center;font-weight:600;transition:all .3s;';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;padding:7px 12px;font-size:0.82rem;font-weight:600;transition:all .3s;display:flex;align-items:center;';
     document.body.appendChild(bar);
   }
   if (pct >= 100) {
-    bar.style.display = 'block';
+    bar.style.display = 'flex';
     bar.style.background = '#c0392b';
     bar.style.color = '#fff';
-    bar.textContent = `🚫 今日 Firestore 讀取已達上限（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），部分功能已暫停。`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">🚫 今日 Firestore 讀取已達上限（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），部分功能已暫停。</span>`;
   } else if (pct >= 90) {
-    bar.style.display = 'block';
+    bar.style.display = 'flex';
     bar.style.background = '#e67e22';
     bar.style.color = '#fff';
-    bar.textContent = `⚠️ 今日讀取數已達 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），非必要功能已鎖定。`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">⚠️ 今日讀取數已達 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），非必要功能已鎖定。</span>`;
   } else if (pct >= 70) {
-    bar.style.display = 'block';
+    if (sessionStorage.getItem('_usageBarDismissed')) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
     bar.style.background = '#f1c40f';
     bar.style.color = '#333';
-    bar.textContent = `📊 今日讀取數 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），請留意用量。`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">📊 今日讀取數 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），請留意用量。</span><span onclick="sessionStorage.setItem('_usageBarDismissed','1');document.getElementById('_usageBar').style.display='none';" style="flex-shrink:0;cursor:pointer;font-size:1.1rem;line-height:1;opacity:0.5;padding:2px 4px;" ontouchstart="">✕</span>`;
   } else {
     bar.style.display = 'none';
   }
