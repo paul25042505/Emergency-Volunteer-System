@@ -11721,6 +11721,7 @@ async function loadLoginLog() {
         const role = d.role || 'member';
         const avatar = (d.memberName||'?')[0];
         const avatarBg = role==='admin'?'#856404':role==='officer'?'#084298':'#37474f';
+        const displayUnit = d.unit || (members.find(m => m.name === d.memberName)?.unit) || '';
         return `
         <div style="background:white;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07);padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;">
           <input type="checkbox" class="llChk" data-id="${d.id}" style="margin-top:3px;flex-shrink:0;">
@@ -11732,7 +11733,7 @@ async function loadLoginLog() {
               ${d.loginMethod && d.loginMethod !== 'google' ? `<span style="font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">${METHOD_LABEL[d.loginMethod]||d.loginMethod}</span>` : ''}
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:0.75rem;color:var(--text-mid);">
-              ${d.unit ? `<span>🏢 ${d.unit}</span>` : '<span style="color:var(--text-light);">無分隊</span>'}
+              ${displayUnit ? `<span>🏢 ${displayUnit}</span>` : '<span style="color:var(--text-light);">無分隊</span>'}
               <span style="color:var(--text-light);">📧 ${d.email||'—'}</span>
             </div>
             <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">🕐 ${d.loginAt||''}</div>
