@@ -18970,12 +18970,13 @@ async function meetingAdminRsvp(id) {
       btn.onclick = () => {
         const name = btn.dataset.n, attend = btn.dataset.a;
         const member = relevant.find(m => m.name === name);
+        const email = member?.email || '';
         if (attend) {
-          const idx = rsvp.findIndex(r => r.name === name);
-          const entry = { name, email: member?.email||'', unit: member?.unit||'', attend, food: rsvp[idx]?.food||'' };
-          if (idx >= 0) rsvp[idx] = entry; else rsvp.push(entry);
+          // 先移除所有可能的同人重複（以 name 或 email 比對）
+          rsvp = rsvp.filter(r => r.name !== name && !(email && r.email === email));
+          rsvp.push({ name, email, unit: member?.unit||'', attend, food: '' });
         } else {
-          rsvp = rsvp.filter(r => r.name !== name);
+          rsvp = rsvp.filter(r => r.name !== name && !(email && r.email === email));
         }
         _render();
       };
@@ -18984,15 +18985,24 @@ async function meetingAdminRsvp(id) {
     overlay.querySelectorAll('button[data-n][data-f]').forEach(btn => {
       btn.onclick = () => {
         const name = btn.dataset.n, food = btn.dataset.f;
-        const idx = rsvp.findIndex(r => r.name === name);
+        const member = relevant.find(m => m.name === name);
+        const email = member?.email || '';
+        const idx = rsvp.findIndex(r => r.name === name || (email && r.email === email));
         if (idx >= 0) rsvp[idx] = { ...rsvp[idx], food };
         _render();
       };
     });
 
     overlay.querySelector('#_arSave').onclick = async () => {
+      // 存檔前去重：同一 email 或同一 name 只保留最後一筆
+      const seen = new Set();
+      const deduped = [];
+      for (let i = rsvp.length - 1; i >= 0; i--) {
+        const key = rsvp[i].email || rsvp[i].name;
+        if (!seen.has(key)) { seen.add(key); deduped.unshift(rsvp[i]); }
+      }
       try {
-        await fbUpdate(COL_MEETING_EVENTS, id, { rsvp });
+        await fbUpdate(COL_MEETING_EVENTS, id, { rsvp: deduped });
         overlay.remove();
         renderDutyMeeting();
       } catch(e) { alert('儲存失敗：' + e.message); }
