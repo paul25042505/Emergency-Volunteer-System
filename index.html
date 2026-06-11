@@ -18864,7 +18864,7 @@ async function meetingRsvp(id) {
     const food = (overlay.querySelector('input[name="_mrFood"]:checked')||{}).value||'';
     if (!attend) return alert('請選擇出席狀況');
     const newRsvp = rsvp.filter(r=>r.email!==u.email);
-    newRsvp.push({name:u.name||'',email:u.email,unit:u.unit||'',attend,food});
+    newRsvp.push({name:u.memberName||u.name||'',email:u.email,unit:u.unit||'',attend,food});
     try {
       await fbUpdate(COL_MEETING_EVENTS, id, {rsvp:newRsvp});
       overlay.remove();
