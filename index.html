@@ -5021,14 +5021,18 @@ function ensureFirebase() {
   return _fbInitPromise;
 }
 
-async function fbGet(col,id){await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;}
+async function fbGet(col,id){
+  // 讀取鎖定：超過 90% 時封鎖，僅允許用量紀錄本身（維持監控）
+  if (_usageLocked && !(col==='settings'&&id==='dailyUsage')) return null;
+  await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;
+}
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
 const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
 const _C_SKIP = new Set(['feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
 async function fbList(col, orderByField, orderDir) {
-  // 讀取鎖定：超過 90% 時，非核心 collection 返回快取或空陣列
-  if (_usageLocked && _LOCK_COLS.has(col)) {
+  // 讀取鎖定：超過 90% 時，全部 collection 返回快取或空陣列（不發出新讀取）
+  if (_usageLocked) {
     const cached = _C.peek(col);
     if (cached) return cached;
     return [];
@@ -5071,6 +5075,14 @@ async function fbList(col, orderByField, orderDir) {
   return _fbInflight[key];
 }
 async function fbQuery(col, conditions, orderByField, orderDir) {
+  // 讀取鎖定：超過 90% 時只允許 簽到簽退 及 今日協勤紀錄 查詢
+  if (_usageLocked) {
+    const today = new Date().toLocaleDateString('sv');
+    const isAttend = col === COL_ATTEND;
+    const isTodayOuting = col === COL_OUTING &&
+      Array.isArray(conditions) && conditions.some(c => c[0]==='date' && (c[1]==='==' || c[1]==='>=') && c[2]===today);
+    if (!isAttend && !isTodayOuting) return [];
+  }
   await ensureFirebase();
   let q = _fbDB.collection(col);
   if (conditions) conditions.forEach(([f,op,v]) => { q = q.where(f, op, v); });
@@ -5129,7 +5141,7 @@ async function _prefetchRecent(col, orderField, orderDir, days) {
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
 // 回傳 Promise，等主要資料載入完畢才 resolve
 function _prefetchCaches() {
-  if (_usageLocked) return Promise.resolve(); // 超過 90%，全部改為懶讀取
+  if (_usageLazyLoad) return Promise.resolve(); // 超過 80%，全部改為懶讀取
   const sideTargets = [
     // 儀表板 todo 需要：保留 prefetch
     [COL_WHITELIST],
@@ -5341,8 +5353,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
     filtered.unshift(entry);
     localStorage.setItem('evs_recent_users', JSON.stringify(filtered.slice(0, 3)));
   } catch(e) {}
-  // 先確認今日讀取配額，超過 90% 則跳過 prefetch 全改懶讀取
-  _checkDailyUsage().then(() => { if (!_usageLocked) _prefetchCaches(); }).catch(() => { _prefetchCaches(); });
+  // 先確認今日讀取配額，超過 80% 則跳過 prefetch 全改懶讀取
+  _checkDailyUsage().then(() => { if (!_usageLazyLoad) _prefetchCaches(); }).catch(() => { _prefetchCaches(); });
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
@@ -5566,8 +5578,8 @@ async function quickLoginAs(idx) {
     if (ltBar) ltBar.style.width = pct + '%';
   }, 80);
   await Promise.race([
-    // 先檢查用量，超過 90% 跳過 prefetch
-    _checkDailyUsage().catch(()=>{}).then(() => _usageLocked ? null : _prefetchCaches()),
+    // 先檢查用量，超過 80% 跳過 prefetch
+    _checkDailyUsage().catch(()=>{}).then(() => _usageLazyLoad ? null : _prefetchCaches()),
     new Promise(r => setTimeout(r, 5000)), // 最多等 5 秒
   ]);
   clearInterval(iv);
@@ -13486,8 +13498,9 @@ async function deletePushLog(id) {
 // ════════════════════════════════════════
 // 自動通知排程
 // ── 每日讀取配額監控 ──────────────────────────────────────────────────
-let _usageLocked = false;
-// 被鎖定的 collection（讀取量大但非核心功能）
+let _usageLocked   = false; // >= 90%：封鎖幾乎所有讀取
+let _usageLazyLoad = false; // >= 80%：停止 prefetch，改為懶讀取
+// 被鎖定的 collection（讀取量大但非核心功能，90% 前適用）
 const _LOCK_COLS = new Set(['loginLogs','loginLog','changelogs','broadcastRequests','correctionRequests','feedback','pushLogs','autoNotifLog']);
 
 async function _checkDailyUsage() {
@@ -13501,7 +13514,8 @@ async function _checkDailyUsage() {
 }
 
 function _applyUsageLock(pct, reads, quota) {
-  _usageLocked = pct >= 90;
+  _usageLocked   = pct >= 90;
+  _usageLazyLoad = pct >= 80;
   let bar = document.getElementById('_usageBar');
   if (!bar) {
     bar = document.createElement('div');
@@ -13518,10 +13532,18 @@ function _applyUsageLock(pct, reads, quota) {
     bar.innerHTML = `<span style="flex:1;text-align:center;">🚫 今日 Firestore 讀取已達上限（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），部分功能已暫停。</span>`;
   } else if (pct >= 90) {
     bar.style.display = 'flex';
-    bar.style.background = '#e67e22';
+    bar.style.background = '#c0392b';
     bar.style.color = '#fff';
     bar.onclick = null;
-    bar.innerHTML = `<span style="flex:1;text-align:center;">⚠️ 今日讀取數已達 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），非必要功能已鎖定。</span>`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">🔒 今日讀取數已達 ${pct}%，功能已限制：僅保留簽到簽退及今日協勤紀錄。</span>`;
+  } else if (pct >= 80) {
+    if (sessionStorage.getItem('_usageBarDismissed')) return;
+    bar.style.display = 'flex';
+    bar.style.background = '#e67e22';
+    bar.style.color = '#fff';
+    bar.style.cursor = 'pointer';
+    bar.innerHTML = `<span style="flex:1;">⚠️ 今日讀取數 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），已切換懶讀取模式。</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;color:#fff;">✕</span>`;
+    bar.onclick = () => { sessionStorage.setItem('_usageBarDismissed','1'); bar.style.display = 'none'; };
   } else if (pct >= 70) {
     if (sessionStorage.getItem('_usageBarDismissed')) return;
     bar.style.display = 'flex';
