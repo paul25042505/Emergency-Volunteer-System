@@ -2964,58 +2964,80 @@ function _dlCSV(content, filename) {
 
 <!-- ══════ PAGE：物品領用 ══════ -->
 <div class="page" id="itemsPage">
-  <div class="query-wrap">
+  <div class="form-wrap" style="padding-top:16px;">
 
-    <!-- 新增物品（僅管理員/承辦人可見）-->
-    <div class="section" id="itemAddSection" style="display:none;">
-      <div class="section-head">
-        <div class="section-num">＋</div>
-        <div class="section-title">新增物品</div>
-        <div class="section-line"></div>
+    <!-- 英雄卡 -->
+    <div style="background:linear-gradient(145deg,#1c0e00 0%,#7c2d00 55%,#c2410c 100%);border-radius:22px;padding:22px 20px 20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(194,65,12,0.35);position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-24px;top:-24px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
+      <div style="position:absolute;left:-16px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:1.15rem;font-weight:800;color:white;letter-spacing:0.04em;">物品領用</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-top:2px;">ITEM PICKUP</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+          <button onclick="reloadItemsList()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);border-radius:8px;padding:7px 12px;font-size:0.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">重整</button>
+          <div id="itemAddWrap" style="display:none;">
+            <button onclick="itemToggleForm()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:10px;padding:8px 16px;font-size:0.82rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;letter-spacing:0.04em;">＋ 新增</button>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <div class="field">
-          <label for="itemName">物品名稱 <span class="req">*</span></label>
-          <input type="text" id="itemName" placeholder="例：聘書、協勤慰問品">
+
+      <!-- 分隊篩選 -->
+      <div style="margin-bottom:12px;">
+        <select id="itemsListUnit" onchange="reloadItemsList()" style="width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:12px;color:white;padding:10px 14px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;outline:none;">
+          <option value="" style="color:#333;">請選擇分隊</option>
+        </select>
+        <div id="itemsListUnitHint" style="display:none;font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:5px;padding-left:2px;">🔒 僅限查看本分隊</div>
+      </div>
+
+      <!-- KPI 條 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;">
+        <div style="min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 6px;background:rgba(28,14,0,0.5);">
+          <div id="itemsKpiPending" style="font-size:1.6rem;font-weight:900;color:#fed7aa;font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">待領件數</div>
         </div>
-        <div class="field">
-          <label for="itemNote">備註說明</label>
-          <input type="text" id="itemNote" placeholder="例：114年春節、共3份">
-        </div>
-        <div class="field">
-          <label>分隊別 <span class="req">*</span></label>
-          <select id="itemUnit" onchange="filterMembersByUnit()" style="width:100%;">
-            <option value="">請選擇分隊</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>領取人 <span class="req">*</span>（可複選）</label>
-          <div id="itemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;"></div>
-        </div>
-        <div style="margin-top:16px;">
-          <button onclick="addItem()" class="btn-submit" style="letter-spacing:0.1em;">新增物品</button>
+        <div style="min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 6px;background:rgba(28,14,0,0.5);">
+          <div id="itemsKpiDone" style="font-size:1.6rem;font-weight:900;color:#86efac;font-family:'Noto Serif TC',serif;line-height:1;">—</div>
+          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;margin-top:4px;">已全部領取</div>
         </div>
       </div>
     </div>
 
-    <!-- 待領清單 -->
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">📦</div>
-        <div class="section-title">待領清單</div>
-        <div class="section-line"></div>
-        <button onclick="reloadItemsList()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 12px;font-size:0.75rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">重新整理</button>
+    <!-- 新增物品表單（管理員/承辦人，預設隱藏） -->
+    <div id="itemAddSection" style="display:none;background:white;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 4px 20px rgba(194,65,12,0.10);border:1px solid rgba(194,65,12,0.15);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <div style="width:4px;height:26px;background:linear-gradient(180deg,#f97316,#c2410c);border-radius:2px;flex-shrink:0;"></div>
+        <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);letter-spacing:0.06em;">新增物品</div>
       </div>
-      <div class="filter-card" style="margin-bottom:16px;padding:14px 16px;">
-        <label style="display:block;font-size:0.78rem;font-weight:500;color:var(--text-mid);margin-bottom:6px;letter-spacing:0.05em;">分隊別 <span class="req">*</span></label>
-        <select id="itemsListUnit" onchange="reloadItemsList()" style="width:100%;">
+      <div class="field">
+        <label for="itemName">物品名稱 <span class="req">*</span></label>
+        <input type="text" id="itemName" placeholder="例：聘書、協勤慰問品">
+      </div>
+      <div class="field">
+        <label for="itemNote">備註說明</label>
+        <input type="text" id="itemNote" placeholder="例：114年春節、共3份">
+      </div>
+      <div class="field">
+        <label>分隊別 <span class="req">*</span></label>
+        <select id="itemUnit" onchange="filterMembersByUnit()" style="width:100%;">
           <option value="">請選擇分隊</option>
         </select>
-        <div id="itemsListUnitHint" style="display:none;font-size:0.72rem;color:var(--text-light);margin-top:5px;">🔒 僅限查看本分隊</div>
       </div>
-      <div id="itemsList">
-        <div class="query-empty"><span class="empty-icon">📦</span>請先選擇分隊</div>
+      <div class="field">
+        <label>領取人 <span class="req">*</span>（可複選）</label>
+        <div id="itemRecipients" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:4px;"></div>
       </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="addItem()" class="btn-submit" style="flex:1;background:linear-gradient(135deg,#f97316,#c2410c);border:none;border-radius:12px;padding:13px;letter-spacing:0.1em;">新增物品</button>
+        <button onclick="itemToggleForm()" style="background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">取消</button>
+      </div>
+    </div>
+
+    <!-- 待領清單 -->
+    <div id="itemsList">
+      <div class="query-empty"><span class="empty-icon">📦</span>請先選擇分隊</div>
     </div>
 
     <div class="site-footer-placeholder"></div>
@@ -10133,9 +10155,11 @@ async function initItemsPage() {
   const canManage  = isAdmin || isOfficer;
   const userUnit   = usr.unit || '';
 
-  // 新增物品區塊：管理員/承辦人才顯示
+  // 新增按鈕（hero 內）：管理員/承辦人才顯示；表單本身預設隱藏
+  const addWrap = document.getElementById('itemAddWrap');
+  if (addWrap) addWrap.style.display = canManage ? '' : 'none';
   const addSec = document.getElementById('itemAddSection');
-  if (addSec) addSec.style.display = canManage ? '' : 'none';
+  if (addSec) addSec.style.display = 'none';
 
   try {
     await loadMembers();
@@ -10255,98 +10279,104 @@ function renderItemsList(filterUnit) {
   const pending = filtered.filter(item => item.recipients.some(r => !r.claimed));
   const done    = filtered.filter(item => item.recipients.every(r => r.claimed));
 
+  // 更新 KPI
+  const kpiPending = document.getElementById('itemsKpiPending');
+  const kpiDone    = document.getElementById('itemsKpiDone');
+  if (kpiPending) kpiPending.textContent = pending.length;
+  if (kpiDone)    kpiDone.textContent    = done.length;
+
   let html = '';
   if (pending.length > 0) html += pending.map(item => renderItemCard(item, false)).join('');
   if (done.length > 0) {
-    html += `<div style="font-size:0.78rem;color:var(--text-light);letter-spacing:0.06em;margin:20px 0 8px;font-family:inherit;">── 已全數領取 ──</div>`;
+    html += `<div style="font-size:0.78rem;color:var(--text-light);letter-spacing:0.06em;margin:20px 0 10px;text-align:center;">── 已全數領取 ──</div>`;
     html += done.map(item => renderItemCard(item, true)).join('');
   }
   container.innerHTML = html;
 }
 
 function renderItemCard(item, allDone) {
-  const total    = item.recipients.length;
-  const claimed  = item.recipients.filter(r => r.claimed).length;
-  const pct      = total > 0 ? Math.round(claimed / total * 100) : 0;
+  const total   = item.recipients.length;
+  const claimed = item.recipients.filter(r => r.claimed).length;
+  const pct     = total > 0 ? Math.round(claimed / total * 100) : 0;
+  const accent  = allDone ? '#22c55e' : '#f97316';
+  const accentDark = allDone ? '#15803d' : '#c2410c';
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const canManage = usr.isAdmin || usr.isOfficer || usr.role === 'admin' || usr.role === 'officer';
+
+  const dateStr = item.createTime ? (() => {
+    try { const d = new Date(item.createTime); if (isNaN(d)) return String(item.createTime).substring(0,10); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } catch(e) { return String(item.createTime).substring(0,10); }
+  })() : '';
 
   const recipientsHtml = item.recipients.map(r => {
-    // 從 members 陣列查出該人的分隊
     const memberUnit = (members.find(m => m.name === r.name) || {}).unit || '';
     const unitBadge  = memberUnit
-      ? `<span style="font-size:0.68rem;color:var(--text-light);background:var(--warm);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:4px;white-space:nowrap;">${memberUnit}</span>`
+      ? `<span style="font-size:0.66rem;background:#f1f5f9;color:#64748b;border-radius:4px;padding:1px 6px;margin-left:5px;">${memberUnit}</span>`
       : '';
     if (r.claimed) {
-      return `<div class="member-item" style="padding:10px 16px;">
-        <div class="member-avatar" style="background:#27ae60;width:32px;height:32px;font-size:0.85rem;">${r.name.charAt(0)}</div>
-        <div class="member-info">
-          <div class="member-name" style="font-size:0.88rem;">${r.name}${unitBadge}</div>
-          <div class="member-title">已領取　${r.claimTime ? r.claimTime.substring(0,16) : ''}</div>
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f3f4f6;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#16a34a;flex-shrink:0;">${r.name.charAt(0)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.84rem;font-weight:600;color:var(--text);">${r.name}${unitBadge}</div>
+          <div style="font-size:0.68rem;color:var(--text-light);margin-top:2px;">${r.claimTime ? r.claimTime.substring(0,16) : '已領取'}</div>
         </div>
-        ${r.sig ? `<img src="${r.sig}" style="height:32px;border:1px solid var(--border);border-radius:3px;" title="領取簽名">` : '<span class="att-status-badge done">已領取</span>'}
+        ${r.sig ? `<img src="${r.sig}" style="height:30px;border:1px solid #e2e8f0;border-radius:4px;" title="領取簽名">` : '<span style="font-size:0.7rem;background:#dcfce7;color:#16a34a;border-radius:5px;padding:3px 8px;font-weight:600;">✓ 完成</span>'}
       </div>`;
     }
-    return `<div class="member-item" style="padding:10px 16px;">
-      <div class="member-avatar" style="background:#e0d5c8;color:var(--text-mid);width:32px;height:32px;font-size:0.85rem;">${r.name.charAt(0)}</div>
-      <div class="member-info">
-        <div class="member-name" style="font-size:0.88rem;">${r.name}${unitBadge}</div>
-        <div class="member-title">尚未領取</div>
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f3f4f6;">
+      <div style="width:32px;height:32px;border-radius:50%;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;color:#ea580c;flex-shrink:0;">${r.name.charAt(0)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.84rem;font-weight:600;color:var(--text);">${r.name}${unitBadge}</div>
+        <div style="font-size:0.68rem;color:var(--text-light);margin-top:2px;">尚未領取</div>
       </div>
-      <button class="att-member-btn" style="border-color:#27ae60;color:#27ae60;"
+      <button style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:8px;padding:6px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;"
         onclick="openClaimModal('${item.itemId}','${r.name}','${item.itemName}','${item.note || ''}')">
         領取
       </button>
     </div>`;
   }).join('');
 
-  return `<div class="result-card" style="margin-bottom:14px;">
-    <div class="result-head" style="${allDone ? '' : 'background:var(--warm);'}">
-      <div>
-        <h3 style="font-family:inherit;font-size:0.92rem;font-weight:700;color:var(--text);">
+  const editDeleteHtml = canManage ? `
+    <div style="display:flex;gap:6px;">
+      <button onclick="openEditItemModal('${item.itemId}','${item.itemName}')"
+        style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:6px;padding:4px 12px;font-size:0.72rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">編輯</button>
+      <button onclick="deleteItem('${item.itemId}','${item.itemName}')"
+        style="background:#fff1f0;color:#b91c1c;border:1px solid #fecaca;border-radius:6px;padding:4px 12px;font-size:0.72rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">刪除</button>
+    </div>` : '';
+
+  return `<div style="background:white;border-radius:18px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.05);">
+    <div style="display:flex;gap:12px;padding:15px 15px 12px;align-items:flex-start;">
+      <div style="width:4px;min-width:4px;border-radius:2px;background:linear-gradient(180deg,${accent},${accentDark});align-self:stretch;flex-shrink:0;margin-top:2px;"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.92rem;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4;">
           ${item.itemName}
-          ${item.note ? `<span style="font-size:0.72rem;font-weight:400;color:var(--text-light);margin-left:6px;">${item.note}</span>` : ''}
-        </h3>
-        <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">
-          建立：${item.createTime ? (function(t){
-            // 用 Date 解析所有格式，再統一輸出 yyyy-MM-dd
-            try {
-              var d = new Date(t);
-              if (isNaN(d)) return String(t).substring(0,10);
-              var y  = d.getFullYear();
-              var mo = String(d.getMonth()+1).padStart(2,'0');
-              var dd = String(d.getDate()).padStart(2,'0');
-              return y+'-'+mo+'-'+dd;
-            } catch(e) { return String(t).substring(0,10); }
-          })(item.createTime) : ''}
+          ${item.note ? `<span style="font-size:0.7rem;background:#fff7ed;color:#c2410c;border-radius:5px;padding:2px 7px;font-weight:600;margin-left:6px;">${item.note}</span>` : ''}
         </div>
+        ${dateStr ? `<div style="font-size:0.7rem;color:var(--text-light);">建立：${dateStr}</div>` : ''}
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-        <div style="text-align:right;">
-          <div style="font-family:inherit;font-size:1.1rem;font-weight:700;color:${allDone ? '#27ae60' : 'var(--red)'};">${claimed}/${total}</div>
-          <div style="font-size:0.68rem;color:var(--text-light);">已領取</div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button onclick="openEditItemModal('${item.itemId}','${item.itemName}')"
-            style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
-            編輯
-          </button>
-          <button onclick="deleteItem('${item.itemId}','${item.itemName}')"
-            style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:0.72rem;color:var(--text-light);cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;white-space:nowrap;">
-            刪除
-          </button>
-        </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;">
+        <div style="font-size:1.25rem;font-weight:800;color:${allDone ? '#16a34a' : '#ea580c'};font-family:'Noto Serif TC',serif;line-height:1;">${claimed}<span style="font-size:0.68rem;color:var(--text-light);font-weight:500;">/${total}</span></div>
+        <div style="font-size:0.6rem;color:var(--text-light);">已領取</div>
       </div>
     </div>
-    <!-- 進度條 -->
-    <div style="padding:0 16px 0;background:var(--warm);">
-      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${allDone ? '#27ae60' : 'var(--red)'};border-radius:2px;transition:width 0.4s;"></div>
+    <div style="padding:0 15px 12px 31px;">
+      <div style="height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${accent};border-radius:99px;transition:width 0.4s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:7px;">
+        <div style="font-size:0.7rem;color:var(--text-light);">${pct}% 完成</div>
+        ${editDeleteHtml}
       </div>
     </div>
-    <!-- 領取人清單 -->
-    <div style="border-top:1px solid var(--border);">
-      ${recipientsHtml}
-    </div>
+    <div style="border-top:1px solid #f3f4f6;">${recipientsHtml}</div>
   </div>`;
+}
+
+function itemToggleForm() {
+  const sec = document.getElementById('itemAddSection');
+  if (!sec) return;
+  sec.style.display = sec.style.display === 'none' ? '' : 'none';
+  if (sec.style.display !== 'none') sec.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 async function addItem() {
@@ -10368,7 +10398,9 @@ async function addItem() {
     document.querySelectorAll('#itemRecipients input').forEach(cb=>{
       cb.checked = false; cb.closest?.('.cb-item')?.classList.remove('checked');
     });
-    // 新增後重新整理清單（同步分隊選單到新增用的分隊）
+    // 新增後收合表單，重新整理清單
+    const addSec = document.getElementById('itemAddSection');
+    if (addSec) addSec.style.display = 'none';
     const listSel = document.getElementById('itemsListUnit');
     if (listSel) listSel.value = unit;
     setTimeout(() => { loadItems(unit); updateItemsBadge(); }, 500);
