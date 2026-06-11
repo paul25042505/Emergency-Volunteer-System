@@ -15859,8 +15859,7 @@ async function renderMeetingList() {
       headTitle.textContent = doc.title || '（無標題）';
       const headMeta = document.createElement('div');
       headMeta.style.cssText = 'font-size:0.75rem;color:var(--text-light);margin-top:3px;';
-      const attCount = (doc.attendees && doc.attendees.length) ? doc.attendees.length : 0;
-      headMeta.textContent = (doc.date || '') + (doc.unit ? '　' + doc.unit : '') + (attCount > 0 ? `　👥 ${attCount} 人出席` : '');
+      headMeta.textContent = (doc.date || '') + (doc.unit ? '　' + doc.unit : '');
       headInfo.appendChild(headTitle);
       headInfo.appendChild(headMeta);
       const headArrow = document.createElement('span');
@@ -15876,25 +15875,6 @@ async function renderMeetingList() {
       contentDiv.style.cssText = 'white-space:pre-wrap;line-height:1.9;';
       contentDiv.textContent = doc.content || '';
       body.appendChild(contentDiv);
-      // 與會人員名單
-      if (doc.attendees && doc.attendees.length > 0) {
-        const attSec = document.createElement('div');
-        attSec.style.cssText = 'margin-top:16px;padding-top:14px;border-top:1px solid var(--border);';
-        const attLabel = document.createElement('div');
-        attLabel.style.cssText = 'font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:8px;';
-        attLabel.textContent = `與會人員（${doc.attendees.length} 人）`;
-        attSec.appendChild(attLabel);
-        const tags = document.createElement('div');
-        tags.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
-        doc.attendees.forEach(n => {
-          const tag = document.createElement('span');
-          tag.style.cssText = 'font-size:0.75rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 9px;';
-          tag.textContent = n;
-          tags.appendChild(tag);
-        });
-        attSec.appendChild(tags);
-        body.appendChild(attSec);
-      }
 
       // 展開/收合
       head.onclick = () => {
@@ -19709,10 +19689,13 @@ async function loadAttendStats() {
   const year = yrSel ? yrSel.value : String(new Date().getFullYear());
   const targetUnit = isAdmin ? (unitSel ? unitSel.value : '') : userUnit;
 
-  let docs;
+  let oldDocs, newDocs;
   try {
-    docs = await Promise.race([
-      fbList(COL_MEETING_EVENTS, 'date', 'asc'),
+    [oldDocs, newDocs] = await Promise.race([
+      Promise.all([
+        fbList(COL_MEETING, 'date', 'asc'),
+        fbList(COL_MEETING_EVENTS, 'date', 'asc')
+      ]),
       new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))
     ]);
   } catch(e) {
@@ -19720,29 +19703,52 @@ async function loadAttendStats() {
     return;
   }
 
-  // 篩選年份 & 分隊（只計有 rsvp 資料的場次）
-  docs = docs.filter(d => (d.date || '').startsWith(year) && (d.rsvp || []).length > 0);
-  if (targetUnit) docs = docs.filter(d => (d.unit || '') === targetUnit);
+  // 舊資料：meetingRecords 用 attendees[]
+  let oldSessions = (oldDocs || [])
+    .filter(d => (d.date || '').startsWith(year) && (d.attendees || []).length > 0)
+    .map(d => ({ id: d.id, title: d.title, date: d.date, unit: d.unit, attendees: d.attendees, _src: 'old' }));
 
-  if (!docs.length) {
+  // 新資料：meetingEvents 用 rsvp[]
+  let newSessions = (newDocs || [])
+    .filter(d => (d.date || '').startsWith(year) && (d.rsvp || []).some(r => r.attend === '出席'))
+    .map(d => ({ id: d.id, title: d.title, date: d.date, unit: d.unit, rsvp: d.rsvp, _src: 'new' }));
+
+  if (targetUnit) {
+    oldSessions = oldSessions.filter(d => (d.unit || '') === targetUnit);
+    newSessions = newSessions.filter(d => (d.unit || '') === targetUnit);
+  }
+
+  const allSessions = [...oldSessions, ...newSessions]
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  if (!allSessions.length) {
     document.getElementById('asTotalSessions').textContent = '0';
     document.getElementById('asAvgRate').textContent = '—';
     body.innerHTML = '<div class="query-empty"><span class="empty-icon">📋</span>' + year + '年查無會議出席紀錄</div>';
     return;
   }
 
-  // 計算每人出席次數（只算 attend === '出席'）
+  // 計算每人出席次數
   const countMap = {};
-  docs.forEach(d => {
-    (d.rsvp || []).filter(r => r.attend === '出席').forEach(r => {
-      const name = r.name || '';
-      if (name) countMap[name] = (countMap[name] || 0) + 1;
-    });
+  allSessions.forEach(d => {
+    if (d._src === 'old') {
+      (d.attendees || []).forEach(name => {
+        if (name) countMap[name] = (countMap[name] || 0) + 1;
+      });
+    } else {
+      (d.rsvp || []).filter(r => r.attend === '出席').forEach(r => {
+        const name = r.name || '';
+        if (name) countMap[name] = (countMap[name] || 0) + 1;
+      });
+    }
   });
 
-  const total = docs.length;
+  const total = allSessions.length;
   const memberList = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
-  const totalAttendees = docs.reduce((s, d) => s + (d.rsvp || []).filter(r => r.attend === '出席').length, 0);
+  const totalAttendees = allSessions.reduce((s, d) => {
+    if (d._src === 'old') return s + (d.attendees || []).length;
+    return s + (d.rsvp || []).filter(r => r.attend === '出席').length;
+  }, 0);
   const uniqueCount = memberList.length;
   const avgRate = total > 0 && uniqueCount > 0
     ? Math.round(totalAttendees / (total * uniqueCount) * 100) + '%'
@@ -19780,10 +19786,17 @@ async function loadAttendStats() {
       <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);">
         <div style="font-size:0.82rem;font-weight:700;color:var(--text);">場次詳情</div>
       </div>
-      ${docs.slice().reverse().map(d => {
-        const attended = (d.rsvp || []).filter(r => r.attend === '出席').length;
-        const replied  = (d.rsvp || []).length;
-        const sessionRate = replied ? Math.round(attended / replied * 100) : 0;
+      ${allSessions.slice().reverse().map(d => {
+        let attended, replied, sessionRate, detailText;
+        if (d._src === 'old') {
+          attended = (d.attendees || []).length;
+          detailText = `${attended} 人出席`;
+        } else {
+          attended = (d.rsvp || []).filter(r => r.attend === '出席').length;
+          replied   = (d.rsvp || []).length;
+          sessionRate = replied ? Math.round(attended / replied * 100) : 0;
+          detailText = `回覆 ${replied} 人・出席率 ${sessionRate}%`;
+        }
         return `<div style="padding:11px 16px;border-bottom:1px solid var(--border);">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
@@ -19792,7 +19805,7 @@ async function loadAttendStats() {
             </div>
             <div style="text-align:right;">
               <div style="font-size:0.85rem;font-weight:700;color:var(--red);">${attended} 人出席</div>
-              <div style="font-size:0.65rem;color:var(--text-light);">回覆 ${replied} 人・出席率 ${sessionRate}%</div>
+              <div style="font-size:0.65rem;color:var(--text-light);">${detailText}</div>
             </div>
           </div>
         </div>`;
