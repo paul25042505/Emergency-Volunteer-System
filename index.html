@@ -14383,6 +14383,7 @@ function _siToggle(btn) {
 }
 
 async function initSystemInfoPage() {
+  _C.invalidate('changelogs'); // 每次開啟都拿最新版本資料
   const verEl  = document.getElementById('siVersionInfo');
   const clEl   = document.getElementById('siChangelogList');
   const footEl = document.getElementById('siFooterVersion');
