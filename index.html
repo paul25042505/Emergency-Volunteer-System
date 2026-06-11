@@ -1951,9 +1951,9 @@ function _dlCSV(content, filename) {
   <!-- 篩選面板 -->
   <div class="mq-filter" style="border-radius:0;">
     <div class="mq-chips" id="qDateChips">
-      <button class="mq-chip" onclick="qSetDateChip('today',this)">今天</button>
+      <button class="mq-chip active" onclick="qSetDateChip('today',this)">今天</button>
       <button class="mq-chip" onclick="qSetDateChip('week',this)">本週</button>
-      <button class="mq-chip active" onclick="qSetDateChip('month',this)">本月</button>
+      <button class="mq-chip" onclick="qSetDateChip('month',this)">本月</button>
       <button class="mq-chip" onclick="qSetDateChip('custom',this)">自訂日期</button>
     </div>
     <div id="qCustomDateRow" style="display:none;flex-direction:row;gap:8px;margin-bottom:10px;align-items:center;">
@@ -5874,7 +5874,7 @@ async function refreshCurrentPage() {
     case 'dashboardPage':   await loadDashboard(); break;
     case 'formPage':        await initFormPage(); break;
     case 'membersPage':     await initMembersPage(); break;
-    case 'queryPage':       await updateQueryMemberSelect(); break;
+    case 'queryPage':       await updateQueryMemberSelect(); qSetDateChip('today', document.querySelector('#qDateChips .mq-chip')); break;
     case 'dutyOverviewPage': await initDutyOverviewPage(); break;
     case 'attendancePage':  await initAttendancePage(); break;
     case 'statsPage':       await initStatsPage(); break;
