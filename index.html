@@ -3923,7 +3923,7 @@ function _dlCSV(content, filename) {
             </div>
           </div>
           <button onclick="openEbook('救護技術員教科書','https://ebook.nfa.gov.tw/1140527/mobile/index.html')" style="margin-top:14px;width:100%;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             開啟閱讀
           </button>
         </div>
@@ -3943,7 +3943,7 @@ function _dlCSV(content, filename) {
             </div>
           </div>
           <button onclick="openEbook('緊急醫療救護操作手冊','https://ebook.nfa.gov.tw/1140526/mobile/index.html')" style="margin-top:14px;width:100%;background:linear-gradient(135deg,#0d47a1,#1565c0);color:white;border:none;border-radius:10px;padding:11px;font-size:0.88rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             開啟閱讀
           </button>
         </div>
@@ -3955,21 +3955,6 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<!-- ══════ 電子書全螢幕閱讀器 ══════ -->
-<div id="ebookOverlay" style="display:none;position:fixed;inset:0;z-index:500;flex-direction:column;background:#1a1a1a;">
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(env(safe-area-inset-top,0px)+10px);background:#1a1a1a;flex-shrink:0;">
-    <button onclick="closeEbook()" style="background:rgba(255,255,255,0.12);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      返回
-    </button>
-    <div id="ebookTitle" style="flex:1;font-size:0.88rem;font-weight:700;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-    <button onclick="openEbookExternal()" style="background:rgba(255,255,255,0.12);border:none;border-radius:8px;padding:8px 12px;color:rgba(255,255,255,0.8);font-size:0.78rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;flex-shrink:0;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      瀏覽器
-    </button>
-  </div>
-  <iframe id="ebookFrame" src="" style="flex:1;width:100%;border:none;background:white;" allow="fullscreen"></iframe>
-</div>
 
 <!-- ══════ PAGE：系統資訊 ══════ -->
 <div class="page" id="systemInfoPage">
@@ -14032,24 +14017,9 @@ async function _removePushSubscription() {
 }
 
 // ════════════════════════════════════════
-// ── 電子書閱讀器 ──────────────────────────────────────────
-let _ebookUrl = '';
+// ── 電子書：直接在瀏覽器開啟（政府網站封鎖 iframe）──────────
 function openEbook(title, url) {
-  _ebookUrl = url;
-  document.getElementById('ebookTitle').textContent = title;
-  document.getElementById('ebookFrame').src = url;
-  const overlay = document.getElementById('ebookOverlay');
-  overlay.style.display = 'flex';
-  _lockScroll();
-}
-function closeEbook() {
-  const overlay = document.getElementById('ebookOverlay');
-  overlay.style.display = 'none';
-  document.getElementById('ebookFrame').src = '';
-  _unlockScroll();
-}
-function openEbookExternal() {
-  if (_ebookUrl) window.open(_ebookUrl, '_blank');
+  window.open(url, '_blank');
 }
 
 // 意見回饋（改版）
