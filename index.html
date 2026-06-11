@@ -13491,7 +13491,7 @@ function _applyUsageLock(pct, reads, quota) {
   if (!bar) {
     bar = document.createElement('div');
     bar.id = '_usageBar';
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;padding:7px 12px;font-size:0.82rem;font-weight:600;transition:all .3s;display:flex;align-items:center;';
+    bar.style.cssText = 'position:fixed;bottom:calc(83px + max(env(safe-area-inset-bottom,0px),8px));left:0;right:0;z-index:9999;padding:7px 12px;font-size:0.82rem;font-weight:600;transition:all .3s;display:flex;align-items:center;';
     document.body.appendChild(bar);
   }
   if (pct >= 100) {
