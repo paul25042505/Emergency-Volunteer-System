@@ -345,7 +345,6 @@ exports.scheduleUsageMonitor = onSchedule(
     const startOfDay = new Date(ptMidnight.getTime() + ptOffsetMs);
     const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
 
-    const quotaPeriodSecs = Math.floor((now.getTime() - startOfDay.getTime()) / 1000);
     const [timeSeries] = await client.listTimeSeries({
       name: `projects/${project}`,
       filter: 'metric.type="firestore.googleapis.com/document/read_count"',
@@ -354,7 +353,7 @@ exports.scheduleUsageMonitor = onSchedule(
         endTime:   { seconds: Math.floor(now.getTime() / 1000) },
       },
       aggregation: {
-        alignmentPeriod: { seconds: quotaPeriodSecs || 86400 },
+        alignmentPeriod: { seconds: 3600 },
         perSeriesAligner: 'ALIGN_SUM',
         crossSeriesReducer: 'REDUCE_SUM',
         groupByFields: [],
