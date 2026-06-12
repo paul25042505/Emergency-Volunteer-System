@@ -209,17 +209,17 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
   }
 );
 
-// ── 2. 每 10 分鐘：排班前 1 小時通知當事人 ──────────────────────────
+// ── 2. 每 30 分鐘：排班前 1 小時通知當事人 ──────────────────────────
 exports.scheduleDutyBeforeReminder = onSchedule(
-  { schedule: '*/10 * * * *', timeZone: TZ, region: REGION },
+  { schedule: '*/30 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
     const now = new Date();
     const today = _dateStr(now);
 
-    // start 在 50～70 分鐘後
-    const loStr = _timeStr(new Date(now.getTime() + 50 * 60000));
-    const hiStr = _timeStr(new Date(now.getTime() + 70 * 60000));
+    // start 在 20～80 分鐘後（配合 30 分鐘間隔擴大偵測窗口）
+    const loStr = _timeStr(new Date(now.getTime() + 20 * 60000));
+    const hiStr = _timeStr(new Date(now.getTime() + 80 * 60000));
 
     const snap = await db.collection('dutySchedule').where('date', '==', today).get();
     const targets = [];
@@ -242,17 +242,17 @@ exports.scheduleDutyBeforeReminder = onSchedule(
   }
 );
 
-// ── 3. 每 10 分鐘：班次結束後 1 小時未簽退者通知 ─────────────────────
+// ── 3. 每 30 分鐘：班次結束後 1 小時未簽退者通知 ─────────────────────
 exports.scheduleNoSignoutReminder = onSchedule(
-  { schedule: '*/10 * * * *', timeZone: TZ, region: REGION },
+  { schedule: '*/30 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
     const now = new Date();
     const today = _dateStr(now);
 
-    // end 在 60～70 分鐘前
-    const loStr = _timeStr(new Date(now.getTime() - 70 * 60000));
-    const hiStr = _timeStr(new Date(now.getTime() - 60 * 60000));
+    // end 在 45～90 分鐘前（配合 30 分鐘間隔擴大偵測窗口）
+    const loStr = _timeStr(new Date(now.getTime() - 90 * 60000));
+    const hiStr = _timeStr(new Date(now.getTime() - 45 * 60000));
 
     const snap = await db.collection('dutySchedule').where('date', '==', today).get();
     const targets = [];
@@ -326,9 +326,9 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   }
 );
 
-// ── 每 15 分鐘：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────
+// ── 每小時：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────────
 exports.scheduleUsageMonitor = onSchedule(
-  { schedule: '*/15 * * * *', timeZone: TZ, region: REGION },
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db      = getFirestore();
     const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
