@@ -2400,8 +2400,8 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- 編輯 Modal -->
-<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:white;border-radius:8px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:calc(100dvh - 32px);">
+<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:center;justify-content:center;padding:16px 16px calc(83px + max(env(safe-area-inset-bottom,0px),8px) + 8px);">
+  <div style="background:white;border-radius:8px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:100%;overflow:hidden;">
     <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0;">
       <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin:0;color:var(--text);">編輯紀錄</h3>
     </div>
@@ -3749,8 +3749,8 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:350;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:white;border-radius:10px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:calc(100dvh - 32px);">
+<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:center;justify-content:center;padding:16px 16px calc(83px + max(env(safe-area-inset-bottom,0px),8px) + 8px);">
+  <div style="background:white;border-radius:10px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:100%;overflow:hidden;">
     <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);" id="adminEditTitle">編輯資料</div>
     <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:16px 24px;">
       <div id="adminEditFields"></div>
