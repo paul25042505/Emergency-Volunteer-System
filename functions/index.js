@@ -209,39 +209,6 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
   }
 );
 
-// ── 2. 每 30 分鐘：排班前 1 小時通知當事人 ──────────────────────────
-exports.scheduleDutyBeforeReminder = onSchedule(
-  { schedule: '*/30 * * * *', timeZone: TZ, region: REGION },
-  async () => {
-    const db  = getFirestore();
-    const now = new Date();
-    const today = _dateStr(now);
-
-    // start 在 20～80 分鐘後（配合 30 分鐘間隔擴大偵測窗口）
-    const loStr = _timeStr(new Date(now.getTime() + 20 * 60000));
-    const hiStr = _timeStr(new Date(now.getTime() + 80 * 60000));
-
-    const snap = await db.collection('dutySchedule').where('date', '==', today).get();
-    const targets = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (!d.start || !d.memberName) return;
-      if (d.start >= loStr && d.start <= hiStr) targets.push(d);
-    });
-
-    for (const d of targets) {
-      const dedupKey = `duty-before1h-${today}-${d.start}-${d.memberName}`;
-      if (await _isDuped(db, dedupKey)) continue;
-
-      const title = '⏰ 即將出勤提醒';
-      const body  = `您今日 ${d.start} 的班次即將開始，請準備出勤。`;
-      const tokens = await _getMemberTokens(db, d.memberName);
-      if (tokens.length) await _sendMulticast(tokens, { title, body });
-      await _writeAutoNotif(db, { title, body, targetMembers: [d.memberName], dedupKey });
-    }
-  }
-);
-
 // ── 3. 每 30 分鐘：班次結束後 1 小時未簽退者通知 ─────────────────────
 exports.scheduleNoSignoutReminder = onSchedule(
   { schedule: '*/30 * * * *', timeZone: TZ, region: REGION },
