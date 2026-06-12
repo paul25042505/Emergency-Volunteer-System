@@ -6854,25 +6854,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
   if (upcomingNoReply.length)
     items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage', page: '會議登記' });
 
-  // ④ 已結束但定訓記錄未填（管理員/承辦人）
-  if (su.isAdmin || su.isOfficer) {
-    const meetingRecords = _C.peek(COL_MEETING) || [];
-    const userUnit = su.unit || '';
-    const recordDateSet = new Set(
-      meetingRecords
-        .filter(r => su.isAdmin || (r.unit || '') === userUnit)
-        .map(r => r.date)
-    );
-    const unfilledEvents = meetingDocs.filter(ev =>
-      ev.date < todayStr &&
-      (su.isAdmin || (ev.unit || '') === userUnit) &&
-      !recordDateSet.has(ev.date)
-    );
-    if (unfilledEvents.length)
-      items.push({ em: '📝', bg: '#fef9c3', title: `${unfilledEvents.length} 個會議未填定訓記錄`, sub: unfilledEvents.map(d => d.title || d.date).join('、'), fn: 'goMeetingStats()', page: '定訓與公告' });
-  }
-
-  // ⑤ 急救憑證快到期（≤30 天）
+  // ④ 急救憑證快到期（≤30 天）
   const myMember = (members || []).find(m => m.name === me);
   if (myMember?.certExp) {
     const diffDays = Math.floor((new Date(myMember.certExp) - Date.now()) / 86400000);
