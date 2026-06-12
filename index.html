@@ -5101,8 +5101,8 @@ const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
 const _C_SKIP = new Set(['feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
 async function fbList(col, orderByField, orderDir) {
-  // 讀取鎖定：超過 90% 時，全部 collection 返回快取或空陣列（不發出新讀取）
-  if (_usageLocked) {
+  // 讀取鎖定：超過 90% 時，僅允許簽到退 / 出勤案件兩個 collection，其餘返回快取或空陣列
+  if (_usageLocked && col !== 'attendance' && col !== 'outingRecords') {
     const cached = _C.peek(col);
     if (cached) return cached;
     return [];
@@ -6268,6 +6268,12 @@ function goBack() {
 }
 
 function navTo(pageId, fromHistory) {
+  // 讀取鎖定：90% 以上僅允許進入簽到退與今日出勤查詢相關頁面
+  const _LOCK_ALLOWED = new Set(['dashboardPage','dutyPage','attendancePage','formPage','attQueryPage','queryPage']);
+  if (_usageLocked && !_LOCK_ALLOWED.has(pageId)) {
+    _showToast('🔒 讀取配額已達 90%，此功能暫時停用，僅保留簽到退與今日出勤功能');
+    return;
+  }
   const _prevPageId = window._currentPageId || '';
   window._prevPageId    = _prevPageId;          // 供 goBack() 使用
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
@@ -13608,7 +13614,7 @@ function _applyUsageLock(pct, reads, quota) {
     bar.style.background = '#c0392b';
     bar.style.color = '#fff';
     bar.onclick = null;
-    bar.innerHTML = `<span style="flex:1;text-align:center;">🔒 今日讀取數已達 ${pct}%，功能已限制：僅保留簽到簽退及今日協勤紀錄。</span>`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">🔒 今日讀取配額已達 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}）— 僅保留【簽到退 / 案件登錄 / 今日查詢】，其他功能全部暫停。</span>`;
   } else if (pct >= 80) {
     if (sessionStorage.getItem('_usageBarDismissed')) return;
     bar.style.display = 'flex';
@@ -13660,7 +13666,7 @@ async function _loadUsageMonitor() {
     const statusEl = document.getElementById('_usageMeterStatus');
     if (pct >= 90) {
       statusEl.style.background = '#fdecea'; statusEl.style.color = '#c0392b';
-      statusEl.textContent = '🔒 已超過 90% — 部分非核心功能鎖定中';
+      statusEl.textContent = '🔒 已超過 90% — 僅保留簽到退、案件登錄、今日查詢，其他全部暫停';
     } else if (pct >= 70) {
       statusEl.style.background = '#fff3e0'; statusEl.style.color = '#e65100';
       statusEl.textContent = '⚠️ 用量偏高（70–89%）— 請留意，接近鎖定門檻';
@@ -13687,38 +13693,35 @@ function _renderUsageFeatureStatus() {
   if (!panel) return;
   panel.style.display = 'block';
 
+  const AVAIL_FEATURES = [
+    { icon: '✍️', label: '簽到 / 簽退',      desc: '出勤簽到、簽退操作' },
+    { icon: '🚑', label: '協勤案件登錄',      desc: '新增今日出勤案件紀錄' },
+    { icon: '🔍', label: '查詢今日簽到退',    desc: '今日出勤紀錄查詢' },
+    { icon: '📋', label: '查詢今日出勤案件',  desc: '今日案件紀錄查詢' },
+  ];
+  const LOCKED_FEATURES = [
+    { icon: '🏠', label: '首頁（完整資料）',  desc: '儀表板統計、待辦事項等' },
+    { icon: '📅', label: '班表總覽',          desc: '排班管理與查詢' },
+    { icon: '👤', label: '個人頁面',          desc: '個人資料、証照、申請紀錄' },
+    { icon: '📣', label: '系統公告',          desc: '公告列表讀取' },
+    { icon: '📦', label: '物品管理',          desc: '物品領用、庫存查詢' },
+    { icon: '🗓', label: '定訓 / 會議',       desc: '定訓行事曆、會議 RSVP' },
+    { icon: '📊', label: '統計 / 報表',       desc: '出勤統計、小隊報表' },
+    { icon: '🚗', label: '公差申請',          desc: '公差申請與歷史查詢' },
+    { icon: '⚙️', label: '管理員後台（全部）', desc: '成員管理、配額監控、推播等' },
+  ];
+
   if (_usageLocked) {
     stateEl.style.display = '';
     stateEl.style.background = '#fdecea'; stateEl.style.color = '#c0392b';
-    stateEl.textContent = '🔒 鎖定中 — 下列功能暫時無法即時讀取';
+    stateEl.textContent = '🔒 鎖定中（≥ 90%）— 僅保留下列 4 項核心功能';
     if (lockedSection) lockedSection.style.display = '';
-    if (availTitle)    availTitle.textContent = '✅ 仍可使用的功能';
+    if (availTitle)    availTitle.textContent = '✅ 仍可使用（4 項）';
   } else {
     stateEl.style.display = 'none';
     if (lockedSection) lockedSection.style.display = 'none';
-    if (availTitle)    availTitle.textContent = '✅ 所有功能狀態';
+    if (availTitle)    availTitle.textContent = '✅ 所有功能正常';
   }
-
-  const LOCKED_FEATURES = [
-    { icon: '🔐', label: '登入紀錄',     desc: '管理員後台 → 登入紀錄，無法查詢最新資料' },
-    { icon: '📋', label: '版本紀錄',     desc: '管理員後台 → 版本紀錄，無法顯示更新說明' },
-    { icon: '📝', label: '修正申請',     desc: '管理員後台 → 修正申請，待審清單可能不完整' },
-    { icon: '💬', label: '意見回饋',     desc: '管理員後台 → 意見回饋，無法載入最新回饋' },
-    { icon: '📢', label: '推播請求記錄', desc: '推播控制台，歷史推播紀錄無法即時讀取' },
-    { icon: '🔔', label: '推播紀錄',     desc: '推播控制台，推播發送紀錄無法即時讀取' },
-    { icon: '⏰', label: '自動通知紀錄', desc: '自動排程通知系統，已發送記錄無法即時確認' },
-  ];
-  const AVAIL_FEATURES = [
-    { icon: '👤', label: '成員帳號管理', desc: '查詢、新增、編輯成員資料與權限' },
-    { icon: '📊', label: '出勤紀錄',     desc: '申請出勤、查詢出勤記錄' },
-    { icon: '🚗', label: '公差申請',     desc: '公差申請與查詢' },
-    { icon: '📅', label: '定訓行事曆',   desc: '查看、管理定訓排程' },
-    { icon: '📣', label: '系統公告',     desc: '查看與發布系統公告' },
-    { icon: '🏢', label: '分隊管理',     desc: '分隊資料新增與刪除' },
-    { icon: '🔑', label: '臨時密碼',     desc: '建立成員臨時登入密碼' },
-    { icon: '✅', label: '確認任務',     desc: '上月紀錄確認作業' },
-    { icon: '🏷', label: '案由管理',     desc: '案由類別新增與刪除' },
-  ];
 
   const makeRow = (f, locked) => {
     const bg    = locked ? '#fdecea' : '#e8f5e9';
@@ -13735,13 +13738,16 @@ function _renderUsageFeatureStatus() {
     return row;
   };
 
-  if (colsEl) { colsEl.innerHTML = ''; LOCKED_FEATURES.forEach(f => colsEl.appendChild(makeRow(f, true))); }
   if (availEl) {
     availEl.innerHTML = '';
+    AVAIL_FEATURES.forEach(f => availEl.appendChild(makeRow(f, false)));
+  }
+  if (colsEl) {
+    colsEl.innerHTML = '';
     if (_usageLocked) {
-      AVAIL_FEATURES.forEach(f => availEl.appendChild(makeRow(f, false)));
+      LOCKED_FEATURES.forEach(f => colsEl.appendChild(makeRow(f, true)));
     } else {
-      [...LOCKED_FEATURES, ...AVAIL_FEATURES].forEach(f => availEl.appendChild(makeRow(f, false)));
+      LOCKED_FEATURES.forEach(f => colsEl.appendChild(makeRow(f, false)));
     }
   }
 }
