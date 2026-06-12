@@ -2400,13 +2400,13 @@ function _dlCSV(content, filename) {
 </div>
 
 <!-- 編輯 Modal -->
-<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:center;justify-content:center;padding:16px 16px calc(83px + max(env(safe-area-inset-bottom,0px),8px) + 8px);">
-  <div style="background:white;border-radius:8px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:100%;overflow:hidden;">
+<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:flex-start;justify-content:center;padding:max(env(safe-area-inset-top,0px),8px) 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
+  <div style="background:white;border-radius:12px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;height:100%;overflow:hidden;">
     <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0;">
       <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin:0;color:var(--text);">編輯紀錄</h3>
     </div>
     <input type="hidden" id="aqEditRow">
-    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:16px 24px;">
+    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:16px 24px;">
     <div style="display:flex;flex-direction:column;gap:14px;">
     <div class="field" style="margin-bottom:0;"><label>日期</label><input type="date" id="aqEditDate" style="width:100%;"></div>
     <div class="field" style="margin-bottom:0;"><label>姓名</label><input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;"></div>
@@ -3749,10 +3749,10 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;align-items:center;justify-content:center;padding:16px 16px calc(83px + max(env(safe-area-inset-bottom,0px),8px) + 8px);">
-  <div style="background:white;border-radius:10px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:100%;overflow:hidden;">
+<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:flex-start;justify-content:center;padding:max(env(safe-area-inset-top,0px),8px) 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
+  <div style="background:white;border-radius:10px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;height:100%;overflow:hidden;">
     <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);" id="adminEditTitle">編輯資料</div>
-    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:16px 24px;">
+    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:16px 24px;">
       <div id="adminEditFields"></div>
     </div>
     <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;flex-shrink:0;">
