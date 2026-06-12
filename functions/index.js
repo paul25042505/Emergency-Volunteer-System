@@ -1,6 +1,6 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onRequest }         = require('firebase-functions/v2/https');
-const { onSchedule }        = require('firebase-functions/v2/scheduler');
+const { onSchedule }        = require('firebase-functions/v2/scheduler'); // v2
 const { onMessagePublished } = require('firebase-functions/v2/pubsub');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
