@@ -1,7 +1,6 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onRequest }         = require('firebase-functions/v2/https');
-const { onSchedule }        = require('firebase-functions/v2/scheduler'); // v2
-const { onMessagePublished } = require('firebase-functions/v2/pubsub');
+const { onSchedule }        = require('firebase-functions/v2/scheduler');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
@@ -298,23 +297,29 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
 );
 
 // ── Cloud Billing 預算警報 → 設定鎖定狀態 ────────────────────────────
-// GCP Console 設定：Billing → Budgets & alerts → 建立預算
-//   → 勾選 "Connect a Pub/Sub topic to this budget"
-//   → Topic 填入 "billing-budget-alerts"（需在同一專案下先建立）
-// 警報閾值建議：50% / 90% / 100%（通知）+ 100%（鎖定）
-exports.onBudgetAlert = onMessagePublished(
-  { topic: 'billing-budget-alerts', region: REGION },
-  async (event) => {
+// GCP Console 設定：Pub/Sub → 訂閱 → 建立推送訂閱
+//   → Topic：billing-budget-alerts
+//   → 傳遞方式：推送（Push）
+//   → 端點 URL：https://onbudgetalert-<hash>-de.a.run.app（部署後取得）
+exports.onBudgetAlert = onRequest(
+  { region: REGION, cors: false, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
+
     const db  = getFirestore();
     const now = new Date();
     const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
 
-    // 解析 Pub/Sub 訊息
+    // Pub/Sub 推送格式：{ message: { data: '<base64>', attributes: {} }, subscription: '...' }
     let data = {};
     try {
-      data = event.data.message.json
-        || JSON.parse(Buffer.from(event.data.message.data || '', 'base64').toString());
-    } catch(e) { console.error('onBudgetAlert: parse error', e); return; }
+      const msg = req.body?.message;
+      if (msg?.data) {
+        data = JSON.parse(Buffer.from(msg.data, 'base64').toString());
+      } else if (msg?.json) {
+        data = msg.json;
+      }
+    } catch(e) { console.error('onBudgetAlert: parse error', e); res.status(400).send('parse error'); return; }
 
     const threshold    = data.alertThresholdExceeded ?? 0;
     const costAmount   = data.costAmount   ?? 0;
@@ -346,6 +351,7 @@ exports.onBudgetAlert = onMessagePublished(
         await db.collection('autoNotifLog').doc(dedupKey).set({ sentAt: now });
       }
     }
+    res.status(200).send('ok');
   }
 );
 
