@@ -13763,6 +13763,7 @@ function _startAutoNotifScheduler() {
 }
 
 async function _runAutoNotifications() {
+  if (_usageLocked) return;
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   if (!usr.isAdmin && !usr.isOfficer) return;
 
