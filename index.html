@@ -6852,7 +6852,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     d.date >= todayStr && !(d.rsvp || []).some(r => r.email === myEmail)
   );
   if (upcomingNoReply.length)
-    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage', page: '定訓與公告' });
+    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage', page: '會議登記' });
 
   // ④ 已結束但定訓記錄未填（管理員/承辦人）
   if (su.isAdmin || su.isOfficer) {
@@ -6895,7 +6895,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         : Promise.resolve({ empty: true, docs: [] }),
     ]);
     if (!corrSnap.empty)
-      items.push({ em: '📋', bg: '#dbeafe', title: `${corrSnap.size} 筆申請審核中`, sub: '點此查看申請進度', nav: 'profilePage', page: '個人資料' });
+      items.push({ em: '📋', bg: '#dbeafe', title: `${corrSnap.size} 筆申請審核中`, sub: '點此查看申請進度', nav: 'myCorrectionsPage', page: '我的申請紀錄' });
     if (!taskSnap.empty) {
       const pendingTasks = [];
       for (const doc of taskSnap.docs) {
