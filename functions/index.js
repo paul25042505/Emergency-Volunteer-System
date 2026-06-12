@@ -174,7 +174,7 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
   { schedule: '0 20 * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
-    if (await _isQuotaLocked(db)) { console.log('quota locked, skip'); return; }
+
     const now = new Date();
     const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
     const dedupKey = `duty-tomorrow-${tomorrow}`;
@@ -214,7 +214,7 @@ exports.scheduleNoSignoutReminder = onSchedule(
   { schedule: '0 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
-    if (await _isQuotaLocked(db)) { console.log('quota locked, skip'); return; }
+
     const now = new Date();
     const today = _dateStr(now);
 
@@ -256,7 +256,7 @@ exports.scheduleMonthlyScheduleOpen = onSchedule(
   { schedule: '0 9 20 * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
-    if (await _isQuotaLocked(db)) { console.log('quota locked, skip'); return; }
+
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const ym  = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
@@ -279,7 +279,7 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   { schedule: '0 9 1 * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
-    if (await _isQuotaLocked(db)) { console.log('quota locked, skip'); return; }
+
     const now = new Date();
     const ym  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const dedupKey = `monthly-confirm-${ym}`;
@@ -360,7 +360,7 @@ exports.scheduleDailyCleanup = onSchedule(
   { schedule: '0 3 * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
-    if (await _isQuotaLocked(db)) { console.log('quota locked, skip'); return; }
+
     const cutoff = new Date(Date.now() - 90 * 86400000); // 90 天前
 
     const COLS = ['loginLogs', 'changelogs', 'announcements', 'pushLogs', 'autoNotifLog', 'broadcastRequests'];
@@ -403,10 +403,6 @@ async function _isDuped(db, key) {
   return doc.exists;
 }
 
-async function _isQuotaLocked(db) {
-  const doc = await db.collection('settings').doc('dailyUsage').get();
-  return doc.exists && doc.data().locked === true;
-}
 
 async function _markDuped(db, key) {
   await db.collection('autoNotifLog').doc(key).set({ sentAt: new Date() });
