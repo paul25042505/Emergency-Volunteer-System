@@ -3792,6 +3792,13 @@ function _dlCSV(content, filename) {
         <span style="font-size:0.72rem;color:var(--text-mid);font-weight:600;">救護手冊</span>
       </button>
 
+      <button onclick="navTo('emsQueryPage')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px;">
+        <div style="width:52px;height:52px;border-radius:16px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h4M8 17h2"/></svg>
+        </div>
+        <span style="font-size:0.72rem;color:var(--text-mid);font-weight:600;">證照效期</span>
+      </button>
+
       <button onclick="navTo('settingsPage')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px;">
         <div style="width:52px;height:52px;border-radius:16px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -4069,6 +4076,40 @@ function _dlCSV(content, filename) {
     </div>
 
     <div class="site-footer-placeholder"></div>
+  </div>
+</div>
+
+
+<!-- ══════ PAGE：受訓紀錄及效期查詢 ══════ -->
+<div class="page" id="emsQueryPage" style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+  <!-- 頂部列 -->
+  <div style="padding:12px 14px 10px;background:white;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;">
+    <div style="flex:1;">
+      <div style="font-size:0.95rem;font-weight:700;color:var(--text);">受訓紀錄及效期查詢</div>
+      <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">衛生福利部緊急醫療救護系統</div>
+    </div>
+    <button onclick="window.open('https://ems.mohw.gov.tw','_blank')" style="display:flex;align-items:center;gap:5px;padding:7px 11px;background:#1d4ed8;color:white;border:none;border-radius:8px;font-size:0.76rem;font-weight:600;cursor:pointer;flex-shrink:0;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      在瀏覽器開啟
+    </button>
+  </div>
+  <!-- iframe 區域 -->
+  <div style="flex:1;position:relative;background:#f3f4f6;min-height:0;">
+    <iframe id="emsFrame" src="" style="width:100%;height:100%;border:none;display:block;"
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation">
+    </iframe>
+    <!-- Fallback（iframe 被擋時顯示） -->
+    <div id="emsFallback" style="display:none;position:absolute;inset:0;background:white;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
+      <div style="width:64px;height:64px;background:#fff3e0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f57c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:6px;">無法嵌入顯示</div>
+      <div style="font-size:0.82rem;color:var(--text-light);line-height:1.65;margin-bottom:24px;">此網站限制了嵌入顯示。<br>請點下方按鈕在瀏覽器中開啟查詢。</div>
+      <button onclick="window.open('https://ems.mohw.gov.tw','_blank')" style="padding:13px 28px;background:#1d4ed8;color:white;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:280px;">
+        🔗 開啟衛福部查詢系統
+      </button>
+      <div style="margin-top:12px;font-size:0.68rem;color:var(--text-light);">ems.mohw.gov.tw</div>
+    </div>
   </div>
 </div>
 
@@ -6042,6 +6083,7 @@ async function refreshCurrentPage() {
 
     case 'caseStatsPage':    await initCaseStatsPage(); break;
     case 'profilePage':     await loadProfilePage(); break;
+    case 'emsQueryPage':    initEmsQueryPage(); break;
     case 'adminPage':       await initAdminPage(); break;
     case 'systemInfoPage':  await initSystemInfoPage(); break;
     default: break;
@@ -6153,6 +6195,7 @@ const _tabForPage = {
   profilePage:        'more',   membersPage:        'manage',  itemsPage: 'more',
   systemInfoPage:     'more',
   settingsPage:       'more',   referencePage:      'more',
+  emsQueryPage:       'more',
 };
 const _tabPageMap = {
   home:     'dashboardPage',
@@ -6254,7 +6297,7 @@ function navTo(pageId, fromHistory) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -6332,6 +6375,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'caseStatsPage')     _nav(initCaseStatsPage);
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
+  else if (pageId === 'emsQueryPage')   _nav(initEmsQueryPage);
 
   if (pageId !== 'adminPage') {
     const bar = document.getElementById('adminTabBar');
@@ -14230,6 +14274,42 @@ async function _removePushSubscription() {
 
 function openEbook(title, url) {
   window.open(url, '_blank');
+}
+
+function initEmsQueryPage() {
+  const frame    = document.getElementById('emsFrame');
+  const fallback = document.getElementById('emsFallback');
+  if (!frame) return;
+  // 第一次進入才載入（避免重複請求）
+  if (frame.src && frame.src !== window.location.href) return;
+  fallback.style.display = 'none';
+  frame.style.display = 'block';
+  frame.onload = function() {
+    try {
+      // 若能讀取 contentDocument 且 body 為空 → 被 X-Frame-Options 擋掉
+      const doc = frame.contentDocument || frame.contentWindow?.document;
+      if (!doc || !doc.body || doc.body.innerHTML.trim() === '') {
+        frame.style.display = 'none';
+        fallback.style.display = 'flex';
+      }
+      // 若 body 有內容 → 同源嵌入成功（不太可能，但處理）
+    } catch(e) {
+      // SecurityError = 跨域載入成功，iframe 正常顯示
+    }
+  };
+  // 5 秒後再次確認（針對部分瀏覽器 load 事件行為不一致）
+  frame.src = 'https://ems.mohw.gov.tw/';
+  setTimeout(() => {
+    if (fallback.style.display !== 'flex') {
+      try {
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        if (!doc || !doc.body || doc.body.innerHTML.trim() === '') {
+          frame.style.display = 'none';
+          fallback.style.display = 'flex';
+        }
+      } catch(e) { /* 跨域正常 */ }
+    }
+  }, 5000);
 }
 
 // 意見回饋（改版）
