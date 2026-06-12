@@ -13257,7 +13257,14 @@ async function loadAdminAnnouncements() {
   try {
     const today = new Date().toLocaleDateString('sv');
     const docs  = await fbList(COL_ANNOUNCE);
-    docs.sort((a,b) => { const p=(b.pinned?1:0)-(a.pinned?1:0); return p!==0?p:((b.startDate||'')>(a.startDate||'')?1:-1); });
+    docs.sort((a,b) => {
+      const p = (b.pinned?1:0) - (a.pinned?1:0);
+      if (p !== 0) return p;
+      const sd = (b.startDate||'').localeCompare(a.startDate||'');
+      if (sd !== 0) return sd;
+      const getT = d => { const t=d._t; if(!t)return 0; if(typeof t.toMillis==='function')return t.toMillis(); if(t.seconds)return t.seconds*1000; return 0; };
+      return getT(b) - getT(a);
+    });
     if (!docs.length) { el.innerHTML='<div class="query-empty"><span class="empty-icon">📢</span>尚無公告</div>'; return; }
     el.innerHTML = '';
     docs.forEach(d => {
