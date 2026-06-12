@@ -13589,40 +13589,43 @@ async function _checkDailyUsage() {
     if (!doc) return;
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
     if (doc.date !== today) return;
-    _applyUsageLock(doc.pct, doc.reads, doc.quota);
+    _applyUsageLock(doc.pct, doc.costAmount, doc.budgetAmount, doc.currency);
   } catch(e) {}
 }
 
-function _applyUsageLock(pct, reads, quota) {
+function _applyUsageLock(pct, costAmount, budgetAmount, currency) {
   _usageLocked   = pct >= 90;
   _usageLazyLoad = pct >= 80;
+  const cur  = currency || 'USD';
+  const cStr = (costAmount != null && budgetAmount != null)
+    ? `${cur} ${Number(costAmount).toFixed(2)} / ${Number(budgetAmount).toFixed(2)}`
+    : `${pct}%`;
   let bar = document.getElementById('_usageBar');
   if (!bar) {
     bar = document.createElement('div');
     bar.id = '_usageBar';
     document.body.appendChild(bar);
   }
-  // 每次都更新定位，確保舊快取的 bar 也能套用
   bar.style.cssText = 'position:fixed;bottom:calc(83px + max(env(safe-area-inset-bottom,0px),8px));left:0;right:0;z-index:9999;padding:8px 16px;font-size:0.82rem;font-weight:600;transition:opacity .3s;display:none;align-items:center;gap:10px;';
   if (pct >= 100) {
     bar.style.display = 'flex';
     bar.style.background = '#c0392b';
     bar.style.color = '#fff';
     bar.onclick = null;
-    bar.innerHTML = `<span style="flex:1;text-align:center;">🚫 今日 Firestore 讀取已達上限（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），部分功能已暫停。</span>`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">🚫 費用預算已達 ${pct}%（${cStr}），部分功能已暫停。</span>`;
   } else if (pct >= 90) {
     bar.style.display = 'flex';
     bar.style.background = '#c0392b';
     bar.style.color = '#fff';
     bar.onclick = null;
-    bar.innerHTML = `<span style="flex:1;text-align:center;">🔒 今日讀取配額已達 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}）— 僅保留【簽到退 / 案件登錄 / 今日查詢】，其他功能全部暫停。</span>`;
+    bar.innerHTML = `<span style="flex:1;text-align:center;">🔒 費用預算已達 ${pct}%（${cStr}）— 僅保留【簽到退 / 案件登錄 / 今日查詢】，其他功能全部暫停。</span>`;
   } else if (pct >= 80) {
     if (sessionStorage.getItem('_usageBarDismissed')) return;
     bar.style.display = 'flex';
     bar.style.background = '#e67e22';
     bar.style.color = '#fff';
     bar.style.cursor = 'pointer';
-    bar.innerHTML = `<span style="flex:1;">⚠️ 今日讀取數 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），已切換懶讀取模式。</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;color:#fff;">✕</span>`;
+    bar.innerHTML = `<span style="flex:1;">⚠️ 費用預算 ${pct}%（${cStr}），已切換懶讀取模式。</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;color:#fff;">✕</span>`;
     bar.onclick = () => { sessionStorage.setItem('_usageBarDismissed','1'); bar.style.display = 'none'; };
   } else if (pct >= 70) {
     if (sessionStorage.getItem('_usageBarDismissed')) return;
@@ -13644,25 +13647,37 @@ async function _loadUsageMonitor() {
   if (panel)   panel.style.display = 'none';
 
   try {
-    const doc = await fbGet('settings', 'dailyUsage');
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
-    const pct   = (doc && doc.date === today) ? (doc.pct   || 0) : 0;
-    const reads = (doc && doc.date === today) ? (doc.reads || 0) : 0;
-    const quota = (doc && doc.date === today) ? (doc.quota || 50000) : 50000;
+    const doc      = await fbGet('settings', 'dailyUsage');
+    const today    = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+    const isToday  = doc && doc.date === today;
+    const pct          = isToday ? (doc.pct          || 0)     : 0;
+    const costAmount   = isToday ? (doc.costAmount   ?? null)  : null;
+    const budgetAmount = isToday ? (doc.budgetAmount ?? null)  : null;
+    const currency     = isToday ? (doc.currency     || 'USD') : 'USD';
     const updAt = (doc && doc.updatedAt) ? new Date(doc.updatedAt.toDate?.() || doc.updatedAt).toLocaleTimeString('zh-TW', { hour12:false, timeZone:'Asia/Taipei' }) : '—';
 
-    _applyUsageLock(pct, reads, quota);
+    _applyUsageLock(pct, costAmount, budgetAmount, currency);
 
-    // 進度條顏色
     const barColor = pct >= 90 ? '#c0392b' : pct >= 70 ? '#e67e22' : pct >= 50 ? '#f1c40f' : '#2ecc71';
 
-    document.getElementById('_usageMeterReads').textContent  = `${reads.toLocaleString()} 次`;
-    document.getElementById('_usageMeterPct').textContent    = `${pct}%`;
-    document.getElementById('_usageMeterPct').style.color    = barColor;
-    document.getElementById('_usageMeterQuota').textContent  = `${quota.toLocaleString()}`;
-    document.getElementById('_usageMeterBar').style.width    = `${Math.min(pct, 100)}%`;
+    // 主要數字：顯示費用或百分比
+    const readsEl = document.getElementById('_usageMeterReads');
+    const quotaEl = document.getElementById('_usageMeterQuota');
+    if (costAmount != null) {
+      readsEl.textContent = `${currency} ${Number(costAmount).toFixed(2)}`;
+      readsEl.previousElementSibling.textContent = '本期費用';
+      quotaEl.textContent = `${currency} ${Number(budgetAmount ?? 0).toFixed(2)}`;
+      quotaEl.previousElementSibling?.remove?.();
+    } else {
+      readsEl.textContent = `${pct}%`;
+      readsEl.previousElementSibling.textContent = '費用預算';
+      quotaEl.textContent = '預算上限';
+    }
+    document.getElementById('_usageMeterPct').textContent     = `${pct}%`;
+    document.getElementById('_usageMeterPct').style.color     = barColor;
+    document.getElementById('_usageMeterBar').style.width     = `${Math.min(pct, 100)}%`;
     document.getElementById('_usageMeterBar').style.background = barColor;
-    document.getElementById('_usageMeterUpdated').textContent = `最後更新：${updAt}`;
+    document.getElementById('_usageMeterUpdated').textContent  = `最後更新：${updAt}（Cloud Billing 警報觸發時更新）`;
 
     const statusEl = document.getElementById('_usageMeterStatus');
     if (pct >= 90) {
@@ -13670,31 +13685,29 @@ async function _loadUsageMonitor() {
       statusEl.textContent = '🔒 已超過 90% — 僅保留簽到退、案件登錄、今日查詢，其他全部暫停';
     } else if (pct >= 70) {
       statusEl.style.background = '#fff3e0'; statusEl.style.color = '#e65100';
-      statusEl.textContent = '⚠️ 用量偏高（70–89%）— 請留意，接近鎖定門檻';
+      statusEl.textContent = '⚠️ 預算偏高（70–89%）— 請留意，接近鎖定門檻';
     } else {
       statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32';
-      statusEl.textContent = '✅ 用量正常 — 所有功能可正常使用';
+      statusEl.textContent = '✅ 費用正常 — 所有功能可正常使用';
     }
 
-    // 費用估算（Blaze 方案：超出免費額度 50,000 後 $0.06 / 100,000 reads）
-    const costEl   = document.getElementById('_usageMeterCost');
-    const overRead = Math.max(0, reads - quota);
+    // 費用資訊卡
+    const costEl = document.getElementById('_usageMeterCost');
     if (costEl) {
-      if (overRead > 0) {
-        const usd = overRead / 100000 * 0.06;
-        const twd = usd * 32;
-        const usdMon = usd * 30;
-        const twdMon = twd * 30;
-        const fmt = (n, d=2) => n < 0.01 ? '<$0.01' : '$' + n.toFixed(d);
+      if (costAmount != null && budgetAmount != null) {
+        const twd = Number(costAmount) * 32;
+        const remain = Math.max(0, Number(budgetAmount) - Number(costAmount));
         costEl.style.display = 'block';
         costEl.innerHTML =
-          `<div style="font-size:0.78rem;font-weight:700;color:#795548;margin-bottom:6px;">💰 Blaze 費用估算（超出 ${overRead.toLocaleString()} 次）</div>`
+          `<div style="font-size:0.78rem;font-weight:700;color:#795548;margin-bottom:6px;">💰 Cloud Billing 費用明細</div>`
         + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:0.78rem;color:#5d4037;">`
-        + `<span>今日讀取費</span><span style="font-weight:700;">${fmt(usd)} USD（≈ NT$${twd.toFixed(1)}）</span>`
-        + `<span>預估月費</span><span style="font-weight:700;">${fmt(usdMon)} USD（≈ NT$${twdMon.toFixed(0)}）</span>`
-        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">以今日用量×30天估算，匯率 1 USD ≈ 32 TWD</div>`;
+        + `<span>本期費用</span><span style="font-weight:700;">${currency} ${Number(costAmount).toFixed(4)}（≈ NT$${twd.toFixed(1)}）</span>`
+        + `<span>預算上限</span><span style="font-weight:700;">${currency} ${Number(budgetAmount).toFixed(2)}</span>`
+        + `<span>剩餘額度</span><span style="font-weight:700;color:${remain < Number(budgetAmount)*0.1 ? '#c0392b':'#2e7d32'};">${currency} ${remain.toFixed(4)}</span>`
+        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">匯率 1 USD ≈ 32 TWD；Cloud Billing 資料有數小時延遲</div>`;
       } else {
-        costEl.style.display = 'none';
+        costEl.style.display = pct > 0 ? 'block' : 'none';
+        if (pct > 0) costEl.innerHTML = `<div style="font-size:0.78rem;color:#795548;">等待 Cloud Billing 預算警報觸發後顯示費用明細</div>`;
       }
     }
 
