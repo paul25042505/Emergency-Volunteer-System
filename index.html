@@ -2399,74 +2399,7 @@ function _dlCSV(content, filename) {
   <div class="site-footer-placeholder"></div>
 </div>
 
-<!-- 編輯 Modal -->
-<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:flex-start;justify-content:center;padding:max(env(safe-area-inset-top,0px),8px) 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
-  <div style="background:white;border-radius:12px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;height:100%;overflow:hidden;">
-    <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0;">
-      <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin:0;color:var(--text);">編輯紀錄</h3>
-    </div>
-    <input type="hidden" id="aqEditRow">
-    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:16px 24px;">
-    <div style="display:flex;flex-direction:column;gap:14px;">
-    <div class="field" style="margin-bottom:0;"><label>日期</label><input type="date" id="aqEditDate" style="width:100%;"></div>
-    <div class="field" style="margin-bottom:0;"><label>姓名</label><input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;"></div>
-    <div class="field" style="margin-bottom:0;">
-      <label>類別</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
-        <label id="aqEditDutyAttLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--red);border-radius:10px;cursor:pointer;background:var(--red-faint);font-weight:600;font-size:0.95rem;color:var(--red);transition:all 0.15s;">
-          <input type="radio" name="aqEditDuty" id="aqEditDutyAtt" value="協勤" checked style="display:none;" onchange="updateDutyStyle()">
-          🚑 協勤
-        </label>
-        <label id="aqEditDutyPubLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-weight:500;font-size:0.95rem;color:var(--text-light);transition:all 0.15s;">
-          <input type="radio" name="aqEditDuty" id="aqEditDutyPub" value="公差" style="display:none;" onchange="updateDutyStyle()">
-          🔧 公差
-        </label>
-      </div>
-    </div>
-    <div class="field" id="aqEditReasonField" style="margin-bottom:0;display:none;">
-      <label>事由</label>
-      <input type="text" id="aqEditReason" style="width:100%;" placeholder="請填寫公差事由">
-    </div>
-    <div class="row-2" style="margin-bottom:0;">
-      <div class="field" style="margin-bottom:0;"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
-      <div class="field" style="margin-bottom:0;"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
-    </div>
-    <div id="aqEditAnomalyFlags" style="display:none;background:#fff8e1;border:1px solid #ffc107;border-radius:8px;padding:10px 12px;font-size:0.78rem;color:#6d4c00;">
-      <div style="font-weight:600;margin-bottom:6px;">⚠️ 此紀錄有時間異常標記</div>
-      <label id="aqEditClearCheckinFlag" style="display:none;align-items:center;gap:6px;cursor:pointer;margin-bottom:4px;">
-        <input type="checkbox" id="aqEditClearCheckin" style="width:15px;height:15px;cursor:pointer;">
-        清除簽到時間異常標記
-      </label>
-      <label id="aqEditClearCheckoutFlag" style="display:none;align-items:center;gap:6px;cursor:pointer;">
-        <input type="checkbox" id="aqEditClearCheckout" style="width:15px;height:15px;cursor:pointer;">
-        清除簽退時間異常標記
-      </label>
-    </div>
-    <div class="field" style="margin-bottom:0;"><label>備勤時數</label><input type="number" id="aqEditHours" style="width:100%;background:#f5f5f5;" min="0" step="0.5" readonly></div>
-    <div class="field" style="margin-bottom:0;"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1"></div>
-    <div class="field" style="margin-bottom:0;"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
-    <div class="field" style="margin-bottom:0;">
-      <label><span>簽到簽名</span></label>
-      <div id="aqEditCheckinPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
-      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
-      <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
-      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
-    </div>
-    <div class="field" style="margin-bottom:0;">
-      <label style="display:flex;justify-content:space-between;align-items:center;"><span>簽退簽名</span><button type="button" id="aqEditCopyCheckinBtn" onclick="aqCopyCheckinSig()" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">📋 複製簽到簽名</button></label>
-      <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
-      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
-      <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
-      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
-    </div>
-    </div><!-- end flex column -->
-    </div><!-- end scrollable area -->
-    <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;flex-shrink:0;">
-      <button onclick="saveAttEdit()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲存</button>
-      <button onclick="closeAttEdit()" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
-    </div>
-  </div>
-</div>
+<!-- 編輯 Modal (moved to body root — see below </body>) -->
 
 <!-- ══════ PAGE：出席統計 ══════ -->
 <div class="page" id="attendStatsPage">
@@ -3749,18 +3682,7 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:flex-start;justify-content:center;padding:max(env(safe-area-inset-top,0px),8px) 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
-  <div style="background:white;border-radius:10px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;height:100%;overflow:hidden;">
-    <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;flex-shrink:0;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);" id="adminEditTitle">編輯資料</div>
-    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:16px 24px;">
-      <div id="adminEditFields"></div>
-    </div>
-    <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;flex-shrink:0;">
-      <button onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
-      <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
-    </div>
-  </div>
-</div>
+<!-- adminEditModal moved to body root — see below </body> -->
 
 <!-- ══════ PAGE：個人基本資料 ══════ -->
 <!-- ══════ PAGE：更多選單 ══════ -->
@@ -9472,7 +9394,7 @@ function openAttEditNew() {
   if (coutPrev) coutPrev.style.display = 'none';
   if (cinNote)  cinNote.style.display  = 'none';
   if (coutNote) coutNote.style.display = 'none';
-  document.getElementById('aqEditModal').style.display = 'flex';
+  const _aqm = document.getElementById('aqEditModal'); _aqm.style.display = 'block'; _aqm.scrollTop = 0;
   autoCalcEditHours();
   setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
 }
@@ -9532,7 +9454,7 @@ function openAttEdit(idx) {
     if (_cinFlag)  { _cinFlag.style.display  = r.timeAdjusted        ? 'flex' : 'none'; if(_cinCb)  _cinCb.checked  = false; }
     if (_coutFlag) { _coutFlag.style.display = r.checkoutTimeAdjusted ? 'flex' : 'none'; if(_coutCb) _coutCb.checked = false; }
   }
-  document.getElementById('aqEditModal').style.display = 'flex';
+  const _aqm = document.getElementById('aqEditModal'); _aqm.style.display = 'block'; _aqm.scrollTop = 0;
   autoCalcEditHours();
   setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
 }
@@ -11195,7 +11117,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
       await loadAdminWhitelist(curUnit);await loadMembers();
     }catch(e){alert('儲存失敗：'+e.message);}
   };
-  document.getElementById('adminEditModal').style.display = 'flex';
+  const _adm = document.getElementById('adminEditModal'); _adm.style.display = 'block'; _adm.scrollTop = 0;
 }
 
 
@@ -11269,7 +11191,7 @@ function adminEditMem(id,name,title,unit,cert,certExp) {
       await loadAdminMembers(); await loadMembers();
     } catch(e){alert('儲存失敗：'+e.message);}
   };
-  document.getElementById('adminEditModal').style.display='flex';
+  const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
 }
 
 async function loadAdminAttendance() {
@@ -11400,7 +11322,7 @@ async function adminEditAtt(id) {
       else await loadAdminAttendance();
     } catch(e){alert('儲存失敗：'+e.message);}
   };
-  document.getElementById('adminEditModal').style.display='flex';
+  const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
 }
 
 async function loadAdminOuting() {
@@ -11537,7 +11459,7 @@ async function adminEditOut(id) {
       else await loadAdminOuting();
     } catch(e){alert('儲存失敗：'+e.message);}
   };
-  document.getElementById('adminEditModal').style.display='flex';
+  const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
 }
 
 
@@ -20474,8 +20396,90 @@ function showTempPassErr(msg) {
 
 </div>
 
+<!-- ══════ ROOT-LEVEL MODALS (outside #appScroll to avoid iOS -webkit-overflow-scrolling stacking context) ══════ -->
 
+<!-- 打卡查詢 編輯 Modal -->
+<div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
+  <div style="background:white;border-radius:12px;width:100%;max-width:420px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;">
+      <h3 style="font-family:'Noto Serif TC',serif;font-size:1rem;margin:0;color:var(--text);">編輯紀錄</h3>
+    </div>
+    <input type="hidden" id="aqEditRow">
+    <div style="padding:16px 24px;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+    <div class="field" style="margin-bottom:0;"><label>日期</label><input type="date" id="aqEditDate" style="width:100%;"></div>
+    <div class="field" style="margin-bottom:0;"><label>姓名</label><input type="text" id="aqEditName" readonly style="width:100%;background:#f5f5f5;"></div>
+    <div class="field" style="margin-bottom:0;">
+      <label>類別</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+        <label id="aqEditDutyAttLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--red);border-radius:10px;cursor:pointer;background:var(--red-faint);font-weight:600;font-size:0.95rem;color:var(--red);transition:all 0.15s;">
+          <input type="radio" name="aqEditDuty" id="aqEditDutyAtt" value="協勤" checked style="display:none;" onchange="updateDutyStyle()">
+          🚑 協勤
+        </label>
+        <label id="aqEditDutyPubLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:white;font-weight:500;font-size:0.95rem;color:var(--text-light);transition:all 0.15s;">
+          <input type="radio" name="aqEditDuty" id="aqEditDutyPub" value="公差" style="display:none;" onchange="updateDutyStyle()">
+          🔧 公差
+        </label>
+      </div>
+    </div>
+    <div class="field" id="aqEditReasonField" style="margin-bottom:0;display:none;">
+      <label>事由</label>
+      <input type="text" id="aqEditReason" style="width:100%;" placeholder="請填寫公差事由">
+    </div>
+    <div class="row-2" style="margin-bottom:0;">
+      <div class="field" style="margin-bottom:0;"><label>簽到時間</label><select id="aqEditCheckin" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
+      <div class="field" style="margin-bottom:0;"><label>簽退時間</label><select id="aqEditCheckout" style="width:100%;" onchange="autoCalcEditHours()"></select></div>
+    </div>
+    <div id="aqEditAnomalyFlags" style="display:none;background:#fff8e1;border:1px solid #ffc107;border-radius:8px;padding:10px 12px;font-size:0.78rem;color:#6d4c00;">
+      <div style="font-weight:600;margin-bottom:6px;">⚠️ 此紀錄有時間異常標記</div>
+      <label id="aqEditClearCheckinFlag" style="display:none;align-items:center;gap:6px;cursor:pointer;margin-bottom:4px;">
+        <input type="checkbox" id="aqEditClearCheckin" style="width:15px;height:15px;cursor:pointer;">
+        清除簽到時間異常標記
+      </label>
+      <label id="aqEditClearCheckoutFlag" style="display:none;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="aqEditClearCheckout" style="width:15px;height:15px;cursor:pointer;">
+        清除簽退時間異常標記
+      </label>
+    </div>
+    <div class="field" style="margin-bottom:0;"><label>備勤時數</label><input type="number" id="aqEditHours" style="width:100%;background:#f5f5f5;" min="0" step="0.5" readonly></div>
+    <div class="field" style="margin-bottom:0;"><label>出勤次數</label><input type="number" id="aqEditCount" style="width:100%;" min="0" step="1"></div>
+    <div class="field" style="margin-bottom:0;"><label>服務人次 <span class="req">*</span></label><input type="number" id="aqEditService" style="width:100%;" min="0" step="1"></div>
+    <div class="field" style="margin-bottom:0;">
+      <label><span>簽到簽名</span></label>
+      <div id="aqEditCheckinPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckinPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
+      <div id="aqEditCheckinPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckinCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
+      <div class="sig-wrap"><canvas id="aqEditCheckinCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label style="display:flex;justify-content:space-between;align-items:center;"><span>簽退簽名</span><button type="button" id="aqEditCopyCheckinBtn" onclick="aqCopyCheckinSig()" style="display:none;background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:#1a5276;font-family:'Noto Sans TC',sans-serif;">📋 複製簽到簽名</button></label>
+      <div id="aqEditCheckoutPrev" style="display:none;margin-bottom:4px;"><img id="aqEditCheckoutPrevImg" style="width:100%;border:1px solid var(--border);border-radius:4px;background:#fafaf8;"></div>
+      <div id="aqEditCheckoutPrevNote" style="font-size:0.72rem;color:var(--text-light);margin-bottom:4px;display:none;justify-content:space-between;align-items:center;">↓ 重新簽名將取代上方舊簽名<button type="button" onclick="aeCanvasClear('aqEditCheckoutCanvas')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);flex-shrink:0;">清除重簽</button></div>
+      <div class="sig-wrap"><canvas id="aqEditCheckoutCanvas"></canvas></div>
+      <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">留空則保留原簽名（若有）</div>
+    </div>
+    </div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
+      <button onclick="saveAttEdit()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲存</button>
+      <button onclick="closeAttEdit()" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
+    </div>
+  </div>
+</div>
 
+<!-- 管理 編輯 Modal -->
+<div id="adminEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
+  <div style="background:white;border-radius:10px;width:100%;max-width:440px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);" id="adminEditTitle">編輯資料</div>
+    <div style="padding:16px 24px;">
+      <div id="adminEditFields"></div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
+      <button onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
+      <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
