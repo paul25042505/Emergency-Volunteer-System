@@ -1071,6 +1071,7 @@ function _dlCSV(content, filename) {
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script>
 // 在 CSS 渲染前設好 --app-height，確保 browser 模式下 body 高度等於 window.innerHeight
 (function(){
@@ -4081,35 +4082,57 @@ function _dlCSV(content, filename) {
 
 
 <!-- ══════ PAGE：受訓紀錄及效期查詢 ══════ -->
-<div class="page" id="emsQueryPage" style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
-  <!-- 頂部列 -->
-  <div style="padding:12px 14px 10px;background:white;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;">
-    <div style="flex:1;">
-      <div style="font-size:0.95rem;font-weight:700;color:var(--text);">受訓紀錄及效期查詢</div>
-      <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">衛生福利部緊急醫療救護系統</div>
-    </div>
-    <button onclick="window.open('https://ems.mohw.gov.tw','_blank')" style="display:flex;align-items:center;gap:5px;padding:7px 11px;background:#1d4ed8;color:white;border:none;border-radius:8px;font-size:0.76rem;font-weight:600;cursor:pointer;flex-shrink:0;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      在瀏覽器開啟
-    </button>
-  </div>
-  <!-- iframe 區域 -->
-  <div style="flex:1;position:relative;background:#f3f4f6;min-height:0;">
-    <iframe id="emsFrame" src="" style="width:100%;height:100%;border:none;display:block;"
-            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation">
-    </iframe>
-    <!-- Fallback（iframe 被擋時顯示） -->
-    <div id="emsFallback" style="display:none;position:absolute;inset:0;background:white;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;">
-      <div style="width:64px;height:64px;background:#fff3e0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f57c00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+<div class="page" id="emsQueryPage">
+  <div class="form-wrap" style="padding-bottom:80px;">
+
+    <!-- 標題 -->
+    <div style="background:linear-gradient(135deg,#1565c0 0%,#0d47a1 100%);border-radius:16px;padding:20px;margin-bottom:16px;color:white;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h5M8 17h3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:1rem;font-weight:700;">受訓紀錄及效期查詢</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.7);margin-top:2px;">衛生福利部緊急醫療救護系統</div>
+        </div>
       </div>
-      <div style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:6px;">無法嵌入顯示</div>
-      <div style="font-size:0.82rem;color:var(--text-light);line-height:1.65;margin-bottom:24px;">此網站限制了嵌入顯示。<br>請點下方按鈕在瀏覽器中開啟查詢。</div>
-      <button onclick="window.open('https://ems.mohw.gov.tw','_blank')" style="padding:13px 28px;background:#1d4ed8;color:white;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:280px;">
-        🔗 開啟衛福部查詢系統
-      </button>
-      <div style="margin-top:12px;font-size:0.68rem;color:var(--text-light);">ems.mohw.gov.tw</div>
     </div>
+
+    <!-- 查詢表單 -->
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:18px;margin-bottom:14px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;">身分證統一編號</div>
+        <input id="emsIdno" type="text" inputmode="text" placeholder="A123456789" maxlength="10"
+               oninput="this.value=this.value.toUpperCase()"
+               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.95rem;box-sizing:border-box;letter-spacing:0.08em;">
+      </div>
+      <div>
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;">出生日期</div>
+        <input id="emsBirthday" type="date"
+               style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.95rem;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:5px;">受訓年度</div>
+        <select id="emsYear" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.92rem;box-sizing:border-box;background:white;">
+          <option value="">全部</option>
+        </select>
+      </div>
+      <button onclick="callEmsQuery()" id="emsQueryBtn"
+              style="width:100%;padding:13px;background:#1d4ed8;color:white;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;">
+        🔍 查詢
+      </button>
+    </div>
+
+    <!-- 查詢結果 -->
+    <div id="emsResults" style="display:none;margin-bottom:14px;"></div>
+
+    <!-- 外部連結 fallback -->
+    <div style="background:#f0f4ff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b5bdb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div style="flex:1;font-size:0.78rem;color:#3b5bdb;line-height:1.5;">查詢失敗或需要詳細資料，可直接前往衛福部官網</div>
+      <button onclick="window.open('https://ems.mohw.gov.tw','_blank')" style="padding:7px 12px;background:#3b5bdb;color:white;border:none;border-radius:8px;font-size:0.76rem;font-weight:600;cursor:pointer;white-space:nowrap;">官網 ↗</button>
+    </div>
+
   </div>
 </div>
 
@@ -14277,39 +14300,86 @@ function openEbook(title, url) {
 }
 
 function initEmsQueryPage() {
-  const frame    = document.getElementById('emsFrame');
-  const fallback = document.getElementById('emsFallback');
-  if (!frame) return;
-  // 第一次進入才載入（避免重複請求）
-  if (frame.src && frame.src !== window.location.href) return;
-  fallback.style.display = 'none';
-  frame.style.display = 'block';
-  frame.onload = function() {
-    try {
-      // 若能讀取 contentDocument 且 body 為空 → 被 X-Frame-Options 擋掉
-      const doc = frame.contentDocument || frame.contentWindow?.document;
-      if (!doc || !doc.body || doc.body.innerHTML.trim() === '') {
-        frame.style.display = 'none';
-        fallback.style.display = 'flex';
-      }
-      // 若 body 有內容 → 同源嵌入成功（不太可能，但處理）
-    } catch(e) {
-      // SecurityError = 跨域載入成功，iframe 正常顯示
+  // 填入受訓年度下拉選單
+  const sel = document.getElementById('emsYear');
+  if (sel && sel.options.length === 1) {
+    const curYear = new Date().getFullYear();
+    for (let y = curYear; y >= 2005; y--) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = `${y} 年（民國 ${y - 1911} 年）`;
+      sel.appendChild(opt);
     }
-  };
-  // 5 秒後再次確認（針對部分瀏覽器 load 事件行為不一致）
-  frame.src = 'https://ems.mohw.gov.tw/';
-  setTimeout(() => {
-    if (fallback.style.display !== 'flex') {
-      try {
-        const doc = frame.contentDocument || frame.contentWindow?.document;
-        if (!doc || !doc.body || doc.body.innerHTML.trim() === '') {
-          frame.style.display = 'none';
-          fallback.style.display = 'flex';
-        }
-      } catch(e) { /* 跨域正常 */ }
+  }
+}
+
+async function callEmsQuery() {
+  const idno     = (document.getElementById('emsIdno')?.value || '').trim().toUpperCase();
+  const birthday = document.getElementById('emsBirthday')?.value || '';
+  const year     = document.getElementById('emsYear')?.value || '';
+  const btn      = document.getElementById('emsQueryBtn');
+  const resultEl = document.getElementById('emsResults');
+
+  if (!idno || !/^[A-Z][12][0-9]{8}$/.test(idno))
+    return alert('請輸入正確的身分證格式（例：A123456789）');
+  if (!birthday) return alert('請選擇出生日期');
+
+  btn.disabled = true;
+  btn.textContent = '查詢中…';
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);">⏳ 連線衛福部系統中，請稍後…</div>';
+
+  try {
+    await ensureFirebase();
+    const fn = firebase.app().functions('asia-east1');
+    const queryFn = fn.httpsCallable('queryEmsRecord', { timeout: 60000 });
+    const { data } = await queryFn({ idno, birthday, year });
+
+    if (!data.success) {
+      resultEl.innerHTML = `
+        <div style="background:#fff8e1;border-radius:12px;padding:16px;border:1px solid #ffe082;">
+          <div style="font-weight:700;color:#f57f17;margin-bottom:4px;">⚠️ 查詢失敗</div>
+          <div style="font-size:0.82rem;color:#7c5f00;">${data.error || '衛福部系統暫時無法存取，請改用外部瀏覽器查詢。'}</div>
+        </div>`;
+      return;
     }
-  }, 5000);
+
+    const rows = data.results || [];
+    if (!rows.length) {
+      resultEl.innerHTML = `<div style="background:white;border-radius:12px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+        <div style="font-size:1.5rem;margin-bottom:8px;">🔍</div>
+        <div style="font-weight:700;color:var(--text);">查無資料</div>
+        <div style="font-size:0.8rem;color:var(--text-light);margin-top:4px;">請確認身分證號及出生日期是否正確</div>
+      </div>`;
+      return;
+    }
+
+    // 取得所有欄位標題（第一筆的 key）
+    const headers = data.headers || Object.keys(rows[0]);
+    resultEl.innerHTML = `
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
+        <div style="padding:12px 16px;background:#e8f5e9;border-bottom:1px solid #c8e6c9;font-size:0.82rem;font-weight:700;color:#2e7d32;">
+          ✅ 查詢成功 — 共 ${rows.length} 筆紀錄
+        </div>
+        ${rows.map((r, i) => `
+          <div style="padding:14px 16px;${i < rows.length-1 ? 'border-bottom:1px solid #f5f5f5;' : ''}">
+            ${headers.map(h => r[h] ? `
+              <div style="display:flex;gap:8px;margin-bottom:4px;">
+                <span style="font-size:0.72rem;color:var(--text-mid);min-width:72px;flex-shrink:0;">${h}</span>
+                <span style="font-size:0.82rem;font-weight:600;color:var(--text);">${r[h]}</span>
+              </div>` : '').join('')}
+          </div>`).join('')}
+      </div>`;
+  } catch(e) {
+    resultEl.innerHTML = `
+      <div style="background:#fff3cd;border-radius:12px;padding:16px;border:1px solid #ffc107;">
+        <div style="font-weight:700;color:#856404;margin-bottom:4px;">⚠️ 無法連線</div>
+        <div style="font-size:0.82rem;color:#856404;">衛福部系統拒絕了程式查詢（可能限制了非瀏覽器存取）。<br>請點「官網 ↗」按鈕在瀏覽器中手動查詢。</div>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 查詢';
+  }
 }
 
 // 意見回饋（改版）
