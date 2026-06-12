@@ -6835,7 +6835,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     const dutyDocs   = _C.peek(COL_DUTY) || [];
     const endPassed  = dutyDocs.some(d => d.date === todayStr && d.memberName === me && d.end && d.end <= nowTimeStr);
     if (endPassed)
-      items.push({ em: '⏰', bg: '#fff3e0', title: '今日尚未完成簽退', sub: '排班已結束，請盡快完成簽退', nav: 'attendancePage' });
+      items.push({ em: '⏰', bg: '#fff3e0', title: '今日尚未完成簽退', sub: '排班已結束，請盡快完成簽退', nav: 'attendancePage', page: '打卡查詢' });
   }
 
   // ② 物品待領取
@@ -6843,7 +6843,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     (item.recipients || []).some(r => r.name === me && !r.claimed)
   );
   if (pendingItems.length)
-    items.push({ em: '📦', bg: '#f3e8ff', title: `${pendingItems.length} 項物品待領取`, sub: pendingItems.map(i => i.itemName).join('、'), nav: 'itemsPage' });
+    items.push({ em: '📦', bg: '#f3e8ff', title: `${pendingItems.length} 項物品待領取`, sub: pendingItems.map(i => i.itemName).join('、'), nav: 'itemsPage', page: '物品領用' });
 
   // ③ 會議未回覆出席
   const meetingDocs    = _C.peek(COL_MEETING_EVENTS) || [];
@@ -6852,7 +6852,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     d.date >= todayStr && !(d.rsvp || []).some(r => r.email === myEmail)
   );
   if (upcomingNoReply.length)
-    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage' });
+    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage', page: '定訓與公告' });
 
   // ④ 已結束但定訓記錄未填（管理員/承辦人）
   if (su.isAdmin || su.isOfficer) {
@@ -6869,7 +6869,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
       !recordDateSet.has(ev.date)
     );
     if (unfilledEvents.length)
-      items.push({ em: '📝', bg: '#fef9c3', title: `${unfilledEvents.length} 個會議未填定訓記錄`, sub: unfilledEvents.map(d => d.title || d.date).join('、'), fn: 'goMeetingStats()' });
+      items.push({ em: '📝', bg: '#fef9c3', title: `${unfilledEvents.length} 個會議未填定訓記錄`, sub: unfilledEvents.map(d => d.title || d.date).join('、'), fn: 'goMeetingStats()', page: '定訓與公告' });
   }
 
   // ⑤ 急救憑證快到期（≤30 天）
@@ -6880,7 +6880,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
       const sub = diffDays < 0
         ? `憑證已於 ${myMember.certExp} 過期`
         : `還有 ${diffDays} 天到期（${myMember.certExp}）`;
-      items.push({ em: '🩺', bg: '#fee2e2', title: '急救憑證即將到期', sub, nav: 'profilePage' });
+      items.push({ em: '🩺', bg: '#fee2e2', title: '急救憑證即將到期', sub, nav: 'profilePage', page: '個人資料' });
     }
   }
 
@@ -6895,7 +6895,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         : Promise.resolve({ empty: true, docs: [] }),
     ]);
     if (!corrSnap.empty)
-      items.push({ em: '📋', bg: '#dbeafe', title: `${corrSnap.size} 筆申請審核中`, sub: '點此查看申請進度', nav: 'profilePage' });
+      items.push({ em: '📋', bg: '#dbeafe', title: `${corrSnap.size} 筆申請審核中`, sub: '點此查看申請進度', nav: 'profilePage', page: '個人資料' });
     if (!taskSnap.empty) {
       const pendingTasks = [];
       for (const doc of taskSnap.docs) {
@@ -6906,7 +6906,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         } catch(e) {}
       }
       if (pendingTasks.length)
-        items.push({ em: '✅', bg: '#dcfce7', title: `${pendingTasks.join('、')} 出勤紀錄待確認`, sub: '請至個人頁面確認出勤紀錄', nav: 'profilePage' });
+        items.push({ em: '✅', bg: '#dcfce7', title: `${pendingTasks.join('、')} 出勤紀錄待確認`, sub: '請至個人頁面確認出勤紀錄', nav: 'profilePage', page: '個人資料' });
     }
   } catch(e) {}
 
@@ -6921,7 +6921,10 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         <div style="font-size:0.85rem;font-weight:600;color:var(--text);line-height:1.3;">${t.title}</div>
         ${t.sub ? `<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.sub}</div>` : ''}
       </div>
-      ${chevron}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+        ${t.page ? `<span style="font-size:0.65rem;background:#f3f4f6;color:#6b7280;border-radius:4px;padding:2px 6px;white-space:nowrap;">→ ${t.page}</span>` : ''}
+        ${chevron}
+      </div>
     </div>`;
   }).join('');
   card.style.display = '';
