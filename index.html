@@ -6852,7 +6852,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     d.date >= todayStr && !(d.rsvp || []).some(r => r.email === myEmail)
   );
   if (upcomingNoReply.length)
-    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), nav: 'meetingPage', page: '會議登記' });
+    items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), fn: "navTo('dutyPage');setTimeout(function(){dutyView('meeting')},400)", page: '會議登記' });
 
   // ④ 急救憑證快到期（≤30 天）
   const myMember = (members || []).find(m => m.name === me);
