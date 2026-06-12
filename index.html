@@ -3680,6 +3680,7 @@ function _dlCSV(content, filename) {
             <span>0</span><span id="_usageMeterQuota"></span>
           </div>
           <div id="_usageMeterStatus" style="padding:8px 12px;border-radius:8px;font-size:0.82rem;font-weight:600;"></div>
+          <div id="_usageMeterCost" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:#fff8e1;border:1px solid #ffe082;"></div>
           <div id="_usageMeterUpdated" style="font-size:0.72rem;color:var(--text-light);margin-top:8px;text-align:right;"></div>
         </div>
       </div>
@@ -13673,6 +13674,28 @@ async function _loadUsageMonitor() {
     } else {
       statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32';
       statusEl.textContent = '✅ 用量正常 — 所有功能可正常使用';
+    }
+
+    // 費用估算（Blaze 方案：超出免費額度 50,000 後 $0.06 / 100,000 reads）
+    const costEl   = document.getElementById('_usageMeterCost');
+    const overRead = Math.max(0, reads - quota);
+    if (costEl) {
+      if (overRead > 0) {
+        const usd = overRead / 100000 * 0.06;
+        const twd = usd * 32;
+        const usdMon = usd * 30;
+        const twdMon = twd * 30;
+        const fmt = (n, d=2) => n < 0.01 ? '<$0.01' : '$' + n.toFixed(d);
+        costEl.style.display = 'block';
+        costEl.innerHTML =
+          `<div style="font-size:0.78rem;font-weight:700;color:#795548;margin-bottom:6px;">💰 Blaze 費用估算（超出 ${overRead.toLocaleString()} 次）</div>`
+        + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:0.78rem;color:#5d4037;">`
+        + `<span>今日讀取費</span><span style="font-weight:700;">${fmt(usd)} USD（≈ NT$${twd.toFixed(1)}）</span>`
+        + `<span>預估月費</span><span style="font-weight:700;">${fmt(usdMon)} USD（≈ NT$${twdMon.toFixed(0)}）</span>`
+        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">以今日用量×30天估算，匯率 1 USD ≈ 32 TWD</div>`;
+      } else {
+        costEl.style.display = 'none';
+      }
     }
 
     if (loading) loading.style.display = 'none';
