@@ -6269,7 +6269,7 @@ function goBack() {
 
 function navTo(pageId, fromHistory) {
   // 讀取鎖定：90% 以上僅允許進入簽到退與今日出勤查詢相關頁面
-  const _LOCK_ALLOWED = new Set(['dashboardPage','dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage']);
+  const _LOCK_ALLOWED = new Set(['dashboardPage','dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage','morePage','adminPage']);
   if (_usageLocked && !_LOCK_ALLOWED.has(pageId)) {
     _showToast('🔒 讀取配額已達 90%，此功能暫時停用，僅保留簽到退與今日出勤功能');
     return;
@@ -13698,17 +13698,17 @@ function _renderUsageFeatureStatus() {
     { icon: '🚑', label: '協勤案件登錄',      desc: '新增今日出勤案件紀錄' },
     { icon: '🔍', label: '查詢今日簽到退',    desc: '今日出勤紀錄查詢' },
     { icon: '📋', label: '查詢今日出勤案件',  desc: '今日案件紀錄查詢' },
+    { icon: '⚙️', label: '更多 / 管理員後台', desc: '可進入後台查看配額監控等' },
   ];
   const LOCKED_FEATURES = [
-    { icon: '🏠', label: '首頁（完整資料）',  desc: '儀表板統計、待辦事項等' },
-    { icon: '📅', label: '班表總覽',          desc: '排班管理與查詢' },
+    { icon: '📅', label: '排班',             desc: '班表總覽、登記排班、排班查詢' },
     { icon: '👤', label: '個人頁面',          desc: '個人資料、証照、申請紀錄' },
     { icon: '📣', label: '系統公告',          desc: '公告列表讀取' },
     { icon: '📦', label: '物品管理',          desc: '物品領用、庫存查詢' },
     { icon: '🗓', label: '定訓 / 會議',       desc: '定訓行事曆、會議 RSVP' },
     { icon: '📊', label: '統計 / 報表',       desc: '出勤統計、小隊報表' },
     { icon: '🚗', label: '公差申請',          desc: '公差申請與歷史查詢' },
-    { icon: '⚙️', label: '管理員後台（全部）', desc: '成員管理、配額監控、推播等' },
+    { icon: '👥', label: '成員管理',          desc: '成員資料讀取（後台）' },
   ];
 
   if (_usageLocked) {
