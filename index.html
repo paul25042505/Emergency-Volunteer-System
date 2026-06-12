@@ -6269,7 +6269,7 @@ function goBack() {
 
 function navTo(pageId, fromHistory) {
   // 讀取鎖定：90% 以上僅允許進入簽到退與今日出勤查詢相關頁面
-  const _LOCK_ALLOWED = new Set(['dashboardPage','dutyPage','attendancePage','formPage','attQueryPage','queryPage']);
+  const _LOCK_ALLOWED = new Set(['dashboardPage','dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage']);
   if (_usageLocked && !_LOCK_ALLOWED.has(pageId)) {
     _showToast('🔒 讀取配額已達 90%，此功能暫時停用，僅保留簽到退與今日出勤功能');
     return;
