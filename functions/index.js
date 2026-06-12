@@ -1,10 +1,10 @@
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onRequest }         = require('firebase-functions/v2/https');
 const { onSchedule }        = require('firebase-functions/v2/scheduler');
+const { onMessagePublished } = require('firebase-functions/v2/pubsub');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
-const { MetricServiceClient } = require('@google-cloud/monitoring');
 
 initializeApp();
 
@@ -297,75 +297,55 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   }
 );
 
-// ── 每小時：監控今日 Firestore 讀取數，超過 90% 寫入警告 ──────────────
-exports.scheduleUsageMonitor = onSchedule(
-  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
-  async () => {
-    const db      = getFirestore();
-    const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
-    const client  = new MetricServiceClient();
-
-    // Firebase 免費額度以太平洋時間午夜重置（PDT=UTC-7, PST=UTC-8）
-    // 計算當前太平洋時間的今日 00:00 UTC，以對齊 Firebase Console 顯示的數字
+// ── Cloud Billing 預算警報 → 設定鎖定狀態 ────────────────────────────
+// GCP Console 設定：Billing → Budgets & alerts → 建立預算
+//   → 勾選 "Connect a Pub/Sub topic to this budget"
+//   → Topic 填入 "billing-budget-alerts"（需在同一專案下先建立）
+// 警報閾值建議：50% / 90% / 100%（通知）+ 100%（鎖定）
+exports.onBudgetAlert = onMessagePublished(
+  { topic: 'billing-budget-alerts', region: REGION },
+  async (event) => {
+    const db  = getFirestore();
     const now = new Date();
-    const month = now.getUTCMonth(); // 0=Jan
-    const isPDT = month >= 3 && month <= 9; // 4月~10月 PDT
-    const ptOffsetMs = (isPDT ? 7 : 8) * 3600000;
-    const ptMidnight = new Date(now.getTime() - ptOffsetMs);
-    ptMidnight.setUTCHours(0, 0, 0, 0);
-    const startOfDay = new Date(ptMidnight.getTime() + ptOffsetMs);
     const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
 
-    const [timeSeries] = await client.listTimeSeries({
-      name: `projects/${project}`,
-      filter: 'metric.type="firestore.googleapis.com/document/read_count"',
-      interval: {
-        startTime: { seconds: Math.floor(startOfDay.getTime() / 1000) },
-        endTime:   { seconds: Math.floor(now.getTime() / 1000) },
-      },
-      aggregation: {
-        alignmentPeriod: { seconds: 3600 },
-        perSeriesAligner: 'ALIGN_SUM',
-        crossSeriesReducer: 'REDUCE_SUM',
-        groupByFields: [],
-      },
-    }).catch(() => [[]]);
+    // 解析 Pub/Sub 訊息
+    let data = {};
+    try {
+      data = event.data.message.json
+        || JSON.parse(Buffer.from(event.data.message.data || '', 'base64').toString());
+    } catch(e) { console.error('onBudgetAlert: parse error', e); return; }
 
-    let todayReads = 0;
-    (timeSeries || []).forEach(ts => {
-      (ts.points || []).forEach(p => {
-        todayReads += Number(p.value?.int64Value || p.value?.doubleValue || 0);
-      });
-    });
-
-    const FREE_QUOTA  = 50000;
-    const pct         = Math.round((todayReads / FREE_QUOTA) * 100);
-    const locked      = pct >= 90;
+    const threshold    = data.alertThresholdExceeded ?? 0;
+    const costAmount   = data.costAmount   ?? 0;
+    const budgetAmount = data.budgetAmount ?? 0;
+    const currency     = data.currencyCode ?? 'USD';
+    const pct          = budgetAmount > 0
+      ? Math.round((costAmount / budgetAmount) * 100)
+      : Math.round(threshold * 100);
+    const locked = threshold >= 0.9;
 
     await db.collection('settings').doc('dailyUsage').set({
-      date:       todayStr,
-      reads:      todayReads,
-      quota:      FREE_QUOTA,
-      pct,
-      locked,
-      updatedAt:  now,
+      date: todayStr, locked, pct,
+      costAmount, budgetAmount, currency,
+      alertThreshold: threshold,
+      alertSource: 'billing',
+      updatedAt: now,
     }, { merge: false });
 
-    // 超過 90% 發推播通知管理員
+    console.log(`onBudgetAlert: threshold=${threshold} cost=${costAmount}/${budgetAmount} ${currency} locked=${locked}`);
+
     if (locked) {
-      const dedupKey = `usage-alert-${todayStr}`;
-      const isDuped  = await db.collection('autoNotifLog').doc(dedupKey).get().then(d => d.exists);
-      if (!isDuped) {
-        const title = '⚠️ Firestore 讀取數超過 90%';
-        const body  = `今日已讀取 ${todayReads.toLocaleString()} 次（${pct}%），部分功能已鎖定。`;
+      const dedupKey = `budget-lock-${todayStr}-${Math.round(threshold * 100)}`;
+      const already  = await db.collection('autoNotifLog').doc(dedupKey).get().then(d => d.exists);
+      if (!already) {
+        const title = '⚠️ Firestore 費用預算警報';
+        const body  = `費用已達預算 ${pct}%（${currency} ${costAmount.toFixed(2)} / ${budgetAmount.toFixed(2)}），部分功能已鎖定。`;
         const tokens = await _getAdminTokens(null);
         if (tokens.length) await _sendMulticast(tokens, { title, body });
         await db.collection('autoNotifLog').doc(dedupKey).set({ sentAt: now });
-        console.log(`scheduleUsageMonitor: alert sent, reads=${todayReads} (${pct}%)`);
       }
     }
-
-    console.log(`scheduleUsageMonitor: today reads=${todayReads} (${pct}%)`);
   }
 );
 
