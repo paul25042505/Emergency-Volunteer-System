@@ -1020,7 +1020,7 @@ async function importAttCSV() {
         const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
         const mem = members.find(m=>m.name===memberName)||{};
         const titleVal = titleRaw || mem.title || '';
-        await fbAdd(COL_ATTEND,{date:dateFmt,dutyType:dutyType||'協勤',memberName,unit:mem.unit||'',title:titleVal,checkinTime:checkinTime||'',checkoutTime:checkoutTime||'',hours:parseFloat(hoursRaw)||0,count:parseInt(countRaw)||0,service:parseInt(serviceRaw)||0,checkinSig:'',checkoutSig:''});
+        await fbAdd(COL_ATTEND,{date:dateFmt,dutyType:dutyType||'協勤',memberName,unit:mem.unit||'',title:titleVal,checkinTime:checkinTime||'',checkoutTime:checkoutTime||'',hours:parseFloat(hoursRaw)||0,count:parseInt(countRaw)||0,service:parseInt(serviceRaw)||0,hasSig:false});
         ok++;
       } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
     }
@@ -1043,7 +1043,7 @@ async function importOutCSV() {
         const [y,m,d2] = date.replace(/\//g,'-').split('-');
         const dateFmt = y+'-'+String(m).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
         const mem = members.find(m=>m.name===memberName)||{};
-        await fbAdd(COL_OUTING,{date:dateFmt,caseType:caseType||'',timeOut:timeOut||'',timeBack:timeBack||'',district:district||'',address:address||'',services:services||'',note:note||'',memberName,unit:mem.unit||'',title:mem.title||'',signature:''});
+        await fbAdd(COL_OUTING,{date:dateFmt,caseType:caseType||'',timeOut:timeOut||'',timeBack:timeBack||'',district:district||'',address:address||'',services:services||'',note:note||'',memberName,unit:mem.unit||'',title:mem.title||'',hasSig:false});
         ok++;
       } catch(e){fail++;failList.push({row:i+1,reason:e.message||'寫入失敗'});}
     }
@@ -5093,8 +5093,6 @@ function ensureFirebase() {
 }
 
 async function fbGet(col,id){
-  // 讀取鎖定：超過 90% 時封鎖，僅允許用量紀錄本身（維持監控）
-  if (_usageLocked && !(col==='settings'&&id==='dailyUsage')) return null;
   await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;
 }
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
@@ -5102,12 +5100,6 @@ const _fbInflight = {};
 // 跳過快取的集合（寫入頻繁或需要即時資料）
 const _C_SKIP = new Set(['feedback','corrections','confirmTasks','tempPass','correctionRequests','broadcastRequests']);
 async function fbList(col, orderByField, orderDir) {
-  // 讀取鎖定：超過 90% 時，僅允許簽到退 / 出勤案件兩個 collection，其餘返回快取或空陣列
-  if (_usageLocked && col !== 'attendance' && col !== 'outingRecords') {
-    const cached = _C.peek(col);
-    if (cached) return cached;
-    return [];
-  }
   // 第一層：localStorage 新鮮快取（零等待，不需網路）
   if (!_C_SKIP.has(col) && _C.fresh(col)) return _C.peek(col);
 
@@ -5146,14 +5138,6 @@ async function fbList(col, orderByField, orderDir) {
   return _fbInflight[key];
 }
 async function fbQuery(col, conditions, orderByField, orderDir) {
-  // 讀取鎖定：超過 90% 時只允許 簽到簽退 及 今日協勤紀錄 查詢
-  if (_usageLocked) {
-    const today = new Date().toLocaleDateString('sv');
-    const isAttend = col === COL_ATTEND;
-    const isTodayOuting = col === COL_OUTING &&
-      Array.isArray(conditions) && conditions.some(c => c[0]==='date' && (c[1]==='==' || c[1]==='>=') && c[2]===today);
-    if (!isAttend && !isTodayOuting) return [];
-  }
   await ensureFirebase();
   let q = _fbDB.collection(col);
   if (conditions) conditions.forEach(([f,op,v]) => { q = q.where(f, op, v); });
@@ -5165,6 +5149,48 @@ async function fbQuery(col, conditions, orderByField, orderDir) {
 async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});_C.invalidate(col);return r.id;}
 async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});_C.invalidate(col);}
 async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);_C.invalidate(col);}
+
+// ── 簽名分離輔助函式 ──
+// 簽名另存至 attSigs/{docId} 或 outSigs/{docId}，主文件不存大圖
+const _SIG_COLS = { [COL_ATTEND]: 'attSigs', [COL_OUTING]: 'outSigs' };
+async function fbGetWithSig(col, id) {
+  const sigCol = _SIG_COLS[col];
+  const [doc, sigDoc] = await Promise.all([fbGet(col, id), sigCol ? fbGet(sigCol, id) : null]);
+  if (!doc) return null;
+  const sigs = sigDoc || { checkinSig: doc.checkinSig||'', checkoutSig: doc.checkoutSig||'', signature: doc.signature||'' };
+  return { ...doc, ...sigs };
+}
+async function fbSaveSig(col, docId, sigData) {
+  const sigCol = _SIG_COLS[col];
+  if (!sigCol || !docId) return;
+  await fbSet(sigCol, docId, sigData);
+}
+function _sigToJpeg(canvas, quality = 0.4) {
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width; tmp.height = canvas.height;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tmp.width, tmp.height);
+  ctx.drawImage(canvas, 0, 0);
+  return tmp.toDataURL('image/jpeg', quality);
+}
+async function loadAndViewSig(col, docId, btn) {
+  btn.disabled = true; btn.textContent = '載入中...';
+  try {
+    const doc = await fbGetWithSig(col, docId);
+    if (!doc) { btn.textContent = '無簽名'; return; }
+    const sigs = col === COL_ATTEND
+      ? [doc.checkinSig && {src: doc.checkinSig, lbl:'簽到'}, doc.checkoutSig && {src: doc.checkoutSig, lbl:'簽退'}].filter(Boolean)
+      : [doc.signature && {src: doc.signature, lbl:'義消簽名'}].filter(Boolean);
+    if (!sigs.length) { btn.textContent = '無簽名'; return; }
+    const html = sigs.map(s => `<div style="text-align:center;margin:8px 0;"><img src="${s.src}" style="max-width:100%;border:1px solid #eee;border-radius:6px;"><div style="font-size:0.72rem;color:var(--text-mid);margin-top:4px;">${s.lbl}</div></div>`).join('');
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:360px;width:100%;padding:16px;">${html}<button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer;font-family:inherit;">關閉</button></div>`;
+    modal.onclick = e => { if(e.target===modal) modal.remove(); };
+    document.body.appendChild(modal);
+  } catch(e) { btn.textContent = '載入失敗'; }
+  btn.disabled = false;
+}
 
 // ── 本地快取（stale-while-revalidate）──
 const _C = {
@@ -5212,7 +5238,6 @@ async function _prefetchRecent(col, orderField, orderDir, days) {
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
 // 回傳 Promise，等主要資料載入完畢才 resolve
 function _prefetchCaches() {
-  if (_usageLazyLoad) return Promise.resolve(); // 超過 80%，全部改為懶讀取
   const sideTargets = [
     // 儀表板 todo 需要：保留 prefetch
     [COL_WHITELIST],
@@ -5424,8 +5449,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
     filtered.unshift(entry);
     localStorage.setItem('evs_recent_users', JSON.stringify(filtered.slice(0, 3)));
   } catch(e) {}
-  // 先確認今日讀取配額，超過 80% 則跳過 prefetch 全改懶讀取
-  _checkDailyUsage().then(() => { if (!_usageLazyLoad) _prefetchCaches(); }).catch(() => { _prefetchCaches(); });
+  _checkDailyUsage().catch(()=>{});
+  _prefetchCaches();
   document.getElementById('loginScreen').style.display = 'none';
   // 顯示底部 tab bar
   const tabBar = document.getElementById('appTabBar');
@@ -5649,8 +5674,7 @@ async function quickLoginAs(idx) {
     if (ltBar) ltBar.style.width = pct + '%';
   }, 80);
   await Promise.race([
-    // 先檢查用量，超過 80% 跳過 prefetch
-    _checkDailyUsage().catch(()=>{}).then(() => _usageLazyLoad ? null : _prefetchCaches()),
+    Promise.all([_checkDailyUsage().catch(()=>{}), _prefetchCaches()]),
     new Promise(r => setTimeout(r, 5000)), // 最多等 5 秒
   ]);
   clearInterval(iv);
@@ -6269,12 +6293,6 @@ function goBack() {
 }
 
 function navTo(pageId, fromHistory) {
-  // 讀取鎖定：90% 以上僅允許進入簽到退與今日出勤查詢相關頁面
-  const _LOCK_ALLOWED = new Set(['dashboardPage','dutyOverviewPage','attendancePage','formPage','attQueryPage','queryPage','morePage','adminPage']);
-  if (_usageLocked && !_LOCK_ALLOWED.has(pageId)) {
-    _showToast('🔒 讀取配額已達 90%，此功能暫時停用，僅保留簽到退與今日出勤功能');
-    return;
-  }
   const _prevPageId = window._currentPageId || '';
   window._prevPageId    = _prevPageId;          // 供 goBack() 使用
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
@@ -7577,7 +7595,7 @@ function aeInitCanvas(canvasId) {
   cv.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!state.drawing)return; const p=getP(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasSig=true; },{passive:false});
   cv.addEventListener('touchend',   ()=>state.drawing=false);
 }
-function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return document.getElementById(id).toDataURL('image/png'); }
+function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return _sigToJpeg(document.getElementById(id)); }
 // ── 簽名放大 ──
 function viewSig(sig) {
   if (!sig) return;
@@ -7753,7 +7771,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
   }
   try {
     const [attDoc, outDocs, allAttDocs] = await Promise.all([
-      attDocId ? fbGet(COL_ATTEND, attDocId) : fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]).then(r=>r[0]||null),
+      attDocId ? fbGetWithSig(COL_ATTEND, attDocId) : fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]).then(r=>r[0]||null),
       fbQuery(COL_OUTING, [['memberName','==',memberName],['date','==',date]]),
       fbQuery(COL_ATTEND, [['memberName','==',memberName],['date','==',date]]),
     ]);
@@ -7950,10 +7968,12 @@ function rdCancelEdit() {
 
 async function rdCopyCheckinSig() {
   const { memberName, date, attDocId, attDoc, opts } = window._rdData;
-  if (!attDoc?.checkinSig) return;
   if (!confirm('將簽到簽名複製為簽退簽名？')) return;
   try {
-    await fbUpdate(COL_ATTEND, attDoc.id, { checkoutSig: attDoc.checkinSig });
+    const sigData = await fbGet('attSigs', attDoc.id) || {};
+    const checkinSigVal = sigData.checkinSig || attDoc.checkinSig || '';
+    if (!checkinSigVal) { alert('找不到簽到簽名'); return; }
+    await fbSaveSig(COL_ATTEND, attDoc.id, { ...sigData, checkoutSig: checkinSigVal });
     repairShowDetail(memberName, date, attDocId, opts||{});
   } catch(e) { alert('更新失敗：' + e.message); }
 }
@@ -8097,7 +8117,7 @@ function submitOutingForm() {
     services:   checked.map(cb => cb.value).join('、'),
     note:       document.getElementById('note').value,
     memberName: document.getElementById('memberSelect').value,
-    signature:  canvas.toDataURL('image/png')
+    signature:  _sigToJpeg(canvas)
   };
 
   const btn = document.querySelector('.btn-submit');
@@ -8107,8 +8127,10 @@ function submitOutingForm() {
     date:data.date,caseType:data.caseType||'',timeOut:data.timeOut,timeBack:data.timeBack,
     district:data.district,address:data.address,services:data.services,
     serviceCount:parseInt(document.getElementById('serviceCount').value)||0,
-    note:data.note||'',memberName:data.memberName,signature:data.signature,
-  }).then(()=>{
+    note:data.note||'',memberName:data.memberName,hasSig:!!(data.signature),
+  }).then(docId=>{
+    fbSaveSig(COL_OUTING, docId, { signature: data.signature });
+
     syncAttServiceForDate(data.memberName, data.date);
     document.getElementById('successMsg').classList.add('show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -8442,7 +8464,7 @@ function renderQueryResults(records) {
         +(tagsHtml ? '<div class="mq-card-tags">'+tagsHtml+'</div>' : '')
         +'<div style="margin-top:7px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.title ? ' <span style="color:var(--text-light);">'+r.title+'</span>' : '')+'</div>'
         +(r.note ? '<div style="margin-top:6px;padding:7px 10px;background:#FFFBEB;border:1.5px solid rgba(217,119,6,0.18);border-radius:8px;font-size:0.75rem;color:#92400E;line-height:1.5;"><span style="font-weight:600;margin-right:4px;">備註</span>'+r.note+'</div>' : '')
-        +(r.signature ? '<div class="mq-card-sigs" style="margin-top:8px;"><div class="mq-card-sig-item" style="flex:1;max-width:none;"><img src="'+r.signature+'" onclick="viewSig(\'' + r.signature + '\')" title="點擊查看簽名" style="height:52px;"><span>簽名</span></div></div>' : '')
+        +((r.signature||r.hasSig) ? '<button onclick="loadAndViewSig(\''+COL_OUTING+'\',\''+r.id+'\',this)" style="margin-top:6px;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;">🖊 查看簽名</button>' : '')
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
     +'</div>';
@@ -8813,7 +8835,7 @@ async function doCheckin() {
   }
 
   const memberObj  = members.find(m => m.name === memberName) || {};
-  const checkinSig = attCheckinCtx.canvas.toDataURL('image/png');
+  const checkinSig = _sigToJpeg(attCheckinCtx.canvas);
   const date       = document.getElementById('attDate').value;
   const outingReason = dutyTypeVal === '公差' ? (document.getElementById('attOutingReasonSel')?.value || '') : '';
 
@@ -8838,10 +8860,12 @@ async function doCheckin() {
 
     fbAdd(COL_ATTEND, {
       date, dutyType: dutyTypeVal, title: memberObj.title || '', memberName,
-      checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0,
+      checkinTime: timeVal, checkoutTime: '', hours: 0, count: 0, service: 0,
+      hasSig: true,
       ...(outingReason ? { outingReason } : {}),
       ..._timeAdjFields,
     }).then(docId => {
+      fbSaveSig(COL_ATTEND, docId, { checkinSig, checkoutSig: '' });
       // 將 tempKey 更新成真正的 Firestore docId
       if (attSessions[tempKey]) {
         attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId });
@@ -9069,13 +9093,16 @@ async function doCheckout() {
   btn.textContent = '送出中...'; btn.disabled = true;
 
   // no-cors 無法讀取回應，直接送出後視為成功
-  const checkoutSig=attCheckoutCtx.canvas.toDataURL('image/png');
+  const checkoutSig=_sigToJpeg(attCheckoutCtx.canvas);
   if(session.fbDocId){
-    fbUpdate(COL_ATTEND,session.fbDocId,{checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal,..._coAdjFields}).catch(()=>{});
+    fbUpdate(COL_ATTEND,session.fbDocId,{checkoutTime,hours,count:countVal,service:serviceVal,hasSig:true,..._coAdjFields}).catch(()=>{});
+    fbSaveSig(COL_ATTEND,session.fbDocId,{checkoutSig}).catch(()=>{});
   } else {
     fbAdd(COL_ATTEND,{date:todayStr,dutyType:session.dutyType||'協勤',title:memberObj.title||'',
-      memberName:attCheckoutTarget,checkinSig:session.checkinSig||'',checkinTime:session.checkinTime,
-      checkoutSig,checkoutTime,hours,count:countVal,service:serviceVal,..._coAdjFields}).catch(()=>{});
+      memberName:attCheckoutTarget,checkinTime:session.checkinTime,
+      checkoutTime,hours,count:countVal,service:serviceVal,hasSig:true,..._coAdjFields})
+    .then(docId => { fbSaveSig(COL_ATTEND, docId, { checkinSig: session.checkinSig||'', checkoutSig }); })
+    .catch(()=>{});
   } // 忽略網路錯誤，Sheets 通常仍會寫入
 
   // 標記完成，顯示成功訊息
@@ -9377,24 +9404,7 @@ function renderAttQueryResults() {
           +'<span style="display:flex;align-items:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'+timeStr+adjIn+adjOut+'</span>'
           +hrsStr+'</div>'
         +(svc ? '<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:3px;background:#F0FDF4;color:#16A34A;font-size:0.72rem;font-weight:600;padding:2px 9px;border-radius:20px;border:1.5px solid rgba(22,163,74,0.15);">服務 '+svc+' 人</span></div>' : '')
-        +(() => {
-          const cin  = r.checkinSig  || '';
-          const cout = r.checkoutSig || '';
-          if (!cin && !cout) return '';
-          const mkThumb = (sig, lbl) => '<div class="mq-card-sig-item" style="flex:1;max-width:none;">'
-            +'<img src="'+sig+'" onclick="viewSig(\''+sig+'\')" title="點擊查看簽名" style="height:56px;">'
-            +'<span>'+lbl+'</span></div>';
-          const mkEmpty = (lbl) => '<div class="mq-card-sig-item" style="flex:1;max-width:none;">'
-            +'<div style="width:100%;height:56px;border:1.5px dashed #f5a0a0;border-radius:6px;background:#fff8f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">'
-              +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e57373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-              +'<span style="font-size:0.62rem;color:#e57373;font-weight:600;letter-spacing:0.04em;">未簽退</span>'
-            +'</div>'
-            +'<span>'+lbl+'</span></div>';
-          return '<div class="mq-card-sigs" style="gap:10px;">'
-            +(cin  ? mkThumb(cin,'簽到') : '')
-            +(cout ? mkThumb(cout,'簽退') : (cin ? mkEmpty('簽退') : ''))
-          +'</div>';
-        })()
+        +((r.checkinSig || r.checkoutSig || r.hasSig) ? '<button onclick="loadAndViewSig(\''+COL_ATTEND+'\',\''+r.id+'\',this)" style="margin-top:6px;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;">🖊 查看簽名</button>' : '')
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
     +'</div>';
@@ -9499,12 +9509,24 @@ function openAttEdit(idx) {
   document.getElementById('aqEditService').value = r.service !== undefined ? r.service : ((r['服務人次'] !== undefined && r['服務人次'] !== '') ? r['服務人次'] : 0);
   const cinPrev=document.getElementById('aqEditCheckinPrev'), cinImg=document.getElementById('aqEditCheckinPrevImg'), cinNote=document.getElementById('aqEditCheckinPrevNote');
   const coutPrev=document.getElementById('aqEditCheckoutPrev'), coutImg=document.getElementById('aqEditCheckoutPrevImg'), coutNote=document.getElementById('aqEditCheckoutPrevNote');
-  if(r.checkinSig){cinImg.src=r.checkinSig;cinPrev.style.display='block';cinNote.style.display='flex';}
+  // 先用主文件資料（舊格式相容），再非同步從 attSigs 補充
+  const _cinSig0 = r.checkinSig || '';
+  const _coutSig0 = r.checkoutSig || '';
+  if(_cinSig0){cinImg.src=_cinSig0;cinPrev.style.display='block';cinNote.style.display='flex';}
   else{cinPrev.style.display='none';cinNote.style.display='none';}
-  if(r.checkoutSig){coutImg.src=r.checkoutSig;coutPrev.style.display='block';coutNote.style.display='flex';}
+  if(_coutSig0){coutImg.src=_coutSig0;coutPrev.style.display='block';coutNote.style.display='flex';}
   else{coutPrev.style.display='none';coutNote.style.display='none';}
   const copyBtn = document.getElementById('aqEditCopyCheckinBtn');
-  if(copyBtn) copyBtn.style.display = (r.checkinSig && !r.checkoutSig) ? 'inline-block' : 'none';
+  if(copyBtn) copyBtn.style.display = (_cinSig0 && !_coutSig0) ? 'inline-block' : 'none';
+  // 若主文件無簽名但有 hasSig，非同步從子集合補充並寫回 r 物件供儲存時使用
+  if (!_cinSig0 && !_coutSig0 && (r.hasSig || r.id)) {
+    fbGet('attSigs', r.id).then(sd => {
+      if (!sd) return;
+      if (sd.checkinSig) { r.checkinSig = sd.checkinSig; if(cinImg) cinImg.src=sd.checkinSig; if(cinPrev) cinPrev.style.display='block'; if(cinNote) cinNote.style.display='flex'; }
+      if (sd.checkoutSig) { r.checkoutSig = sd.checkoutSig; if(coutImg) coutImg.src=sd.checkoutSig; if(coutPrev) coutPrev.style.display='block'; if(coutNote) coutNote.style.display='flex'; }
+      if (copyBtn) copyBtn.style.display = (sd.checkinSig && !sd.checkoutSig) ? 'inline-block' : 'none';
+    }).catch(()=>{});
+  }
   // 時間異常旗標區
   const _hasAdj = r.timeAdjusted || r.checkoutTimeAdjusted;
   const _adjBox  = document.getElementById('aqEditAnomalyFlags');
@@ -9638,6 +9660,8 @@ async function saveAttEdit() {
   btn.textContent = '儲存中...'; btn.disabled = true;
   const _aqDutyVal = document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤';
   const _aqReason  = _aqDutyVal === '公差' ? (document.getElementById('aqEditReason')?.value.trim() || '') : '';
+  const _aqCin  = cinNew  || (r?.checkinSig  || '');
+  const _aqCout = coutNew || (r?.checkoutSig || '');
   const data = {
     date:        document.getElementById('aqEditDate').value,
     dutyType:    _aqDutyVal,
@@ -9647,16 +9671,20 @@ async function saveAttEdit() {
     hours:       parseFloat(document.getElementById('aqEditHours').value)||0,
     count:       parseInt(document.getElementById('aqEditCount').value)||0,
     service:     parseInt(document.getElementById('aqEditService').value)||0,
-    checkinSig:  cinNew  || (r?.checkinSig  || ''),
-    checkoutSig: coutNew || (r?.checkoutSig || ''),
+    hasSig:      !!(_aqCin || _aqCout),
     ...(_aqReason ? { outingReason: _aqReason } : { outingReason: '' }),
     timeAdjusted:         isNew ? false : (document.getElementById('aqEditClearCheckin')?.checked  ? false : (r?.timeAdjusted         || false)),
     checkoutTimeAdjusted: isNew ? false : (document.getElementById('aqEditClearCheckout')?.checked ? false : (r?.checkoutTimeAdjusted || false)),
   };
   if (isNew && !data.memberName) { alert('請填入義消姓名'); btn.textContent='儲存'; btn.disabled=false; return; }
   try {
-    if (isNew) await fbAdd(COL_ATTEND, data);
-    else       await fbSet(COL_ATTEND, r.id, data);
+    if (isNew) {
+      const newDocId = await fbAdd(COL_ATTEND, data);
+      await fbSaveSig(COL_ATTEND, newDocId, { checkinSig: _aqCin, checkoutSig: _aqCout });
+    } else {
+      await fbSet(COL_ATTEND, r.id, data);
+      await fbSaveSig(COL_ATTEND, r.id, { checkinSig: _aqCin, checkoutSig: _aqCout });
+    }
     closeAttEdit();
     await doAttQuery();
   } catch(e) {
@@ -11293,7 +11321,7 @@ async function loadAdminAttendance() {
       <th style="${ths}">日期</th><th style="${ths}">類別</th><th style="${ths}">姓名</th>
       <th style="${ths}">簽到</th><th style="${ths}">簽退</th><th style="${ths}">時數</th>
       <th style="${ths}">次數</th><th style="${ths}">服務</th>
-      <th style="${ths}">簽到簽名</th><th style="${ths}">簽退簽名</th><th style="${ths}">操作</th>
+      <th style="${ths}">簽名</th><th style="${ths}">操作</th>
     </tr></thead>`;
 
     const tbody = document.createElement('tbody');
@@ -11308,8 +11336,7 @@ async function loadAdminAttendance() {
         <td style="${tds}text-align:center;">${d.hours||0}</td>
         <td style="${tds}text-align:center;">${d.count||0}</td>
         <td style="${tds}text-align:center;">${d.service||0}</td>
-        <td style="${tds}text-align:center;padding:6px 8px;">${sigA(d.checkinSig||'')}</td>
-        <td style="${tds}text-align:center;padding:6px 8px;">${sigA(d.checkoutSig||'')}</td>
+        <td style="${tds}text-align:center;padding:6px 8px;">${(d.checkinSig||d.checkoutSig||d.hasSig) ? `<button onclick="loadAndViewSig('${COL_ATTEND}','${d.id}',this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">查看簽名</button>` : '<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>'}</td>
         <td style="${tds}white-space:nowrap;">
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯</button>
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}" data-label="簽到 ${(d.memberName||'')} ${(d.date||'')}"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
@@ -11328,7 +11355,7 @@ async function loadAdminAttendance() {
 
 async function adminEditAtt(id) {
   let doc;
-  try { doc=await fbGet(COL_ATTEND,id); } catch(e){alert('讀取資料失敗：'+e.message);return;}
+  try { doc=await fbGetWithSig(COL_ATTEND,id); } catch(e){alert('讀取資料失敗：'+e.message);return;}
   if(!doc){alert('找不到資料');return;}
   document.getElementById('adminEditTitle').textContent='編輯簽到簽退';
   document.getElementById('adminEditFields').innerHTML=`
@@ -11361,6 +11388,8 @@ async function adminEditAtt(id) {
       const cinN=aeGetSig('aeACheckinCanvas'), coutN=aeGetSig('aeACheckoutCanvas');
       const cinDel  = document.getElementById('aeACheckinDeleted')?.value  === '1';
       const coutDel = document.getElementById('aeACheckoutDeleted')?.value === '1';
+      const newCin  = cinDel  ? '' : (cinN  || doc.checkinSig  || '');
+      const newCout = coutDel ? '' : (coutN || doc.checkoutSig || '');
       await fbSet(COL_ATTEND,id,{
         date:document.getElementById('aeADate').value,
         dutyType:document.getElementById('aeADuty').value,
@@ -11370,9 +11399,9 @@ async function adminEditAtt(id) {
         hours:parseFloat(document.getElementById('aeAHours').value)||0,
         count:parseInt(document.getElementById('aeACount').value)||0,
         service:parseInt(document.getElementById('aeASvc').value)||0,
-        checkinSig:  cinDel  ? '' : (cinN  || doc.checkinSig  || ''),
-        checkoutSig: coutDel ? '' : (coutN || doc.checkoutSig || ''),
+        hasSig: !!(newCin || newCout),
       });
+      await fbSaveSig(COL_ATTEND, id, { checkinSig: newCin, checkoutSig: newCout });
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('attQueryPage')?.classList.contains('active')) await doAttQuery();
       else await loadAdminAttendance();
@@ -11437,7 +11466,7 @@ async function loadAdminOuting() {
         <td style="${tds2}white-space:nowrap;">${d.caseType||'—'}</td>
         <td style="${tds2}min-width:8em;">${d.services||''}</td>
         <td style="${tds2}min-width:6em;">${d.note||''}</td>
-        <td style="${tds2}text-align:center;padding:6px 8px;">${sigB(d.signature||'')}</td>
+        <td style="${tds2}text-align:center;padding:6px 8px;">${(d.signature||d.hasSig) ? `<button onclick="loadAndViewSig('${COL_OUTING}','${d.id}',this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;color:var(--text-mid);">查看簽名</button>` : '<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>'}</td>
         <td style="${tds2}white-space:nowrap;">
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;" data-id="${d.id}"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯</button>
           <button class="att-member-btn" style="padding:4px 10px;font-size:0.8rem;border-color:#f5c6c6;color:#b94a3a;margin-left:4px;" data-del="${d.id}"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>
@@ -11455,7 +11484,7 @@ async function loadAdminOuting() {
 }
 
 async function adminEditOut(id) {
-  const doc=await fbGet(COL_OUTING,id); if(!doc){alert('找不到資料');return;}
+  const doc=await fbGetWithSig(COL_OUTING,id); if(!doc){alert('找不到資料');return;}
   document.getElementById('adminEditTitle').textContent='編輯協勤紀錄';
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
@@ -11490,6 +11519,7 @@ async function adminEditOut(id) {
       const sigDel = document.getElementById('aeOSigDeleted')?.value === '1';
       const newDate   = document.getElementById('aeODate').value;
       const newMember = document.getElementById('aeOName').value.trim();
+      const newSig    = sigDel ? '' : (sigN || doc.signature || '');
       await fbSet(COL_OUTING,id,{
         date: newDate,
         caseType:document.getElementById('aeOCaseType').value.trim(),
@@ -11501,8 +11531,9 @@ async function adminEditOut(id) {
         serviceCount:parseInt(document.getElementById('aeOServiceCount').value)||0,
         note:document.getElementById('aeONote').value.trim(),
         memberName: newMember,
-        signature: sigDel ? '' : (sigN || doc.signature || ''),
+        hasSig: !!(newSig),
       });
+      await fbSaveSig(COL_OUTING, id, { signature: newSig });
       // 同步更新對應的簽退服務人次
       await syncAttServiceForDate(newMember, newDate);
       if (doc.memberName !== newMember || doc.date !== newDate) {
@@ -12000,10 +12031,6 @@ async function loadAdminPushCtrl() {
 async function loadLoginLog() {
   const el = document.getElementById('adminLoginLogList');
   if (!el) return;
-  if (_usageLocked) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔒</span>今日讀取配額已達 90%，登入紀錄暫時無法查詢。</div>';
-    return;
-  }
   el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
   try {
     const dateFrom = document.getElementById('loginLogFrom')?.value || '';
@@ -13577,65 +13604,31 @@ async function deletePushLog(id) {
 
 // ════════════════════════════════════════
 // 自動通知排程
-// ── 每日讀取配額監控 ──────────────────────────────────────────────────
-let _usageLocked   = false; // >= 90%：封鎖幾乎所有讀取
-let _usageLazyLoad = false; // >= 80%：停止 prefetch，改為懶讀取
-// 被鎖定的 collection（讀取量大但非核心功能，90% 前適用）
-const _LOCK_COLS = new Set(['loginLogs','loginLog','changelogs','broadcastRequests','correctionRequests','feedback','pushLogs','autoNotifLog']);
-
+// ── Cloud Billing 費用監控 ────────────────────────────────────────────
 async function _checkDailyUsage() {
   try {
     const doc = await fbGet('settings', 'dailyUsage');
     if (!doc) return;
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
     if (doc.date !== today) return;
-    _applyUsageLock(doc.pct, doc.costAmount, doc.budgetAmount, doc.currency);
+    _showBillingBanner(doc.pct, doc.costAmount, doc.budgetAmount, doc.currency);
   } catch(e) {}
 }
 
-function _applyUsageLock(pct, costAmount, budgetAmount, currency) {
-  _usageLocked   = pct >= 90;
-  _usageLazyLoad = pct >= 80;
+function _showBillingBanner(pct, costAmount, budgetAmount, currency) {
+  if (pct < 70) return;
+  if (sessionStorage.getItem('_usageBarDismissed')) return;
   const cur  = currency || 'USD';
   const cStr = (costAmount != null && budgetAmount != null)
     ? `${cur} ${Number(costAmount).toFixed(2)} / ${Number(budgetAmount).toFixed(2)}`
     : `${pct}%`;
   let bar = document.getElementById('_usageBar');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = '_usageBar';
-    document.body.appendChild(bar);
-  }
-  bar.style.cssText = 'position:fixed;bottom:calc(83px + max(env(safe-area-inset-bottom,0px),8px));left:0;right:0;z-index:9999;padding:8px 16px;font-size:0.82rem;font-weight:600;transition:opacity .3s;display:none;align-items:center;gap:10px;';
-  if (pct >= 100) {
-    bar.style.display = 'flex';
-    bar.style.background = '#c0392b';
-    bar.style.color = '#fff';
-    bar.onclick = null;
-    bar.innerHTML = `<span style="flex:1;text-align:center;">🚫 費用預算已達 ${pct}%（${cStr}），部分功能已暫停。</span>`;
-  } else if (pct >= 90) {
-    bar.style.display = 'flex';
-    bar.style.background = '#c0392b';
-    bar.style.color = '#fff';
-    bar.onclick = null;
-    bar.innerHTML = `<span style="flex:1;text-align:center;">🔒 費用預算已達 ${pct}%（${cStr}）— 僅保留【簽到退 / 案件登錄 / 今日查詢】，其他功能全部暫停。</span>`;
-  } else if (pct >= 80) {
-    if (sessionStorage.getItem('_usageBarDismissed')) return;
-    bar.style.display = 'flex';
-    bar.style.background = '#e67e22';
-    bar.style.color = '#fff';
-    bar.style.cursor = 'pointer';
-    bar.innerHTML = `<span style="flex:1;">⚠️ 費用預算 ${pct}%（${cStr}），已切換懶讀取模式。</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;color:#fff;">✕</span>`;
-    bar.onclick = () => { sessionStorage.setItem('_usageBarDismissed','1'); bar.style.display = 'none'; };
-  } else if (pct >= 70) {
-    if (sessionStorage.getItem('_usageBarDismissed')) return;
-    bar.style.display = 'flex';
-    bar.style.background = '#f1c40f';
-    bar.style.color = '#333';
-    bar.style.cursor = 'pointer';
-    bar.innerHTML = `<span style="flex:1;">📊 今日讀取數 ${pct}%（${reads?.toLocaleString()} / ${quota?.toLocaleString()}），請留意用量。</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;color:#555;">✕</span>`;
-    bar.onclick = () => { sessionStorage.setItem('_usageBarDismissed','1'); bar.style.display = 'none'; };
-  }
+  if (!bar) { bar = document.createElement('div'); bar.id = '_usageBar'; document.body.appendChild(bar); }
+  const bg = pct >= 90 ? '#c0392b' : pct >= 80 ? '#e67e22' : '#f1c40f';
+  const fg = pct >= 80 ? '#fff' : '#333';
+  bar.style.cssText = `position:fixed;bottom:calc(83px + max(env(safe-area-inset-bottom,0px),8px));left:0;right:0;z-index:9999;padding:8px 16px;font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:10px;background:${bg};color:${fg};cursor:pointer;`;
+  bar.innerHTML = `<span style="flex:1;">⚠️ 計費預算已達 ${pct}%（${cStr}）</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;">✕</span>`;
+  bar.onclick = () => { sessionStorage.setItem('_usageBarDismissed','1'); bar.style.display = 'none'; };
 }
 
 async function _loadUsageMonitor() {
@@ -13656,11 +13649,10 @@ async function _loadUsageMonitor() {
     const currency     = isToday ? (doc.currency     || 'USD') : 'USD';
     const updAt = (doc && doc.updatedAt) ? new Date(doc.updatedAt.toDate?.() || doc.updatedAt).toLocaleTimeString('zh-TW', { hour12:false, timeZone:'Asia/Taipei' }) : '—';
 
-    _applyUsageLock(pct, costAmount, budgetAmount, currency);
+    _showBillingBanner(pct, costAmount, budgetAmount, currency);
 
     const barColor = pct >= 90 ? '#c0392b' : pct >= 70 ? '#e67e22' : pct >= 50 ? '#f1c40f' : '#2ecc71';
 
-    // 主要數字：顯示費用或百分比
     const readsEl = document.getElementById('_usageMeterReads');
     const quotaEl = document.getElementById('_usageMeterQuota');
     if (costAmount != null) {
@@ -13682,13 +13674,13 @@ async function _loadUsageMonitor() {
     const statusEl = document.getElementById('_usageMeterStatus');
     if (pct >= 90) {
       statusEl.style.background = '#fdecea'; statusEl.style.color = '#c0392b';
-      statusEl.textContent = '🔒 已超過 90% — 僅保留簽到退、案件登錄、今日查詢，其他全部暫停';
+      statusEl.textContent = '⚠️ 費用預算已達 90% 以上，請注意費用';
     } else if (pct >= 70) {
       statusEl.style.background = '#fff3e0'; statusEl.style.color = '#e65100';
-      statusEl.textContent = '⚠️ 預算偏高（70–89%）— 請留意，接近鎖定門檻';
+      statusEl.textContent = '⚠️ 費用預算偏高（70–89%）— 請留意';
     } else {
       statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32';
-      statusEl.textContent = '✅ 費用正常 — 所有功能可正常使用';
+      statusEl.textContent = '✅ 費用正常 — 所有功能正常使用中';
     }
 
     // 費用資訊卡
@@ -13713,80 +13705,11 @@ async function _loadUsageMonitor() {
 
     if (loading) loading.style.display = 'none';
     if (body)    body.style.display = 'block';
-    _renderUsageFeatureStatus();
   } catch(e) {
     if (loading) { loading.textContent = '⚠️ 載入失敗，請重新整理'; }
   }
 }
 
-function _renderUsageFeatureStatus() {
-  const panel   = document.getElementById('_usageTestStatus');
-  const stateEl = document.getElementById('_usageTestLockState');
-  const colsEl  = document.getElementById('_usageTestCols');
-  const availEl = document.getElementById('_usageTestAvail');
-  const lockedSection = document.getElementById('_usageSectionLocked');
-  const availTitle    = document.getElementById('_usageAvailTitle');
-  if (!panel) return;
-  panel.style.display = 'block';
-
-  const AVAIL_FEATURES = [
-    { icon: '✍️', label: '簽到 / 簽退',      desc: '出勤簽到、簽退操作' },
-    { icon: '🚑', label: '協勤案件登錄',      desc: '新增今日出勤案件紀錄' },
-    { icon: '🔍', label: '查詢今日簽到退',    desc: '今日出勤紀錄查詢' },
-    { icon: '📋', label: '查詢今日出勤案件',  desc: '今日案件紀錄查詢' },
-    { icon: '⚙️', label: '更多 / 管理員後台', desc: '可進入後台查看配額監控等' },
-  ];
-  const LOCKED_FEATURES = [
-    { icon: '📅', label: '排班',             desc: '班表總覽、登記排班、排班查詢' },
-    { icon: '👤', label: '個人頁面',          desc: '個人資料、証照、申請紀錄' },
-    { icon: '📣', label: '系統公告',          desc: '公告列表讀取' },
-    { icon: '📦', label: '物品管理',          desc: '物品領用、庫存查詢' },
-    { icon: '🗓', label: '定訓 / 會議',       desc: '定訓行事曆、會議 RSVP' },
-    { icon: '📊', label: '統計 / 報表',       desc: '出勤統計、小隊報表' },
-    { icon: '🚗', label: '公差申請',          desc: '公差申請與歷史查詢' },
-    { icon: '👥', label: '成員管理',          desc: '成員資料讀取（後台）' },
-  ];
-
-  if (_usageLocked) {
-    stateEl.style.display = '';
-    stateEl.style.background = '#fdecea'; stateEl.style.color = '#c0392b';
-    stateEl.textContent = '🔒 鎖定中（≥ 90%）— 僅保留下列 4 項核心功能';
-    if (lockedSection) lockedSection.style.display = '';
-    if (availTitle)    availTitle.textContent = '✅ 仍可使用（4 項）';
-  } else {
-    stateEl.style.display = 'none';
-    if (lockedSection) lockedSection.style.display = 'none';
-    if (availTitle)    availTitle.textContent = '✅ 所有功能正常';
-  }
-
-  const makeRow = (f, locked) => {
-    const bg    = locked ? '#fdecea' : '#e8f5e9';
-    const color = locked ? '#c0392b' : '#2e7d32';
-    const sub   = locked ? '#922b21' : '#1e8449';
-    const row   = document.createElement('div');
-    row.style.cssText = `display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:${bg};`;
-    row.innerHTML = `
-      <div style="font-size:1rem;flex-shrink:0;margin-top:1px;">${locked ? '🔒' : '✅'}</div>
-      <div>
-        <div style="font-size:0.86rem;font-weight:700;color:${color};">${f.icon} ${f.label}</div>
-        <div style="font-size:0.76rem;color:${sub};margin-top:2px;">${f.desc}</div>
-      </div>`;
-    return row;
-  };
-
-  if (availEl) {
-    availEl.innerHTML = '';
-    AVAIL_FEATURES.forEach(f => availEl.appendChild(makeRow(f, false)));
-  }
-  if (colsEl) {
-    colsEl.innerHTML = '';
-    if (_usageLocked) {
-      LOCKED_FEATURES.forEach(f => colsEl.appendChild(makeRow(f, true)));
-    } else {
-      LOCKED_FEATURES.forEach(f => colsEl.appendChild(makeRow(f, false)));
-    }
-  }
-}
 
 // ════════════════════════════════════════
 const COL_AUTO_NOTIF_LOG = 'autoNotifLog';
@@ -13799,7 +13722,6 @@ function _startAutoNotifScheduler() {
 }
 
 async function _runAutoNotifications() {
-  if (_usageLocked) return;
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   if (!usr.isAdmin && !usr.isOfficer) return;
 
@@ -16142,7 +16064,7 @@ async function easyDoCheckin() {
   }
 
   const memberObj    = members.find(m => m.name === memberName) || {};
-  const checkinSig   = _easyCheckinCtx.canvas.toDataURL('image/png');
+  const checkinSig   = _sigToJpeg(_easyCheckinCtx.canvas);
   const date         = new Date().toLocaleDateString('sv');
   const outingReason = dutyType === '公差' ? (document.getElementById('easyOutingReasonSel')?.value || '') : '';
   const btn          = document.querySelector('.easy-submit-btn.do-checkin');
@@ -16153,8 +16075,8 @@ async function easyDoCheckin() {
     const _easyTimeAdjFields = (!_appIsAdmin && _easyTimeDiff > 30) ? { timeAdjusted: true, checkinRecordedAt: _easyNowRecorded } : {};
     const tempKey = 'new_' + memberName + '_' + Date.now();
     attSessions[tempKey] = { memberName, checkinTime: timeVal, checkinSig, fbDocId: null, rowIndex: null, date, dutyType, done: false };
-    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinSig, checkinTime: timeVal, checkoutSig: '', checkoutTime: '', hours: 0, count: 0, service: 0, ...(outingReason ? { outingReason } : {}), ..._easyTimeAdjFields })
-      .then(docId => { if (attSessions[tempKey]) { attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId }); delete attSessions[tempKey]; } }).catch(() => {});
+    fbAdd(COL_ATTEND, { date, dutyType, title: memberObj.title||'', memberName, checkinTime: timeVal, checkoutTime: '', hours: 0, count: 0, service: 0, hasSig: true, ...(outingReason ? { outingReason } : {}), ..._easyTimeAdjFields })
+      .then(docId => { fbSaveSig(COL_ATTEND, docId, { checkinSig, checkoutSig: '' }); if (attSessions[tempKey]) { attSessions[docId] = Object.assign({}, attSessions[tempKey], { fbDocId: docId }); delete attSessions[tempKey]; } }).catch(() => {});
 
     alert('✅ ' + memberName + ' 簽到成功！');
     easyBack();
@@ -16189,7 +16111,7 @@ async function easyDoCheckout() {
   const service    = (checkoutDuty === '公差') ? 0 : (parseInt(document.getElementById('easyServiceCount')?.textContent) || 0);
   const date       = session.date || new Date().toLocaleDateString('sv');
   const memberObj  = members.find(m => m.name === memberName) || {};
-  const checkoutSig = _easyCheckoutCtx.canvas.toDataURL('image/png');
+  const checkoutSig = _sigToJpeg(_easyCheckoutCtx.canvas);
   const _easyNowCo = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; })();
   const _easyCoAdjFields = (!_appIsAdmin && Math.abs(_easyCoDiff) > 30) ? { checkoutTimeAdjusted: true, checkoutRecordedAt: _easyNowCo } : {};
 
@@ -16199,9 +16121,11 @@ async function easyDoCheckout() {
   try {
     const count = checkoutDuty === '公差' ? 0 : 1;
     if (session.fbDocId) {
-      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutSig, checkoutTime, hours, count, service, ..._easyCoAdjFields }).catch(() => {});
+      fbUpdate(COL_ATTEND, session.fbDocId, { checkoutTime, hours, count, service, hasSig: true, ..._easyCoAdjFields }).catch(() => {});
+      fbSaveSig(COL_ATTEND, session.fbDocId, { checkoutSig }).catch(() => {});
     } else {
-      fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinSig: session.checkinSig||'', checkinTime: session.checkinTime, checkoutSig, checkoutTime, hours, count, service, ..._easyCoAdjFields }).catch(() => {});
+      fbAdd(COL_ATTEND, { date, dutyType: checkoutDuty, title: memberObj.title||'', memberName, checkinTime: session.checkinTime, checkoutTime, hours, count, service, hasSig: true, ..._easyCoAdjFields })
+        .then(docId => { fbSaveSig(COL_ATTEND, docId, { checkinSig: session.checkinSig||'', checkoutSig }); }).catch(() => {});
     }
 
     attSessions[_easyCheckoutTarget].done        = true;
@@ -17725,7 +17649,7 @@ async function loadAdminCorrections() {
       if (docSigCache[d.docId]) return;
       try {
         const col = d.type === 'outing' ? COL_OUTING : COL_ATTEND;
-        const orig = await fbGet(col, d.docId);
+        const orig = await fbGetWithSig(col, d.docId);
         if (orig) docSigCache[d.docId] = { checkinSig: orig.checkinSig||'', checkoutSig: orig.checkoutSig||'', signature: orig.signature||'' };
         else docSigCache[d.docId] = { _notFound: true };
       } catch(e) { /* 原始紀錄可能已刪除 */ }
