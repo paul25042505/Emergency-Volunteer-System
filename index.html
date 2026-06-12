@@ -13689,16 +13689,15 @@ async function _loadUsageMonitor() {
     const costEl = document.getElementById('_usageMeterCost');
     if (costEl) {
       if (costAmount != null && budgetAmount != null) {
-        const twd = Number(costAmount) * 32;
         const remain = Math.max(0, Number(budgetAmount) - Number(costAmount));
         costEl.style.display = 'block';
         costEl.innerHTML =
           `<div style="font-size:0.78rem;font-weight:700;color:#795548;margin-bottom:6px;">💰 Cloud Billing 費用明細</div>`
         + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:0.78rem;color:#5d4037;">`
-        + `<span>本期費用</span><span style="font-weight:700;">${currency} ${Number(costAmount).toFixed(4)}（≈ NT$${twd.toFixed(1)}）</span>`
+        + `<span>本期費用</span><span style="font-weight:700;">${currency} ${Number(costAmount).toFixed(2)}</span>`
         + `<span>預算上限</span><span style="font-weight:700;">${currency} ${Number(budgetAmount).toFixed(2)}</span>`
-        + `<span>剩餘額度</span><span style="font-weight:700;color:${remain < Number(budgetAmount)*0.1 ? '#c0392b':'#2e7d32'};">${currency} ${remain.toFixed(4)}</span>`
-        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">匯率 1 USD ≈ 32 TWD；Cloud Billing 資料有數小時延遲</div>`;
+        + `<span>剩餘額度</span><span style="font-weight:700;color:${remain < Number(budgetAmount)*0.1 ? '#c0392b':'#2e7d32'};">${currency} ${remain.toFixed(2)}</span>`
+        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">Cloud Billing 資料有數小時延遲</div>`;
       } else {
         costEl.style.display = pct > 0 ? 'block' : 'none';
         if (pct > 0) costEl.innerHTML = `<div style="font-size:0.78rem;color:#795548;">等待 Cloud Billing 預算警報觸發後顯示費用明細</div>`;
