@@ -212,16 +212,16 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
 
 // ── 3. 每 30 分鐘：班次結束後 1 小時未簽退者通知 ─────────────────────
 exports.scheduleNoSignoutReminder = onSchedule(
-  { schedule: '*/30 * * * *', timeZone: TZ, region: REGION },
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
     if (await _isQuotaLocked(db)) { console.log('quota locked, skip'); return; }
     const now = new Date();
     const today = _dateStr(now);
 
-    // end 在 45～90 分鐘前（配合 30 分鐘間隔擴大偵測窗口）
-    const loStr = _timeStr(new Date(now.getTime() - 90 * 60000));
-    const hiStr = _timeStr(new Date(now.getTime() - 45 * 60000));
+    // end 在 60～120 分鐘前（配合每小時間隔）
+    const loStr = _timeStr(new Date(now.getTime() - 120 * 60000));
+    const hiStr = _timeStr(new Date(now.getTime() -  60 * 60000));
 
     const snap = await db.collection('dutySchedule').where('date', '==', today).get();
     const targets = [];
