@@ -5189,8 +5189,9 @@ async function loadAndViewSig(col, docId, btn) {
     modal.innerHTML = `<div style="background:#fff;border-radius:12px;max-width:360px;width:100%;padding:16px;">${html}<button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer;font-family:inherit;">關閉</button></div>`;
     modal.onclick = e => { if(e.target===modal) modal.remove(); };
     document.body.appendChild(modal);
+    btn.textContent = '🖊 查看簽名';
   } catch(e) { btn.textContent = '載入失敗'; }
-  btn.disabled = false;
+  finally { btn.disabled = false; }
 }
 
 // ── 本地快取（stale-while-revalidate）──
