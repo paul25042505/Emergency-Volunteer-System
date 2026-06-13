@@ -12892,6 +12892,15 @@ function _renderNoticeTab() {
     if (_noticeTab === 'msg' ? !msgTypes.includes(d.type || 'system') : msgTypes.includes(d.type || 'system')) return false;
     // 指定成員的推播：只顯示給收件人
     if (d.targetMembers && d.targetMembers.length && !d.targetMembers.includes(_me)) return false;
+    // 未簽退提醒：若已簽退（或今日根本無未結束的簽到），不再顯示
+    if (d.source === 'auto-duty-nosignout' && _me) {
+      const todayStr = new Date().toLocaleDateString('sv');
+      const attCache = _C.peek(COL_ATTEND) || [];
+      if (attCache.length) {
+        const hasOpenCheckin = attCache.some(r => r.memberName === _me && r.date === todayStr && r.checkinTime && !r.checkoutTime);
+        if (!hasOpenCheckin) return false;
+      }
+    }
     return true;
   });
   if (!filtered.length) {
@@ -13727,6 +13736,38 @@ async function _runAutoNotifications() {
     }
   }
 
+  // ── 2. 未簽退提醒（班次結束後 1 小時內，10 分鐘視窗）
+  {
+    const todayStr2 = now.toLocaleDateString('sv');
+    const nowMins   = hour * 60 + minute;
+    const dutyAll   = (_C.fresh(COL_DUTY) ? _C.peek(COL_DUTY) : null) || await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
+    const todayDuty = dutyAll.filter(d => d.date === todayStr2 && d.end && d.memberName);
+    for (const duty of todayDuty) {
+      const [eh, em] = duty.end.split(':').map(Number);
+      const endMins  = eh * 60 + em;
+      if (nowMins >= endMins + 60 && nowMins < endMins + 70) {
+        const key = `duty-nosignout-${todayStr2}-${duty.memberName}-${duty.end}`;
+        if (!sent(key)) {
+          const attAll    = (_C.fresh(COL_ATTEND) ? _C.peek(COL_ATTEND) : null) || await fbList(COL_ATTEND, 'date', 'asc').catch(() => []);
+          const myToday   = attAll.filter(r => r.memberName === duty.memberName && r.date === todayStr2);
+          const hasCheckin  = myToday.some(r => r.checkinTime);
+          const hasCheckout = myToday.some(r => r.checkoutTime);
+          if (hasCheckin && !hasCheckout) {
+            await _autoSendPush({
+              title: '⏰ 請記得簽退',
+              body: `您今日 ${duty.end} 的班次已結束超過 1 小時，請確認是否已簽退。`,
+              target: 'members',
+              targetMembers: [duty.memberName],
+              key,
+              source: 'auto-duty-nosignout',
+            });
+          }
+          await markSent(key);
+        }
+      }
+    }
+  }
+
   // ── 4. 每月20日：下個月班表開放
   if (day === 20) {
     const key = `monthly-open-${month}`;
@@ -13764,7 +13805,7 @@ async function _autoSendPush({ title, body, target, targetMembers, key, source }
     const ok = res.ok;
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount: result.successCount ?? (ok ? 1 : 0), failCount: result.failCount ?? (ok ? 0 : 1) }).catch(() => {});
     if (ok) {
-      await fbAdd(COL_ANNOUNCE, { title, body, text: body ? `${title}\n${body}` : title, type: 'broadcast', active: true, audience: target, targetMembers: target === 'members' ? targetMembers : [], startDate: today, endDate: today, createdAt: new Date(), sentBy: '系統自動' }).catch(() => {});
+      await fbAdd(COL_ANNOUNCE, { title, body, text: body ? `${title}\n${body}` : title, type: 'broadcast', active: true, audience: target, targetMembers: target === 'members' ? targetMembers : [], startDate: today, endDate: today, createdAt: new Date(), sentBy: '系統自動', ...(source ? { source } : {}) }).catch(() => {});
     }
   } catch(e) {
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1 }).catch(() => {});
