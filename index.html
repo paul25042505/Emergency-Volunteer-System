@@ -14221,7 +14221,8 @@ async function repairHasSig(btn) {
   if (log) log.textContent = '';
   try {
     await ensureFirebase();
-    const snap = await _fbDB.collection(COL_ATTEND).where('hasSig','==',false).get();
+    // hasSig != true 可掃到 false、null、欄位不存在三種情況
+    const snap = await _fbDB.collection(COL_ATTEND).where('hasSig','!=',true).get();
     let fixed = 0, checked = 0;
     for (const doc of snap.docs) {
       checked++;
