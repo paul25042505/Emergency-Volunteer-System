@@ -7055,7 +7055,7 @@ async function loadMembers() {
     // 從 whitelist 讀取（整合帳號與成員資料，unit 一定有）
     const wlDocs = await fbList(COL_WHITELIST);
     if (wlDocs.length > 0) {
-      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
+      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
       members = wlDocs.map(d=>({
         id: d.id, name: d.memberName||'', title: d.title||'',
         squad: d.squad||'', isSquadLeader: d.isSquadLeader||false,
@@ -7063,7 +7063,7 @@ async function loadMembers() {
         role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
       })).filter(m=>m.name).sort((a,b)=>{
         if((a.unit||'')!==(b.unit||''))return(a.unit||'')>(b.unit||'')?1:-1;
-        const ai=TITLE_ORDER.indexOf(a.title),bi=TITLE_ORDER.indexOf(b.title);
+        const ai=TITLE_ORDER.indexOf(_memberTitle(a)),bi=TITLE_ORDER.indexOf(_memberTitle(b));
         if(ai!==bi)return(ai<0?99:ai)-(bi<0?99:bi);
         return(a.name||'')>(b.name||'')?1:-1;
       });
@@ -10948,11 +10948,11 @@ async function loadAdminWhitelist(filterUnit) {
     docs = docs.filter(d => (d.unit||'') === filterUnit);
     if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">' + (filterUnit ? '此分隊暫無成員' : '尚無資料') + '</div>'; return; }
 
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     docs.sort(function(a,b){
       var au=a.unit||'未分配', bu=b.unit||'未分配';
       if(au!==bu) return au>bu?1:-1;
-      var ai=TITLE_ORDER.indexOf(a.title||''), bi=TITLE_ORDER.indexOf(b.title||'');
+      var ai=TITLE_ORDER.indexOf(_memberTitle(a)), bi=TITLE_ORDER.indexOf(_memberTitle(b));
       if(ai!==bi) return (ai<0?99:ai)-(bi<0?99:bi);
       return (a.memberName||'')>(b.memberName||'')?1:-1;
     });
@@ -11175,10 +11175,10 @@ async function loadAdminMembers() {
   try {
     const docs=await fbList(COL_MEMBERS);
     if(!docs.length){el.innerHTML='<div style="color:var(--text-light);">尚無成員</div>';return;}
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     docs.sort((a,b) => {
       if ((a.unit||'') !== (b.unit||'')) return (a.unit||'') > (b.unit||'') ? 1 : -1;
-      const ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
+      const ai = TITLE_ORDER.indexOf(_memberTitle(a)), bi = TITLE_ORDER.indexOf(_memberTitle(b));
       if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
       return (a.name||'') > (b.name||'') ? 1 : -1;
     });
@@ -13817,7 +13817,7 @@ function filterMemberList() {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
     return;
   }
-  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
   const filtered = members.filter(m => (m.unit||'').trim() === unit.trim());
   if (!filtered.length) {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>此分隊暫無成員</div>';
@@ -13828,7 +13828,7 @@ function filterMemberList() {
     const aIsOfficer = a.role === 'officer' || a.title === '分隊承辦人';
     const bIsOfficer = b.role === 'officer' || b.title === '分隊承辦人';
     if (aIsOfficer !== bIsOfficer) return aIsOfficer ? 1 : -1;
-    var ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
+    var ai = TITLE_ORDER.indexOf(_memberTitle(a)), bi = TITLE_ORDER.indexOf(_memberTitle(b));
     if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
     return (a.name||'') > (b.name||'') ? 1 : -1;
   });
@@ -16367,11 +16367,11 @@ async function meetingLoadAttendees(preSelected) {
   if (hint) hint.style.display = 'none';
   try {
     await loadMembers();
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     const unitMembers = members
       .filter(m => (m.unit || '') === unit && (m.title || '') !== '分隊承辦人')
       .sort((a, b) => {
-        const aw = TITLE_ORDER.indexOf(a.title||''); const bw = TITLE_ORDER.indexOf(b.title||'');
+        const aw = TITLE_ORDER.indexOf(_memberTitle(a)); const bw = TITLE_ORDER.indexOf(_memberTitle(b));
         if (aw !== bw) return (aw === -1 ? 999 : aw) - (bw === -1 ? 999 : bw);
         return (a.name || '').localeCompare(b.name || '', 'zh-TW');
       });
@@ -16453,7 +16453,7 @@ async function renderMeetingStats() {
       });
     });
 
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員'];
     const relevant = (isAdmin ? members : members.filter(m => (m.unit || '') === userUnit))
       .filter(m => (m.title || '') !== '分隊承辦人');
 
@@ -16465,7 +16465,7 @@ async function renderMeetingStats() {
 
     const rows = relevant.map(m => ({
       name: m.name, unit: m.unit || '', title: _memberTitle(m),
-      titleRank: TITLE_ORDER.indexOf(m.title || ''),
+      titleRank: TITLE_ORDER.indexOf(_memberTitle(m)),
       count: countMap[m.name] || 0,
     }));
 
