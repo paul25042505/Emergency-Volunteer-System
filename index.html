@@ -5576,7 +5576,7 @@ async function quickLoginAs(idx) {
   if (lt) {
     if (ltAvatar) ltAvatar.textContent = (u.name || '?')[0];
     if (ltName)   ltName.textContent   = u.name || '';
-    if (ltRole)   ltRole.textContent   = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+    if (ltRole)   ltRole.textContent   = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : u.isSquadLeader ? '小隊長' : '隊員');
     if (ltBar)    ltBar.style.width    = '10%';
     if (ltLabel)  ltLabel.textContent  = '驗證身份中…';
     lt.style.display = 'flex';
@@ -5597,7 +5597,7 @@ async function quickLoginAs(idx) {
 
   if (ltBar)   ltBar.style.width   = '35%';
   if (ltLabel) ltLabel.textContent = '載入資料中…';
-  if (ltRole)  ltRole.textContent  = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+  if (ltRole)  ltRole.textContent  = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : u.isSquadLeader ? '小隊長' : '隊員');
 
   // 儲存 session
   sessionStorage.setItem('rescue_user', JSON.stringify({
@@ -7040,6 +7040,14 @@ async function updateItemsBadge() {
 let members     = [];
 let allItems    = [];
 
+// 顯示用職稱：若 squad 已設定且不在 title 中，自動加前綴
+function _memberTitle(d) {
+  const squad = d.squad || '';
+  const title = d.title || '';
+  if (!squad || title.includes(squad)) return title;
+  return squad + title;
+}
+
 async function loadMembers() {
   if (members.length) return members; // 已載入，直接回傳
   try {
@@ -7049,6 +7057,7 @@ async function loadMembers() {
       const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
       members = wlDocs.map(d=>({
         id: d.id, name: d.memberName||'', title: d.title||'',
+        squad: d.squad||'', isSquadLeader: d.isSquadLeader||false,
         unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
         role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
       })).filter(m=>m.name).sort((a,b)=>{
@@ -7088,7 +7097,7 @@ function renderMemberList() {
       <div class="member-avatar" style="${m.role==='officer'?'background:#8e44ad;':m.role==='admin'?'background:#2471a3;':''}">${m.name.charAt(0)}</div>
       <div class="member-info">
         <div class="member-name">${m.name}${m.role==='officer'?'<span style="margin-left:6px;font-size:0.65rem;background:#f0e6ff;color:#8e44ad;border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">承辦人</span>':m.role==='admin'?'<span style="margin-left:6px;font-size:0.65rem;background:#d6eaf8;color:#2471a3;border-radius:4px;padding:1px 5px;font-weight:600;vertical-align:middle;">管理員</span>':''}</div>
-        ${m.title ? `<div class="member-title">${m.title}</div>` : ''}
+        ${(m.title||m.squad) ? `<div class="member-title">${_memberTitle(m)}</div>` : ''}
       </div>
       <button class="btn-delete" onclick="deleteMember(${i})">刪除</button>
     </div>
@@ -7148,7 +7157,7 @@ function filterAttMembers() {
   if (!sel) return;
   const filtered = unit ? members.filter(m => (m.unit||'') === unit) : [];
   sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
-    filtered.map(m=>`<option value="${m.name}">${m.name}${m.title?' ('+m.title+')':''}</option>`).join('');
+    filtered.map(m=>{const t=_memberTitle(m);return`<option value="${m.name}">${m.name}${t?' ('+t+')':''}</option>`;}).join('');
 }
 
 function updateMemberSelect() {
@@ -8629,10 +8638,11 @@ function renderCheckinList() {
       badge.textContent = '已完成';
       row.appendChild(avatar); row.appendChild(info); row.appendChild(badge);
     } else {
-      if (m.title) {
+      const _attTitle = _memberTitle(m);
+      if (_attTitle) {
         const titleDiv = document.createElement('div');
         titleDiv.className = 'member-title';
-        titleDiv.textContent = m.title;
+        titleDiv.textContent = _attTitle;
         info.appendChild(titleDiv);
       }
       const badge = document.createElement('span');
@@ -10982,10 +10992,11 @@ async function loadAdminWhitelist(filterUnit) {
       nameSpan.style.cssText = 'font-weight:700;font-size:0.95rem;color:var(--text);';
       nameSpan.textContent = d.memberName||'—';
       nameDiv.appendChild(nameSpan);
-      if (d.title) {
+      const _wlTitle = (d.squad&&!d.title.includes(d.squad)?d.squad:'') + (d.title||'');
+      if (_wlTitle) {
         var titleSpan = document.createElement('span');
         titleSpan.style.cssText = 'font-size:0.75rem;color:var(--text-mid);';
-        titleSpan.textContent = d.title;
+        titleSpan.textContent = _wlTitle;
         nameDiv.appendChild(titleSpan);
       }
       info.appendChild(nameDiv);
@@ -10997,6 +11008,12 @@ async function loadAdminWhitelist(filterUnit) {
       roleBadge.style.cssText = 'font-size:0.65rem;background:'+rc.bg+';color:'+rc.color+';border:1px solid '+rc.border+';border-radius:8px;padding:2px 7px;font-weight:600;';
       roleBadge.textContent = rc.label;
       badgeRow.appendChild(roleBadge);
+      if (d.squad) {
+        var squadBadge = document.createElement('span');
+        squadBadge.style.cssText = 'font-size:0.65rem;background:#ecfdf5;color:#059669;border:1px solid #6ee7b7;border-radius:8px;padding:2px 7px;font-weight:600;';
+        squadBadge.textContent = d.squad;
+        badgeRow.appendChild(squadBadge);
+      }
       if (d.cert) {
         var certBadge = document.createElement('span');
         certBadge.style.cssText = 'font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border:1px solid #c6def5;border-radius:8px;padding:2px 7px;';
@@ -13825,7 +13842,7 @@ function filterMemberList() {
     if (t==='分隊長')   return { bg:'#fff0f0', fg:'#c0392b', av:'var(--red)' };
     if (t==='副分隊長') return { bg:'#fff5ee', fg:'#d35400', av:'#e67e22' };
     if (t==='幹事'||t==='助理幹事') return { bg:'#f0f8ff', fg:'#2471a3', av:'#2980b9' };
-    if (t==='小隊長')  return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
+    if (t.includes('小隊長'))  return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
     if (t==='分隊承辦人') return { bg:'#f9f0ff', fg:'#7d3c98', av:'#8e44ad' };
     return { bg:'#f4f6fa', fg:'#5d6d7e', av:'#7f8c8d' };
   };
@@ -13838,7 +13855,8 @@ function filterMemberList() {
   // 一般成員（3欄格）
   cards += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:' + (officerMembers.length?'16px':'0') + ';">';
   regularMembers.forEach(m => {
-    const c = titleColor(m.title);
+    const _mt = _memberTitle(m);
+    const c = titleColor(_mt);
     const isAdmin = m.role === 'admin';
     cards += '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">';
     cards += '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">';
@@ -13846,7 +13864,7 @@ function filterMemberList() {
     cards += '<div style="font-size:0.82rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>';
     cards += '</div>';
     cards += '<div style="padding:6px 6px 8px;">';
-    if (m.title) cards += '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.title + '</span></div>';
+    if (_mt) cards += '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _mt + '</span></div>';
     if (isAdmin) cards += '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>';
     if (m.cert)  cards += '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>';
     cards += '</div>';
@@ -15488,7 +15506,7 @@ function filterTpMembers() {
   if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊別 —</option>'; return; }
   const filtered = members.filter(m => (m.unit||'') === unit);
   sel.innerHTML = '<option value="">請選擇成員</option>' +
-    filtered.map(m => '<option value="'+m.name+'">'+m.name+(m.title?'（'+m.title+'）':'')+'</option>').join('');
+    filtered.map(m => { const t=_memberTitle(m); return '<option value="'+m.name+'">'+m.name+(t?'（'+t+'）':'')+'</option>'; }).join('');
 }
 
 async function addTempPass() {
@@ -16445,7 +16463,7 @@ async function renderMeetingStats() {
     const sortMode = el.dataset.sort || 'count';
 
     const rows = relevant.map(m => ({
-      name: m.name, unit: m.unit || '', title: m.title || '',
+      name: m.name, unit: m.unit || '', title: _memberTitle(m),
       titleRank: TITLE_ORDER.indexOf(m.title || ''),
       count: countMap[m.name] || 0,
     }));
@@ -16867,7 +16885,7 @@ async function loadProfilePage() {
 
   // 填入基本資訊
   const unitVal  = member.unit  || profile.unit  || usr.unit || '—';
-  const titleVal = member.title || profile.title || '—';
+  const titleVal = _memberTitle(member) || profile.title || '—';
   document.getElementById('profileName').textContent  = memberName || '—';
   document.getElementById('profileUnit').textContent  = unitVal;
   document.getElementById('profileTitle').textContent = titleVal;
@@ -18217,7 +18235,7 @@ function filterDutyMembers() {
     return;
   }
   sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
-    filtered.map(m => '<option value="' + m.name + '">' + m.name + (m.title?'（'+m.title+'）':'') + '</option>').join('');
+    filtered.map(m => { const t=_memberTitle(m); return '<option value="' + m.name + '">' + m.name + (t?'（'+t+'）':'') + '</option>'; }).join('');
 }
 
 async function loadDutyData() {
@@ -19790,7 +19808,7 @@ function filterQAMembers() {
     return;
   }
   sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
-    filtered.map(m => '<option value="' + m.name + '">' + m.name + (m.title?'（'+m.title+'）':'') + '</option>').join('');
+    filtered.map(m => { const t=_memberTitle(m); return '<option value="' + m.name + '">' + m.name + (t?'（'+t+'）':'') + '</option>'; }).join('');
   const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   const myName = usr.memberName || usr.name || '';
   if (myName) sel.value = myName;
