@@ -10730,7 +10730,7 @@ function closeClaimModal() {
 async function submitClaim() {
   if (!claimHasSig) { alert('請先完成簽名'); return; }
   if (!claimTargetItem || !claimTargetName) { alert('資料錯誤，請重新開啟'); return; }
-  const sig = document.getElementById('claimSigCanvas').toDataURL('image/png');
+  const sig = _sigToJpeg(document.getElementById('claimSigCanvas'));
   const btn = document.getElementById('claimSubmitBtn');
   if (btn) { btn.textContent = '送出中...'; btn.disabled = true; }
   try {
