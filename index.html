@@ -5346,13 +5346,15 @@ async function handleGoogleLogin(response) {
     }
     if (allowed) {
       const memberName = (fbResult && fbResult.memberName) || name;
-      const isAdmin    = (fbResult && fbResult.isAdmin)    || false;
-      const isOfficer  = (fbResult && fbResult.isOfficer)  || false;
-      const role       = (fbResult && fbResult.role)       || 'member';
-      const unit       = (fbResult && fbResult.unit)       || '';
-      const title      = (fbResult && fbResult.title)      || '';
+      const isAdmin       = (fbResult && fbResult.isAdmin)       || false;
+      const isOfficer     = (fbResult && fbResult.isOfficer)     || false;
+      const isSquadLeader = (fbResult && fbResult.isSquadLeader) || false;
+      const role          = (fbResult && fbResult.role)          || 'member';
+      const unit          = (fbResult && fbResult.unit)          || '';
+      const squad         = (fbResult && fbResult.squad)         || '';
+      const title         = (fbResult && fbResult.title)         || '';
       sessionStorage.setItem('rescue_user', JSON.stringify({
-        email, name, memberName, isAdmin, isOfficer, role, unit, title, loginAt: Date.now()
+        email, name, memberName, isAdmin, isOfficer, isSquadLeader, role, unit, squad, title, loginAt: Date.now()
       }));
       // 寫入登入紀錄（超過 500 筆時自動刪除最舊的）
       fbAdd(COL_LOGINLOG, {
@@ -7044,7 +7046,7 @@ async function loadMembers() {
     // 從 whitelist 讀取（整合帳號與成員資料，unit 一定有）
     const wlDocs = await fbList(COL_WHITELIST);
     if (wlDocs.length > 0) {
-      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+      const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
       members = wlDocs.map(d=>({
         id: d.id, name: d.memberName||'', title: d.title||'',
         unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
@@ -10935,11 +10937,11 @@ async function loadAdminWhitelist(filterUnit) {
     docs = docs.filter(d => (d.unit||'') === filterUnit);
     if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">' + (filterUnit ? '此分隊暫無成員' : '尚無資料') + '</div>'; return; }
 
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     docs.sort(function(a,b){
       var au=a.unit||'未分配', bu=b.unit||'未分配';
       if(au!==bu) return au>bu?1:-1;
-      var ai=TITLE_ORDER.indexOf(a.title), bi=TITLE_ORDER.indexOf(b.title);
+      var ai=TITLE_ORDER.indexOf(a.title||''), bi=TITLE_ORDER.indexOf(b.title||'');
       if(ai!==bi) return (ai<0?99:ai)-(bi<0?99:bi);
       return (a.memberName||'')>(b.memberName||'')?1:-1;
     });
@@ -10948,9 +10950,10 @@ async function loadAdminWhitelist(filterUnit) {
     docs.forEach(function(d){ var u=d.unit||'未分配'; if(!grouped[u])grouped[u]=[]; grouped[u].push(d); });
 
     var ROLE_CFG={
-      admin:   {label:'系統管理員',bg:'#fff3cd',color:'#856404',border:'#ffc107'},
-      officer: {label:'分隊承辦人',bg:'#cfe2ff',color:'#084298',border:'#9ec5fe'},
-      member:  {label:'一般成員',  bg:'#e9ecef',color:'#495057',border:'#ced4da'},
+      admin:       {label:'系統管理員',bg:'#fff3cd',color:'#856404',border:'#ffc107'},
+      officer:     {label:'分隊承辦人',bg:'#cfe2ff',color:'#084298',border:'#9ec5fe'},
+      squadLeader: {label:'小隊長',    bg:'#f0fdf4',color:'#166534',border:'#86efac'},
+      member:      {label:'一般成員',  bg:'#e9ecef',color:'#495057',border:'#ced4da'},
     };
 
     function buildMemberRow(d) {
@@ -11032,7 +11035,7 @@ async function loadAdminWhitelist(filterUnit) {
       editBtn.style.cssText = 'flex:1;background:white;border:1px solid var(--border);border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
       editBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.onclick = function(){
-        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'');
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'');
       };
       btnRow.appendChild(editBtn);
 
@@ -11096,14 +11099,21 @@ async function adminAddWhitelist() {
   } catch(e) { alert('新增失敗：' + e.message); }
 }
 
-async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone) {
+async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad) {
   if (!role || role==='member') role = isAdmin ? 'admin' : (role||'member');
   cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||'';
+  isSquadLeader=isSquadLeader||false; squad=squad||'';
+  if (isSquadLeader && role==='member') role='squadLeader';
   let extraEmails=[];
   try{const d=await fbGet(COL_WHITELIST,id);if(d&&Array.isArray(d.extraEmails))extraEmails=d.extraEmails;}catch(e){}
-  var TITLES=['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+  var TITLES=['分隊長','副分隊長','幹事','助理幹事',
+    '第一小隊小隊長','第二小隊小隊長','第三小隊小隊長',
+    '第一小隊隊員','第二小隊隊員','第三小隊隊員',
+    '小隊長','隊員','分隊承辦人'];
   var titleOpts='<option value="">請選擇</option>'+TITLES.map(t=>'<option value="'+t+'"'+(t===title?' selected':'')+'>'+t+'</option>').join('');
-  var roleOpts='<option value="member"'+(role==='member'?' selected':'')+'>一般成員</option><option value="officer"'+(role==='officer'?' selected':'')+'>分隊承辦人</option><option value="admin"'+(role==='admin'?' selected':'')+'>系統管理員</option>';
+  var SQUADS=['第一小隊','第二小隊','第三小隊'];
+  var squadOpts='<option value=""'+(squad===''?' selected':'')+'>（無）</option>'+SQUADS.map(s=>'<option value="'+s+'"'+(s===squad?' selected':'')+'>'+s+'</option>').join('');
+  var roleOpts='<option value="member"'+(role==='member'?' selected':'')+'>一般成員</option><option value="squadLeader"'+(role==='squadLeader'?' selected':'')+'>小隊長</option><option value="officer"'+(role==='officer'?' selected':'')+'>分隊承辦人</option><option value="admin"'+(role==='admin'?' selected':'')+'>系統管理員</option>';
   var certOpts='<option value=""'+(cert===''?' selected':'')+'>無</option><option value="EMT-1"'+(cert==='EMT-1'?' selected':'')+'>EMT-1</option><option value="EMT-2"'+(cert==='EMT-2'?' selected':'')+'>EMT-2</option><option value="EMT-P"'+(cert==='EMT-P'?' selected':'')+'>EMT-P（中級）</option>';
   function buildExtraHtml(arr){
     return arr.map((em,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="email" value="'+em+'" style="flex:1;background:white;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);box-sizing:border-box;" oninput="window.aeWlExtra['+i+']=this.value.trim().toLowerCase()"><button type="button" onclick="window.aeWlRemove('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:6px 10px;font-size:0.82rem;color:#b94a3a;cursor:pointer;">✕</button></div>').join('')
@@ -11116,6 +11126,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     '<div class="field"><label>額外信箱 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（其他 Google 帳號）</span></label><div id="aeWlExtraList">'+buildExtraHtml(extraEmails)+'</div></div>'+
     '<div class="field"><label>義消姓名</label><input type="text" id="aeWlName" value="'+memberName+'" style="'+s+'"></div>'+
     '<div class="field"><label>分隊別</label><select id="aeWlUnit" style="width:100%;"><option value="">請選擇</option>'+getUnitsSelectOptions(unit)+'</select></div>'+
+    '<div class="field"><label>所屬小隊</label><select id="aeWlSquad" style="width:100%;">'+squadOpts+'</select></div>'+
     '<div class="field"><label>職稱</label><select id="aeWlTitle" style="width:100%;">'+titleOpts+'</select></div>'+
     '<div class="field"><label>角色權限</label><select id="aeWlRole" style="width:100%;">'+roleOpts+'</select></div>'+
     '<div class="field"><label>證照等級</label><select id="aeWlCert" style="width:100%;">'+certOpts+'</select></div>'+
@@ -11129,7 +11140,8 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     const main=document.getElementById('aeWlEmail').value.trim().toLowerCase();
     const extras=window.aeWlExtra.map(e=>e.trim().toLowerCase()).filter(e=>e&&e!==main);
     try{
-      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||''});
+      const sq=document.getElementById('aeWlSquad')?.value||'';
+      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||''});
       document.getElementById('adminEditModal').style.display='none';
       const curUnit=document.getElementById('adminWlFilterUnit')?.value||'';
       await loadAdminWhitelist(curUnit);await loadMembers();
@@ -11145,7 +11157,7 @@ async function loadAdminMembers() {
   try {
     const docs=await fbList(COL_MEMBERS);
     if(!docs.length){el.innerHTML='<div style="color:var(--text-light);">尚無成員</div>';return;}
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     docs.sort((a,b) => {
       if ((a.unit||'') !== (b.unit||'')) return (a.unit||'') > (b.unit||'') ? 1 : -1;
       const ai = TITLE_ORDER.indexOf(a.title), bi = TITLE_ORDER.indexOf(b.title);
@@ -13787,7 +13799,7 @@ function filterMemberList() {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
     return;
   }
-  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
   const filtered = members.filter(m => (m.unit||'').trim() === unit.trim());
   if (!filtered.length) {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>此分隊暫無成員</div>';
@@ -14264,7 +14276,7 @@ function _initMorePage() {
   const tl = document.getElementById('moreTitle');
   if (av) av.textContent = (u.name||'?').slice(0,1);
   if (nm) nm.textContent = u.name || '—';
-  if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : '隊員');
+  if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : u.isSquadLeader ? '小隊長' : '隊員');
   const adminBtn = document.getElementById('moreAdminBtn');
   if (adminBtn) adminBtn.style.display = (u.isAdmin || u.isOfficer) ? 'flex' : 'none';
   _updatePushToggleUI();
@@ -16336,7 +16348,7 @@ async function meetingLoadAttendees(preSelected) {
   if (hint) hint.style.display = 'none';
   try {
     await loadMembers();
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     const unitMembers = members
       .filter(m => (m.unit || '') === unit && (m.title || '') !== '分隊承辦人')
       .sort((a, b) => {
@@ -16422,7 +16434,7 @@ async function renderMeetingStats() {
       });
     });
 
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員'];
+    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員'];
     const relevant = (isAdmin ? members : members.filter(m => (m.unit || '') === userUnit))
       .filter(m => (m.title || '') !== '分隊承辦人');
 
@@ -18282,7 +18294,7 @@ async function renderDutyGongcha() {
   const el = document.getElementById('dutyGongchaContent');
   if (!el) return;
   const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const isAdmin = u.isAdmin || u.isOfficer;
+  const isAdmin = u.isAdmin || u.isOfficer || u.isSquadLeader;
   el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);">載入中…</div>';
   let docs = [];
   try { docs = await fbList(COL_GONGCHA_MISSIONS, 'date', 'desc'); } catch(e) {}
@@ -18633,7 +18645,7 @@ async function renderDutyMeeting() {
   const el = document.getElementById('dutyMeetingContent');
   if (!el) return;
   const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const isAdmin = u.isAdmin || u.isOfficer;
+  const isAdmin = u.isAdmin || u.isOfficer || u.isSquadLeader;
   el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);">載入中…</div>';
   let docs = [];
   try { docs = await fbList(COL_MEETING_EVENTS, 'date', 'desc'); } catch(e) {}
@@ -19945,7 +19957,7 @@ function gcShowDates() {
 }
 
 async function loadGongchaStats() {
-  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'];
+  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第二小隊小隊長','第三小隊小隊長','第一小隊隊員','第二小隊隊員','第三小隊隊員','小隊長','隊員','分隊承辦人'];
 
   // ── populate year select ──────────────────────────────────────────────────
   const yrSel = document.getElementById('gcYear');
