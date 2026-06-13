@@ -5180,32 +5180,25 @@ async function _prefetchRecent(col, orderField, orderDir, days) {
 // 登入後預熱（平行背景拉取，完成後更新 dashboard）
 // 回傳 Promise，等主要資料載入完畢才 resolve
 function _prefetchCaches() {
-  const sideTargets = [
-    // 儀表板 todo 需要：保留 prefetch
-    [COL_WHITELIST],
-    [COL_ITEMS],
-    [COL_MEETING,        'date', 'desc'],
-    [COL_MEETING_EVENTS, 'date', 'desc'],
-    // 以下改為懶讀取（開啟對應頁面時才觸發）
-    // COL_ANNOUNCE    → 鈴鐺有自己的 snapshot listener
-    // COL_MEMBERS     → loadMembers() 用 whitelist，此集合是備援
-    // COL_GONGCHA_MISSIONS → 只有公差頁才讀
-    // COL_CORRECTION  → dashboard 用直接 where 查詢，不走快取
-    // COL_CASETYPES   → 只有案件管理頁才讀
-    // COL_SETTINGS    → 單筆 fbGet，list prefetch 無用
-  ];
-  // 次要資料：靜默背景拉取（fbList 已自動快取）
-  sideTargets.forEach(([col, ...args]) => { fbList(col, ...args).catch(() => {}); });
-  // 主要資料：attendance/outing 只取近 30 天，dutySchedule 全取
+  // 懶讀取清單（開啟對應頁面時才觸發，不在登入時預載）：
+  // COL_WHITELIST, COL_ITEMS, COL_MEETING, COL_MEETING_EVENTS → 各頁 init 自行 fbList()
+  // COL_OUTING    → initDutyOverviewPage / 打卡查詢頁 自行抓
+  // COL_ANNOUNCE  → 鈴鐺 snapshot listener
+  // COL_MEMBERS   → loadMembers() 用 whitelist，此集合是備援
+  // COL_GONGCHA_MISSIONS → 只有公差頁才讀
+  // COL_CORRECTION  → dashboard 用直接 where 查詢，不走快取
+  // COL_CASETYPES   → 只有案件管理頁才讀
+  // COL_SETTINGS    → 單筆 fbGet，list prefetch 無用
+
+  // 主要資料：只保留首頁 todo 必要的最小集合
+  // attendance 縮短為 14 天（簽退提示只需今日；14 天已足夠個人查詢快取）
   return Promise.all([
-    _prefetchRecent(COL_ATTEND, 'date', 'asc', 30).catch(() => null),
-    _prefetchRecent(COL_OUTING, 'date', 'asc', 30).catch(() => null),
+    _prefetchRecent(COL_ATTEND, 'date', 'asc', 14).catch(() => null),
     fbList('dutySchedule').catch(() => null),
-  ]).then(([attDocs, outDocs, dutyDocs]) => {
-    if (attDocs && outDocs) {
-      const today = new Date(), todayStr = today.toLocaleDateString('sv'), monthStr = todayStr.substring(0,7);
+  ]).then(([attDocs, dutyDocs]) => {
+    if (attDocs) {
+      const today = new Date(), todayStr = today.toLocaleDateString('sv');
       const _me = (JSON.parse(sessionStorage.getItem('rescue_user')||'{}').memberName)||'';
-      if (typeof _applyDashStats === 'function') _applyDashStats(attDocs, outDocs, todayStr, monthStr, _me);
       if (typeof _applyDashDuty  === 'function' && dutyDocs) _applyDashDuty(dutyDocs, todayStr);
       if (typeof updateItemsBadge === 'function') updateItemsBadge();
     }
@@ -6828,10 +6821,9 @@ async function loadDashboard() {
   const _su = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   const _me = _su.memberName || _su.name || '';
   const staleAtt  = _C.peek(COL_ATTEND);
-  const staleOut  = _C.peek(COL_OUTING);
   const staleDuty = _C.peek('dutySchedule');
-  if (staleAtt && staleOut) _applyDashStats(staleAtt, staleOut, todayStr, monthStr, _me);
-  if (staleDuty)            _applyDashDuty(staleDuty, todayStr);
+  // outingRecords 改為懶讀取，勤務總覽頁自行抓取
+  if (staleDuty) _applyDashDuty(staleDuty, todayStr);
 
   // ② 背景更新由 _prefetchCaches() 負責，這裡不重複發請求
 
