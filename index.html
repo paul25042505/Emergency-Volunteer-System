@@ -3587,7 +3587,13 @@ function _dlCSV(content, filename) {
         <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
-    </div>
+
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">修復簽名旗標（hasSig）</div>
+        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">掃描所有 <code>hasSig=false</code> 的打卡紀錄，若 attSigs 子集合有簽名資料，自動將 hasSig 更新為 true。<br><span style="color:var(--red);font-weight:600;">適用於：編輯紀錄後「查看簽名」按鈕消失的情況。</span></div>
+        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔑 執行修復</button>
+        <div id="repairHasSigLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
+      </div>
 
     <div id="adminSec-usagetest" style="display:none;padding:0 0 20px;">
       <div style="background:linear-gradient(135deg,#1565c0 0%,#0d47a1 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
@@ -3822,21 +3828,6 @@ function _dlCSV(content, filename) {
         </div>
         <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:#e11d48;">登出</div></div>
       </button>
-    </div>
-
-    <!-- 資料維護（僅管理員可見） -->
-    <div id="settingsAdminTools" style="display:none;background:white;margin-bottom:12px;">
-      <div style="padding:10px 18px 4px;font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.08em;">資料維護</div>
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid #f5f5f5;">
-        <div style="width:36px;height:36px;border-radius:10px;background:#fef9c3;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:0.9rem;font-weight:600;color:var(--text);">修復簽名旗標</div>
-          <div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">掃描並修正 hasSig 不一致的打卡紀錄</div>
-        </div>
-        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:0.8rem;cursor:pointer;font-family:inherit;flex-shrink:0;">執行</button>
-      </div>
     </div>
 
     <div class="site-footer-placeholder"></div>
@@ -14225,7 +14216,9 @@ function initSettingsPage() {
 }
 
 async function repairHasSig(btn) {
-  btn.disabled = true; btn.textContent = '掃描中...';
+  btn.disabled = true; btn.textContent = '🔄 掃描中...';
+  const log = document.getElementById('repairHasSigLog');
+  if (log) log.textContent = '';
   try {
     await ensureFirebase();
     const snap = await _fbDB.collection(COL_ATTEND).where('hasSig','==',false).get();
@@ -14239,10 +14232,13 @@ async function repairHasSig(btn) {
       }
     }
     _C.invalidate(COL_ATTEND);
-    btn.textContent = `完成（掃描 ${checked} 筆，修復 ${fixed} 筆）`;
-    setTimeout(() => { btn.disabled = false; btn.textContent = '執行'; }, 4000);
+    const msg = `✅ 完成：掃描 ${checked} 筆，修復 ${fixed} 筆`;
+    if (log) log.textContent = msg;
+    btn.textContent = '🔑 執行修復';
   } catch(e) {
-    btn.textContent = '失敗：' + e.message;
+    const msg = '❌ 失敗：' + e.message;
+    if (log) log.textContent = msg;
+  } finally {
     btn.disabled = false;
   }
 }
