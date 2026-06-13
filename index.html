@@ -3824,6 +3824,21 @@ function _dlCSV(content, filename) {
       </button>
     </div>
 
+    <!-- 資料維護（僅管理員可見） -->
+    <div id="settingsAdminTools" style="display:none;background:white;margin-bottom:12px;">
+      <div style="padding:10px 18px 4px;font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.08em;">資料維護</div>
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid #f5f5f5;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#fef9c3;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.9rem;font-weight:600;color:var(--text);">修復簽名旗標</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">掃描並修正 hasSig 不一致的打卡紀錄</div>
+        </div>
+        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:0.8rem;cursor:pointer;font-family:inherit;flex-shrink:0;">執行</button>
+      </div>
+    </div>
+
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -6360,6 +6375,7 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
   else if (pageId === 'emsQueryPage')   _nav(initEmsQueryPage);
+  else if (pageId === 'settingsPage')   _nav(initSettingsPage);
 
   if (pageId !== 'adminPage') {
     const bar = document.getElementById('adminTabBar');
@@ -9575,8 +9591,16 @@ async function saveAttEdit() {
   btn.textContent = '儲存中...'; btn.disabled = true;
   const _aqDutyVal = document.querySelector('input[name="aqEditDuty"]:checked')?.value || '協勤';
   const _aqReason  = _aqDutyVal === '公差' ? (document.getElementById('aqEditReason')?.value.trim() || '') : '';
-  const _aqCin  = cinNew  || (r?.checkinSig  || '');
-  const _aqCout = coutNew || (r?.checkoutSig || '');
+  let _aqCin  = cinNew  || (r?.checkinSig  || '');
+  let _aqCout = coutNew || (r?.checkoutSig || '');
+  // 若本地未拿到簽名（非同步載入可能尚未完成），主動從 attSigs 補查
+  if (!_aqCin && !_aqCout && !isNew && r?.id) {
+    try {
+      const sd = await fbGet('attSigs', r.id);
+      if (sd?.checkinSig)  _aqCin  = sd.checkinSig;
+      if (sd?.checkoutSig) _aqCout = sd.checkoutSig;
+    } catch(e) {}
+  }
   const data = {
     date:        document.getElementById('aqEditDate').value,
     dutyType:    _aqDutyVal,
@@ -14192,6 +14216,36 @@ function openEbook(title, url) {
 }
 
 function initEmsQueryPage() {}
+
+function initSettingsPage() {
+  const usr = window._currentUser || {};
+  const isAdmin = usr.isAdmin || usr.role === 'admin';
+  const toolBox = document.getElementById('settingsAdminTools');
+  if (toolBox) toolBox.style.display = isAdmin ? '' : 'none';
+}
+
+async function repairHasSig(btn) {
+  btn.disabled = true; btn.textContent = '掃描中...';
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_ATTEND).where('hasSig','==',false).get();
+    let fixed = 0, checked = 0;
+    for (const doc of snap.docs) {
+      checked++;
+      const sd = await _fbDB.collection('attSigs').doc(doc.id).get();
+      if (sd.exists && (sd.data().checkinSig || sd.data().checkoutSig)) {
+        await _fbDB.collection(COL_ATTEND).doc(doc.id).update({ hasSig: true });
+        fixed++;
+      }
+    }
+    _C.invalidate(COL_ATTEND);
+    btn.textContent = `完成（掃描 ${checked} 筆，修復 ${fixed} 筆）`;
+    setTimeout(() => { btn.disabled = false; btn.textContent = '執行'; }, 4000);
+  } catch(e) {
+    btn.textContent = '失敗：' + e.message;
+    btn.disabled = false;
+  }
+}
 
 function callEmsQuery() {
   const idno     = (document.getElementById('emsIdno')?.value || '').trim().toUpperCase();
