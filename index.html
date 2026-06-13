@@ -1645,6 +1645,9 @@ function _dlCSV(content, filename) {
 
     </div>
 
+    <!-- 氣象警特報 Banner -->
+    <div id="dashAlertBanner" style="display:none;margin-bottom:16px;"></div>
+
     <!-- 待辦提示 -->
     <div id="dashTodoCard" style="display:none;margin-bottom:16px;background:white;border-radius:16px;padding:14px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -6730,6 +6733,88 @@ function _renderDashWeather(data) {
   } catch(e) {}
 }
 
+// ════════════════════════════════════════
+// CWA 氣象警特報
+// ════════════════════════════════════════
+const _CWA_ALERT_KEY = 'cwaAlertCache';
+const _CWA_ALERT_TTL = 15 * 60 * 1000;
+
+async function loadDashWeatherAlert() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(_CWA_ALERT_KEY) || 'null');
+    if (cached) _renderDashAlert(cached.alerts);
+    if (cached && Date.now() - cached.ts < _CWA_ALERT_TTL) return;
+  } catch(e) {}
+  try {
+    const res = await fetch(
+      'https://opendata.cwa.gov.tw/api/v1/rest/datastore/W-C0033-001' +
+      '?Authorization=CWA-C471B712-733E-4115-9AD2-0E1D96D3A10E' +
+      '&locationName=%E8%87%BA%E4%B8%AD%E5%B8%82'
+    );
+    const data = await res.json();
+    const alerts = _parseCwaAlerts(data);
+    try { localStorage.setItem(_CWA_ALERT_KEY, JSON.stringify({ ts: Date.now(), alerts })); } catch(e) {}
+    _renderDashAlert(alerts);
+  } catch(e) {}
+}
+
+function _parseCwaAlerts(data) {
+  try {
+    const record = data?.records?.record;
+    const locs = Array.isArray(record?.location) ? record.location
+               : (record?.location ? [record.location] : []);
+    const tc = locs.find(l => l.locationName === '臺中市');
+    if (!tc) return [];
+    const raw = tc?.hazardConditions?.hazards?.hazard;
+    const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    return list.map(h => ({
+      phenomena:   h?.info?.phenomena   || '',
+      significance:h?.info?.significance|| '',
+      startTime:   h?.info?.startTime   || h?.validTime?.startTime || '',
+      endTime:     h?.info?.endTime     || h?.validTime?.endTime   || '',
+    })).filter(h => h.phenomena);
+  } catch(e) { return []; }
+}
+
+function _renderDashAlert(alerts) {
+  const el = document.getElementById('dashAlertBanner');
+  if (!el) return;
+  if (!alerts || !alerts.length) { el.style.display = 'none'; return; }
+
+  const _style = (p) => {
+    if (p.includes('颱風'))   return { bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)', icon:'🌀' };
+    if (p.includes('超大豪雨'))return { bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)', icon:'⛈' };
+    if (p.includes('大豪雨')) return { bg:'linear-gradient(135deg,#7c2d12,#c2410c)', icon:'⛈' };
+    if (p.includes('豪雨'))   return { bg:'linear-gradient(135deg,#7c2d12,#c2410c)', icon:'⛈' };
+    if (p.includes('大雨'))   return { bg:'linear-gradient(135deg,#92400e,#d97706)', icon:'🌧' };
+    if (p.includes('低溫'))   return { bg:'linear-gradient(135deg,#1e3a5f,#2563eb)', icon:'🥶' };
+    if (p.includes('強風'))   return { bg:'linear-gradient(135deg,#3b1f6b,#7c3aed)', icon:'💨' };
+    if (p.includes('濃霧'))   return { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'🌫' };
+    return { bg:'linear-gradient(135deg,#78350f,#d97706)', icon:'⚠️' };
+  };
+  const _fmt = (t) => {
+    if (!t) return '';
+    const d = new Date(t);
+    if (isNaN(d)) return '';
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+
+  el.innerHTML = alerts.map(a => {
+    const { bg, icon } = _style(a.phenomena);
+    const label  = a.phenomena + (a.significance || '');
+    const endStr = a.endTime ? `解除時間：${_fmt(a.endTime)}` : '';
+    return `<div style="background:${bg};border-radius:14px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 18px rgba(0,0,0,0.22);">
+      <span style="font-size:1.7rem;flex-shrink:0;">${icon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.9rem;font-weight:700;color:white;letter-spacing:0.04em;">臺中市 ${label}</div>
+        ${endStr ? `<div style="font-size:0.7rem;color:rgba(255,255,255,0.75);margin-top:3px;">${endStr}</div>` : ''}
+      </div>
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);white-space:nowrap;text-align:right;line-height:1.6;">中央氣象署<br>警特報</div>
+    </div>`;
+  }).join('');
+  el.style.display = '';
+}
+
 async function loadDashboard() {
   const today = new Date();
   const todayStr = today.toLocaleDateString('sv');
@@ -6737,6 +6822,7 @@ async function loadDashboard() {
 
   startDashClock();
   loadDashWeather();
+  loadDashWeatherAlert();
 
   // ① 立即顯示快取資料（零等待，localStorage 不需網路）
   const _su = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
