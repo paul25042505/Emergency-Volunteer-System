@@ -14100,81 +14100,107 @@ function filterMemberList() {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>請先選擇分隊</div>';
     return;
   }
-  const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
   const filtered = members.filter(m => (m.unit||'').trim() === unit.trim());
   if (!filtered.length) {
     container.innerHTML = '<div class="query-empty"><span class="empty-icon">👥</span>此分隊暫無成員</div>';
     return;
   }
-  filtered.sort(function(a, b) {
-    // 承辦人排最下面
-    const aIsOfficer = a.role === 'officer' || a.title === '分隊承辦人';
-    const bIsOfficer = b.role === 'officer' || b.title === '分隊承辦人';
-    if (aIsOfficer !== bIsOfficer) return aIsOfficer ? 1 : -1;
-    var ai = TITLE_ORDER.indexOf(_memberTitle(a)), bi = TITLE_ORDER.indexOf(_memberTitle(b));
-    if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
-    return (a.name||'') > (b.name||'') ? 1 : -1;
+
+  const LEADER_TITLES = ['分隊長','副分隊長','幹事','助理幹事'];
+  const SQUAD_ROLE_ORDER = ['小隊長','隊員'];
+
+  const leaders  = filtered.filter(m => LEADER_TITLES.includes(m.title||'') && m.role !== 'officer' && m.title !== '分隊承辦人');
+  const officers = filtered.filter(m => m.role === 'officer' || m.title === '分隊承辦人');
+  const rest     = filtered.filter(m => !LEADER_TITLES.includes(m.title||'') && m.role !== 'officer' && m.title !== '分隊承辦人');
+
+  // 按職稱排序幹部
+  leaders.sort((a,b) => (LEADER_TITLES.indexOf(a.title||'') - LEADER_TITLES.indexOf(b.title||'')) || (a.name||'').localeCompare(b.name||''));
+
+  // 小隊分群
+  const squadMap = {};
+  rest.forEach(m => {
+    const sq = m.squad || '__none__';
+    if (!squadMap[sq]) squadMap[sq] = [];
+    squadMap[sq].push(m);
+  });
+  const squadKeys = Object.keys(squadMap).sort((a,b) => {
+    if (a === '__none__') return 1;
+    if (b === '__none__') return -1;
+    return a.localeCompare(b, 'zh-TW');
+  });
+  squadKeys.forEach(sq => {
+    squadMap[sq].sort((a,b) =>
+      (SQUAD_ROLE_ORDER.indexOf(a.title||'') - SQUAD_ROLE_ORDER.indexOf(b.title||''))
+      || (a.name||'').localeCompare(b.name||'')
+    );
   });
 
-  // 一般成員（排除承辦人，管理員仍算在人數內）
-  const regularMembers  = filtered.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人');
-  const officerMembers  = filtered.filter(m => m.role === 'officer' || m.title === '分隊承辦人');
+  const regularCount = leaders.length + rest.length;
+  const countStr = '共 ' + regularCount + ' 人' + (officers.length ? '　另有承辦人 ' + officers.length + ' 位' : '');
 
-  // 標題顏色對應職稱
+  // 標題顏色
   const titleColor = t => {
     if (!t) return { bg:'#f4f6fa', fg:'#888', av:'#aab4c0' };
     if (t==='分隊長')   return { bg:'#fff0f0', fg:'#c0392b', av:'var(--red)' };
     if (t==='副分隊長') return { bg:'#fff5ee', fg:'#d35400', av:'#e67e22' };
     if (t==='幹事'||t==='助理幹事') return { bg:'#f0f8ff', fg:'#2471a3', av:'#2980b9' };
-    if (t.includes('小隊長'))  return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
+    if (t.includes('小隊長')) return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
     if (t==='分隊承辦人') return { bg:'#f9f0ff', fg:'#7d3c98', av:'#8e44ad' };
     return { bg:'#f4f6fa', fg:'#5d6d7e', av:'#7f8c8d' };
   };
 
-  const countStr = '共 ' + regularMembers.length + ' 人'
-    + (officerMembers.length ? '　另有承辦人 ' + officerMembers.length + ' 位' : '');
-
-  let idx = 1;
-  let cards = '';
-  // 一般成員（3欄格）
-  cards += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:' + (officerMembers.length?'16px':'0') + ';">';
-  regularMembers.forEach(m => {
-    const _mt = _memberTitle(m);
-    const c = titleColor(_mt);
+  const makeCard = m => {
+    const t = m.title || '';
+    const c = titleColor(t);
     const isAdmin = m.role === 'admin';
-    cards += '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">';
-    cards += '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">';
-    cards += '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;margin:0 auto 6px;">' + (m.name||'?').slice(0,1) + '</div>';
-    cards += '<div style="font-size:0.82rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>';
-    cards += '</div>';
-    cards += '<div style="padding:6px 6px 8px;">';
-    if (_mt) cards += '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _mt + '</span></div>';
-    if (isAdmin) cards += '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>';
-    if (m.cert)  cards += '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>';
-    cards += '</div>';
-    cards += '</div>';
-  });
-  cards += '</div>';
+    return '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">'
+      + '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">'
+      + '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;margin:0 auto 6px;">' + (m.name||'?').slice(0,1) + '</div>'
+      + '<div style="font-size:0.82rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>'
+      + '</div>'
+      + '<div style="padding:6px 6px 8px;">'
+      + (t ? '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t + '</span></div>' : '')
+      + (isAdmin ? '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>' : '')
+      + (m.cert  ? '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>' : '')
+      + '</div></div>';
+  };
 
-  // 承辦人（獨立列）
-  if (officerMembers.length) {
-    cards += '<div style="font-size:0.72rem;color:#aaa;font-weight:600;letter-spacing:0.06em;margin-bottom:8px;">分隊承辦人</div>';
-    cards += '<div style="display:flex;flex-direction:column;gap:8px;">';
-    officerMembers.forEach(m => {
+  const makeGrid = (arr, mb) =>
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;' + (mb ? 'margin-bottom:' + mb + ';' : '') + '">'
+    + arr.map(makeCard).join('') + '</div>';
+
+  const makeSectionHeader = label =>
+    '<div style="font-size:0.72rem;font-weight:700;color:var(--text-mid);letter-spacing:0.06em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid var(--border);">' + label + '</div>';
+
+  let html = '<div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:12px;font-weight:500;">' + countStr + '</div>';
+
+  // 幹部
+  if (leaders.length) html += makeGrid(leaders, squadKeys.length || officers.length ? '0' : '0');
+
+  // 小隊分群
+  squadKeys.forEach(sq => {
+    const label = sq === '__none__' ? '隊員' : sq;
+    html += makeSectionHeader(label);
+    html += makeGrid(squadMap[sq], '0');
+  });
+
+  // 承辦人
+  if (officers.length) {
+    html += makeSectionHeader('分隊承辦人');
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    officers.forEach(m => {
       const c = titleColor(m.title);
-      cards += '<div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;">';
-      cards += '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>';
-      cards += '<div style="flex:1;"><div style="font-size:0.92rem;font-weight:700;">' + (m.name||'') + '</div>';
-      cards += '<div style="font-size:0.72rem;color:' + c.fg + ';margin-top:2px;">分隊承辦人</div></div>';
-      if (m.cert) cards += '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span>';
-      cards += '</div>';
+      html += '<div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;">'
+        + '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>'
+        + '<div style="flex:1;"><div style="font-size:0.92rem;font-weight:700;">' + (m.name||'') + '</div>'
+        + '<div style="font-size:0.72rem;color:' + c.fg + ';margin-top:2px;">分隊承辦人</div></div>'
+        + (m.cert ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span>' : '')
+        + '</div>';
     });
-    cards += '</div>';
+    html += '</div>';
   }
 
-  container.innerHTML =
-    '<div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:12px;font-weight:500;">' + countStr + '</div>'
-    + cards;
+  container.innerHTML = html;
 }
 
 // ════════════════════════════════════════
