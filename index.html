@@ -6795,13 +6795,15 @@ function _renderDashAlert(alerts, dbg) {
 
   el.innerHTML = alerts.map(a => {
     const { bg, icon } = _style(a.phenomena);
-    const label  = a.phenomena + (a.significance || '');
-    const endStr = a.endTime ? `解除時間：${_fmt(a.endTime)}` : '';
+    const label    = a.phenomena + (a.significance || '');
+    const startStr = a.startTime ? `發佈：${_fmt(a.startTime)}` : '';
+    const endStr   = a.endTime   ? `解除：${_fmt(a.endTime)}`   : '';
+    const timeStr  = [startStr, endStr].filter(Boolean).join('　');
     return `<div style="background:${bg};border-radius:14px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 18px rgba(0,0,0,0.22);">
       <span style="font-size:1.7rem;flex-shrink:0;">${icon}</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.9rem;font-weight:700;color:white;letter-spacing:0.04em;">臺中市 ${label}</div>
-        ${endStr ? `<div style="font-size:0.7rem;color:rgba(255,255,255,0.75);margin-top:3px;">${endStr}</div>` : ''}
+        ${timeStr ? `<div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:3px;">${timeStr}</div>` : ''}
       </div>
       <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);white-space:nowrap;text-align:right;line-height:1.6;">中央氣象署<br>警特報</div>
     </div>`;
