@@ -6747,7 +6747,7 @@ async function loadDashWeatherAlert() {
     );
     const data = await res.json();
     const alerts = _parseCwaAlerts(data);
-    const dbg = isAdm ? JSON.stringify(data).slice(0, 400) : '';
+    const dbg = isAdm ? `locs:${JSON.stringify(data?.records?.location??data?.records?.record??'(none)').slice(0,600)}` : '';
     console.log('[CWA]', data);
     try { localStorage.setItem(_CWA_ALERT_KEY, JSON.stringify({ ts: Date.now(), alerts, dbg })); } catch(e) {}
     _renderDashAlert(alerts, dbg);
@@ -6759,29 +6759,34 @@ async function loadDashWeatherAlert() {
 
 function _parseCwaAlerts(data) {
   try {
-    // record 可能是 object 或 array
-    const rawRecord = data?.records?.record;
-    const records = Array.isArray(rawRecord) ? rawRecord : (rawRecord ? [rawRecord] : []);
-
-    const allHazards = [];
-    for (const record of records) {
-      // location 可能在 record 頂層或 record.location
-      const rawLocs = record?.location ?? record?.locations?.location ?? [];
-      const locs = Array.isArray(rawLocs) ? rawLocs : (rawLocs ? [rawLocs] : []);
-      const tc = locs.find(l => l.locationName === '臺中市') || locs[0]; // 已用 locationName 篩選，直接取第一筆也行
-      if (!tc) continue;
-
-      const rawHazard = tc?.hazardConditions?.hazards?.hazard;
-      const hazards = Array.isArray(rawHazard) ? rawHazard : (rawHazard ? [rawHazard] : []);
-      for (const h of hazards) {
-        const phenomena    = h?.info?.phenomena    || '';
-        const significance = h?.info?.significance || '';
-        const startTime    = h?.info?.startTime    || h?.validTime?.startTime || '';
-        const endTime      = h?.info?.endTime      || h?.validTime?.endTime   || '';
-        if (phenomena) allHazards.push({ phenomena, significance, startTime, endTime });
+    // W-C0033-001 actual response: data.records.location[]
+    // Fallback: data.records.record (older/alternate format)
+    let locs = [];
+    if (Array.isArray(data?.records?.location)) {
+      locs = data.records.location;
+    } else if (data?.records?.location) {
+      locs = [data.records.location];
+    } else {
+      const rawRecord = data?.records?.record;
+      const records = Array.isArray(rawRecord) ? rawRecord : (rawRecord ? [rawRecord] : []);
+      for (const record of records) {
+        const rawLocs = record?.location ?? record?.locations?.location ?? [];
+        const arr = Array.isArray(rawLocs) ? rawLocs : (rawLocs ? [rawLocs] : []);
+        locs.push(...arr);
       }
     }
-    return allHazards;
+
+    const tc = locs.find(l => l.locationName === '臺中市') || locs[0];
+    if (!tc) return [];
+
+    const rawHazard = tc?.hazardConditions?.hazards?.hazard;
+    const hazards = Array.isArray(rawHazard) ? rawHazard : (rawHazard ? [rawHazard] : []);
+    return hazards.map(h => ({
+      phenomena:    h?.info?.phenomena    || '',
+      significance: h?.info?.significance || '',
+      startTime:    h?.info?.startTime    || h?.validTime?.startTime || '',
+      endTime:      h?.info?.endTime      || h?.validTime?.endTime   || '',
+    })).filter(h => h.phenomena);
   } catch(e) { return []; }
 }
 
