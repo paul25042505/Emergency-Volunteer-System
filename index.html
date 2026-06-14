@@ -6780,9 +6780,10 @@ function _parseCwaAlerts(data) {
     const tc = locs.find(l => l.locationName === '臺中市') || locs[0];
     if (!tc) return [];
 
-    // Try both: hazardConditions.hazards.hazard and hazardConditions.hazard (no wrapper)
+    // hazardConditions.hazards 可能是陣列（實際格式）或 {hazard:[...]}（舊格式）
     const hc = tc?.hazardConditions;
-    const rawHazard = hc?.hazards?.hazard ?? hc?.hazard;
+    const rawHazard = Array.isArray(hc?.hazards) ? hc.hazards
+                    : (hc?.hazards?.hazard ?? hc?.hazard);
     const hazards = Array.isArray(rawHazard) ? rawHazard : (rawHazard ? [rawHazard] : []);
     return hazards.map(h => ({
       phenomena:    h?.info?.phenomena    || '',
