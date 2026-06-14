@@ -6747,7 +6747,8 @@ async function loadDashWeatherAlert() {
     );
     const data = await res.json();
     const alerts = _parseCwaAlerts(data);
-    const dbg = isAdm ? `locs:${JSON.stringify(data?.records?.location??data?.records?.record??'(none)').slice(0,600)}` : '';
+    const _loc0 = (data?.records?.location ?? data?.records?.record ?? [])[0];
+    const dbg = isAdm ? `alerts:${alerts.length} | hc:${JSON.stringify(_loc0?.hazardConditions).slice(0,500)}` : '';
     console.log('[CWA]', data);
     try { localStorage.setItem(_CWA_ALERT_KEY, JSON.stringify({ ts: Date.now(), alerts, dbg })); } catch(e) {}
     _renderDashAlert(alerts, dbg);
@@ -6779,13 +6780,15 @@ function _parseCwaAlerts(data) {
     const tc = locs.find(l => l.locationName === '臺中市') || locs[0];
     if (!tc) return [];
 
-    const rawHazard = tc?.hazardConditions?.hazards?.hazard;
+    // Try both: hazardConditions.hazards.hazard and hazardConditions.hazard (no wrapper)
+    const hc = tc?.hazardConditions;
+    const rawHazard = hc?.hazards?.hazard ?? hc?.hazard;
     const hazards = Array.isArray(rawHazard) ? rawHazard : (rawHazard ? [rawHazard] : []);
     return hazards.map(h => ({
       phenomena:    h?.info?.phenomena    || '',
       significance: h?.info?.significance || '',
-      startTime:    h?.info?.startTime    || h?.validTime?.startTime || '',
-      endTime:      h?.info?.endTime      || h?.validTime?.endTime   || '',
+      startTime:    h?.info?.startTime    || h?.info?.validTime?.startTime || h?.validTime?.startTime || '',
+      endTime:      h?.info?.endTime      || h?.info?.validTime?.endTime   || h?.validTime?.endTime   || '',
     })).filter(h => h.phenomena);
   } catch(e) { return []; }
 }
