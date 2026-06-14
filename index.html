@@ -6730,7 +6730,7 @@ function _renderDashWeather(data) {
 // CWA 氣象警特報
 // ════════════════════════════════════════
 const _CWA_ALERT_KEY = 'cwaAlertCache';
-const _CWA_ALERT_TTL = 15 * 60 * 1000;
+const _CWA_ALERT_TTL = 5 * 60 * 1000;  // 5 分鐘（警報時效性高）
 
 async function loadDashWeatherAlert() {
   try {
@@ -6753,19 +6753,29 @@ async function loadDashWeatherAlert() {
 
 function _parseCwaAlerts(data) {
   try {
-    const record = data?.records?.record;
-    const locs = Array.isArray(record?.location) ? record.location
-               : (record?.location ? [record.location] : []);
-    const tc = locs.find(l => l.locationName === '臺中市');
-    if (!tc) return [];
-    const raw = tc?.hazardConditions?.hazards?.hazard;
-    const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-    return list.map(h => ({
-      phenomena:   h?.info?.phenomena   || '',
-      significance:h?.info?.significance|| '',
-      startTime:   h?.info?.startTime   || h?.validTime?.startTime || '',
-      endTime:     h?.info?.endTime     || h?.validTime?.endTime   || '',
-    })).filter(h => h.phenomena);
+    // record 可能是 object 或 array
+    const rawRecord = data?.records?.record;
+    const records = Array.isArray(rawRecord) ? rawRecord : (rawRecord ? [rawRecord] : []);
+
+    const allHazards = [];
+    for (const record of records) {
+      // location 可能在 record 頂層或 record.location
+      const rawLocs = record?.location ?? record?.locations?.location ?? [];
+      const locs = Array.isArray(rawLocs) ? rawLocs : (rawLocs ? [rawLocs] : []);
+      const tc = locs.find(l => l.locationName === '臺中市') || locs[0]; // 已用 locationName 篩選，直接取第一筆也行
+      if (!tc) continue;
+
+      const rawHazard = tc?.hazardConditions?.hazards?.hazard;
+      const hazards = Array.isArray(rawHazard) ? rawHazard : (rawHazard ? [rawHazard] : []);
+      for (const h of hazards) {
+        const phenomena    = h?.info?.phenomena    || '';
+        const significance = h?.info?.significance || '';
+        const startTime    = h?.info?.startTime    || h?.validTime?.startTime || '';
+        const endTime      = h?.info?.endTime      || h?.validTime?.endTime   || '';
+        if (phenomena) allHazards.push({ phenomena, significance, startTime, endTime });
+      }
+    }
+    return allHazards;
   } catch(e) { return []; }
 }
 
