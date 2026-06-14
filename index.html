@@ -14106,39 +14106,28 @@ function filterMemberList() {
     return;
   }
 
-  const LEADER_TITLES = ['分隊長','副分隊長','幹事','助理幹事'];
-  const SQUAD_ROLE_ORDER = ['小隊長','隊員'];
+  // 排序 key：squad 排前，職稱再排後
+  // _memberTitle 回傳 "第一小隊小隊長" 等完整字串，用於排序
+  const TITLE_ORDER = [
+    '分隊長','副分隊長','幹事','助理幹事',
+    '第一小隊小隊長','第一小隊隊員',
+    '第二小隊小隊長','第二小隊隊員',
+    '第三小隊小隊長','第三小隊隊員',
+    '第四小隊小隊長','第四小隊隊員',
+    '小隊長','隊員','分隊承辦人'
+  ];
 
-  const leaders  = filtered.filter(m => LEADER_TITLES.includes(m.title||'') && m.role !== 'officer' && m.title !== '分隊承辦人');
   const officers = filtered.filter(m => m.role === 'officer' || m.title === '分隊承辦人');
-  const rest     = filtered.filter(m => !LEADER_TITLES.includes(m.title||'') && m.role !== 'officer' && m.title !== '分隊承辦人');
+  const regular  = filtered.filter(m => m.role !== 'officer' && m.title !== '分隊承辦人');
 
-  // 按職稱排序幹部
-  leaders.sort((a,b) => (LEADER_TITLES.indexOf(a.title||'') - LEADER_TITLES.indexOf(b.title||'')) || (a.name||'').localeCompare(b.name||''));
-
-  // 小隊分群
-  const squadMap = {};
-  rest.forEach(m => {
-    const sq = m.squad || '__none__';
-    if (!squadMap[sq]) squadMap[sq] = [];
-    squadMap[sq].push(m);
-  });
-  const squadKeys = Object.keys(squadMap).sort((a,b) => {
-    if (a === '__none__') return 1;
-    if (b === '__none__') return -1;
-    return a.localeCompare(b, 'zh-TW');
-  });
-  squadKeys.forEach(sq => {
-    squadMap[sq].sort((a,b) =>
-      (SQUAD_ROLE_ORDER.indexOf(a.title||'') - SQUAD_ROLE_ORDER.indexOf(b.title||''))
-      || (a.name||'').localeCompare(b.name||'')
-    );
+  regular.sort((a, b) => {
+    const ai = TITLE_ORDER.indexOf(_memberTitle(a));
+    const bi = TITLE_ORDER.indexOf(_memberTitle(b));
+    return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi) || (a.name||'').localeCompare(b.name||'');
   });
 
-  const regularCount = leaders.length + rest.length;
-  const countStr = '共 ' + regularCount + ' 人' + (officers.length ? '　另有承辦人 ' + officers.length + ' 位' : '');
+  const countStr = '共 ' + regular.length + ' 人' + (officers.length ? '　另有承辦人 ' + officers.length + ' 位' : '');
 
-  // 標題顏色
   const titleColor = t => {
     if (!t) return { bg:'#f4f6fa', fg:'#888', av:'#aab4c0' };
     if (t==='分隊長')   return { bg:'#fff0f0', fg:'#c0392b', av:'var(--red)' };
@@ -14150,9 +14139,8 @@ function filterMemberList() {
   };
 
   const makeCard = m => {
-    const t = m.title || '';
+    const t = m.title || '';                // 卡片只顯示職稱（不含小隊前綴）
     const c = titleColor(t);
-    const isAdmin = m.role === 'admin';
     return '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">'
       + '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">'
       + '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;margin:0 auto 6px;">' + (m.name||'?').slice(0,1) + '</div>'
@@ -14160,33 +14148,20 @@ function filterMemberList() {
       + '</div>'
       + '<div style="padding:6px 6px 8px;">'
       + (t ? '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t + '</span></div>' : '')
-      + (isAdmin ? '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>' : '')
-      + (m.cert  ? '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>' : '')
+      + (m.role==='admin' ? '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>' : '')
+      + (m.cert ? '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>' : '')
       + '</div></div>';
   };
 
-  const makeGrid = (arr, mb) =>
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;' + (mb ? 'margin-bottom:' + mb + ';' : '') + '">'
-    + arr.map(makeCard).join('') + '</div>';
-
-  const makeSectionHeader = label =>
-    '<div style="font-size:0.72rem;font-weight:700;color:var(--text-mid);letter-spacing:0.06em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid var(--border);">' + label + '</div>';
-
   let html = '<div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:12px;font-weight:500;">' + countStr + '</div>';
 
-  // 幹部
-  if (leaders.length) html += makeGrid(leaders, squadKeys.length || officers.length ? '0' : '0');
+  // 一般成員：3欄格
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'
+    + regular.map(makeCard).join('') + '</div>';
 
-  // 小隊分群
-  squadKeys.forEach(sq => {
-    const label = sq === '__none__' ? '隊員' : sq;
-    html += makeSectionHeader(label);
-    html += makeGrid(squadMap[sq], '0');
-  });
-
-  // 承辦人
+  // 承辦人：單獨條列
   if (officers.length) {
-    html += makeSectionHeader('分隊承辦人');
+    html += '<div style="font-size:0.72rem;font-weight:700;color:var(--text-mid);letter-spacing:0.06em;margin:16px 0 8px;padding-bottom:4px;border-bottom:1.5px solid var(--border);">分隊承辦人</div>';
     html += '<div style="display:flex;flex-direction:column;gap:8px;">';
     officers.forEach(m => {
       const c = titleColor(m.title);
