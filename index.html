@@ -1646,6 +1646,30 @@ function _dlCSV(content, filename) {
         </div>
       </div>
 
+      <!-- 明後天天氣預報 (F-C0032-001) -->
+      <div id="dashForecastSection" style="display:none;margin-top:14px;">
+        <div style="font-size:0.65rem;color:rgba(255,255,255,0.55);letter-spacing:0.08em;margin-bottom:8px;">明後天預報</div>
+        <div id="dashForecastScroll"
+          style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
+                 scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 最近地震 (E-A0016-001) -->
+    <div id="dashEqCard" style="display:none;margin-bottom:12px;background:white;border-radius:16px;padding:12px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.6rem;flex-shrink:0;">🌏</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="dashEqLocation">—</div>
+          <div style="font-size:0.65rem;color:var(--text-mid);margin-top:2px;" id="dashEqDetail">—</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:1.05rem;font-weight:800;letter-spacing:0.02em;" id="dashEqMag">—</div>
+          <div style="font-size:0.58rem;color:var(--text-mid);">芮氏規模</div>
+        </div>
+      </div>
     </div>
 
     <!-- 待辦提示 -->
@@ -6837,6 +6861,167 @@ function _renderDashAlert(alerts, dbg) {
   el.style.display = 'block';
 }
 
+// ════════════════════════════════════════
+// 地震速報 E-A0016-001
+// ════════════════════════════════════════
+const _EQ_KEY = 'eqCache';
+const _EQ_TTL = 5 * 60 * 1000;
+
+async function loadDashEarthquake() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(_EQ_KEY) || 'null');
+    if (cached) _renderDashEq(cached.eq);
+    if (cached && Date.now() - cached.ts < _EQ_TTL) return;
+  } catch(e) {}
+  try {
+    const res = await fetch(
+      'https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0016-001' +
+      '?Authorization=CWA-C471B712-733E-4115-9AD2-0E1D96D3A10E&limit=1'
+    );
+    const data = await res.json();
+    const eq = _parseEq(data);
+    try { localStorage.setItem(_EQ_KEY, JSON.stringify({ ts: Date.now(), eq })); } catch(e) {}
+    _renderDashEq(eq);
+  } catch(e) { console.error('[EQ]', e); }
+}
+
+function _parseEq(data) {
+  try {
+    const quakes = data?.records?.earthquake;
+    const q = Array.isArray(quakes) ? quakes[0] : quakes;
+    if (!q) return null;
+    const info = q.earthquakeInfo;
+    const areas = q.intensity?.shakingArea;
+    const tc = Array.isArray(areas) ? areas.find(a => a.countyName === '臺中市') : null;
+    const tcIntensity = tc ? (tc.areaDesc?.match(/震度(\d+)/)?.[1] ?? null) : null;
+    return {
+      mag:         info?.magnitudeValue ?? null,
+      originTime:  info?.originTime ?? '',
+      location:    info?.epicenter?.location ?? '',
+      depth:       info?.depth?.value ?? null,
+      tcIntensity,
+    };
+  } catch(e) { return null; }
+}
+
+function _renderDashEq(eq) {
+  const card = document.getElementById('dashEqCard');
+  if (!card) return;
+  if (!eq) { card.style.display = 'none'; return; }
+
+  const timeAgo = (() => {
+    if (!eq.originTime) return '';
+    const d = new Date(eq.originTime.replace(' ', 'T'));
+    if (isNaN(d)) return '';
+    const mins = Math.round((Date.now() - d) / 60000);
+    if (mins < 60) return `${mins} 分鐘前`;
+    if (mins < 1440) return `${Math.round(mins / 60)} 小時前`;
+    return `${Math.round(mins / 1440)} 天前`;
+  })();
+
+  const mag = parseFloat(eq.mag);
+  const magColor = mag >= 6 ? '#C1121F' : mag >= 5 ? '#e85d04' : mag >= 4 ? '#f48c06' : 'var(--text-mid)';
+  const details = [timeAgo, eq.depth ? `深度 ${eq.depth} 公里` : null, eq.tcIntensity ? `臺中震度 ${eq.tcIntensity} 級` : null].filter(Boolean).join(' · ');
+
+  const loc = document.getElementById('dashEqLocation');
+  const det = document.getElementById('dashEqDetail');
+  const magEl = document.getElementById('dashEqMag');
+  if (loc) loc.textContent = eq.location || '—';
+  if (det) det.textContent = details;
+  if (magEl) { magEl.textContent = `M ${mag.toFixed(1)}`; magEl.style.color = magColor; }
+  card.style.display = 'block';
+}
+
+// ════════════════════════════════════════
+// 36 小時天氣預報 F-C0032-001
+// ════════════════════════════════════════
+const _FC_KEY = 'fcstCache';
+const _FC_TTL = 30 * 60 * 1000;
+
+async function loadDashForecast() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(_FC_KEY) || 'null');
+    if (cached) _renderDashForecast(cached.periods);
+    if (cached && Date.now() - cached.ts < _FC_TTL) return;
+  } catch(e) {}
+  try {
+    const res = await fetch(
+      'https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001' +
+      '?Authorization=CWA-C471B712-733E-4115-9AD2-0E1D96D3A10E' +
+      '&locationName=%E8%87%BA%E4%B8%AD%E5%B8%82'
+    );
+    const data = await res.json();
+    const periods = _parseForecast(data);
+    try { localStorage.setItem(_FC_KEY, JSON.stringify({ ts: Date.now(), periods })); } catch(e) {}
+    _renderDashForecast(periods);
+  } catch(e) { console.error('[FCST]', e); }
+}
+
+function _parseForecast(data) {
+  try {
+    const loc = (data?.records?.location ?? [])[0];
+    if (!loc) return [];
+    const elMap = {};
+    for (const el of (loc.weatherElement || [])) elMap[el.elementName] = el.time || [];
+
+    const wx = elMap['Wx'] || [];
+    const pop = elMap['PoP'] || [];
+    const minT = elMap['MinT'] || [];
+    const maxT = elMap['MaxT'] || [];
+    const now = Date.now();
+
+    const todayStr     = new Date().toLocaleDateString('sv');
+    const tomorrowStr  = new Date(Date.now() + 86400000).toLocaleDateString('sv');
+    const dayAfterStr  = new Date(Date.now() + 172800000).toLocaleDateString('sv');
+
+    return wx.map((p, i) => {
+      const end = new Date(p.endTime);
+      if (end <= now) return null;
+      const start = new Date(p.startTime);
+      const dateStr = start.toLocaleDateString('sv');
+      const dayLabel = dateStr === todayStr ? '今天' : dateStr === tomorrowStr ? '明天' : dateStr === dayAfterStr ? '後天' : '';
+      const hour = start.getHours();
+      const periodLabel = (hour >= 6 && hour < 18) ? '白天' : '夜間';
+      return {
+        label:  dayLabel + periodLabel,
+        wxCode: p.parameter?.parameterValue || '0',
+        pop:    pop[i]?.parameter?.parameterName ?? '—',
+        minT:   minT[i]?.parameter?.parameterName ?? '—',
+        maxT:   maxT[i]?.parameter?.parameterName ?? '—',
+      };
+    }).filter(Boolean).slice(0, 4);
+  } catch(e) { return []; }
+}
+
+function _renderDashForecast(periods) {
+  const section = document.getElementById('dashForecastSection');
+  const scroll  = document.getElementById('dashForecastScroll');
+  if (!section || !scroll) return;
+  if (!periods || !periods.length) { section.style.display = 'none'; return; }
+
+  const icon = c => {
+    const n = parseInt(c);
+    if (n === 1) return '☀️';
+    if (n === 2) return '🌤';
+    if (n <= 4)  return '⛅';
+    if (n <= 7)  return '🌥';
+    if (n <= 10) return '☁️';
+    if (n <= 14) return '🌧';
+    if (n <= 22) return '⛈';
+    return '🌡';
+  };
+
+  scroll.innerHTML = periods.map(p => `
+    <div style="flex-shrink:0;text-align:center;background:rgba(255,255,255,0.18);
+      border-radius:10px;padding:8px 10px;min-width:66px;">
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.65);margin-bottom:4px;white-space:nowrap;">${p.label}</div>
+      <div style="font-size:1.35rem;line-height:1.2;margin-bottom:3px;">${icon(p.wxCode)}</div>
+      <div style="font-size:0.7rem;color:white;font-weight:600;">${p.maxT}°/${p.minT}°</div>
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.65);margin-top:2px;">☂ ${p.pop}%</div>
+    </div>`).join('');
+  section.style.display = 'block';
+}
+
 async function loadDashboard() {
   const today = new Date();
   const todayStr = today.toLocaleDateString('sv');
@@ -6845,6 +7030,8 @@ async function loadDashboard() {
   startDashClock();
   loadDashWeather();
   loadDashWeatherAlert();
+  loadDashEarthquake();
+  loadDashForecast();
 
   // ① 立即顯示快取資料（零等待，localStorage 不需網路）
   const _su = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
