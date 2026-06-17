@@ -16938,7 +16938,75 @@ async function initTrainingPage() {
   if (addWrap) addWrap.style.display = isAdmin ? '' : 'none';
   trainingHideForm();
   trainingSwitchTab(_trainingTab, true);
+  await _seedTrainingDefaults();
   await renderTrainingList();
+}
+
+// 第一次使用時自動建立預設教學內容（流程＋救護單項技術），之後可自行刪除
+async function _seedTrainingDefaults() {
+  try {
+    const flag = await fbGet(COL_SETTINGS, 'trainingSeeded');
+    if (flag && flag.done) return;
+    await fbSet(COL_SETTINGS, 'trainingSeeded', { done: true });
+
+    const defaults = [
+      { category:'process', title:'協勤案件登錄流程', content:
+        '1. 出勤前先確認案件基本資訊（地點、案由）\n' +
+        '2. 出勤回隊後，進入「協勤案件登錄」填寫：協勤日期、出動/返隊時間、行政區與地址、案由類型、服務人數\n' +
+        '3. 確認資料無誤後送出，系統自動計入當月統計',
+        notes: '出動/返隊時間務必填實際時刻，影響「本月累積時數」統計；地址盡量填到路口/地標方便日後查詢' },
+      { category:'process', title:'打卡簽到簽退流程', content:
+        '1. 到隊後於「簽到簽退」頁面點選簽到\n' +
+        '2. 備勤結束或離隊前，務必回到同頁點選簽退\n' +
+        '3. 簽到未簽退會持續顯示在「在線人員」名單中',
+        notes: '忘記簽退會讓在隊人數統計失真，請務必記得簽退；忘記時請告知幹部協助補登' },
+      { category:'process', title:'物品領用流程', content:
+        '1. 於「待領清單」查看可領用物品項目\n' +
+        '2. 選擇需要的物品與數量，填寫領用人\n' +
+        '3. 確認送出後物品會從庫存扣除',
+        notes: '領用前確認用途是否符合規定；歸還或損壞請主動回報幹部，避免庫存資料錯誤' },
+      { category:'process', title:'出勤補登/請假申請流程', content:
+        '1. 進入「更多」>「我的申請」\n' +
+        '2. 點新增申請，選擇類型（補登出勤／請假等）\n' +
+        '3. 填寫原因與相關資訊送出，等待幹部審核\n' +
+        '4. 可在同頁查看審核狀態（待審核／已核准／已拒絕）',
+        notes: '請盡早提出，避免影響月底統計與考核' },
+      { category:'skill', title:'CPR 心肺復甦術（成人）', content:
+        '1. 確認現場安全，呼叫並輕拍患者確認意識\n' +
+        '2. 無反應、無呼吸或僅喘息 → 立即請人call 119並取得AED\n' +
+        '3. 患者平躺硬質平面，暴露胸口\n' +
+        '4. 雙手交疊於胸骨下半部（兩乳頭連線中央），手臂打直垂直下壓\n' +
+        '5. 速率每分鐘100–120次，深度約5–6公分，壓後完全回彈\n' +
+        '6. 會人工呼吸者採30:2循環；不會的話持續單純按壓直到AED或救護人員到場\n' +
+        '7. AED到達立即接上並依語音操作，按壓盡量不中斷',
+        notes: '按壓中斷盡量少於10秒；以上為通則，實際操作以最新CPR/AED訓練課程與指導員教學為準' },
+      { category:'skill', title:'AED 自動體外心臟去顫器使用', content:
+        '1. 打開電源依語音/畫面指示操作\n' +
+        '2. 暴露胸口，擦乾水分/處理過多胸毛\n' +
+        '3. 貼片：一片貼右胸上方鎖骨下，一片貼左側胸下方腋下\n' +
+        '4. 分析心律時所有人不可觸碰患者\n' +
+        '5. 建議電擊時確認無人接觸後按下電擊鍵\n' +
+        '6. 電擊後立即恢復CPR，依指示循環',
+        notes: '植入式心臟裝置者貼片需避開該處至少8公分；潮濕環境需先擦乾；實際操作以機型說明書與訓練課程為準' },
+      { category:'skill', title:'止血包扎技術', content:
+        '1. 評估出血程度，優先處理大量出血\n' +
+        '2. 戴手套（如有）避免體液接觸\n' +
+        '3. 直接加壓法：乾淨紗布覆蓋傷口，手掌穩定加壓\n' +
+        '4. 無法止血可加壓綁紮固定，避免過緊影響循環\n' +
+        '5. 四肢嚴重出血上述無效時，視訓練程度考慮止血帶並記錄上止血帶時間\n' +
+        '6. 包紮後持續觀察傷肢末端膚色、溫度與脈搏',
+        notes: '止血帶為最後手段，使用後須標示時間並盡速送醫；實際處置以受訓內容與EMT指導為準' },
+      { category:'skill', title:'傷患搬運與固定', content:
+        '1. 搬運前完成基本評估，懷疑脊椎損傷時避免不必要移動\n' +
+        '2. 短距離無懷疑脊傷可徒手搬運；懷疑脊椎/骨盆損傷用擔架/長背板\n' +
+        '3. 搬運前固定可疑骨折部位\n' +
+        '4. 多人搬運統一口令、動作一致\n' +
+        '5. 上擔架後以固定帶妥善固定，懷疑頸椎損傷加頭部固定器',
+        notes: '懷疑脊椎損傷應盡量避免搬動，等待專業救護人員到場處理' },
+    ];
+
+    await Promise.all(defaults.map(d => fbAdd(COL_TRAINING, d)));
+  } catch(e) { console.warn('_seedTrainingDefaults:', e); }
 }
 
 function trainingSwitchTab(tab, skipRender) {
