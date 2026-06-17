@@ -6705,10 +6705,9 @@ const _CWA_ALERT_KEY = 'cwaAlertCache';
 const _CWA_ALERT_TTL = 5 * 60 * 1000;  // 5 分鐘（警報時效性高）
 
 async function loadDashWeatherAlert() {
-  const isAdm = (() => { try { const u=JSON.parse(sessionStorage.getItem('rescue_user')||'{}'); return u.isAdmin||u.isOfficer; } catch(e){return false;} })();
   try {
     const cached = JSON.parse(localStorage.getItem(_CWA_ALERT_KEY) || 'null');
-    if (cached) _renderDashAlert(cached.alerts, cached.dbg);
+    if (cached) _renderDashAlert(cached.alerts);
     if (cached && Date.now() - cached.ts < _CWA_ALERT_TTL) return;
   } catch(e) {}
   try {
@@ -6719,14 +6718,10 @@ async function loadDashWeatherAlert() {
     );
     const data = await res.json();
     const alerts = _parseCwaAlerts(data);
-    const _loc0 = (data?.records?.location ?? data?.records?.record ?? [])[0];
-    const dbg = isAdm ? `alerts:${alerts.length} | hc:${JSON.stringify(_loc0?.hazardConditions).slice(0,500)}` : '';
-    console.log('[CWA]', data);
-    try { localStorage.setItem(_CWA_ALERT_KEY, JSON.stringify({ ts: Date.now(), alerts, dbg })); } catch(e) {}
-    _renderDashAlert(alerts, dbg);
+    try { localStorage.setItem(_CWA_ALERT_KEY, JSON.stringify({ ts: Date.now(), alerts })); } catch(e) {}
+    _renderDashAlert(alerts);
   } catch(e) {
     console.error('[CWA] fetch 失敗', e);
-    if (isAdm) _renderDashAlert([], '[CWA] 請求失敗：' + (e?.message || e));
   }
 }
 
@@ -6766,12 +6761,11 @@ function _parseCwaAlerts(data) {
   } catch(e) { return []; }
 }
 
-function _renderDashAlert(alerts, dbg) {
+function _renderDashAlert(alerts) {
   const el = document.getElementById('dashAlertBanner');
   if (!el) return;
   if (!alerts || !alerts.length) {
-    el.style.display = dbg ? '' : 'none';
-    if (dbg) el.innerHTML = `<div style="background:#1e293b;border-radius:10px;padding:10px 14px;font-size:0.7rem;color:#94a3b8;word-break:break-all;"><b style="color:#f8fafc;">🔧 CWA debug（僅管理員可見）</b><br>${dbg}</div>`;
+    el.style.display = 'none';
     return;
   }
 
