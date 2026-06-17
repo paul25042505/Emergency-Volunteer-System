@@ -13847,7 +13847,7 @@ function _showBillingBanner(pct, costAmount, budgetAmount, currency) {
   const bg = pct >= 90 ? '#c0392b' : pct >= 80 ? '#e67e22' : '#f1c40f';
   const fg = pct >= 80 ? '#fff' : '#333';
   bar.style.cssText = `position:fixed;bottom:calc(83px + max(env(safe-area-inset-bottom,0px),8px));left:0;right:0;z-index:9999;padding:8px 16px;font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:10px;background:${bg};color:${fg};cursor:pointer;`;
-  bar.innerHTML = `<span style="flex:1;">⚠️ 計費預算已達 ${pct}%（${cStr}）</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;">✕</span>`;
+  bar.innerHTML = `<span style="flex:1;">⚠️ 計費預算已超出（${cStr}）</span><span style="flex-shrink:0;font-size:1rem;font-weight:700;">✕</span>`;
   bar.onclick = () => { sessionStorage.setItem('_usageBarDismissed','1'); bar.style.display = 'none'; };
 }
 
