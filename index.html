@@ -7292,8 +7292,8 @@ function _memberTitle(d) {
   return squad + title;
 }
 
-async function loadMembers() {
-  if (members.length) return members; // 已載入，直接回傳
+async function loadMembers(force) {
+  if (members.length && !force) return members; // 已載入，直接回傳（force 時強制重抓，反映編輯後的最新小隊/職稱）
   try {
     // 從 whitelist 讀取（整合帳號與成員資料，unit 一定有）
     const wlDocs = await fbList(COL_WHITELIST);
@@ -11304,7 +11304,7 @@ async function loadAdminWhitelist(filterUnit) {
       delBtn.style.cssText = 'flex:1;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
       delBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>刪除';
       delBtn.onclick = function(){
-        adminDel(COL_WHITELIST, d.id, '帳號 '+(d.memberName||d.email), loadAdminWhitelist);
+        adminDel(COL_WHITELIST, d.id, '帳號 '+(d.memberName||d.email), async()=>{await loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'');await loadMembers(true);});
       };
       btnRow.appendChild(delBtn);
 
@@ -11405,7 +11405,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
       await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||''});
       document.getElementById('adminEditModal').style.display='none';
       const curUnit=document.getElementById('adminWlFilterUnit')?.value||'';
-      await loadAdminWhitelist(curUnit);await loadMembers();
+      await loadAdminWhitelist(curUnit);await loadMembers(true);
     }catch(e){alert('儲存失敗：'+e.message);}
   };
   const _adm = document.getElementById('adminEditModal'); _adm.style.display = 'block'; _adm.scrollTop = 0;
@@ -11449,7 +11449,7 @@ async function adminAddMember() {
     document.getElementById('adminMemName').value='';
     document.getElementById('adminMemTitle').value='';
     document.getElementById('adminMemUnit').value='';
-    await loadAdminMembers(); await loadMembers();
+    await loadAdminMembers(); await loadMembers(true);
   } catch(e){alert('新增失敗：'+e.message);}
 }
 
@@ -11479,7 +11479,7 @@ function adminEditMem(id,name,title,unit,cert,certExp) {
         certExp:document.getElementById('aeMCertExp').value||'',
       });
       document.getElementById('adminEditModal').style.display='none';
-      await loadAdminMembers(); await loadMembers();
+      await loadAdminMembers(); await loadMembers(true);
     } catch(e){alert('儲存失敗：'+e.message);}
   };
   const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
