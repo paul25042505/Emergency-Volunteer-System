@@ -3783,14 +3783,6 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
-      <button onclick="navTo('trainingPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;border-top:1px solid #f5f5f5;cursor:pointer;text-align:left;">
-        <div style="width:36px;height:36px;border-radius:10px;background:#e6f7f1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#117a5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        </div>
-        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">教學專區</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">流程與單項技術說明</div></div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-
     </div>
 
     <!-- 系統列表 -->
@@ -4734,83 +4726,6 @@ function _dlCSV(content, filename) {
   </div>
 </div>
 
-<!-- ══════ PAGE：教學專區 ══════ -->
-<div class="page" id="trainingPage">
-  <div class="form-wrap" style="padding-top:16px;">
-
-    <!-- 英雄卡 -->
-    <div style="background:linear-gradient(145deg,#052e26 0%,#0a4d3f 55%,#117a5e 100%);border-radius:22px;padding:22px 20px 20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(10,77,63,0.35);position:relative;overflow:hidden;">
-      <div style="position:absolute;right:-24px;top:-24px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
-      <div style="position:absolute;left:-16px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
-
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">
-        <div>
-          <div style="font-size:1.15rem;font-weight:800;color:white;letter-spacing:0.04em;">教學專區</div>
-          <div style="font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-top:2px;">TRAINING CENTER</div>
-        </div>
-        <div id="trainingAddWrap" style="display:none;flex-shrink:0;">
-          <button onclick="trainingShowForm(null)" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:10px;padding:8px 16px;font-size:0.82rem;font-weight:700;font-family:'Noto Sans TC',sans-serif;cursor:pointer;letter-spacing:0.04em;">＋ 新增</button>
-        </div>
-      </div>
-
-      <div style="background:rgba(0,0,0,0.22);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:8px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <span id="trainingHeroCount" style="font-size:0.78rem;color:rgba(255,255,255,0.75);font-weight:600;">載入中...</span>
-      </div>
-    </div>
-
-    <!-- 分類 Tab -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:16px;">
-      <button id="trainingTab-process" onclick="trainingSwitchTab('process')"
-        style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:white;color:#117a5e;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
-        📋 流程
-      </button>
-      <button id="trainingTab-skill" onclick="trainingSwitchTab('skill')"
-        style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:transparent;color:#64748b;">
-        🛠 單項技術
-      </button>
-    </div>
-
-    <!-- 新增／編輯表單（預設隱藏） -->
-    <div id="trainingForm" style="display:none;background:white;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 4px 20px rgba(10,77,63,0.12);border:1px solid rgba(17,122,94,0.18);">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-        <div style="width:4px;height:26px;background:linear-gradient(180deg,#117a5e,#0a4d3f);border-radius:2px;flex-shrink:0;"></div>
-        <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);letter-spacing:0.06em;" id="trainingFormTitle">新增教學內容</div>
-      </div>
-      <div class="field">
-        <label>分類 <span class="req">*</span></label>
-        <select id="trainingCategory">
-          <option value="process">流程</option>
-          <option value="skill">單項技術</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>標題 <span class="req">*</span></label>
-        <input type="text" id="trainingTitle" placeholder="例：協勤案件登錄流程 / CPR 心肺復甦術">
-      </div>
-      <div class="field">
-        <label>內容 <span class="req">*</span></label>
-        <textarea id="trainingContent" style="min-height:200px;line-height:1.8;" placeholder="請輸入流程步驟或技術說明..."></textarea>
-      </div>
-      <div class="field">
-        <label>注意事項</label>
-        <textarea id="trainingNotes" style="min-height:100px;line-height:1.8;" placeholder="操作上要特別注意的地方（選填）..."></textarea>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:6px;">
-        <button onclick="trainingSave()" style="flex:1;background:linear-gradient(135deg,#117a5e,#0a4d3f);color:white;border:none;border-radius:12px;padding:13px;font-size:0.95rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">儲存</button>
-        <button onclick="trainingHideForm()" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:0.95rem;font-family:'Noto Sans TC',sans-serif;cursor:pointer;">取消</button>
-      </div>
-    </div>
-
-    <!-- 內容列表 -->
-    <div id="trainingList">
-      <div class="query-empty"><span class="empty-icon">📖</span>載入中...</div>
-    </div>
-
-    <div class="site-footer-placeholder"></div>
-  </div>
-</div>
-
 <!-- ══════ PAGE：版本修改紀錄 ══════ -->
 <div class="page" id="myCorrectionsPage">
   <div class="query-wrap">
@@ -5076,7 +4991,6 @@ var COL_MEETING_EVENTS = 'meetingEvents';
 var COL_MEETING_TYPES  = 'meetingTypes';
 var COL_MEETING_LOCS   = 'meetingLocations';
 var COL_CASETYPES = 'caseTypes';
-var COL_TRAINING = 'trainingTopics';
 
 // Firebase 初始化（SDK 用 defer 載入，window.onload 後才 init）
 var _fbReady = false;
@@ -5243,7 +5157,6 @@ const _C = {
     members:1800, whitelist:1800,              // 成員：30 分鐘
     caseTypes:1800, units:3600,                // 案件類型/分隊：30/60 分鐘
     meetingTypes:1800, meetingLocations:1800,  // 會議類型/地點：30 分鐘
-    trainingTopics:1800,                       // 教學專區：30 分鐘
     gongchaMissions:900, meetings:900,         // 公差/定訓：15 分鐘（懶讀取，不需很短）
     settings:3600, changelog:3600,             // 設定/版本：60 分鐘
     loginLogs:120, loginLog:120,               // 登入紀錄：2 分鐘
@@ -6168,7 +6081,6 @@ async function refreshCurrentPage() {
     case 'itemsPage':       await initItemsPage(); break;
     case 'dutyPage':        await loadDutyData(); break;
     case 'meetingPage':     await loadMeetingPage(); break;
-    case 'trainingPage':    await initTrainingPage(); break;
     case 'morePage':           _initMorePage(); break;
     case 'feedbackPage':       await initFeedbackPage(); break;
     case 'myCorrectionsPage':  await loadMyCorrections(); break;
@@ -6391,7 +6303,7 @@ function navTo(pageId, fromHistory) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', trainingPage:'教學專區' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -6422,7 +6334,6 @@ function navTo(pageId, fromHistory) {
     itemsPage:      ['物品領用', 'Item Pickup'],
     dutyPage:       ['備勤排班', 'Duty Schedule'],
     meetingPage:    ['定訓與公告', 'Training & Announcements'],
-    trainingPage:   ['教學專區', 'Training Center'],
     myCorrectionsPage: ['我的申請記錄', 'My Requests'],
     gongchaPage:    ['公差統計', 'Duty Statistics'],
     attendStatsPage:['出席統計', 'Attendance Statistics'],
@@ -6463,7 +6374,6 @@ function navTo(pageId, fromHistory) {
   else if (pageId === 'feedbackPage') _nav(initFeedbackPage);
   else if (pageId === 'profilePage')   _nav(loadProfilePage);
   else if (pageId === 'meetingPage')   _nav(loadMeetingPage);
-  else if (pageId === 'trainingPage')  _nav(initTrainingPage);
   else if (pageId === 'myCorrectionsPage') _nav(loadMyCorrections);
   else if (pageId === 'gongchaPage')       _nav(loadGongchaStats);
   else if (pageId === 'attendStatsPage')   _nav(loadAttendStats);
@@ -16919,199 +16829,6 @@ async function meetingDelete(id, title) {
   try {
     await fbDelete(COL_MEETING, id);
     await renderMeetingList();
-  } catch(e) {
-    alert('刪除失敗：' + e.message);
-  }
-}
-
-// ════════════════════════════════════════
-// 教學專區（流程 + 單項技術）
-// ════════════════════════════════════════
-var _trainingTab = 'process';
-var _trainingEditId = null;
-var _trainingDocs = [];
-
-async function initTrainingPage() {
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const isAdmin = usr.isAdmin || usr.role === 'admin';
-  const addWrap = document.getElementById('trainingAddWrap');
-  if (addWrap) addWrap.style.display = isAdmin ? '' : 'none';
-  trainingHideForm();
-  trainingSwitchTab(_trainingTab, true);
-  await renderTrainingList();
-}
-
-function trainingSwitchTab(tab, skipRender) {
-  _trainingTab = tab;
-  const map = { process: 'trainingTab-process', skill: 'trainingTab-skill' };
-  Object.keys(map).forEach(k => {
-    const btn = document.getElementById(map[k]);
-    if (!btn) return;
-    if (k === tab) {
-      btn.style.background = 'white';
-      btn.style.color = '#117a5e';
-      btn.style.boxShadow = '0 1px 4px rgba(0,0,0,0.1)';
-    } else {
-      btn.style.background = 'transparent';
-      btn.style.color = '#64748b';
-      btn.style.boxShadow = 'none';
-    }
-  });
-  if (!skipRender) renderTrainingList();
-}
-
-async function renderTrainingList() {
-  const el = document.getElementById('trainingList');
-  if (!el) return;
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const isAdmin = usr.isAdmin || usr.role === 'admin';
-  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📖</span>載入中...</div>';
-  try {
-    _trainingDocs = await fbList(COL_TRAINING);
-    const heroCount = document.getElementById('trainingHeroCount');
-    if (heroCount) heroCount.textContent = `共 ${_trainingDocs.length} 篇教學內容`;
-
-    const docs = _trainingDocs.filter(d => (d.category || 'process') === _trainingTab)
-      .sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-
-    if (!docs.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📖</span>目前沒有內容</div>';
-      return;
-    }
-
-    el.innerHTML = '';
-    docs.forEach(doc => {
-      const card = document.createElement('div');
-      card.style.cssText = 'background:white;border-radius:18px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.05);';
-
-      const head = document.createElement('div');
-      head.style.cssText = 'display:flex;align-items:flex-start;gap:12px;padding:16px 16px 14px;cursor:pointer;';
-
-      const accent = document.createElement('div');
-      accent.style.cssText = 'width:4px;min-width:4px;border-radius:2px;background:linear-gradient(180deg,#117a5e,#0a4d3f);align-self:stretch;flex-shrink:0;margin-top:2px;';
-
-      const headInfo = document.createElement('div');
-      headInfo.style.cssText = 'flex:1;min-width:0;';
-
-      const headTitle = document.createElement('div');
-      headTitle.style.cssText = 'font-size:0.93rem;font-weight:700;color:var(--text);letter-spacing:0.02em;line-height:1.4;';
-      headTitle.textContent = doc.title || '（無標題）';
-      headInfo.appendChild(headTitle);
-
-      const headArrow = document.createElement('div');
-      headArrow.style.cssText = 'width:28px;height:28px;border-radius:8px;background:#e8f6f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.2s;margin-top:2px;';
-      headArrow.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#117a5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>';
-
-      head.appendChild(accent);
-      head.appendChild(headInfo);
-      head.appendChild(headArrow);
-
-      const body = document.createElement('div');
-      body.style.cssText = 'display:none;padding:0 16px 16px 32px;';
-
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = 'white-space:pre-wrap;line-height:1.9;font-size:0.88rem;color:var(--text);background:#fafaf8;border-radius:10px;padding:14px 16px;border:1px solid var(--border);';
-      contentDiv.textContent = doc.content || '';
-      body.appendChild(contentDiv);
-
-      if (doc.notes) {
-        const notesLabel = document.createElement('div');
-        notesLabel.style.cssText = 'font-weight:700;margin-bottom:4px;color:#92400e;';
-        notesLabel.textContent = '⚠️ 注意事項';
-        const notesDiv = document.createElement('div');
-        notesDiv.style.cssText = 'white-space:pre-wrap;line-height:1.9;font-size:0.85rem;color:#92400e;background:#fffbeb;border-radius:10px;padding:12px 14px;border:1px solid #fde68a;margin-top:10px;';
-        notesDiv.appendChild(notesLabel);
-        const notesText = document.createElement('div');
-        notesText.textContent = doc.notes;
-        notesDiv.appendChild(notesText);
-        body.appendChild(notesDiv);
-      }
-
-      if (isAdmin) {
-        const actions = document.createElement('div');
-        actions.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
-        const editBtn = document.createElement('button');
-        editBtn.textContent = '編輯';
-        editBtn.style.cssText = 'flex:1;background:#e8f6f0;color:#0a4d3f;border:1px solid #b8e6d4;border-radius:8px;padding:8px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
-        editBtn.onclick = (e) => { e.stopPropagation(); trainingShowForm(doc); };
-        const delBtn = document.createElement('button');
-        delBtn.textContent = '刪除';
-        delBtn.style.cssText = 'flex:1;background:#fff1f0;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:8px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:"Noto Sans TC",sans-serif;';
-        delBtn.onclick = (e) => { e.stopPropagation(); trainingDelete(doc.id, doc.title); };
-        actions.appendChild(editBtn);
-        actions.appendChild(delBtn);
-        body.appendChild(actions);
-      }
-
-      head.onclick = () => {
-        const isOpen = body.style.display !== 'none';
-        body.style.display = isOpen ? 'none' : 'block';
-        headArrow.style.transform = isOpen ? '' : 'rotate(180deg)';
-      };
-
-      card.appendChild(head);
-      card.appendChild(body);
-      el.appendChild(card);
-    });
-  } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
-  }
-}
-
-function trainingShowForm(doc) {
-  _trainingEditId = doc ? doc.id : null;
-  document.getElementById('trainingFormTitle').textContent = doc ? '編輯教學內容' : '新增教學內容';
-  document.getElementById('trainingCategory').value = doc ? (doc.category || 'process') : _trainingTab;
-  document.getElementById('trainingTitle').value     = doc ? (doc.title   || '') : '';
-  document.getElementById('trainingContent').value   = doc ? (doc.content || '') : '';
-  document.getElementById('trainingNotes').value     = doc ? (doc.notes   || '') : '';
-  const form = document.getElementById('trainingForm');
-  form.style.display = '';
-  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function trainingHideForm() {
-  const form = document.getElementById('trainingForm');
-  if (form) form.style.display = 'none';
-  _trainingEditId = null;
-}
-
-async function trainingSave() {
-  const category = document.getElementById('trainingCategory').value;
-  const title    = document.getElementById('trainingTitle').value.trim();
-  const content  = document.getElementById('trainingContent').value.trim();
-  const notes    = document.getElementById('trainingNotes').value.trim();
-
-  if (!title)   { alert('請填入標題'); return; }
-  if (!content) { alert('請填入內容'); return; }
-
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const data = { category, title, content, notes, updatedBy: usr.memberName || usr.name || '' };
-
-  const saveBtn = document.querySelector('#trainingForm button');
-  saveBtn.textContent = '儲存中...'; saveBtn.disabled = true;
-
-  try {
-    if (_trainingEditId) {
-      await fbUpdate(COL_TRAINING, _trainingEditId, data);
-    } else {
-      await fbAdd(COL_TRAINING, data);
-    }
-    trainingHideForm();
-    trainingSwitchTab(category, true);
-    await renderTrainingList();
-  } catch(e) {
-    alert('儲存失敗：' + e.message);
-  } finally {
-    saveBtn.textContent = '儲存'; saveBtn.disabled = false;
-  }
-}
-
-async function trainingDelete(id, title) {
-  if (!confirm('確定要刪除「' + title + '」？')) return;
-  try {
-    await fbDelete(COL_TRAINING, id);
-    await renderTrainingList();
   } catch(e) {
     alert('刪除失敗：' + e.message);
   }
