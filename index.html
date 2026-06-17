@@ -14084,7 +14084,7 @@ async function initMembersPage() {
     await Promise.all([fbList(COL_WHITELIST).then(docs => {
       members = docs.map(d => ({
         id: d.id, name: d.memberName||'', title: d.title||'',
-        unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'',
+        squad: d.squad||'', unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'',
         role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
       })).filter(m => m.name);
     }), loadUnits()]);
