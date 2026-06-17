@@ -47,6 +47,7 @@ jobs:
 
           # Copy root files from main (preview/ folder is untouched)
           cp /tmp/deploy-index.html index.html
+          sed -i "s/<meta name=\"build-version\" content=\"dev\">/<meta name=\"build-version\" content=\"$MAIN_COMMIT\">/" index.html
           cp /tmp/deploy-sw.js firebase-messaging-sw.js
           [ -f /tmp/deploy-icon-192.png ] && cp /tmp/deploy-icon-192.png icon-192.png
           [ -f /tmp/deploy-icon-512.png ] && cp /tmp/deploy-icon-512.png icon-512.png
