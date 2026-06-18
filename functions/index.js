@@ -180,9 +180,10 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
     const dedupKey = `duty-tomorrow-${tomorrow}`;
 
     if (await _isDuped(db, dedupKey)) return;
+    await _markDuped(db, dedupKey);
 
     const snap = await db.collection('dutySchedule').where('date', '==', tomorrow).get();
-    if (snap.empty) { await _markDuped(db, dedupKey); return; }
+    if (snap.empty) return;
 
     const memberMap = {};
     snap.forEach(doc => {
@@ -193,7 +194,7 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
     });
 
     const members = Object.keys(memberMap);
-    if (!members.length) { await _markDuped(db, dedupKey); return; }
+    if (!members.length) return;
 
     const title = '📅 明日排班提醒';
     for (const memberName of members) {
@@ -204,7 +205,6 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
       await _writeAutoNotif(db, { title, body, targetMembers: [memberName], dedupKey: `${dedupKey}-${memberName}` });
     }
 
-    await _markDuped(db, dedupKey);
     console.log(`scheduleDutyTomorrowReminder: notified ${members.length} members for ${tomorrow}`);
   }
 );
@@ -233,6 +233,7 @@ exports.scheduleNoSignoutReminder = onSchedule(
     for (const d of targets) {
       const dedupKey = `duty-nosignout-${today}-${d.end}-${d.memberName}`;
       if (await _isDuped(db, dedupKey)) continue;
+      await _markDuped(db, dedupKey);
 
       const attSnap = await db.collection('attendance')
         .where('date', '==', today)
@@ -240,7 +241,7 @@ exports.scheduleNoSignoutReminder = onSchedule(
         .get();
       const hasCheckin  = !attSnap.empty && attSnap.docs.some(doc => doc.data().checkinTime);
       const hasCheckout = !attSnap.empty && attSnap.docs.some(doc => doc.data().checkoutTime);
-      if (!hasCheckin || hasCheckout) { await _markDuped(db, dedupKey); continue; }
+      if (!hasCheckin || hasCheckout) continue;
 
       const title = '🔔 請記得簽退';
       const body  = `您今日 ${d.end} 的班次已結束超過 1 小時，請確認是否已簽退。`;
@@ -263,13 +264,13 @@ exports.scheduleMonthlyScheduleOpen = onSchedule(
     const dedupKey = `monthly-open-${ym}`;
 
     if (await _isDuped(db, dedupKey)) return;
+    await _markDuped(db, dedupKey);
 
     const title = '📋 下月班表開放排班';
     const body  = `${ym} 班表已開放，請盡快完成排班登記。`;
     const tokens = await _getAllTokens(db);
     if (tokens.length) await _sendMulticast(tokens, { title, body });
     await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
-    await _markDuped(db, dedupKey);
     console.log(`scheduleMonthlyScheduleOpen: notified for ${ym}`);
   }
 );
@@ -285,13 +286,13 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
     const dedupKey = `monthly-confirm-${ym}`;
 
     if (await _isDuped(db, dedupKey)) return;
+    await _markDuped(db, dedupKey);
 
     const title = '✅ 請確認本月任務';
     const body  = `${ym} 已開始，請確認本月班表與任務是否有問題。`;
     const tokens = await _getAllTokens(db);
     if (tokens.length) await _sendMulticast(tokens, { title, body });
     await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
-    await _markDuped(db, dedupKey);
     console.log(`scheduleMonthlyConfirmTask: notified for ${ym}`);
   }
 );
@@ -342,13 +343,14 @@ exports.onBudgetAlert = onRequest(
 
     if (locked) {
       const dedupKey = `budget-lock-${todayStr}-${Math.round(threshold * 100)}`;
-      const already  = await db.collection('autoNotifLog').doc(dedupKey).get().then(d => d.exists);
+      const dedupRef = db.collection('autoNotifLog').doc(dedupKey);
+      const already  = await dedupRef.get().then(d => d.exists);
       if (!already) {
+        await dedupRef.set({ sentAt: now });
         const title = '⚠️ Firestore 費用預算警報';
         const body  = `費用已達預算 ${pct}%（${currency} ${costAmount.toFixed(2)} / ${budgetAmount.toFixed(2)}），部分功能已鎖定。`;
         const tokens = await _getAdminTokens(null);
         if (tokens.length) await _sendMulticast(tokens, { title, body });
-        await db.collection('autoNotifLog').doc(dedupKey).set({ sentAt: now });
       }
     }
     res.status(200).send('ok');
