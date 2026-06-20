@@ -2730,10 +2730,27 @@ function _dlCSV(content, filename) {
       </div>
       <div class="stats-hero-slide">
         <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;min-height:100%;box-sizing:border-box;">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+          <div style="margin-bottom:16px;">
+            <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">隊員協勤時數明細</div>
+            <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:0.14em;margin-top:2px;" id="statsHoursChartSub">ANNUAL HOURS DETAIL</div>
+          </div>
+          <!-- Filters（與卡片1同步） -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
             <div>
-              <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">隊員協勤時數明細</div>
-              <div style="font-size:0.68rem;color:rgba(255,255,255,0.65);letter-spacing:0.06em;margin-top:3px;" id="statsHoursChartSub">— 年度 · —</div>
+              <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
+              <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+                <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYear2Display">—</div>
+                <select id="statsYear2" onchange="document.getElementById('statsYear').value=this.value;document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">分隊別</div>
+              <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+                <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="statsUnit2Display">全部</div>
+                <select id="statsUnit2" onchange="document.getElementById('statsUnit').value=this.value;document.getElementById('statsUnitDisplay').textContent=this.value||'全部';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+                  <option value="">全部分隊</option>
+                </select>
+              </div>
             </div>
           </div>
           <div id="statsDetailOverview" style="display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:12px;">
@@ -10684,28 +10701,37 @@ function downloadDocx(json) {
 
 function initStatsPage() {
   const sel = document.getElementById('statsYear');
+  const sel2 = document.getElementById('statsYear2');
   if (!sel.options.length) {
     const curY = new Date().getFullYear() - 1911;
     for (let y = curY + 1; y >= 100; y--) {
       const opt = document.createElement('option');
       opt.value = y; opt.textContent = y + ' 年';
       sel.appendChild(opt);
+      if (sel2) sel2.appendChild(opt.cloneNode(true));
     }
     sel.value = curY;
+    if (sel2) sel2.value = curY;
     const yd = document.getElementById('statsYearDisplay'); if (yd) yd.textContent = curY;
+    const y2d = document.getElementById('statsYear2Display'); if (y2d) y2d.textContent = curY;
     document.getElementById('statsMonth').value = '';
     const md = document.getElementById('statsMonthDisplay'); if (md) md.textContent = '全年';
   }
   // 載入分隊選單
   loadUnits().then(() => {
     const unitSel = document.getElementById('statsUnit');
+    const unitSel2 = document.getElementById('statsUnit2');
     if (unitSel) {
-      unitSel.innerHTML = '<option value="">全部分隊</option>' +
+      const optsHtml = '<option value="">全部分隊</option>' +
         _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
+      unitSel.innerHTML = optsHtml;
+      if (unitSel2) unitSel2.innerHTML = optsHtml;
       const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
       if (usr.unit) {
         unitSel.value = usr.unit;
+        if (unitSel2) unitSel2.value = usr.unit;
         const ud = document.getElementById('statsUnitDisplay'); if (ud) ud.textContent = usr.unit;
+        const u2d = document.getElementById('statsUnit2Display'); if (u2d) u2d.textContent = usr.unit;
       }
     }
   }).catch(()=>{});
@@ -10783,8 +10809,15 @@ async function loadStats() {
       }
     }
 
-    const chartSubEl = document.getElementById('statsHoursChartSub');
-    if (chartSubEl) chartSubEl.textContent = `${year} 年度 · ${filterUnit || '全部分隊'}`;
+    // 卡片2 篩選器與卡片1同步
+    const year2Sel = document.getElementById('statsYear2');
+    if (year2Sel) {
+      if (year2Sel.value !== year) year2Sel.value = year;
+      const y2d = document.getElementById('statsYear2Display'); if (y2d) y2d.textContent = year;
+    }
+    const unit2Sel = document.getElementById('statsUnit2');
+    if (unit2Sel && unit2Sel.value !== filterUnit) unit2Sel.value = filterUnit;
+    const u2d = document.getElementById('statsUnit2Display'); if (u2d) u2d.textContent = filterUnit || '全部';
 
     // 逐月時數明細（不受月份篩選影響，永遠顯示整年度逐月時數）
     const yearPrefix = `${westernYear}-`;
