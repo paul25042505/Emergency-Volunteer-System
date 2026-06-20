@@ -5299,15 +5299,18 @@ const _C = {
 };
 
 // 只抓最近 N 天的紀錄並存入快取（減少 document 讀取數）
+// 注意：必須用獨立的快取 key（與 col 不同），否則會覆蓋 fbList(col) 的「完整清單」快取，
+// 導致登入後 10 分鐘內，其他頁面（如統計排行榜）誤用這份只有近 14 天的不完整資料
 async function _prefetchRecent(col, orderField, orderDir, days) {
-  if (_C.fresh(col)) return _C.peek(col);
+  const cacheKey = col + '_recent' + days;
+  if (_C.fresh(cacheKey)) return _C.peek(cacheKey);
   await ensureFirebase();
   const cutoff = new Date(Date.now() - days * 86400000).toLocaleDateString('sv');
   try {
     let q = _fbDB.collection(col).where('date', '>=', cutoff).orderBy('date', orderDir || 'asc').limit(1000);
     const snap = await q.get();
     const data = snap.docs.map(d => ({id:d.id,...d.data()}));
-    _C.set(col, data);
+    _C.set(cacheKey, data);
     return data;
   } catch(e) { return null; }
 }
