@@ -10761,7 +10761,10 @@ async function loadCaseStats() {
         const ix1 = cx + r * Math.cos(startAngle), iy1 = cy + r * Math.sin(startAngle);
         const ix2 = cx + r * Math.cos(endAngle),   iy2 = cy + r * Math.sin(endAngle);
         const large = angle > Math.PI ? 1 : 0;
-        paths += `<path d="M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} L${ix2.toFixed(2)},${iy2.toFixed(2)} A${r},${r} 0 ${large} 0 ${ix1.toFixed(2)},${iy1.toFixed(2)} Z" fill="${colors[i]}" stroke="#fff" stroke-width="1.5"/>`;
+        // 角度太小時白色邊框會把整塊扇形蓋掉（看起來像缺一角），故依角度縮小邊框、極小角度時直接不畫邊框
+        const angleDeg = angle * 180 / Math.PI;
+        const strokeW = angleDeg < 3 ? 0 : angleDeg < 6 ? 0.5 : 1.5;
+        paths += `<path d="M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} L${ix2.toFixed(2)},${iy2.toFixed(2)} A${r},${r} 0 ${large} 0 ${ix1.toFixed(2)},${iy1.toFixed(2)} Z" fill="${colors[i]}" stroke="#fff" stroke-width="${strokeW}"/>`;
         startAngle = endAngle;
       });
       pieEl.innerHTML = `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" style="display:block;margin:0 auto;">${paths}<text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="14" font-weight="700" fill="#333" font-family="'Noto Serif TC',serif">${total}</text></svg>`;
