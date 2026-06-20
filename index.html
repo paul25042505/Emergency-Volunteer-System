@@ -2672,7 +2672,7 @@ function _dlCSV(content, filename) {
     <!-- Hero（左右滑動：① 篩選/KPI ② 個人時數達標圖表） -->
     <div class="stats-hero-swipe" id="statsHeroSwipe" onscroll="_statsSwipeDotSync()">
       <div class="stats-hero-slide">
-        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;box-shadow:0 8px 32px rgba(13,33,55,0.35);">
+        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">
             <div>
               <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">協勤統計</div>
@@ -2729,11 +2729,11 @@ function _dlCSV(content, filename) {
         </div>
       </div>
       <div class="stats-hero-slide">
-        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;box-shadow:0 8px 32px rgba(13,33,55,0.35);min-height:100%;box-sizing:border-box;">
+        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;min-height:100%;box-sizing:border-box;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
             <div>
               <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">隊員協勤時數明細</div>
-              <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:0.1em;margin-top:2px;" id="statsHoursChartSub">ANNUAL HOURS DETAIL</div>
+              <div style="font-size:0.68rem;color:rgba(255,255,255,0.65);letter-spacing:0.06em;margin-top:3px;" id="statsHoursChartSub">— 年度 · —</div>
             </div>
           </div>
           <div id="statsDetailOverview" style="display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:12px;">
@@ -10784,7 +10784,7 @@ async function loadStats() {
     }
 
     const chartSubEl = document.getElementById('statsHoursChartSub');
-    if (chartSubEl) chartSubEl.textContent = `${year} 年度逐月明細${filterUnit?' · '+filterUnit:''}`;
+    if (chartSubEl) chartSubEl.textContent = `${year} 年度 · ${filterUnit || '全部分隊'}`;
 
     // 逐月時數明細（不受月份篩選影響，永遠顯示整年度逐月時數）
     const yearPrefix = `${westernYear}-`;
