@@ -2728,14 +2728,9 @@ function _dlCSV(content, filename) {
       </div>
       <div class="stats-hero-slide">
         <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:18px;box-shadow:0 8px 32px rgba(13,33,55,0.35);min-height:100%;box-sizing:border-box;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div>
-              <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;letter-spacing:0.06em;">隊員協勤時數明細</div>
-              <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;" id="statsHoursChartSub">每人每月至少 12 小時</div>
-            </div>
-            <div style="font-size:0.62rem;color:rgba(255,255,255,0.55);flex-shrink:0;"><span style="color:#ff6b6b;font-weight:700;">紅字</span> = 未達標</div>
-          </div>
-          <div id="statsHoursDetailList" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
+          <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;letter-spacing:0.06em;">隊員協勤時數明細</div>
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;" id="statsHoursChartSub">每人每月至少 12 小時</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:10px;"><span style="color:#ff6b6b;font-weight:700;">紅字</span> = 未達標 · 往下滑看每人逐月明細</div>
         </div>
       </div>
     </div>
@@ -2743,13 +2738,21 @@ function _dlCSV(content, filename) {
       <span class="stats-swipe-dot active" id="statsSwipeDot0"></span><span class="stats-swipe-dot" id="statsSwipeDot1"></span>
     </div>
 
-    <!-- Ranking -->
-    <div id="statsTableCard" style="display:none;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;">
-        <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);" id="statsTableTitle">協勤排行榜</div>
-        <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.06em;" id="statsTableSub">依時數排序</div>
+    <!-- 第一頁：協勤排行榜 -->
+    <div id="statsBelowPage0">
+      <div id="statsTableCard" style="display:none;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;">
+          <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);" id="statsTableTitle">協勤排行榜</div>
+          <div style="font-size:0.62rem;color:var(--text-light);letter-spacing:0.06em;" id="statsTableSub">依時數排序</div>
+        </div>
+        <div id="statsTableBody"></div>
       </div>
-      <div id="statsTableBody"></div>
+    </div>
+
+    <!-- 第二頁：隊員逐月協勤時數明細 -->
+    <div id="statsBelowPage1" style="display:none;margin-bottom:20px;">
+      <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:10px;padding:0 2px;">隊員逐月協勤時數明細</div>
+      <div id="statsHoursDetailList" style="display:flex;flex-direction:column;gap:8px;"></div>
     </div>
 
     <div id="statsEmptyMsg" class="query-empty"><span class="empty-icon">📋</span>載入中...</div>
@@ -10836,10 +10839,10 @@ async function loadStats() {
 function _renderStatsMonthlyDetail(rows, monthsToShow, threshold) {
   const wrap = document.getElementById('statsHoursDetailList');
   if (!wrap) return;
-  if (!rows.length) { wrap.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.75rem;text-align:center;padding:30px 0;">無資料</div>'; return; }
+  if (!rows.length) { wrap.innerHTML = '<div style="color:var(--text-light);font-size:0.75rem;text-align:center;padding:30px 0;">無資料</div>'; return; }
 
   wrap.innerHTML = rows.map(r => `
-    <div style="background:white;border-radius:14px;padding:12px 14px;">
+    <div style="background:white;border-radius:14px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.04);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
           <div style="font-weight:700;font-size:0.88rem;color:var(--text);">${r.name}</div>
@@ -10868,6 +10871,11 @@ function _statsSwipeDotSync() {
   const idx = step > 0 ? Math.round(el.scrollLeft / step) : 0;
   document.getElementById('statsSwipeDot0')?.classList.toggle('active', idx <= 0);
   document.getElementById('statsSwipeDot1')?.classList.toggle('active', idx >= 1);
+  // 下方內容跟著卡片頁面一起切換
+  const page0 = document.getElementById('statsBelowPage0');
+  const page1 = document.getElementById('statsBelowPage1');
+  if (page0) page0.style.display = idx <= 0 ? '' : 'none';
+  if (page1) page1.style.display = idx >= 1 ? '' : 'none';
 }
 
 
