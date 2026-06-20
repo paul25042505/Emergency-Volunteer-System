@@ -14591,11 +14591,16 @@ async function _savePushSubscription(fcmToken) {
       unit: usr.unit || '',
       isAdmin: usr.isAdmin || false,
       isOfficer: usr.isOfficer || false,
-      grantedAt: firebase.firestore.FieldValue.serverTimestamp(),
       platform, browser,
     };
     if (fcmToken) doc.fcmToken = fcmToken;
-    await firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).set(doc, { merge: true });
+    const ref = firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName);
+    const existing = await ref.get();
+    // grantedAt 只在第一次建立時寫入，之後每次開 App 重新整理訂閱都不再覆蓋，避免日期一直變成「今天」
+    if (!existing.exists || !existing.data().grantedAt) {
+      doc.grantedAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    await ref.set(doc, { merge: true });
   } catch(e) {}
 }
 
