@@ -6274,38 +6274,54 @@ function goBack() {
     }
   }
   const prev = window._prevPageId;
-  // 若有明確上一頁就回去，否則回到該頁所屬的 tab 預設頁
+  // 若有明確上一頁就回去，否則回到該頁所屬的 tab 預設頁（一律視為「返回」往左滑）
   if (prev && prev !== window._currentPageId) {
-    navTo(prev);
+    navTo(prev, false, 'back');
     return;
   }
   const tabDefault = { more: 'morePage', manage: 'membersPage', home: 'dashboardPage', duty: 'dutyOverviewPage', schedule: 'dutyPage' };
   const tab = _tabForPage[window._currentPageId] || 'more';
-  navTo(tabDefault[tab] || 'morePage');
+  navTo(tabDefault[tab] || 'morePage', false, 'back');
 }
 
-function navTo(pageId, fromHistory) {
+function navTo(pageId, fromHistory, forceDir) {
   const _prevPageId = window._currentPageId || '';
   window._prevPageId    = _prevPageId;          // 供 goBack() 使用
   window._currentPageId = pageId; // 記錄當前頁面供下拉重新整理用
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const _newPage = document.getElementById(pageId);
   _newPage.classList.add('active');
-  // 子選單滑動動畫
+  // 頁面切換左右滑動動畫：同分頁內有明確子頁順序就照順序，
+  // 跨底部分頁就照分頁順序，其餘（鑽進子頁）預設視為前進，goBack() 強制視為後退
   (function() {
-    const groups = [
-      ['attendancePage','formPage','attQueryPage','queryPage'],
-      ['membersPage','statsPage','gongchaPage','reportPage'],
-    ];
-    for (const g of groups) {
-      const pi = g.indexOf(_prevPageId), ni = g.indexOf(pageId);
-      if (pi >= 0 && ni >= 0 && pi !== ni) {
-        const dir = ni > pi ? 'slide-from-right' : 'slide-from-left';
-        _newPage.classList.add(dir);
-        _newPage.addEventListener('animationend', () => _newPage.classList.remove(dir), { once: true });
-        break;
+    if (!_prevPageId || _prevPageId === pageId) return;
+    let dir = forceDir || null;
+    if (!dir) {
+      if (fromHistory) {
+        dir = 'back';
+      } else {
+        const groups = [
+          ['attendancePage','formPage','attQueryPage','queryPage'],
+          ['membersPage','statsPage','gongchaPage','reportPage'],
+        ];
+        for (const g of groups) {
+          const pi = g.indexOf(_prevPageId), ni = g.indexOf(pageId);
+          if (pi >= 0 && ni >= 0 && pi !== ni) { dir = ni > pi ? 'forward' : 'back'; break; }
+        }
+        if (!dir) {
+          const tabOrder = ['home','duty','schedule','manage','more'];
+          const prevTab = _tabForPage[_prevPageId], newTab = _tabForPage[pageId];
+          if (prevTab && newTab && prevTab !== newTab) {
+            dir = tabOrder.indexOf(newTab) > tabOrder.indexOf(prevTab) ? 'forward' : 'back';
+          } else {
+            dir = 'forward'; // 鑽進子頁面，預設往前
+          }
+        }
       }
     }
+    const animClass = dir === 'back' ? 'slide-from-left' : 'slide-from-right';
+    _newPage.classList.add(animClass);
+    _newPage.addEventListener('animationend', () => _newPage.classList.remove(animClass), { once: true });
   })();
 
   // 首頁：隱藏 header；勤務頁：隱藏 header；其他頁：顯示 header + 返回按鈕
