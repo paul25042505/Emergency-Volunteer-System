@@ -10806,7 +10806,9 @@ async function loadStats() {
       if (!map[m.name]) map[m.name] = { name: m.name, unit: m.unit||'', count:0, hours:0, service:0 };
     });
 
-    const rows = Object.values(map).sort((a,b)=>b.hours!==a.hours?b.hours-a.hours:b.count-a.count);
+    // 排行榜僅顯示目前在隊成員，已退隊（從成員名單刪除）者不再列出
+    const currentNames = new Set(members.map(m=>m.name));
+    const rows = Object.values(map).filter(r=>currentNames.has(r.name)).sort((a,b)=>b.hours!==a.hours?b.hours-a.hours:b.count-a.count);
     const totalCount = rows.reduce((s,r)=>s+r.count,0);
     document.getElementById('statsMemCount').textContent = rows.filter(r=>r.count>0).length;
     const totalHours = rows.reduce((s,r)=>s+r.hours,0);
@@ -21134,7 +21136,9 @@ async function loadGongchaStats() {
     if (!countMap[m.name].unit)  countMap[m.name].unit  = m.unit||'';
   });
 
-  const ranking = Object.values(countMap).sort((a, b) => {
+  // 排行榜僅顯示目前在隊成員，已退隊（從成員名單刪除）者不再列出
+  const currentNames = new Set(members.map(m => m.name));
+  const ranking = Object.values(countMap).filter(r => currentNames.has(r.name)).sort((a, b) => {
     if (b.count !== a.count) return b.count - a.count;
     const aw = TITLE_ORDER.indexOf(a.title); const bw = TITLE_ORDER.indexOf(b.title);
     return (aw===-1?999:aw) - (bw===-1?999:bw);
@@ -21278,6 +21282,8 @@ async function loadAttendStats() {
   const isAdmin = usr.isAdmin || usr.isOfficer;
   const userUnit = usr.unit || '';
 
+  await loadMembers();
+
   // 初始化年份下拉
   const yrSel = document.getElementById('asYear');
   if (yrSel && !yrSel.options.length) {
@@ -21362,7 +21368,9 @@ async function loadAttendStats() {
   });
 
   const total = allSessions.length;
-  const memberList = Object.entries(countMap).sort((a, b) => b[1] - a[1]);
+  // 排行榜僅顯示目前在隊成員，已退隊（從成員名單刪除）者不再列出
+  const currentNames = new Set(members.map(m => m.name));
+  const memberList = Object.entries(countMap).filter(([name]) => currentNames.has(name)).sort((a, b) => b[1] - a[1]);
   const totalAttendees = allSessions.reduce((s, d) => {
     if (d._src === 'old') return s + (d.attendees || []).length;
     return s + (d.rsvp || []).filter(r => r.attend === '出席').length;
