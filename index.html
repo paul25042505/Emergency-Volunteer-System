@@ -829,6 +829,8 @@ tr:hover td { background: #fdfcfb; }
 .stats-hero-slide { flex:0 0 calc(100% - 28px); scroll-snap-align:start; min-width:0; }
 .stats-swipe-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:all 0.2s; }
 .stats-swipe-dot.active { width:16px; border-radius:3px; background:var(--red); }
+.stats-month-scroll { display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; }
+.stats-month-scroll::-webkit-scrollbar { display:none; }
 .dash-quick-sticky {
   position: sticky;
   top: env(safe-area-inset-top, 0px);
@@ -10786,12 +10788,16 @@ async function loadStats() {
       if (!monthlyMap[m.name]) monthlyMap[m.name] = { name: m.name, title: m.title||'', months: Array(12).fill(0) };
       else monthlyMap[m.name].title = m.title || '';
     });
+    const DETAIL_TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員'];
     const detailRows = Object.values(monthlyMap)
       .map(r => ({ ...r, total: r.months.reduce((s,h)=>s+h,0) }))
-      .sort((a,b) => b.total - a.total);
-    const todayNow = new Date();
-    const monthsToShow = (westernYear === todayNow.getFullYear()) ? todayNow.getMonth()+1 : 12;
-    _renderStatsMonthlyDetail(detailRows, monthsToShow, MIN_MONTHLY_HOURS);
+      .sort((a,b) => {
+        const ai = DETAIL_TITLE_ORDER.indexOf(a.title), bi = DETAIL_TITLE_ORDER.indexOf(b.title);
+        const aRank = ai === -1 ? DETAIL_TITLE_ORDER.length : ai;
+        const bRank = bi === -1 ? DETAIL_TITLE_ORDER.length : bi;
+        return aRank !== bRank ? aRank - bRank : b.total - a.total;
+      });
+    _renderStatsMonthlyDetail(detailRows, 12, MIN_MONTHLY_HOURS);
 
     const maxHours = rows.length ? rows[0].hours : 1;
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
@@ -10853,9 +10859,9 @@ function _renderStatsMonthlyDetail(rows, monthsToShow, threshold) {
           <div style="font-size:1.1rem;font-weight:800;color:#2980b9;line-height:1.1;">${r.total%1===0?r.total:r.total.toFixed(1)}</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(24px,1fr));gap:5px 2px;text-align:center;">
+      <div class="stats-month-scroll">
         ${r.months.slice(0, monthsToShow).map((h,i) => `
-          <div>
+          <div style="flex:0 0 32px;text-align:center;">
             <div style="font-size:0.55rem;color:var(--text-light);margin-bottom:2px;">${i+1}月</div>
             <div style="font-size:0.78rem;font-weight:700;color:${h < threshold ? '#e74c3c' : 'var(--text)'};">${h%1===0?h:h.toFixed(1)}</div>
           </div>`).join('')}
