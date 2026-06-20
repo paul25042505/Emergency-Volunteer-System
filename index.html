@@ -10795,18 +10795,11 @@ async function loadStats() {
 
     document.getElementById('statsTableTitle').textContent = `${year} 年 ${month} 月協勤排行榜${filterUnit?' — '+filterUnit:''}`;
 
-    // 每人每月至少 12 小時達標提示（僅在篩選單一月份時適用）
     const MIN_MONTHLY_HOURS = 12;
     const subEl = document.getElementById('statsTableSub');
     if (subEl) {
-      if (month) {
-        const shortCount = rows.filter(r => r.hours < MIN_MONTHLY_HOURS).length;
-        subEl.textContent = shortCount > 0 ? `⚠️ ${shortCount} 人未達標（12hr）` : '✅ 全員達標（12hr）';
-        subEl.style.color = shortCount > 0 ? '#c0392b' : '#27ae60';
-      } else {
-        subEl.textContent = '依時數排序';
-        subEl.style.color = '';
-      }
+      subEl.textContent = '依時數排序';
+      subEl.style.color = '';
     }
 
     // 卡片2 篩選器與卡片1同步
@@ -10886,9 +10879,6 @@ async function loadStats() {
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-size:1.05rem;font-weight:800;color:var(--red);line-height:1;">${r.hours%1===0?r.hours:r.hours.toFixed(1)}</div>
           <div style="font-size:0.6rem;color:var(--text-light);margin-top:2px;">小時 / ${r.count}次</div>
-          ${month ? (r.hours >= MIN_MONTHLY_HOURS
-            ? `<div style="font-size:0.58rem;font-weight:700;color:#27ae60;margin-top:3px;">✅ 達標</div>`
-            : `<div style="font-size:0.58rem;font-weight:700;color:#c0392b;margin-top:3px;">⚠️ 差${(MIN_MONTHLY_HOURS-r.hours).toFixed(1)}h</div>`) : ''}
         </div>
       </div>`;
     }).join('');
