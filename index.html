@@ -21577,31 +21577,6 @@ function showTempPassErr(msg) {
   } catch(e) { /* 非關鍵，靜默略過 */ }
 })();
 
-// ── 自動插入 v1.9.09 版本紀錄（若尚未存在）────────────────────────────────
-(async function seedV1909() {
-  try {
-    const TARGET = 'v1.9.09';
-    const all = await fbList(COL_CHANGELOG);
-    if (all.some(d => d.version === TARGET)) return;
-    await Promise.all(all.filter(d => d.isLatest).map(d => fbUpdate(COL_CHANGELOG, d.id, { isLatest: false })));
-    await fbAdd(COL_CHANGELOG, {
-      version: TARGET,
-      date: '2026-06-20',
-      title: '協勤統計頁全新改版、成員退隊封存、案件表單優化',
-      isLatest: true,
-      items: [
-        { subtitle:'新增', detail:'協勤統計頁全新改版：新增「隊員逐月時數明細」卡片，可左右滑動查看全年12個月，依職稱排序顯示各成員協勤時數' },
-        { subtitle:'新增', detail:'協勤統計卡片新增年度／分隊篩選器，與排行榜雙向同步；篩選月份後排行榜顯示格式與全年一致' },
-        { subtitle:'新增', detail:'新增成員退隊封存功能：退隊後完整保留歷史打卡與協勤紀錄，但不再出現於任何成員清單、下拉選單，且無法再登入系統' },
-        { subtitle:'改善', detail:'協勤案件登錄表單：義消姓名下拉顯示「小隊＋職稱」，出動時間／返隊時間欄位分別加上明確標籤，避免填寫錯誤' },
-        { subtitle:'新增', detail:'首頁新增節日彩蛋效果（元旦、勞動節、消防節、國慶、聖誕、跨年、農曆春節）' },
-        { subtitle:'新增', detail:'新增「系統小知識」教學頁面' },
-        { subtitle:'改善', detail:'首頁「本月累積」標題改為「分隊本月總累計」，避免誤認為個人時數' },
-      ],
-    });
-  } catch(e) { /* 非關鍵，靜默略過 */ }
-})();
-
 </script>
 
 </div>
