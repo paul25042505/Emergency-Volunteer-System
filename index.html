@@ -1981,7 +1981,7 @@ function _dlCSV(content, filename) {
   <!-- 篩選面板 -->
   <div class="mq-filter" style="border-radius:0;">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-      <input type="text" inputmode="numeric" id="qCaseId" placeholder="🔍 輸入案件編號精準查詢，如 123" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;">
+      <input type="text" inputmode="numeric" id="qCaseId" placeholder="🔍 輸入案件編號精準查詢，如 123（不需打前面的0）" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;">
     </div>
     <div class="mq-chips" id="qDateChips">
       <button class="mq-chip active" onclick="qSetDateChip('today',this)">今天</button>
@@ -5155,6 +5155,7 @@ async function _nextCaseId() {
     return next;
   });
 }
+function _fmtCaseId(n) { return n ? String(n).padStart(4, '0') : ''; }
 
 // ── 簽名分離輔助函式 ──
 // 簽名另存至 attSigs/{docId} 或 outSigs/{docId}，主文件不存大圖
@@ -8618,7 +8619,7 @@ async function doQuery() {
       if (!_unitMembers.includes(r.memberName)) return false;
     }
     // 案件編號為精準查詢，輸入後忽略其他篩選條件（含日期範圍）
-    if (qCaseId) return String(r.caseId||'') === qCaseId;
+    if (qCaseId) return parseInt(r.caseId,10) === parseInt(qCaseId,10);
     // 管理員/承辦人可依分隊篩選
     if (qUnit) {
       const unitMemberNames = members.filter(m => (m.unit||'') === qUnit).map(m => m.name);
@@ -8715,7 +8716,7 @@ function renderQueryResults(records) {
     const svcBadge = r.serviceCount !== undefined && r.serviceCount !== null
       ? '<span style="display:inline-flex;align-items:center;background:#F0FDF4;color:#16A34A;font-size:0.72rem;font-weight:600;padding:2px 9px;border-radius:20px;border:1.5px solid rgba(22,163,74,0.15);flex-shrink:0;">服務 '+r.serviceCount+' 人</span>'
       : '';
-    const caseIdBadge = r.caseId ? '<span style="font-size:0.68rem;font-weight:700;color:var(--text-light);background:#f2f2f0;border-radius:8px;padding:2px 7px;margin-left:6px;">#'+r.caseId+'</span>' : '';
+    const caseIdBadge = r.caseId ? '<span style="font-size:0.68rem;font-weight:700;color:var(--text-light);background:#f2f2f0;border-radius:8px;padding:2px 7px;margin-left:6px;">#'+_fmtCaseId(r.caseId)+'</span>' : '';
     return '<div class="mq-card">'
       +'<div class="mq-card-head"><span><span class="mq-card-date">'+(r.date||'—')+'</span>'+caseIdBadge+'</span>'+districtBadge+'</div>'
       +'<div class="mq-card-body">'
@@ -10230,7 +10231,7 @@ function _verifyGroupCardHTML(g) {
     ? g.allOutings.map(o => {
         const parentId = g.sessions.find(s => s.outings.some(oo => oo.id === o.id))?.id || '';
         const om = _verifyMins(o.timeOut, o.timeBack);
-        const caseInfo = [o.caseId?'#'+o.caseId:'', o.caseType, o.district].filter(Boolean).join('・');
+        const caseInfo = [o.caseId?'#'+_fmtCaseId(o.caseId):'', o.caseType, o.district].filter(Boolean).join('・');
         return `<div id="orow-${o.id}" style="border-top:1px solid #f0f0f0;padding:6px 0;">
           <div style="display:flex;align-items:center;">
             <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
@@ -10831,7 +10832,7 @@ function showCaseTypeRecords(typeName) {
         ${records.map(r => `
           <div style="padding:12px 14px;background:#f9f9f7;border-radius:12px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-              <span><span style="font-size:0.88rem;font-weight:700;color:var(--text);">${r.date||''}</span>${r.caseId?`<span style="font-size:0.68rem;font-weight:700;color:var(--text-light);background:#eee;border-radius:8px;padding:2px 7px;margin-left:6px;">#${r.caseId}</span>`:''}</span>
+              <span><span style="font-size:0.88rem;font-weight:700;color:var(--text);">${r.date||''}</span>${r.caseId?`<span style="font-size:0.68rem;font-weight:700;color:var(--text-light);background:#eee;border-radius:8px;padding:2px 7px;margin-left:6px;">#${_fmtCaseId(r.caseId)}</span>`:''}</span>
               <span style="font-size:0.75rem;color:var(--text-light);">${r.timeOut||''}${r.timeBack?'–'+r.timeBack:''}</span>
             </div>
             <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:2px;">👤 ${r.memberName||''}${r.unit?'　'+r.unit:''}</div>
@@ -11840,7 +11841,7 @@ async function loadAdminOuting() {
     docs.forEach(d => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="${tds2}white-space:nowrap;color:var(--text-light);">${d.caseId?'#'+d.caseId:'—'}</td>
+        <td style="${tds2}white-space:nowrap;color:var(--text-light);">${d.caseId?'#'+_fmtCaseId(d.caseId):'—'}</td>
         <td style="${tds2}white-space:nowrap;">${d.date||''}</td>
         <td style="${tds2}white-space:nowrap;">${(d.timeOut||'')}～${(d.timeBack||'')}</td>
         <td style="${tds2}white-space:nowrap;">${d.district||''}</td>
@@ -11868,7 +11869,7 @@ async function loadAdminOuting() {
 
 async function adminEditOut(id) {
   const doc=await fbGetWithSig(COL_OUTING,id); if(!doc){alert('找不到資料');return;}
-  document.getElementById('adminEditTitle').textContent='編輯協勤紀錄'+(doc.caseId?' #'+doc.caseId:'');
+  document.getElementById('adminEditTitle').textContent='編輯協勤紀錄'+(doc.caseId?' #'+_fmtCaseId(doc.caseId):'');
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
@@ -18085,7 +18086,7 @@ function openCorrectionModal(type, record) {
     if (_saArr) _saArr.style.transform = '';
 
   } else {
-    origItem('案件編號', record.caseId ? '#'+record.caseId : '');
+    origItem('案件編號', record.caseId ? '#'+_fmtCaseId(record.caseId) : '');
     origItem('日期',     record.date || '');
     origItem('義消',     record.memberName || '');
     origItem('出勤',     record.timeOut || '');
