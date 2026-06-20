@@ -2736,12 +2736,8 @@ function _dlCSV(content, filename) {
               <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:0.1em;margin-top:2px;" id="statsHoursChartSub">ANNUAL HOURS DETAIL</div>
             </div>
           </div>
-          <div id="statsDetailOverview" style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:12px;">
-            <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
-              <div style="font-size:1.6rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsDetailAnnualHours">—</div>
-              <div style="font-size:0.55rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;">年度總時數(h)</div>
-            </div>
-            <div style="padding:12px 4px 10px;text-align:center;border-left:1px solid rgba(255,255,255,0.12);border-right:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+          <div id="statsDetailOverview" style="display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:12px;">
+            <div style="padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
               <div style="font-size:1.6rem;font-weight:900;color:#2ecc71;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsDetailMetCount">—</div>
               <div style="font-size:0.55rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;" id="statsDetailMetLabel">達標人數</div>
             </div>
@@ -10819,11 +10815,8 @@ async function loadStats() {
 
     // 卡片 2 KPI：年度總時數 + 以參考月份（今年看當月，往年看12月）判斷達標/未達標人數
     const refMonthIdx = (westernYear === new Date().getFullYear()) ? new Date().getMonth() : 11;
-    const annualTotalHours = detailRows.reduce((s,r) => s + r.total, 0);
     const metCount = detailRows.filter(r => r.months[refMonthIdx] >= MIN_MONTHLY_HOURS).length;
     const shortCount = detailRows.length - metCount;
-    const annualEl = document.getElementById('statsDetailAnnualHours');
-    if (annualEl) annualEl.textContent = annualTotalHours%1===0 ? annualTotalHours : annualTotalHours.toFixed(1);
     const metEl = document.getElementById('statsDetailMetCount');
     if (metEl) metEl.textContent = metCount;
     const shortEl = document.getElementById('statsDetailShortCount');
