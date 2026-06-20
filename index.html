@@ -3820,6 +3820,14 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
+      <button onclick="navTo('sysTipsPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;border-top:1px solid #f5f5f5;cursor:pointer;text-align:left;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#e6f7f5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        </div>
+        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">系統小知識</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">常用功能的小技巧整理</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
     </div>
 
     <!-- 系統列表 -->
@@ -4130,6 +4138,29 @@ function _dlCSV(content, filename) {
         查詢項目包含：EMT 證照效期、受訓紀錄、複訓狀態等。
       </div>
     </div>
+
+  </div>
+</div>
+
+
+<!-- ══════ PAGE：系統小知識 ══════ -->
+<div class="page" id="sysTipsPage">
+  <div class="form-wrap" style="padding-bottom:40px;">
+
+    <!-- 標題 -->
+    <div style="background:linear-gradient(135deg,#0f766e 0%,#134e4a 100%);border-radius:16px;padding:20px;margin-bottom:16px;color:white;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        </div>
+        <div>
+          <div style="font-size:1rem;font-weight:700;">系統小知識</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.7);margin-top:2px;">幾個常用功能的小技巧整理</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sysTipsList" style="display:flex;flex-direction:column;gap:14px;"></div>
 
   </div>
 </div>
@@ -6142,6 +6173,7 @@ async function refreshCurrentPage() {
     case 'caseStatsPage':    await initCaseStatsPage(); break;
     case 'profilePage':     await loadProfilePage(); break;
     case 'emsQueryPage':    initEmsQueryPage(); break;
+    case 'sysTipsPage':     initSysTipsPage(); break;
     case 'adminPage':       await initAdminPage(); break;
     case 'systemInfoPage':  await initSystemInfoPage(); break;
     default: break;
@@ -6254,6 +6286,7 @@ const _tabForPage = {
   systemInfoPage:     'more',
   settingsPage:       'more',   referencePage:      'more',
   emsQueryPage:       'more',
+  sysTipsPage:        'more',
 };
 const _tabPageMap = {
   home:     'dashboardPage',
@@ -6389,7 +6422,7 @@ function navTo(pageId, fromHistory, forceDir) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -6468,6 +6501,7 @@ function navTo(pageId, fromHistory, forceDir) {
   else if (pageId === 'dutyPage')      _nav(initDutyPage);
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
   else if (pageId === 'emsQueryPage')   _nav(initEmsQueryPage);
+  else if (pageId === 'sysTipsPage')    _nav(initSysTipsPage);
   else if (pageId === 'settingsPage')   _nav(initSettingsPage);
 
   if (pageId !== 'adminPage') {
@@ -15209,6 +15243,59 @@ function _siToggle(btn) {
   const open = body.style.display !== 'none';
   body.style.display  = open ? 'none' : 'block';
   if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+// ════════════════════════════════════════
+// 系統小知識
+// ════════════════════════════════════════
+const SYS_TIPS = [
+  { cat:'打卡與簽到簽退', icon:'⏰', color:'#c0392b', items:[
+    { icon:'📋', title:'忘記簽退怎麼辦？',   desc:'到「打卡查詢」找到當天紀錄，送出修正申請即可由承辦人補登。' },
+    { icon:'🔒', title:'超過 24 小時會鎖定', desc:'打卡紀錄超過 24 小時系統會鎖定，需送出修正申請才能修改。' },
+    { icon:'✍️', title:'簽到簽退要簽名',     desc:'簽到、簽退、協勤案件都需要簽名才能完成登錄。' },
+    { icon:'🔍', title:'簽名可以放大簽',     desc:'簽名區可以點全螢幕放大簽，手指較大或螢幕較小時更方便。' },
+  ]},
+  { cat:'協勤案件登錄', icon:'🚑', color:'#d35400', items:[
+    { icon:'📋', title:'案由要對照值班台',   desc:'案由請依「值班台派遣系統」填寫，點案由旁的對照表按鈕快速核對。' },
+    { icon:'📊', title:'點案由可看明細',     desc:'到「案件統計」頁點任一筆案由列，可展開該類型的完整案件明細。' },
+    { icon:'📝', title:'其他案由記得寫備註', desc:'案由選「其他」時，記得在備註欄填清楚實際狀況，方便之後查詢統計。' },
+  ]},
+  { cat:'排班與定訓', icon:'📅', color:'#2980b9', items:[
+    { icon:'✅', title:'會議記得回覆出席',   desc:'收到定訓/會議通知時記得按「我要參加」，方便承辦人統計人數。' },
+    { icon:'🚫', title:'排班衝突自動擋',     desc:'排班時間衝突或時段已滿，系統會直接擋下提示，不用自己對表。' },
+    { icon:'📈', title:'出席統計可切換排序', desc:'「出席統計」頁可以依次數或職稱排序，查自己的出席狀況。' },
+    { icon:'🏅', title:'公差英雄榜',         desc:'累積公差出勤天數達到門檻會拿到專屬徽章，到「公差英雄榜」查排行。' },
+    { icon:'🏆', title:'排行榜列出全分隊',   desc:'「協勤統計」排行榜會列出全分隊成員，沒出勤也會顯示 0，方便看全員概況。' },
+  ]},
+  { cat:'物品、申請與通知', icon:'📦', color:'#16a085', items:[
+    { icon:'📦', title:'領用物品先查庫存',   desc:'到「物品領用」頁先查庫存再登記，避免白跑一趟。' },
+    { icon:'🔔', title:'待領物品提醒',       desc:'有人指派物品給你時，首頁待辦事項會出現提醒，記得去確認領取。' },
+    { icon:'🩺', title:'證照效期查詢',       desc:'「更多 > 服務 > 證照效期查詢」可以直接連到衛福部系統查詢效期。' },
+    { icon:'👤', title:'資料異動記得更新',   desc:'電話、Email 有改記得到「個人資料」更新，不然系統通知可能收不到。' },
+    { icon:'📋', title:'申請進度可追蹤',     desc:'修正申請送出後，到「我的申請紀錄」就能追蹤審核進度。' },
+    { icon:'🚨', title:'緊急公告要看完',     desc:'緊急公告會跳全螢幕提醒，需按「已閱」才能關閉，記得仔細看完。' },
+    { icon:'📥', title:'大量補登用 CSV 匯入', desc:'補登歷史紀錄時可以用 CSV 匯入功能，照範本格式填好上傳，不用一筆一筆 key。' },
+  ]},
+];
+
+function initSysTipsPage() {
+  const wrap = document.getElementById('sysTipsList');
+  if (!wrap || wrap.children.length) return; // 內容固定，只需渲染一次
+  wrap.innerHTML = SYS_TIPS.map(group => `
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
+      <div style="padding:12px 16px;display:flex;align-items:center;gap:8px;background:${group.color}14;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:1rem;">${group.icon}</span>
+        <span style="font-size:0.85rem;font-weight:700;color:${group.color};">${group.cat}</span>
+      </div>
+      ${group.items.map(it => `
+        <div style="padding:12px 16px;display:flex;align-items:flex-start;gap:12px;border-top:1px solid #f5f5f5;">
+          <div style="width:32px;height:32px;border-radius:9px;background:${group.color}14;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.95rem;">${it.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:2px;">${it.title}</div>
+            <div style="font-size:0.76rem;color:var(--text-mid);line-height:1.55;">${it.desc}</div>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
 }
 
 async function initSystemInfoPage() {
