@@ -2729,10 +2729,28 @@ function _dlCSV(content, filename) {
         </div>
       </div>
       <div class="stats-hero-slide">
-        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:18px;box-shadow:0 8px 32px rgba(13,33,55,0.35);min-height:100%;box-sizing:border-box;">
-          <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;letter-spacing:0.06em;">隊員協勤時數明細</div>
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;" id="statsHoursChartSub">每人每月至少 12 小時</div>
-          <div style="font-size:0.62rem;color:rgba(255,255,255,0.55);margin-top:10px;"><span style="color:#ff6b6b;font-weight:700;">紅字</span> = 未達標 · 往下滑看每人逐月明細</div>
+        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;box-shadow:0 8px 32px rgba(13,33,55,0.35);min-height:100%;box-sizing:border-box;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">隊員協勤時數明細</div>
+              <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:0.1em;margin-top:2px;" id="statsHoursChartSub">ANNUAL HOURS DETAIL</div>
+            </div>
+          </div>
+          <div id="statsDetailOverview" style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;margin-bottom:12px;">
+            <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+              <div style="font-size:1.6rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsDetailAnnualHours">—</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;">年度總時數(h)</div>
+            </div>
+            <div style="padding:12px 4px 10px;text-align:center;border-left:1px solid rgba(255,255,255,0.12);border-right:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+              <div style="font-size:1.6rem;font-weight:900;color:#2ecc71;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsDetailMetCount">—</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;" id="statsDetailMetLabel">達標人數</div>
+            </div>
+            <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+              <div style="font-size:1.6rem;font-weight:900;color:#ff6b6b;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsDetailShortCount">—</div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;" id="statsDetailShortLabel">未達標人數</div>
+            </div>
+          </div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.55);"><span style="color:#ff6b6b;font-weight:700;">紅字</span> = 未達標 · 往下滑看每人逐月明細</div>
         </div>
       </div>
     </div>
@@ -10798,6 +10816,22 @@ async function loadStats() {
         return aRank !== bRank ? aRank - bRank : b.total - a.total;
       });
     _renderStatsMonthlyDetail(detailRows, 12, MIN_MONTHLY_HOURS);
+
+    // 卡片 2 KPI：年度總時數 + 以參考月份（今年看當月，往年看12月）判斷達標/未達標人數
+    const refMonthIdx = (westernYear === new Date().getFullYear()) ? new Date().getMonth() : 11;
+    const annualTotalHours = detailRows.reduce((s,r) => s + r.total, 0);
+    const metCount = detailRows.filter(r => r.months[refMonthIdx] >= MIN_MONTHLY_HOURS).length;
+    const shortCount = detailRows.length - metCount;
+    const annualEl = document.getElementById('statsDetailAnnualHours');
+    if (annualEl) annualEl.textContent = annualTotalHours%1===0 ? annualTotalHours : annualTotalHours.toFixed(1);
+    const metEl = document.getElementById('statsDetailMetCount');
+    if (metEl) metEl.textContent = metCount;
+    const shortEl = document.getElementById('statsDetailShortCount');
+    if (shortEl) shortEl.textContent = shortCount;
+    const metLabelEl = document.getElementById('statsDetailMetLabel');
+    if (metLabelEl) metLabelEl.textContent = `${refMonthIdx+1}月達標人數`;
+    const shortLabelEl = document.getElementById('statsDetailShortLabel');
+    if (shortLabelEl) shortLabelEl.textContent = `${refMonthIdx+1}月未達標人數`;
 
     const maxHours = rows.length ? rows[0].hours : 1;
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
