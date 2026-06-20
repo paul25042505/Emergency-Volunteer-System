@@ -1811,11 +1811,17 @@ function _dlCSV(content, filename) {
             <input type="date" id="date" required style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:'Noto Sans TC',sans-serif;background:white;">
           </div>
           <div>
-            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">出動時間 <span style="color:var(--red);">*</span> <span style="font-size:0.7rem;font-weight:400;color:var(--text-light);">（24小時制）</span></div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">出動時間 / 返隊時間 <span style="color:var(--red);">*</span> <span style="font-size:0.7rem;font-weight:400;color:var(--text-light);">（24小時制）</span></div>
             <div class="time-row">
-              <input type="time" id="timeOut" required>
+              <div>
+                <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;">出動時間</div>
+                <input type="time" id="timeOut" required>
+              </div>
               <div class="time-dash">—</div>
-              <input type="time" id="timeBack" required>
+              <div>
+                <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;">返隊時間</div>
+                <input type="time" id="timeBack" required>
+              </div>
             </div>
           </div>
         </div>
