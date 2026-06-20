@@ -18540,12 +18540,12 @@ function filterDutyMembers() {
     filtered.map(m => { const t=_memberTitle(m); return '<option value="' + m.name + '">' + m.name + (t?'（'+t+'）':'') + '</option>'; }).join('');
 }
 
-async function loadDutyData() {
+async function loadDutyData(scrollDate) {
   try {
     await loadTrainingDates(); // 每次載入時同步最新定訓日期
     const docs = await fbList(COL_DUTY);
     _dutyDocs = docs;
-    renderDutyView();
+    renderDutyView(scrollDate);
   } catch(e) { console.warn('loadDutyData 失敗：', e.message); }
 }
 
@@ -18594,18 +18594,20 @@ function dutyView(v, scrollToDate) {
   }
 }
 
-function renderDutyView() {
+function renderDutyView(scrollDate) {
   const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   document.getElementById('dutyMonthLabel').innerHTML = `<div style="font-size:1rem;font-weight:800;color:var(--text);line-height:1.2;">${_dutyYear} 年 ${monthNames[_dutyMonth]}</div><div style="font-size:0.6rem;font-weight:700;color:#3498db;letter-spacing:0.1em;margin-top:1px;">MONTHLY OVERVIEW</div>`;
   document.getElementById('dutyMonthView').style.display = _dutyView==='month' ? '' : 'none';
   document.getElementById('dutyListView').style.display  = _dutyView==='list'  ? '' : 'none';
   document.getElementById('dutyGongchaView').style.display = _dutyView==='gongcha' ? '' : 'none';
   document.getElementById('dutyMeetingView').style.display  = _dutyView==='meeting'  ? '' : 'none';
-  // 切換子視圖時回到頂部
-  const _sc = document.getElementById('appScroll');
-  if (_sc) _sc.scrollTop = 0;
+  // 切換子視圖時回到頂部（資料重新整理但停留同一視圖時不重置，避免閃動）
+  if (!scrollDate) {
+    const _sc = document.getElementById('appScroll');
+    if (_sc) _sc.scrollTop = 0;
+  }
   if (_dutyView==='month') renderDutyCalendar();
-  else if (_dutyView==='list') renderDutyList();
+  else if (_dutyView==='list') renderDutyList(scrollDate);
   else if (_dutyView==='gongcha') renderDutyGongcha();
   else if (_dutyView==='meeting') renderDutyMeeting();
 }
@@ -19768,7 +19770,7 @@ function renderDutyCalendar() {
   }
 }
 
-function renderDutyList() {
+function renderDutyList(scrollDate) {
   const el = document.getElementById('dutyListContent');
   if (!el) return;
   const daysInMonth = new Date(_dutyYear, _dutyMonth+1, 0).getDate();
@@ -19905,13 +19907,13 @@ function renderDutyList() {
   }
   el.innerHTML = html;
 
-  // 渲染完成後滾回今天（如果在本月）
-  const todayEl = document.getElementById('duty-day-' + today);
-  if (todayEl) {
+  // 渲染完成後滾回目標日期（編輯/刪除/新增後傳入該筆日期；否則預設今天）
+  const targetEl = document.getElementById('duty-day-' + (scrollDate || today));
+  if (targetEl) {
     setTimeout(() => {
       const scroller = document.getElementById('appScroll');
       if (!scroller) return;
-      const elTop = todayEl.getBoundingClientRect().top;
+      const elTop = targetEl.getBoundingClientRect().top;
       const scrollerTop = scroller.getBoundingClientRect().top;
       scroller.scrollBy({ top: elTop - scrollerTop - 8, behavior: 'auto' });
     }, 0);
@@ -20013,9 +20015,10 @@ async function addDutySchedule() {
 
 async function deleteDuty(id) {
   if (!confirm('確定刪除這筆備勤？')) return;
+  const targetDate = _dutyDocs.find(d => d.id === id)?.date;
   try {
     await fbDelete(COL_DUTY, id);
-    await loadDutyData();
+    await loadDutyData(targetDate);
     onDutyTimeChange();
   } catch(e) { alert('刪除失敗：' + e.message); }
 }
@@ -20154,7 +20157,7 @@ async function submitQuickAdd() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
     closeQuickAdd();
-    await loadDutyData();
+    await loadDutyData(_qaDate);
     alert('✅ 備勤時段已新增');
   } catch(e) { alert('新增失敗：' + e.message); }
 }
@@ -20206,7 +20209,7 @@ async function submitDutyEdit() {
   try {
     await fbUpdate(COL_DUTY, id, { start, end });
     closeDutyEdit();
-    await loadDutyData();
+    await loadDutyData(_editDocDate);
     alert('✅ 已更新');
   } catch(e) { alert('更新失敗：' + e.message); }
 }
@@ -20217,7 +20220,7 @@ async function deleteDutyFromEdit() {
   try {
     await fbDelete(COL_DUTY, id);
     closeDutyEdit();
-    await loadDutyData();
+    await loadDutyData(_editDocDate);
   } catch(e) { alert('刪除失敗：' + e.message); }
 }
 
