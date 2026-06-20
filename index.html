@@ -822,6 +822,13 @@ tr:hover td { background: #fdfcfb; }
   scrollbar-width: none; -ms-overflow-style: none;
 }
 .quick-scroll::-webkit-scrollbar { display: none; }
+
+/* ══ 協勤統計 Hero 卡片左右滑動 ══ */
+.stats-hero-swipe { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; }
+.stats-hero-swipe::-webkit-scrollbar { display:none; }
+.stats-hero-slide { flex:0 0 100%; scroll-snap-align:start; min-width:0; }
+.stats-swipe-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:all 0.2s; }
+.stats-swipe-dot.active { width:16px; border-radius:3px; background:var(--red); }
 .dash-quick-sticky {
   position: sticky;
   top: env(safe-area-inset-top, 0px);
@@ -2660,61 +2667,83 @@ function _dlCSV(content, filename) {
 <div class="page" id="statsPage">
   <div class="query-wrap">
 
-    <!-- Hero -->
-    <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;margin-bottom:18px;box-shadow:0 8px 32px rgba(13,33,55,0.35);">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">
-        <div>
-          <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">協勤統計</div>
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:0.14em;margin-top:2px;">DUTY STATISTICS</div>
-        </div>
-      </div>
-      <!-- Filters -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-        <div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
-          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-            <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
-            <select id="statsYear" onchange="document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
+    <!-- Hero（左右滑動：① 篩選/KPI ② 個人時數達標圖表） -->
+    <div class="stats-hero-swipe" id="statsHeroSwipe" onscroll="_statsSwipeDotSync()">
+      <div class="stats-hero-slide">
+        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:22px 18px 20px;box-shadow:0 8px 32px rgba(13,33,55,0.35);">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">
+            <div>
+              <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">協勤統計</div>
+              <div style="font-size:0.6rem;color:rgba(255,255,255,0.45);letter-spacing:0.14em;margin-top:2px;">DUTY STATISTICS</div>
+            </div>
+          </div>
+          <!-- Filters -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+            <div>
+              <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
+              <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+                <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
+                <select id="statsYear" onchange="document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
+              <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+                <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
+                <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value?this.value+'月':'全年';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+                  <option value="">全年</option>
+                  <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
+                  <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
+                  <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
+                  <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">分隊別</div>
+              <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+                <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="statsUnitDisplay">全部</div>
+                <select id="statsUnit" onchange="document.getElementById('statsUnitDisplay').textContent=this.value||'全部';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
+                  <option value="">全部分隊</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- KPI strip -->
+          <div id="statsOverview" style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
+            <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+              <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsTotal">—</div>
+              <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">協勤案件</div>
+            </div>
+            <div style="padding:12px 4px 10px;text-align:center;border-left:1px solid rgba(255,255,255,0.12);border-right:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+              <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsMemCount">—</div>
+              <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">協勤人數</div>
+            </div>
+            <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
+              <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsTotalHours">—</div>
+              <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">總時數(h)</div>
+            </div>
           </div>
         </div>
-        <div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
-          <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-            <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
-            <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value?this.value+'月':'全年';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
-              <option value="">全年</option>
-              <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
-              <option value="4">4 月</option><option value="5">5 月</option><option value="6">6 月</option>
-              <option value="7">7 月</option><option value="8">8 月</option><option value="9">9 月</option>
-              <option value="10">10 月</option><option value="11">11 月</option><option value="12">12 月</option>
-            </select>
+      </div>
+      <div class="stats-hero-slide">
+        <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:18px;box-shadow:0 8px 32px rgba(13,33,55,0.35);min-height:100%;box-sizing:border-box;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div>
+              <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;letter-spacing:0.06em;">個人時數達標圖</div>
+              <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;" id="statsHoursChartSub">每人每月至少 12 小時</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:0.62rem;color:rgba(255,255,255,0.6);">
+              <span style="width:8px;height:8px;border-radius:2px;background:#2ecc71;display:inline-block;"></span>達標
+              <span style="width:8px;height:8px;border-radius:2px;background:#e74c3c;display:inline-block;margin-left:6px;"></span>未達標
+            </div>
           </div>
-        </div>
-        <div>
-          <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">分隊別</div>
-          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-            <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="statsUnitDisplay">全部</div>
-            <select id="statsUnit" onchange="document.getElementById('statsUnitDisplay').textContent=this.value||'全部';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
-              <option value="">全部分隊</option>
-            </select>
-          </div>
+          <div id="statsHoursChart" style="overflow-x:auto;margin-top:8px;"></div>
         </div>
       </div>
-      <!-- KPI strip -->
-      <div id="statsOverview" style="display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;">
-        <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
-          <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsTotal">—</div>
-          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">協勤案件</div>
-        </div>
-        <div style="padding:12px 4px 10px;text-align:center;border-left:1px solid rgba(255,255,255,0.12);border-right:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
-          <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsMemCount">—</div>
-          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">協勤人數</div>
-        </div>
-        <div style="padding:12px 4px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;">
-          <div style="font-size:1.75rem;font-weight:900;color:white;line-height:1;font-family:'Noto Serif TC',serif;flex:1;display:flex;align-items:center;" id="statsTotalHours">—</div>
-          <div style="font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.08em;margin-top:4px;">總時數(h)</div>
-        </div>
-      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:6px;margin:10px 0 18px;">
+      <span class="stats-swipe-dot active" id="statsSwipeDot0"></span><span class="stats-swipe-dot" id="statsSwipeDot1"></span>
     </div>
 
     <!-- Ranking -->
@@ -10738,6 +10767,14 @@ async function loadStats() {
       }
     }
 
+    const chartSubEl = document.getElementById('statsHoursChartSub');
+    if (chartSubEl) {
+      chartSubEl.textContent = month
+        ? `${year} 年 ${month} 月 — 每人每月至少 12 小時${filterUnit?' · '+filterUnit:''}`
+        : `${year} 年全年 — 選擇單一月份可查看達標狀態${filterUnit?' · '+filterUnit:''}`;
+    }
+    _renderStatsHoursChart(rows, month, MIN_MONTHLY_HOURS);
+
     const maxHours = rows.length ? rows[0].hours : 1;
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
     const myName = usr.memberName || usr.name || '';
@@ -10779,6 +10816,47 @@ async function loadStats() {
   } catch(e) {
     document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
   }
+}
+
+function _renderStatsHoursChart(rows, month, threshold) {
+  const wrap = document.getElementById('statsHoursChart');
+  if (!wrap) return;
+  if (!rows.length) { wrap.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.75rem;text-align:center;padding:30px 0;">無資料</div>'; return; }
+
+  const sorted = [...rows].sort((a,b) => b.hours - a.hours);
+  const barW = 22, gap = 14, slot = barW + gap;
+  const padT = 22, chartH = 130, padB = 30;
+  const maxVal = Math.max(...sorted.map(r => r.hours), month ? threshold : 1, 1);
+  const W = Math.max(sorted.length * slot + 16, 260);
+  const H = padT + chartH + padB;
+
+  let bars = '';
+  sorted.forEach((r, i) => {
+    const x = 12 + i * slot;
+    const h = Math.max(2, (r.hours / maxVal) * chartH);
+    const y = padT + chartH - h;
+    const color = month ? (r.hours >= threshold ? '#2ecc71' : '#e74c3c') : '#3498db';
+    const label = r.name.length > 3 ? r.name.slice(0,3) : r.name;
+    bars += `<text x="${x+barW/2}" y="${y-5}" text-anchor="middle" font-size="9" fill="white" opacity="0.85">${r.hours%1===0?r.hours:r.hours.toFixed(1)}</text>
+      <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}"/>
+      <text x="${x+barW/2}" y="${padT+chartH+13}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.8)">${label}</text>`;
+  });
+
+  const thresholdLine = month
+    ? (() => { const ty = padT + chartH - (threshold / maxVal) * chartH;
+        return `<line x1="0" y1="${ty}" x2="${W}" y2="${ty}" stroke="rgba(255,255,255,0.45)" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="4" y="${ty-4}" font-size="8" fill="rgba(255,255,255,0.6)">${threshold}hr 標準</text>`; })()
+    : '';
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${thresholdLine}${bars}</svg>`;
+}
+
+function _statsSwipeDotSync() {
+  const el = document.getElementById('statsHeroSwipe');
+  if (!el || !el.clientWidth) return;
+  const idx = Math.round(el.scrollLeft / el.clientWidth);
+  document.getElementById('statsSwipeDot0')?.classList.toggle('active', idx === 0);
+  document.getElementById('statsSwipeDot1')?.classList.toggle('active', idx === 1);
 }
 
 
