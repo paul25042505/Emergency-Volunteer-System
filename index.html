@@ -10549,9 +10549,15 @@ async function loadStats() {
       map[nm].service += parseInt(r.service)||0;
     });
 
+    // 也納入無協勤紀錄的分隊成員（顯示 0），讓排行榜列出全分隊
+    members.filter(m => m.title !== '分隊承辦人').forEach(m => {
+      if (filterUnit && (m.unit||'') !== filterUnit) return;
+      if (!map[m.name]) map[m.name] = { name: m.name, unit: m.unit||'', count:0, hours:0, service:0 };
+    });
+
     const rows = Object.values(map).sort((a,b)=>b.hours!==a.hours?b.hours-a.hours:b.count-a.count);
     const totalCount = rows.reduce((s,r)=>s+r.count,0);
-    document.getElementById('statsMemCount').textContent = rows.length;
+    document.getElementById('statsMemCount').textContent = rows.filter(r=>r.count>0).length;
     const totalHours = rows.reduce((s,r)=>s+r.hours,0);
     document.getElementById('statsTotalHours').textContent = totalHours%1===0?totalHours:totalHours.toFixed(1);
 
