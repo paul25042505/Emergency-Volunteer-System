@@ -3303,6 +3303,10 @@ function _dlCSV(content, filename) {
             <option value="">請選擇分隊</option>
           </select>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-mid);margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="adminWlShowRetired" onchange="filterAdminWlByUnit()" style="width:auto;margin:0;">
+          顯示已退隊成員（封存資料）
+        </label>
         <div id="adminWlList">
           <div style="color:var(--text-light);padding:8px 0;font-size:0.85rem;">請先選擇分隊</div>
         </div>
@@ -5376,6 +5380,7 @@ async function verifyWhitelist(email){
   if (s.empty) s = await _fbDB.collection(COL_WHITELIST).where('extraEmails','array-contains',em).get();
   if(s.empty)return null;
   const d=s.docs[0].data();
+  if (d.status === 'retired') return { allowed:false, retired:true };
   const isAdminFlag = d.isAdmin === true || d.role === 'admin';
   const isOfficerFlag = d.isOfficer === true || d.role === 'officer';
   const role = isAdminFlag ? 'admin' : (isOfficerFlag ? 'officer' : (d.role || 'member'));
@@ -5526,7 +5531,9 @@ async function handleGoogleLogin(response) {
       showApp(memberName, email, isAdmin, isOfficer, role, title);
     } else {
       spinner.classList.remove('show');
-      errorDiv.innerHTML = `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
+      errorDiv.innerHTML = (fbResult && fbResult.retired)
+        ? `❌ 帳號 <b>${email}</b> 已標記為退隊，無法登入<br>如有疑問請聯絡管理員。`
+        : `❌ 帳號 <b>${email}</b> 無存取權限<br>請聯絡管理員或分隊承辦人申請帳號。`;
       errorDiv.classList.add('show');
       google.accounts.id.disableAutoSelect();
     }
@@ -5747,6 +5754,13 @@ async function quickLoginAs(idx) {
   // 驗證白名單（取最新權限）
   try {
     const wl = await verifyWhitelist(u.email);
+    if (wl && wl.allowed === false) {
+      if (lt) lt.style.display = 'none';
+      stored.splice(idx, 1);
+      localStorage.setItem('evs_recent_users', JSON.stringify(stored));
+      alert('此帳號已被停用或標記為退隊，請聯絡管理員。');
+      return;
+    }
     if (wl && wl.allowed) {
       u.isAdmin   = wl.isAdmin   || false;
       u.isOfficer = wl.isOfficer || false;
@@ -7559,7 +7573,7 @@ async function loadMembers(force) {
     const wlDocs = await fbList(COL_WHITELIST);
     if (wlDocs.length > 0) {
       const TITLE_ORDER=['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
-      members = wlDocs.map(d=>({
+      members = wlDocs.filter(d=>d.status!=='retired').map(d=>({
         id: d.id, name: d.memberName||'', title: d.title||'',
         squad: d.squad||'', isSquadLeader: d.isSquadLeader||false,
         unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
@@ -7572,7 +7586,7 @@ async function loadMembers(force) {
       });
     } else {
       const docs = await fbList(COL_MEMBERS);
-      members = docs.map(d=>({name:d.name||'',title:d.title||'',unit:d.unit||'',cert:d.cert||'',certExp:d.certExp||''})).filter(m=>m.name);
+      members = docs.filter(d=>d.status!=='retired').map(d=>({name:d.name||'',title:d.title||'',unit:d.unit||'',cert:d.cert||'',certExp:d.certExp||''})).filter(m=>m.name);
     }
   } catch(e) {
     console.error('loadMembers 失敗:', e);
@@ -11656,8 +11670,9 @@ async function loadAdminWhitelist(filterUnit) {
   el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
   try {
     let docs = await fbList(COL_WHITELIST);
-    docs = docs.filter(d => (d.unit||'') === filterUnit);
-    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">' + (filterUnit ? '此分隊暫無成員' : '尚無資料') + '</div>'; return; }
+    const showRetired = document.getElementById('adminWlShowRetired')?.checked || false;
+    docs = docs.filter(d => (d.unit||'') === filterUnit && (showRetired ? d.status === 'retired' : d.status !== 'retired'));
+    if (!docs.length) { el.innerHTML = '<div style="color:var(--text-light);">' + (showRetired ? '此分隊暫無已退隊成員' : (filterUnit ? '此分隊暫無成員' : '尚無資料')) + '</div>'; return; }
 
     const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
     docs.sort(function(a,b){
@@ -11732,6 +11747,12 @@ async function loadAdminWhitelist(filterUnit) {
         certBadge.textContent = d.cert + (d.certExp ? '  效期 '+d.certExp : '');
         badgeRow.appendChild(certBadge);
       }
+      if (d.status === 'retired') {
+        var retiredBadge = document.createElement('span');
+        retiredBadge.style.cssText = 'font-size:0.65rem;background:#f1f1f1;color:#888;border:1px solid #ddd;border-radius:8px;padding:2px 7px;font-weight:600;';
+        retiredBadge.textContent = '已退隊' + (d.retiredAt ? '  '+d.retiredAt : '');
+        badgeRow.appendChild(retiredBadge);
+      }
       info.appendChild(badgeRow);
 
       // Email
@@ -11767,6 +11788,17 @@ async function loadAdminWhitelist(filterUnit) {
         adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'');
       };
       btnRow.appendChild(editBtn);
+
+      var retireBtn = document.createElement('button');
+      retireBtn.style.cssText = 'flex:1;background:white;border:1px solid #f0d9a8;border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:#9a6a1a;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
+      if (d.status === 'retired') {
+        retireBtn.textContent = '↩ 恢復';
+        retireBtn.onclick = function(){ adminRestoreMember(d.id, d.memberName||''); };
+      } else {
+        retireBtn.textContent = '🚪 退隊';
+        retireBtn.onclick = function(){ adminRetireMember(d.id, d.memberName||''); };
+      }
+      btnRow.appendChild(retireBtn);
 
       var delBtn = document.createElement('button');
       delBtn.style.cssText = 'flex:1;background:white;border:1px solid #f5c6c6;border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:#b94a3a;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
@@ -12254,6 +12286,24 @@ async function adminDel(col,id,label,reloadFn) {
   catch(e){alert('刪除失敗：'+e.message);}
 }
 
+async function adminRetireMember(id, name) {
+  if (!confirm('確定要將「'+name+'」標記為退隊？\n\n• 將從成員列表、打卡、案件登錄等選單中隱藏\n• 歷史出勤/協勤紀錄將保留封存，不會被刪除\n• 該帳號將無法再登入系統\n\n之後可勾選「顯示已退隊成員」復原。')) return;
+  try {
+    await fbSet(COL_WHITELIST, id, { status: 'retired', retiredAt: new Date().toISOString().slice(0,10) });
+    await loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'');
+    await loadMembers(true);
+  } catch(e) { alert('操作失敗：'+e.message); }
+}
+
+async function adminRestoreMember(id, name) {
+  if (!confirm('確定要恢復「'+name+'」的成員資格？')) return;
+  try {
+    await fbSet(COL_WHITELIST, id, { status: 'active', retiredAt: '' });
+    await loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'');
+    await loadMembers(true);
+  } catch(e) { alert('操作失敗：'+e.message); }
+}
+
 function _buildAdminMenu() {
   const grid = document.getElementById('adminMenuCards');
   if (!grid) return;
@@ -12601,8 +12651,8 @@ async function loadAdminPushCtrl() {
       devicesByName[s.memberName].push(s);
     });
 
-    // 取所有成員（whitelist），依 unit + name 排序
-    let allMembers = wl.map(m => ({ name: m.memberName || m.name, unit: m.unit || '' }))
+    // 取所有成員（whitelist，排除已退隊），依 unit + name 排序
+    let allMembers = wl.filter(m => m.status !== 'retired').map(m => ({ name: m.memberName || m.name, unit: m.unit || '' }))
       .filter(m => m.name);
     // 去重
     const seen = new Set();
@@ -14627,7 +14677,7 @@ async function initMembersPage() {
 
   try {
     await Promise.all([fbList(COL_WHITELIST).then(docs => {
-      members = docs.map(d => ({
+      members = docs.filter(d => d.status !== 'retired').map(d => ({
         id: d.id, name: d.memberName||'', title: d.title||'',
         squad: d.squad||'', unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'',
         role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
@@ -20981,7 +21031,7 @@ async function reloadMembersUnit() {
     // 強制重新讀 whitelist
     const docs = await fbList('whitelist');
     const units = [...new Set(docs.map(d => (d.unit||'').trim()).filter(Boolean))].sort();
-    members = docs.map(d => ({
+    members = docs.filter(d => d.status !== 'retired').map(d => ({
       id: d.id, name: d.memberName||'', title: d.title||'',
       unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
       role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
