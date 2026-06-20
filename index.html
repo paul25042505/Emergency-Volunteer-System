@@ -3188,25 +3188,6 @@ function _dlCSV(content, filename) {
 <div class="page" id="adminPage">
   <div class="query-wrap">
 
-    <!-- 後台功能選擇器（保留 select 供 JS 相容） -->
-    <div id="adminSecSelector" style="display:none;">
-      <select id="adminSecSelect" style="display:none;">
-        <option value="adminSec-units"      id="adminSelOpt-units">🏢 分隊管理</option>
-        <option value="adminSec-wl">👤 成員帳號</option>
-        <option value="adminSec-casetypes">🏷 案由管理</option>
-        <option value="adminSec-announce"   id="adminSelOpt-announce">📢 訊息管理</option>
-        <option value="adminSec-feedback">💬 意見回饋</option>
-        <option value="adminSec-correction">修正申請</option>
-        <option value="adminSec-schedule">📅 定訓行事曆</option>
-        <option value="adminSec-temppass">🔑 臨時密碼</option>
-        <option value="adminSec-changelog"  id="adminSelOpt-changelog">版本紀錄</option>
-        <option value="adminSec-loginlog"   id="adminSelOpt-loginlog" style="display:none;">🔐 登入紀錄</option>
-        <option value="adminSec-import">📥 批次匯入</option>
-        <option value="adminSec-repair">🔧 資料修復</option>
-        <option value="adminSec-confirm">✅ 確認任務</option>
-        <option value="adminSec-usagetest">🧪 配額測試</option>
-      </select>
-    </div>
 
     <!-- 後台選單格 -->
     <div id="adminMenuGrid" style="display:none;padding:0 0 20px;">
@@ -6592,80 +6573,6 @@ function closeDrawer() {}
 // ════════════════════════════════════════
 // ── 首頁日期時間每秒更新 ──
 let _dashClockTimer = null;
-// ── 農曆計算 ──
-function getLunarDate(date) {
-  // 農曆天干地支
-  const tiangan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  const dizhi   = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-  const shengxiao = ['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'];
-  const lunarMonths = ['正','二','三','四','五','六','七','八','九','十','冬','臘'];
-  const lunarDays   = ['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十',
-    '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
-    '廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
-
-  // 農曆基準：1900/1/31 = 農曆正月初一（庚子年）
-  const baseDate  = new Date(1900, 0, 31);
-  const baseLunar = { year: 1900, month: 1, day: 1 };
-
-  // 農曆每年資料（年份農曆月份天數資料表 1900-2100）
-  // 每個元素：高4位=閏月月份(0無閏),接著每月bit=1表大月(30天)否則小月(29天)
-  const lunarInfo = [
-    0x04AE53,0x0A5748,0x5526BD,0x0D2650,0x0D9544,0x46AAB9,0x056A4D,0x09AD42,0x24AEB6,0x04AE4A,
-    0x6A4DBE,0x0A4D52,0x0D2546,0x5D52BA,0x0B544E,0x0D6A43,0x296D37,0x095B4B,0x749BC1,0x049754,
-    0x0A4B48,0x5B25BC,0x06A550,0x06D445,0x4ADAB8,0x02B64D,0x095742,0x2497B7,0x04974A,0x664B3E,
-    0x0D4A51,0x0EA546,0x56D4BA,0x05AD4E,0x02B644,0x393738,0x092E4B,0x7C96BF,0x0C9553,0x0D4A48,
-    0x6DA53B,0x0B554F,0x056A45,0x4AADB9,0x025D4D,0x092D42,0x2C95B6,0x0A954A,0x7B4ABD,0x06CA51,
-    0x0B5546,0x555ABB,0x04DA4E,0x0A5B43,0x352BB8,0x052B4C,0x8A953F,0x0E9552,0x06AA48,0x7AD53C,
-    0x0AB54F,0x04B645,0x4A5739,0x0A574D,0x052642,0x3E9335,0x0D9549,0x75AABE,0x056A51,0x096D46,
-    0x54AEBB,0x04AD4F,0x0A4D43,0x4D26B7,0x0D254B,0x8D52BF,0x0B5452,0x0B6A47,0x696D3C,0x095B50,
-    0x049B45,0x4A4BB9,0x0A4B4D,0x6B25C2,0x06A554,0x06D449,0x6ADA3D,0x0AB651,0x093746,0x5497BB,
-    0x04974F,0x064B44,0x36A537,0x0EA54A,0x56D43F,0x05AD53,0x02B648,0x3A9B3B,0x092B4F,0x0C9644,
-    // 2000–2030
-    0x0C9645,0x4D4AB8,0x0D4A4C,0x0DA541,0x25AAB6,0x056A49,0x7AADBD,0x025D52,0x092D47,0x5C95BA,
-    0x0A954E,0x0B4A43,0x4B5537,0x0AD54A,0x955ABF,0x04BA53,0x0A5B48,0x652BBC,0x052B50,0x0A9345,
-    0x474AB9,0x06AA4C,0x0AD541,0x24DAB6,0x04B64A,0x69573D,0x0A4E51,0x0D2646,0x5E933A,0x0D534D,
-    0x05AA43,
-  ];
-
-  let offset = Math.floor((date - baseDate) / 86400000);
-  let lunarYear = 1900, lunarMonth = 1, lunarDay = 1;
-  let isLeap = false;
-
-  for (let y = 1900; y < 2031 && offset > 0; y++) {
-    const info = lunarInfo[y - 1900];
-    const leapMonth = (info >> 20) & 0xF;
-    let daysInYear = 0;
-    for (let m = 1; m <= 12; m++) {
-      daysInYear += ((info >> (16 - m)) & 1) ? 30 : 29;
-    }
-    if (leapMonth) daysInYear += ((info >> 16) & 1) ? 30 : 29;
-
-    if (offset < daysInYear) {
-      lunarYear = y;
-      let leap = false;
-      for (let m = 1; m <= 12 && offset >= 0; m++) {
-        if (leapMonth === m && !leap) {
-          const ld = ((info >> 16) & 1) ? 30 : 29;
-          if (offset < ld) { lunarMonth = m; lunarDay = offset + 1; isLeap = true; break; }
-          offset -= ld; leap = true;
-        }
-        const ld = ((info >> (16 - m)) & 1) ? 30 : 29;
-        if (offset < ld) { lunarMonth = m; lunarDay = offset + 1; break; }
-        offset -= ld;
-      }
-      break;
-    }
-    offset -= daysInYear;
-  }
-
-  const tgIdx = (lunarYear - 4) % 10;
-  const dzIdx = (lunarYear - 4) % 12;
-  const yearStr = tiangan[tgIdx] + dizhi[dzIdx] + shengxiao[dzIdx] + '年';
-  const monthStr = (isLeap ? '閏' : '') + lunarMonths[lunarMonth - 1] + '月';
-  const dayStr = lunarDays[lunarDay - 1];
-  return yearStr + ' ' + monthStr + dayStr;
-}
-
 // ── 24 節氣（天文演算法，永久有效）──
 // 原理：太陽黃經每隔 15° 為一個節氣，從春分(0°)開始
 function getSolarTermByAstro(date) {
@@ -8064,8 +7971,6 @@ function calcAttStats(attDoc, outDocs) {
     service: valid.reduce((s, o) => s + (parseInt(o.serviceCount) || 0), 0),
   };
 }
-function calcServiceForAtt(attDoc, outDocs) { return calcAttStats(attDoc, outDocs).service; }
-
 async function _repairBuildDiffList(dateFrom, dateTo) {
   const outConds = [];
   const attConds = [];
@@ -11643,11 +11548,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // ════════════════════════════════════════
 let adminEditSave = () => {};
 
-function adminClearDate(fromId, toId) {
-  const f=document.getElementById(fromId), t=document.getElementById(toId);
-  if(f)f.value=''; if(t)t.value='';
-}
-
 async function loadAdminWhitelist(filterUnit) {
   const el = document.getElementById('adminWlList'); if (!el) return;
   // 未選分隊時顯示提示，不載入資料
@@ -12185,16 +12085,6 @@ async function batchDelChecked(className, col, reloadFn) {
   } catch(e) { alert('批次刪除失敗：' + e.message); }
 }
 
-// ── 批次刪除共用函式 ──
-async function adminBatchDel(col, ids, reloadFn) {
-  if (!ids.length) { alert('請先勾選要刪除的項目'); return; }
-  if (!confirm(`確定刪除選取的 ${ids.length} 筆資料？此操作無法還原。`)) return;
-  try {
-    await Promise.all(ids.map(id => fbDelete(col, id)));
-    if (reloadFn) await reloadFn();
-  } catch(e) { alert('批次刪除失敗：' + e.message); }
-}
-
 async function adminDel(col,id,label,reloadFn) {
   if(!confirm('確定刪除「'+label+'」？此操作無法復原。'))return;
   try { await fbDelete(col,id); if(typeof reloadFn==='function')await reloadFn(); }
@@ -12301,8 +12191,6 @@ function adminShowSection(sectionId) {
     if (el) el.style.display = (id === sectionId) ? '' : 'none';
   });
   if (menuGrid) menuGrid.style.display = 'none';
-  const sel = document.getElementById('adminSecSelect');
-  if (sel) sel.value = sectionId;
   document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
   if (sectionId === 'adminSec-feedback') {
     localStorage.setItem('adminFbLastSeen', String(Date.now()));
@@ -12336,48 +12224,10 @@ function adminShowSection(sectionId) {
   }
 }
 
-function adminNavTo(sectionId) {
-  if (!document.getElementById('adminPage').classList.contains('active')) {
-    navTo('adminPage');
-    setTimeout(() => adminShowSection(sectionId), 600);
-    return;
-  }
-  adminShowSection(sectionId);
-  closeDrawer();
-}
-
 // _positionAdminTabBar 已於上方定義為 no-op
 
 function adminScrollTo(sectionId) {
   adminShowSection(sectionId);
-}
-
-function _adminScrollTo_legacy(sectionId) {
-  const el = document.getElementById(sectionId);
-  if (!el) return;
-
-  const scroller = document.getElementById('appScroll');
-
-  if (scroller) {
-    const barBottom   = 100;
-    const elTop       = el.getBoundingClientRect().top;
-    const target = scroller.scrollTop + elTop - barBottom - 16;
-
-    window._adminScrolling = true;
-    scroller.scrollTo({ top: target, behavior: 'smooth' });
-    clearTimeout(window._adminScrollTimer);
-    window._adminScrollTimer = setTimeout(() => { window._adminScrolling = false; }, 1000);
-  }
-
-  // 立即高亮
-  document.querySelectorAll('.admin-tab').forEach(t => {
-    t.classList.remove('active');
-    if ((t.getAttribute('onclick')||'').includes(sectionId)) t.classList.add('active');
-  });
-  document.querySelectorAll('.admin-subnav-btn').forEach(b => {
-    b.classList.remove('active-subnav');
-    if ((b.getAttribute('onclick')||'').includes(sectionId)) b.classList.add('active-subnav');
-  });
 }
 
 var _adminTabObserver = null;
@@ -12386,12 +12236,6 @@ async function initAdminPage() {
   if(!u.isAdmin && !u.isOfficer){ _confirmModal('您沒有管理員權限', ()=>navTo('dashboardPage'), '返回', '#333'); return; }
   const isAdminOnly = u.isAdmin || u.role === 'admin';
 
-  // 管理員限定功能：選單 option 和 subnav 顯示控制
-  const adminOnlyIds = ['adminSelOpt-units','adminSelOpt-announce','adminSelOpt-changelog','adminSelOpt-loginlog','adminSubNav-loginlog','adminSubNav-announce'];
-  adminOnlyIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = isAdminOnly ? '' : 'none';
-  });
   if (!isAdminOnly) {
     document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
       const oc = btn.getAttribute('onclick') || '';
@@ -15041,14 +14885,6 @@ async function _savePushSubscription(fcmToken) {
       doc.grantedAt = firebase.firestore.FieldValue.serverTimestamp();
     }
     await ref.set(doc, { merge: true });
-  } catch(e) {}
-}
-
-async function _removePushSubscription() {
-  try {
-    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    if (!usr.memberName) return;
-    await firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).delete();
   } catch(e) {}
 }
 
@@ -20583,64 +20419,6 @@ function isDateInNextMonth(dateStr) {
   const nextM = (now.getMonth() + 1) % 12;
   const d = new Date(dateStr + 'T00:00:00');
   return d.getFullYear() === nextY && d.getMonth() === nextM;
-}
-
-async function addDutySchedule() {
-  const date   = document.getElementById('dutyDate').value;
-  const member = document.getElementById('dutyMember').value;
-  const start  = document.getElementById('dutyStart').value;
-  const end    = document.getElementById('dutyEnd').value;
-
-  if (!date)   { alert('請選擇日期'); return; }
-  if (!isDutyDateAllowed(date)) { alert('⚠️ 此日期不在可填寫範圍內。\n本月班表全月開放；次月班表於當月20日起開放。'); return; }
-  if (!member) { alert('請選擇義消姓名'); return; }
-  if (!start || !end) { alert('請選擇時間'); return; }
-  if (start >= end)   { alert('結束時間必須晚於開始時間'); return; }
-
-  const startHH = parseInt(start.split(':')[0]);
-  const endHH   = parseInt(end.split(':')[0]);
-
-  // 次月排班 12 小時限制（20日起開放次月，但每人最多先排12小時；次月1日起解除）
-  if (isDateInNextMonth(date)) {
-    const newHours = endHH - startHH;
-    const already  = getNextMonthDutyHoursForMember(member);
-    if (already + newHours > 12) {
-      alert('⚠️ 次月班表每人最多先排 12 小時（' + member + ' 已排 ' + already + ' 小時，本次 ' + newHours + ' 小時，合計 ' + (already + newHours) + ' 小時）。\n次月1日起限制解除。');
-      return;
-    }
-  }
-
-  // 定訓時段檢查
-  const trainingSlots = [];
-  for (let h = startHH; h < endHH; h++) {
-    if (isDutyTrainingBlock(date, h)) trainingSlots.push(String(h).padStart(2,'0') + ':00');
-  }
-  if (trainingSlots.length > 0) {
-    alert('⚠️ 以下時段為定訓時段，無法排班：\n' + trainingSlots.join('、'));
-    return;
-  }
-
-  const fullSlots = [];
-  for (let h = startHH; h < endHH; h++) {
-    if (getDutySlotCount(date, h) >= getDutySlotCapacity(date, h))
-      fullSlots.push(String(h).padStart(2,'00') + ':00');
-  }
-  if (fullSlots.length > 0) {
-    alert('⚠️ 以下時段已額滿，無法新增：\n' + fullSlots.join('、'));
-    return;
-  }
-
-  try {
-    const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-    await fbAdd(COL_DUTY, {
-      date, memberName: member, start, end,
-      unit: usr.unit || '',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
-    await loadDutyData();
-    onDutyTimeChange();
-    alert('✅ 備勤時段已新增');
-  } catch(e) { alert('新增失敗：' + e.message); }
 }
 
 async function deleteDuty(id) {
