@@ -851,6 +851,14 @@ tr:hover td { background: #fdfcfb; }
 .duty-sub-card.active svg { stroke: white; }
 .duty-sub-card.active { color: var(--red); }
 .duty-sub-card span { display: block; line-height: 1.4; }
+.subnav-fade {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 34px;
+  display: none; align-items: center; justify-content: flex-end;
+  padding-right: 2px; pointer-events: none;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.92) 65%);
+}
+.subnav-fade svg { animation: _subnavFadeBounce 1.2s ease-in-out infinite; }
+@keyframes _subnavFadeBounce { 0%,100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
 .qa-item {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   flex-shrink: 0; cursor: pointer; min-width: 54px;
@@ -1376,7 +1384,8 @@ function _dlCSV(content, filename) {
       </button>
     </div>
   </div>
-  <div style="overflow-x:auto;scrollbar-width:none;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+  <div style="position:relative;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+  <div id="opsSubNavScroll" style="overflow-x:auto;scrollbar-width:none;">
     <div style="display:flex;gap:10px;padding:8px 16px 14px;">
     <button onclick="navTo('dutyOverviewPage')" id="opsSub-overview" class="duty-sub-card">
       <div class="duty-sub-card-icon">
@@ -1410,6 +1419,8 @@ function _dlCSV(content, filename) {
     </button>
     </div>
   </div>
+  <div id="opsSubNavFade" class="subnav-fade"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>
+  </div>
 </div>
 
 <!-- ══════ 管理 自訂固定 HEADER ══════ -->
@@ -1435,7 +1446,8 @@ function _dlCSV(content, filename) {
       </button>
     </div>
   </div>
-  <div style="overflow-x:auto;scrollbar-width:none;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+  <div style="position:relative;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+  <div id="manageSubNavScroll" style="overflow-x:auto;scrollbar-width:none;">
     <div style="display:flex;gap:10px;padding:8px 16px 14px;">
     <button onclick="navTo('membersPage')" id="manageSub-members" class="duty-sub-card active">
       <div class="duty-sub-card-icon">
@@ -1476,6 +1488,8 @@ function _dlCSV(content, filename) {
     </button>
     </div>
   </div>
+  <div id="manageSubNavFade" class="subnav-fade"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>
+  </div>
 </div>
 
 <!-- ══════ 備勤排班 自訂 HEADER（flex 流，不需 position:fixed）══════ -->
@@ -1502,7 +1516,8 @@ function _dlCSV(content, filename) {
     </div>
   </div>
   <!-- ── 視圖切換（子選單，固定在 header 內）── -->
-  <div id="dutySubNav" style="overflow-x:auto;scrollbar-width:none;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+  <div style="position:relative;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
+  <div id="dutySubNav" style="overflow-x:auto;scrollbar-width:none;">
     <div style="display:flex;gap:10px;padding:8px 16px 14px;">
     <button onclick="dutyView('list')" id="dutySub-list" class="duty-sub-card active">
       <div class="duty-sub-card-icon">
@@ -1529,6 +1544,8 @@ function _dlCSV(content, filename) {
       <span>會議登記</span>
     </button>
     </div>
+  </div>
+  <div id="dutySubNavFade" class="subnav-fade"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>
   </div>
   <!-- ── 月份導覽（固定在 header 內，子選單下方）── -->
   <div id="dutyMonthNav" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;padding:8px 16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);">
@@ -6233,6 +6250,20 @@ function _syncTabBar(pageId) {
   }
 }
 
+// 子選單可橫向捲動時，右側顯示淡化遮罩 + 箭頭提示還有更多項目
+function _updateSubnavFade(scrollEl, fadeEl) {
+  if (!scrollEl || !fadeEl) return;
+  const hasMore = scrollEl.scrollWidth - scrollEl.scrollLeft - scrollEl.clientWidth > 4;
+  fadeEl.style.display = hasMore ? 'flex' : 'none';
+}
+function _bindSubnavFade(scrollId, fadeId) {
+  const scrollEl = document.getElementById(scrollId);
+  const fadeEl   = document.getElementById(fadeId);
+  if (!scrollEl || !fadeEl) return;
+  scrollEl.addEventListener('scroll', () => _updateSubnavFade(scrollEl, fadeEl));
+  _updateSubnavFade(scrollEl, fadeEl);
+}
+
 function goBack() {
   // 若目前在 adminPage 且有子區塊展開，先回到後台選單
   if (window._currentPageId === 'adminPage') {
@@ -6293,6 +6324,10 @@ function navTo(pageId, fromHistory) {
   // custom header 在 flex 流中，不需要手動設定 padding-top
   const _scr = document.getElementById('appScroll');
   if (_scr) _scr.style.removeProperty('padding-top');
+  // header 從隱藏切到顯示時寬度才會算出來，重新檢查子選單捲動提示
+  if (isOps)    _updateSubnavFade(document.getElementById('opsSubNavScroll'),    document.getElementById('opsSubNavFade'));
+  if (isManage) _updateSubnavFade(document.getElementById('manageSubNavScroll'), document.getElementById('manageSubNavFade'));
+  if (isDuty)   _updateSubnavFade(document.getElementById('dutySubNav'),         document.getElementById('dutySubNavFade'));
   // 同步各 header 的子選單 active 狀態
   if (isOps) {
     document.querySelectorAll('#opsCustomHeader .duty-sub-card').forEach(b => b.classList.remove('active'));
@@ -11155,6 +11190,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 重整後將捲動位置歸零，防止 iOS Safari 還原舊位置導致內容被 header 遮住
   const _appScroll = document.getElementById('appScroll');
   if (_appScroll) _appScroll.scrollTop = 0;
+  // ── 子選單可橫向捲動提示（淡化遮罩 + 箭頭）──
+  _bindSubnavFade('opsSubNavScroll', 'opsSubNavFade');
+  _bindSubnavFade('manageSubNavScroll', 'manageSubNavFade');
+  _bindSubnavFade('dutySubNav', 'dutySubNavFade');
   // ── Pull to Refresh ──
   initPullToRefresh();
   initFootersWithVersion();
