@@ -7051,10 +7051,89 @@ function _renderDashForecast(periods) {
   section.style.display = 'block';
 }
 
+// ════════════════════════════════════════
+// 節日彩蛋（首頁登入時，命中當天節日就跳一個小慶祝橫幅）
+// ════════════════════════════════════════
+const HOLIDAY_EGGS = {
+  '01-01': { emoji:'🎉', title:'元旦快樂',   msg:'新的一年，謝謝你持續守護大家！',      color:'#e74c3c' },
+  '05-01': { emoji:'💪', title:'勞動節快樂', msg:'感謝你無私的付出，辛苦了！',          color:'#27ae60' },
+  '08-08': { emoji:'👨', title:'父親節快樂', msg:'祝所有身為父親的隊員佳節愉快！',      color:'#2980b9' },
+  '10-10': { emoji:'🇹🇼', title:'國慶日快樂', msg:'祝大家國慶日愉快！',                  color:'#c0392b' },
+  '11-09': { emoji:'🚒', title:'消防節快樂', msg:'119，感謝每一位義消夥伴的付出與守護！', color:'#d35400' },
+  '12-25': { emoji:'🎄', title:'聖誕節快樂', msg:'祝大家聖誕節平安喜樂！',              color:'#16a085' },
+  '12-31': { emoji:'🎆', title:'跨年快樂',   msg:'感謝這一年的辛苦付出，新年快樂！',     color:'#8e44ad' },
+};
+
+// 農曆春節（初一）日期，需逐年更新
+const LUNAR_NEW_YEAR = {
+  2025:'2025-01-29', 2026:'2026-02-17', 2027:'2027-02-06',
+  2028:'2028-01-26', 2029:'2029-02-13', 2030:'2030-02-03',
+};
+
+function _getTodayHolidayEgg() {
+  const now = new Date();
+  const mmdd = String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  if (HOLIDAY_EGGS[mmdd]) return HOLIDAY_EGGS[mmdd];
+
+  const todayStr = now.toLocaleDateString('sv');
+  const cny = LUNAR_NEW_YEAR[now.getFullYear()];
+  if (cny) {
+    if (todayStr === cny) return { emoji:'🧧', title:'新年快樂', msg:'祝大家新的一年平安順利，闔家團圓！', color:'#c0392b' };
+    const eve = new Date(cny + 'T00:00:00');
+    eve.setDate(eve.getDate() - 1);
+    if (todayStr === eve.toLocaleDateString('sv')) return { emoji:'🧨', title:'除夕快樂', msg:'年夜飯記得早點回家吃，辛苦了！', color:'#e67e22' };
+  }
+  return null;
+}
+
+function _maybeShowHolidayEgg() {
+  const egg = _getTodayHolidayEgg();
+  if (!egg) return;
+  const todayStr = new Date().toLocaleDateString('sv');
+  const key = '_holidayEggShown_' + todayStr;
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, '1');
+  _showHolidayBanner(egg);
+}
+
+function _showHolidayBanner(egg) {
+  const wrap = document.createElement('div');
+  wrap.id = 'holidayEggOverlay';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:20000;pointer-events:none;overflow:hidden;';
+  for (let i = 0; i < 36; i++) {
+    const span = document.createElement('span');
+    span.className = 'milestoneConfettiPiece';
+    span.textContent = egg.emoji;
+    span.style.left = (Math.random()*100) + '%';
+    span.style.animationDelay = (Math.random()*1.2) + 's';
+    span.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    span.style.fontSize = (14 + Math.random()*14) + 'px';
+    wrap.appendChild(span);
+  }
+  document.body.appendChild(wrap);
+
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:max(env(safe-area-inset-top,0px),16px);left:50%;transform:translateX(-50%) translateY(-12px);z-index:20001;background:white;border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,0.18);padding:14px 18px;display:flex;align-items:center;gap:10px;max-width:88%;opacity:0;transition:opacity .35s,transform .35s;';
+  banner.innerHTML = `<span style="font-size:1.8rem;line-height:1;flex-shrink:0;">${egg.emoji}</span>
+    <div style="min-width:0;">
+      <div style="font-size:0.92rem;font-weight:700;color:${egg.color};font-family:'Noto Serif TC',serif;">${egg.title}</div>
+      <div style="font-size:0.78rem;color:var(--text-mid);margin-top:2px;">${egg.msg}</div>
+    </div>`;
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => { banner.style.opacity = '1'; banner.style.transform = 'translateX(-50%) translateY(0)'; });
+  setTimeout(() => {
+    banner.style.opacity = '0';
+    banner.style.transform = 'translateX(-50%) translateY(-12px)';
+    setTimeout(() => { banner.remove(); wrap.remove(); }, 400);
+  }, 4500);
+}
+
 async function loadDashboard() {
   const today = new Date();
   const todayStr = today.toLocaleDateString('sv');
   const monthStr = todayStr.substring(0, 7);
+
+  _maybeShowHolidayEgg();
 
   startDashClock();
   loadDashWeather();
