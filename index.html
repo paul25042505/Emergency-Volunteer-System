@@ -1842,7 +1842,9 @@ function _dlCSV(content, filename) {
         </div>
         <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
           <div>
-            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;">案由 <span style="color:var(--red);">*</span>（單選）<span style="font-size:0.7rem;font-weight:400;color:var(--text-light);margin-left:4px;">依值班台電腦救護派遣系統案由填寫</span></div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;">案由 <span style="color:var(--red);">*</span>（單選）<span style="font-size:0.7rem;font-weight:400;color:var(--text-light);">依值班台電腦救護派遣系統案由填寫</span>
+              <button type="button" onclick="showCaseTypeGuide()" style="display:inline-flex;align-items:center;gap:3px;background:#FFF0E6;color:#d35400;border:1px solid #ffd9b3;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:700;cursor:pointer;margin-left:auto;">📋 對照表</button>
+            </div>
             <div class="checkbox-grid" id="caseTypeGrid" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
               <div style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1;">載入中...</div>
             </div>
@@ -17135,6 +17137,47 @@ async function loadCaseTypes() {
     _caseTypeDocs = [];
     _caseTypesList = [...DEFAULT_CASE_TYPES];
   }
+}
+
+// 值班台派遣系統「案件類別」對照本系統「案由」，提醒填寫人員依派遣單填寫正確案由
+const CASE_TYPE_GUIDE = [
+  { dispatch: '緊急救護_路倒',  local: '路倒',   color: '#2980b9' },
+  { dispatch: '緊急救護_急病',  local: '急病',   color: '#c0392b' },
+  { dispatch: '緊急救護_創傷',  local: '創傷',   color: '#e67e22' },
+  { dispatch: '緊急救護_車禍',  local: '車禍',   color: '#8e44ad' },
+  { dispatch: '緊急救護_空跑',  local: '空跑',   color: '#7f8c8d' },
+  { dispatch: '精神異常／躁動', local: '精神異常', color: '#16a085' },
+  { dispatch: '火警／火災',    local: '火災',   color: '#d35400' },
+  { dispatch: '其他（不屬以上）', local: '其他', color: '#34495e' },
+];
+
+function showCaseTypeGuide() {
+  const overlay = document.createElement('div');
+  overlay.id = 'caseTypeGuideOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📋 案由對照表</div>
+        <button onclick="document.getElementById('caseTypeGuideOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);line-height:1;">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:14px 20px 28px;">
+        <div style="background:#FFF5F5;border:1px solid #ffd9d9;border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:0.78rem;color:#a83232;line-height:1.6;">
+          ⚠️ 請依「值班台派遣單」上顯示的案件類別，對照下表選擇本系統的案由，勿憑印象填寫。
+        </div>
+        ${CASE_TYPE_GUIDE.map(g => `
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:#f9f9f7;border-radius:12px;margin-bottom:8px;">
+            <div style="flex:1;min-width:0;font-size:0.82rem;color:var(--text-mid);">${g.dispatch}</div>
+            <div style="font-size:0.95rem;color:var(--text-light);flex-shrink:0;">→</div>
+            <div style="flex-shrink:0;font-size:0.8rem;font-weight:700;color:white;background:${g.color};border-radius:20px;padding:4px 12px;">${g.local}</div>
+          </div>`).join('')}
+        <div style="font-size:0.72rem;color:var(--text-light);margin-top:8px;line-height:1.7;">
+          💡 派遣單顯示「緊急救護_◯◯」時，本系統只需選底線後的關鍵字即可，例如「緊急救護_急病」→選「急病」。
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function renderCaseTypeGrid() {
