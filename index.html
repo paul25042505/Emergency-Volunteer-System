@@ -2728,17 +2728,14 @@ function _dlCSV(content, filename) {
       </div>
       <div class="stats-hero-slide">
         <div style="background:linear-gradient(145deg,#0d2137 0%,#133557 55%,#1a4a78 100%);border-radius:22px;padding:18px;box-shadow:0 8px 32px rgba(13,33,55,0.35);min-height:100%;box-sizing:border-box;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div>
-              <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;letter-spacing:0.06em;">個人時數達標圖</div>
+              <div style="font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:white;letter-spacing:0.06em;">隊員協勤時數明細</div>
               <div style="font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;" id="statsHoursChartSub">每人每月至少 12 小時</div>
             </div>
-            <div style="display:flex;align-items:center;gap:5px;font-size:0.62rem;color:rgba(255,255,255,0.6);">
-              <span style="width:8px;height:8px;border-radius:2px;background:#2ecc71;display:inline-block;"></span>達標
-              <span style="width:8px;height:8px;border-radius:2px;background:#e74c3c;display:inline-block;margin-left:6px;"></span>未達標
-            </div>
+            <div style="font-size:0.62rem;color:rgba(255,255,255,0.55);flex-shrink:0;"><span style="color:#ff6b6b;font-weight:700;">紅字</span> = 未達標</div>
           </div>
-          <div id="statsHoursChart" style="overflow-x:auto;margin-top:8px;"></div>
+          <div id="statsHoursDetailList" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
     </div>
@@ -10768,12 +10765,30 @@ async function loadStats() {
     }
 
     const chartSubEl = document.getElementById('statsHoursChartSub');
-    if (chartSubEl) {
-      chartSubEl.textContent = month
-        ? `${year} 年 ${month} 月 — 每人每月至少 12 小時${filterUnit?' · '+filterUnit:''}`
-        : `${year} 年全年 — 選擇單一月份可查看達標狀態${filterUnit?' · '+filterUnit:''}`;
-    }
-    _renderStatsHoursChart(rows, month, MIN_MONTHLY_HOURS);
+    if (chartSubEl) chartSubEl.textContent = `${year} 年度逐月明細${filterUnit?' · '+filterUnit:''}`;
+
+    // 逐月時數明細（不受月份篩選影響，永遠顯示整年度逐月時數）
+    const yearPrefix = `${westernYear}-`;
+    const yearAtt = attDocs.filter(r => (r.date||'').startsWith(yearPrefix) && (!filterUnit || (memberUnitMap[r.memberName]||r.unit||'') === filterUnit));
+    const monthlyMap = {};
+    yearAtt.forEach(r => {
+      const nm = r.memberName||''; if (!nm) return;
+      const mIdx = parseInt((r.date||'').slice(5,7), 10);
+      if (!mIdx) return;
+      if (!monthlyMap[nm]) monthlyMap[nm] = { name: nm, title: '', months: Array(12).fill(0) };
+      monthlyMap[nm].months[mIdx-1] += parseFloat(r.hours)||0;
+    });
+    members.filter(m => m.title !== '分隊承辦人').forEach(m => {
+      if (filterUnit && (m.unit||'') !== filterUnit) return;
+      if (!monthlyMap[m.name]) monthlyMap[m.name] = { name: m.name, title: m.title||'', months: Array(12).fill(0) };
+      else monthlyMap[m.name].title = m.title || '';
+    });
+    const detailRows = Object.values(monthlyMap)
+      .map(r => ({ ...r, total: r.months.reduce((s,h)=>s+h,0) }))
+      .sort((a,b) => b.total - a.total);
+    const todayNow = new Date();
+    const monthsToShow = (westernYear === todayNow.getFullYear()) ? todayNow.getMonth()+1 : 12;
+    _renderStatsMonthlyDetail(detailRows, monthsToShow, MIN_MONTHLY_HOURS);
 
     const maxHours = rows.length ? rows[0].hours : 1;
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
@@ -10818,37 +10833,31 @@ async function loadStats() {
   }
 }
 
-function _renderStatsHoursChart(rows, month, threshold) {
-  const wrap = document.getElementById('statsHoursChart');
+function _renderStatsMonthlyDetail(rows, monthsToShow, threshold) {
+  const wrap = document.getElementById('statsHoursDetailList');
   if (!wrap) return;
   if (!rows.length) { wrap.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.75rem;text-align:center;padding:30px 0;">無資料</div>'; return; }
 
-  const sorted = [...rows].sort((a,b) => b.hours - a.hours);
-  const barW = 22, gap = 14, slot = barW + gap;
-  const padT = 22, chartH = 130, padB = 30;
-  const maxVal = Math.max(...sorted.map(r => r.hours), month ? threshold : 1, 1);
-  const W = Math.max(sorted.length * slot + 16, 260);
-  const H = padT + chartH + padB;
-
-  let bars = '';
-  sorted.forEach((r, i) => {
-    const x = 12 + i * slot;
-    const h = Math.max(2, (r.hours / maxVal) * chartH);
-    const y = padT + chartH - h;
-    const color = month ? (r.hours >= threshold ? '#2ecc71' : '#e74c3c') : '#3498db';
-    const label = r.name.length > 3 ? r.name.slice(0,3) : r.name;
-    bars += `<text x="${x+barW/2}" y="${y-5}" text-anchor="middle" font-size="9" fill="white" opacity="0.85">${r.hours%1===0?r.hours:r.hours.toFixed(1)}</text>
-      <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}"/>
-      <text x="${x+barW/2}" y="${padT+chartH+13}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.8)">${label}</text>`;
-  });
-
-  const thresholdLine = month
-    ? (() => { const ty = padT + chartH - (threshold / maxVal) * chartH;
-        return `<line x1="0" y1="${ty}" x2="${W}" y2="${ty}" stroke="rgba(255,255,255,0.45)" stroke-width="1" stroke-dasharray="4,3"/>
-          <text x="4" y="${ty-4}" font-size="8" fill="rgba(255,255,255,0.6)">${threshold}hr 標準</text>`; })()
-    : '';
-
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${thresholdLine}${bars}</svg>`;
+  wrap.innerHTML = rows.map(r => `
+    <div style="background:white;border-radius:14px;padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700;font-size:0.88rem;color:var(--text);">${r.name}</div>
+          ${r.title ? `<div style="font-size:0.66rem;color:var(--text-light);margin-top:1px;">${r.title}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:0.58rem;color:var(--text-light);">年度總計</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#2980b9;line-height:1.1;">${r.total%1===0?r.total:r.total.toFixed(1)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(24px,1fr));gap:5px 2px;text-align:center;">
+        ${r.months.slice(0, monthsToShow).map((h,i) => `
+          <div>
+            <div style="font-size:0.55rem;color:var(--text-light);margin-bottom:2px;">${i+1}月</div>
+            <div style="font-size:0.78rem;font-weight:700;color:${h < threshold ? '#e74c3c' : 'var(--text)'};">${h%1===0?h:h.toFixed(1)}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
 }
 
 function _statsSwipeDotSync() {
