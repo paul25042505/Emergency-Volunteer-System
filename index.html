@@ -823,10 +823,10 @@ tr:hover td { background: #fdfcfb; }
 }
 .quick-scroll::-webkit-scrollbar { display: none; }
 
-/* ══ 協勤統計 Hero 卡片左右滑動 ══ */
-.stats-hero-swipe { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; }
+/* ══ 協勤統計 Hero 卡片左右滑動（偷看式輪播：下一張卡片邊緣會露出） ══ */
+.stats-hero-swipe { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; padding-right:28px; }
 .stats-hero-swipe::-webkit-scrollbar { display:none; }
-.stats-hero-slide { flex:0 0 100%; scroll-snap-align:start; min-width:0; }
+.stats-hero-slide { flex:0 0 calc(100% - 28px); scroll-snap-align:start; min-width:0; }
 .stats-swipe-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:all 0.2s; }
 .stats-swipe-dot.active { width:16px; border-radius:3px; background:var(--red); }
 .dash-quick-sticky {
@@ -10853,10 +10853,12 @@ function _renderStatsHoursChart(rows, month, threshold) {
 
 function _statsSwipeDotSync() {
   const el = document.getElementById('statsHeroSwipe');
-  if (!el || !el.clientWidth) return;
-  const idx = Math.round(el.scrollLeft / el.clientWidth);
-  document.getElementById('statsSwipeDot0')?.classList.toggle('active', idx === 0);
-  document.getElementById('statsSwipeDot1')?.classList.toggle('active', idx === 1);
+  const slide = el?.querySelector('.stats-hero-slide');
+  if (!el || !slide) return;
+  const step = slide.offsetWidth + 12; // 12px = gap
+  const idx = step > 0 ? Math.round(el.scrollLeft / step) : 0;
+  document.getElementById('statsSwipeDot0')?.classList.toggle('active', idx <= 0);
+  document.getElementById('statsSwipeDot1')?.classList.toggle('active', idx >= 1);
 }
 
 
