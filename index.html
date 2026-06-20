@@ -12119,7 +12119,12 @@ async function loadAdminPushCtrl() {
       fbList(COL_WHITELIST),
     ]);
     const subMap = {};
-    subs.forEach(s => { subMap[s.memberName] = s; });
+    const devicesByName = {};
+    subs.forEach(s => {
+      subMap[s.memberName] = s;
+      if (!devicesByName[s.memberName]) devicesByName[s.memberName] = [];
+      devicesByName[s.memberName].push(s);
+    });
 
     // 取所有成員（whitelist），依 unit + name 排序
     let allMembers = wl.map(m => ({ name: m.memberName || m.name, unit: m.unit || '' }))
@@ -12155,28 +12160,56 @@ async function loadAdminPushCtrl() {
       if (a.unit !== b.unit) return a.unit.localeCompare(b.unit);
       const as = subMap[a.name] ? 0 : 1, bs = subMap[b.name] ? 0 : 1;
       return as - bs || a.name.localeCompare(b.name);
-    }).map(m => {
-      const s = subMap[m.name];
-      const on = !!s;
-      let timeStr = '';
-      if (s && s.grantedAt) {
-        const d = s.grantedAt.toDate ? s.grantedAt.toDate() : new Date(s.grantedAt.seconds*1000);
-        const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
-        timeStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : `${diff} 天前`;
+    }).map((m, idx) => {
+      const devices = devicesByName[m.name] || [];
+      const on = devices.length > 0;
+      if (!on) {
+        return `<div style="background:white;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+          <div style="width:8px;height:8px;border-radius:4px;background:#E5E7EB;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${m.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:1px;">${m.unit}</div>
+          </div>
+          <div style="font-size:0.72rem;color:#9CA3AF;flex-shrink:0;">未訂閱</div>
+        </div>`;
       }
-      const platformIcon = s ? (s.platform === 'iOS' ? '🍎' : s.platform === 'Android' ? '🤖' : '💻') : '';
-      return `<div style="background:white;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
-        <div style="width:8px;height:8px;border-radius:4px;background:${on?'#22C55E':'#E5E7EB'};flex-shrink:0;"></div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${m.name}</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:1px;">${m.unit}</div>
+      const rowId = 'pushRow' + idx;
+      const summaryRight = devices.length === 1
+        ? `<div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:0.72rem;color:#22C55E;font-weight:600;">已訂閱</div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">${_pushDeviceLabel(devices[0])}</div>
+          </div>`
+        : `<div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:0.72rem;color:#EA580C;font-weight:700;">⚠️ ${devices.length} 個裝置</div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">點擊展開</div>
+          </div>`;
+      return `<div style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);overflow:hidden;">
+        <div style="padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="_pushCtrlToggleRow('${rowId}')">
+          <div style="width:8px;height:8px;border-radius:4px;background:#22C55E;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${m.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:1px;">${m.unit}</div>
+          </div>
+          ${summaryRight}
         </div>
-        ${on ? `<div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:0.72rem;color:#22C55E;font-weight:600;">已訂閱</div>
-          <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">${platformIcon} ${s.browser||''} · ${timeStr}</div>
-        </div>` : `<div style="font-size:0.72rem;color:#9CA3AF;flex-shrink:0;">未訂閱</div>`}
+        <div id="${rowId}" style="display:none;border-top:1px solid #F3F4F6;">
+          ${devices.map(s => _pushDeviceRowHtml(s)).join('')}
+        </div>
       </div>`;
     }).join('');
+
+    // 未對應到白名單的訂閱記錄（改名/打字差異造成的孤兒裝置，常是重複推播的來源）
+    const wlNameSet = new Set(wl.map(m => m.memberName || m.name).filter(Boolean));
+    const orphanSubs = subs.filter(s => s.memberName && !wlNameSet.has(s.memberName));
+    const orphanHtml = orphanSubs.length ? `
+      <div style="font-size:0.78rem;color:#EA580C;font-weight:700;margin:18px 2px 8px;">⚠️ 未對應到白名單的訂閱記錄（${orphanSubs.length}）— 可能是改名或打字差異造成的重複裝置</div>
+      ${orphanSubs.map(s => `<div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.86rem;font-weight:700;color:var(--text);">${s.memberName}</div>
+          <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">${_pushDeviceLabel(s)}</div>
+        </div>
+        <button onclick="_pushCtrlDeleteDevice(${_jsStr(s.id)},${_jsStr(s.memberName)})" style="background:white;color:#DC2626;border:1px solid #FCA5A5;border-radius:8px;padding:6px 12px;font-size:0.74rem;font-weight:700;cursor:pointer;flex-shrink:0;">刪除</button>
+      </div>`).join('')}` : '';
 
     el.innerHTML = `
       <!-- 統計卡 -->
@@ -12221,8 +12254,45 @@ async function loadAdminPushCtrl() {
       <!-- 名單 -->
       <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;padding:0 2px;">共 ${filtered.length} 人</div>
       ${rows || '<div style="color:var(--text-light);padding:16px;text-align:center;">無資料</div>'}
+      ${orphanHtml}
     `;
   } catch(e) { el.innerHTML = '載入失敗：' + e.message; }
+}
+
+function _pushDeviceLabel(s) {
+  let timeStr = '';
+  if (s.grantedAt) {
+    const d = s.grantedAt.toDate ? s.grantedAt.toDate() : new Date(s.grantedAt.seconds*1000);
+    const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
+    timeStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : `${diff} 天前`;
+  }
+  const icon = s.platform === 'iOS' ? '🍎' : s.platform === 'Android' ? '🤖' : '💻';
+  return `${icon} ${s.browser||''} · ${timeStr}`;
+}
+
+function _jsStr(str) {
+  return "'" + String(str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'") + "'";
+}
+
+function _pushDeviceRowHtml(s) {
+  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #F9FAFB;">
+    <div style="flex:1;min-width:0;font-size:0.74rem;color:var(--text-mid);">${_pushDeviceLabel(s)}</div>
+    <button onclick="event.stopPropagation();_pushCtrlDeleteDevice(${_jsStr(s.id)},${_jsStr(s.memberName)})" style="background:#FEF2F2;color:#DC2626;border:none;border-radius:8px;padding:5px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;flex-shrink:0;">刪除</button>
+  </div>`;
+}
+
+function _pushCtrlToggleRow(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function _pushCtrlDeleteDevice(docId, name) {
+  if (!confirm(`確定要刪除「${name}」的這筆推播訂閱（裝置）嗎？\n刪除後該裝置將不再收到推播通知，需重新開啟通知權限才會再次訂閱。`)) return;
+  try {
+    await firebase.firestore().collection(COL_PUSH_SUBS).doc(docId).delete();
+    await loadAdminPushCtrl();
+  } catch(e) { alert('刪除失敗：' + e.message); }
 }
 
 // ════════════════════════════════════════
