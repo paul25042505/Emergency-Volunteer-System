@@ -3612,6 +3612,13 @@ function _dlCSV(content, filename) {
         <div id="repairHasSigLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
       </div>
 
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">初始化累積服務時數（里程碑功能）</div>
+        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">掃描全部出勤紀錄，依姓名加總歷史服務時數，寫入里程碑慶祝功能使用的累積總時數。<br><span style="color:var(--red);font-weight:600;">只需執行一次：在「服務時數里程碑」功能上線時執行，讓既有時數能銜接里程碑計算（否則會從 0 開始累積）。重複執行會覆蓋成最新加總，不會重複累加。</span></div>
+        <button onclick="repairServiceStats(this)" style="background:#6a1b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🏅 執行初始化</button>
+        <div id="repairServiceStatsLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
+      </div>
+
     </div><!-- /adminSec-repair -->
 
     <div id="adminSec-usagetest" style="display:none;padding:0 0 20px;">
@@ -4981,6 +4988,8 @@ var COL_LOGINLOG = 'loginLogs';
 var COL_MEETING  = 'meetingRecords';
 var COL_CORRECTION = 'correctionRequests';
 var COL_PUSH_SUBS = 'pushSubscriptions';
+var COL_SERVICE_STATS = 'serviceStats';
+var SERVICE_MILESTONES = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
 // Firebase Cloud Messaging VAPID key
 // 取得方式：Firebase Console → 專案設定 → Cloud Messaging → Web Push 憑證 → 產生金鑰組
 var FCM_VAPID_KEY = 'BLccMuZDy7yJD_Td7uwY5qlagkZg13i2q5B0XDdEpnC_FMj9oFvHDzElXeWbK4Ww8HBcmrMxUSiL9_gZafSyF28';
@@ -9077,6 +9086,51 @@ function calcHours(inTime, outTime) {
   return Math.floor(mins / 30) * 0.5;
 }
 
+// 累積服務時數里程碑：簽退時用 transaction 累加總時數，跨過整數里程碑就慶祝一下
+async function _checkServiceMilestone(memberName, hoursAdded) {
+  if (!memberName || !hoursAdded || hoursAdded <= 0) return null;
+  try {
+    const ref = _fbDB.collection(COL_SERVICE_STATS).doc(memberName);
+    let crossed = null, newTotal = 0;
+    await _fbDB.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const prevTotal = snap.exists ? (snap.data().totalHours || 0) : 0;
+      newTotal = prevTotal + hoursAdded;
+      for (const m of SERVICE_MILESTONES) {
+        if (prevTotal < m && newTotal >= m) crossed = m;
+      }
+      tx.set(ref, { memberName, totalHours: newTotal }, { merge: true });
+    });
+    return crossed ? { milestone: crossed, totalHours: newTotal } : null;
+  } catch (e) { return null; }
+}
+
+function _showMilestoneCelebration(milestone, totalHours) {
+  const modal = document.getElementById('milestoneModal');
+  if (!modal) return;
+  document.getElementById('milestoneNum').textContent = milestone;
+  document.getElementById('milestoneTotal').textContent = totalHours.toFixed(1);
+  const wrap = document.getElementById('milestoneConfetti');
+  wrap.innerHTML = '';
+  const emojis = ['🎉', '🎊', '⭐', '🏅', '✨'];
+  for (let i = 0; i < 40; i++) {
+    const span = document.createElement('span');
+    span.className = 'milestoneConfettiPiece';
+    span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    span.style.left = (Math.random() * 100) + '%';
+    span.style.animationDelay = (Math.random() * 1.2) + 's';
+    span.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+    span.style.fontSize = (14 + Math.random() * 14) + 'px';
+    wrap.appendChild(span);
+  }
+  modal.style.display = 'block';
+  modal.scrollTop = 0;
+}
+
+function closeMilestoneModal() {
+  document.getElementById('milestoneModal').style.display = 'none';
+}
+
 function autoCalcHours() {
   const inTime  = (document.getElementById('attCheckinTimeRef').textContent || '').replace(/\s+/g, '').trim();
   const outTime = document.getElementById('attCheckoutTime').value;
@@ -9287,6 +9341,8 @@ async function doCheckout() {
     `${memberName} ${session.checkinTime}～${checkoutTime}，協勤 ${hours} 小時，已儲存。`;
   document.getElementById('attSuccessMsg').classList.add('show');
   btn.textContent = '確認簽退送出'; btn.disabled = false;
+
+  _checkServiceMilestone(memberName, hours).then(r => { if (r) _showMilestoneCelebration(r.milestone, r.totalHours); });
 }
 
 
@@ -14654,6 +14710,38 @@ async function repairHasSig(btn) {
   }
 }
 
+async function repairServiceStats(btn) {
+  btn.disabled = true; btn.textContent = '🔄 計算中...';
+  const log = document.getElementById('repairServiceStatsLog');
+  if (log) log.textContent = '';
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_ATTEND).get();
+    const totals = {};
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (!d.memberName) return;
+      totals[d.memberName] = (totals[d.memberName] || 0) + (d.hours || 0);
+    });
+    const names = Object.keys(totals);
+    let batch = _fbDB.batch(), n = 0;
+    for (const name of names) {
+      batch.set(_fbDB.collection(COL_SERVICE_STATS).doc(name), { memberName: name, totalHours: totals[name] }, { merge: true });
+      n++;
+      if (n % 400 === 0) { await batch.commit(); batch = _fbDB.batch(); }
+    }
+    await batch.commit();
+    const msg = `✅ 完成：已初始化 ${names.length} 人的累積服務時數`;
+    if (log) log.textContent = msg;
+    btn.textContent = '🏅 執行初始化';
+  } catch(e) {
+    const msg = '❌ 失敗：' + e.message;
+    if (log) log.textContent = msg;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function callEmsQuery() {
   const idno     = (document.getElementById('emsIdno')?.value || '').trim().toUpperCase();
   const birthday = document.getElementById('emsBirthday')?.value || '';
@@ -16512,8 +16600,13 @@ async function easyDoCheckout() {
 
     attSessions[_easyCheckoutTarget].done        = true;
     attSessions[_easyCheckoutTarget].checkoutTime = checkoutTime;
-    alert('🏠 ' + memberName + ' 簽退成功！\n出勤 ' + hours + ' 小時');
+    const _milestone = await _checkServiceMilestone(memberName, hours);
     easyBack();
+    if (_milestone) {
+      _showMilestoneCelebration(_milestone.milestone, _milestone.totalHours);
+    } else {
+      alert('🏠 ' + memberName + ' 簽退成功！\n出勤 ' + hours + ' 小時');
+    }
   } catch(e) {
     alert('簽退失敗，請確認網路連線後再試。');
   } finally {
@@ -20941,6 +21034,40 @@ function showTempPassErr(msg) {
     <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
       <button onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
       <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 服務時數里程碑 慶祝 Modal -->
+<style>
+@keyframes milestoneFall {
+  0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0.85; }
+}
+.milestoneConfettiPiece {
+  position: absolute;
+  top: 0;
+  animation-name: milestoneFall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+@keyframes milestonePop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+</style>
+<div id="milestoneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9500;overflow:hidden;" onclick="if(event.target===this) closeMilestoneModal()">
+  <div id="milestoneConfetti" style="position:absolute;inset:0;overflow:hidden;"></div>
+  <div style="position:relative;height:100%;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="background:white;border-radius:16px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);text-align:center;padding:32px 24px;animation:milestonePop 0.5s ease-out;">
+      <div style="font-size:3rem;line-height:1;margin-bottom:8px;">🏅</div>
+      <div style="font-family:'Noto Serif TC',serif;font-size:1.2rem;font-weight:700;color:var(--red);margin-bottom:6px;">恭喜達成里程碑！</div>
+      <div style="font-size:1rem;color:var(--text-mid);margin-bottom:4px;">累積服務時數突破</div>
+      <div style="font-size:2.2rem;font-weight:800;color:var(--red);margin-bottom:4px;"><span id="milestoneNum">100</span> 小時</div>
+      <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:20px;">目前累積：<span id="milestoneTotal">0</span> 小時</div>
+      <button onclick="closeMilestoneModal()" class="btn-search" style="width:100%;min-height:unset;padding:12px;">太棒了！</button>
     </div>
   </div>
 </div>
