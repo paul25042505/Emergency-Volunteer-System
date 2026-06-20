@@ -1,16 +1,6 @@
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey: "AIzaSyB2dIDRYOAkoRkoJGD0XkuxamQ_vLS58fI",
-  authDomain: "rescue-volunteer-a33f1.firebaseapp.com",
-  projectId: "rescue-volunteer-a33f1",
-  storageBucket: "rescue-volunteer-a33f1.firebasestorage.app",
-  messagingSenderId: "1054665034207",
-  appId: "1:1054665034207:web:bbc1bb9d542e3b4bb49c6a"
-});
-
-const messaging = firebase.messaging();
+// 注意：故意不呼叫 firebase.messaging()。它會自動幫帶 notification 欄位的推播
+// 顯示一次系統通知，跟下面手動的 push 監聽器疊加，導致每筆推播顯示兩次。
+// getToken() 只需要這個 SW 有註冊、能處理 push 事件即可，不需要在 SW 裡初始化 messaging。
 
 // 新版 SW 立即接管，不等舊頁面關閉
 self.addEventListener('install',  () => self.skipWaiting());
