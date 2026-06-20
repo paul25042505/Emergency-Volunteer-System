@@ -3706,20 +3706,6 @@ function _dlCSV(content, filename) {
         <div id="repairHasSigLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
       </div>
 
-      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">初始化累積服務時數（里程碑功能）</div>
-        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">掃描全部出勤紀錄，依姓名加總歷史服務時數，寫入里程碑慶祝功能使用的累積總時數。<br><span style="color:var(--red);font-weight:600;">只需執行一次：在「服務時數里程碑」功能上線時執行，讓既有時數能銜接里程碑計算（否則會從 0 開始累積）。重複執行會覆蓋成最新加總，不會重複累加。</span></div>
-        <button onclick="repairServiceStats(this)" style="background:#6a1b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🏅 執行初始化</button>
-        <div id="repairServiceStatsLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
-      </div>
-
-      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">初始化案件編號</div>
-        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">為所有尚未有編號的協勤案件，依日期時間順序補上案件編號（#1、#2…），方便日後查詢與編輯。<br><span style="color:var(--red);font-weight:600;">只需執行一次：新增的案件會自動取得編號，重複執行不會影響已有編號的案件。</span></div>
-        <button onclick="repairCaseIds(this)" style="background:#0d6efd;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔢 執行初始化</button>
-        <div id="repairCaseIdsLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
-      </div>
-
     </div><!-- /adminSec-repair -->
 
     <div id="adminSec-usagetest" style="display:none;padding:0 0 20px;">
@@ -11914,79 +11900,6 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
 }
 
 
-async function loadAdminMembers() {
-  const el=document.getElementById('adminMemList'); if(!el)return;
-  el.innerHTML='<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
-  try {
-    const docs=await fbList(COL_MEMBERS);
-    if(!docs.length){el.innerHTML='<div style="color:var(--text-light);">尚無成員</div>';return;}
-    const TITLE_ORDER = ['分隊長','副分隊長','幹事','助理幹事','第一小隊小隊長','第一小隊隊員','第二小隊小隊長','第二小隊隊員','第三小隊小隊長','第三小隊隊員','小隊長','隊員','分隊承辦人'];
-    docs.sort((a,b) => {
-      if ((a.unit||'') !== (b.unit||'')) return (a.unit||'') > (b.unit||'') ? 1 : -1;
-      const ai = TITLE_ORDER.indexOf(_memberTitle(a)), bi = TITLE_ORDER.indexOf(_memberTitle(b));
-      if (ai !== bi) return (ai<0?99:ai) - (bi<0?99:bi);
-      return (a.name||'') > (b.name||'') ? 1 : -1;
-    });
-    el.innerHTML=docs.map(d=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);">
-        <div style="flex:1;">
-          <span style="font-weight:500;">${d.name}</span>
-          <span style="color:var(--text-light);font-size:0.82rem;margin-left:4px;">${d.title||''}</span>
-          ${d.unit?`<span style="font-size:0.72rem;color:white;background:var(--red);border-radius:10px;padding:1px 7px;margin-left:4px;">${d.unit}</span>`:''}
-          ${d.cert?`<span style="font-size:0.72rem;color:#1a6b9a;background:#e8f4fd;border:1px solid #c6def5;border-radius:10px;padding:1px 7px;margin-left:4px;">${d.cert}</span>`:''}
-        </div>
-        <button onclick="adminEditMem('${d.id}','${(d.name||'').replace(/'/g,String.fromCharCode(39))}','${(d.title||'').replace(/'/g,String.fromCharCode(39))}','${(d.unit||'').replace(/'/g,String.fromCharCode(39))}','${d.cert||''}','${d.certExp||''}')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:0.75rem;cursor:pointer;">編輯</button>
-        <button onclick="adminDel('${COL_MEMBERS}','${d.id}','成員 ${d.name}',loadAdminMembers)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;">刪除</button>
-      </div>`).join('');
-  } catch(e){el.innerHTML='載入失敗：'+e.message;}
-}
-
-async function adminAddMember() {
-  const name=(document.getElementById('adminMemName').value||'').trim();
-  const title=document.getElementById('adminMemTitle').value||'';
-  const unit=document.getElementById('adminMemUnit').value||'';
-  if(!name){alert('請填入姓名');return;}
-  try {
-    await fbAdd(COL_MEMBERS,{name,title,unit});
-    document.getElementById('adminMemName').value='';
-    document.getElementById('adminMemTitle').value='';
-    document.getElementById('adminMemUnit').value='';
-    await loadAdminMembers(); await loadMembers(true);
-  } catch(e){alert('新增失敗：'+e.message);}
-}
-
-function adminEditMem(id,name,title,unit,cert,certExp) {
-  document.getElementById('adminEditTitle').textContent='編輯成員';
-  document.getElementById('adminEditFields').innerHTML=`
-    <div class="field"><label>姓名</label><input type="text" id="aeMName" value="${name}" style="width:100%;"></div>
-    <div class="field"><label>職稱</label><select id="aeMTitle" style="width:100%;">
-      <option value="">請選擇</option>
-      ${['分隊長','副分隊長','幹事','助理幹事','小隊長','隊員','分隊承辦人'].map(t=>`<option value="\${t}" \${t===title?'selected':''}>\${t}</option>`).join('')}
-    </select></div>
-    <div class="field"><label>分隊別</label><select id="aeMUnit" style="width:100%;"><option value="">請選擇</option>${getUnitsSelectOptions(unit)}</select></div>
-    <div class="field"><label>證照等級</label><select id="aeMCert" style="width:100%;">
-      <option value="" \${!cert?'selected':''}>無</option>
-      <option value="EMT-1" \${cert==='EMT-1'?'selected':''}>EMT-1</option>
-      <option value="EMT-2" \${cert==='EMT-2'?'selected':''}>EMT-2</option>
-      <option value="EMT-P" \${cert==='EMT-P'?'selected':''}>EMT-P（中級）</option>
-    </select></div>
-    <div class="field"><label>證照效期</label><input type="date" id="aeMCertExp" value="\${certExp||''}" style="width:100%;"></div>`;
-  adminEditSave=async()=>{
-    try {
-      await fbSet(COL_MEMBERS,id,{
-        name:document.getElementById('aeMName').value.trim(),
-        title:document.getElementById('aeMTitle').value.trim(),
-        unit:document.getElementById('aeMUnit').value.trim(),
-        cert:document.getElementById('aeMCert').value||'',
-        certExp:document.getElementById('aeMCertExp').value||'',
-      });
-      document.getElementById('adminEditModal').style.display='none';
-      await loadAdminMembers(); await loadMembers(true);
-    } catch(e){alert('儲存失敗：'+e.message);}
-  };
-  const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
-}
-
 async function loadAdminAttendance() {
   const el=document.getElementById('adminAttList');
   if (!el) return;
@@ -15173,79 +15086,6 @@ async function repairHasSig(btn) {
     const msg = `✅ 完成：掃描 ${checked} 筆，修復 ${fixed} 筆`;
     if (log) log.textContent = msg;
     btn.textContent = '🔑 執行修復';
-  } catch(e) {
-    const msg = '❌ 失敗：' + e.message;
-    if (log) log.textContent = msg;
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-async function repairServiceStats(btn) {
-  btn.disabled = true; btn.textContent = '🔄 計算中...';
-  const log = document.getElementById('repairServiceStatsLog');
-  if (log) log.textContent = '';
-  try {
-    await ensureFirebase();
-    const snap = await _fbDB.collection(COL_ATTEND).get();
-    const totals = {};
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (!d.memberName) return;
-      totals[d.memberName] = (totals[d.memberName] || 0) + (d.hours || 0);
-    });
-    const names = Object.keys(totals);
-    let batch = _fbDB.batch(), n = 0;
-    for (const name of names) {
-      batch.set(_fbDB.collection(COL_SERVICE_STATS).doc(name), { memberName: name, totalHours: totals[name] }, { merge: true });
-      n++;
-      if (n % 400 === 0) { await batch.commit(); batch = _fbDB.batch(); }
-    }
-    await batch.commit();
-    const msg = `✅ 完成：已初始化 ${names.length} 人的累積服務時數`;
-    if (log) log.textContent = msg;
-    btn.textContent = '🏅 執行初始化';
-  } catch(e) {
-    const msg = '❌ 失敗：' + e.message;
-    if (log) log.textContent = msg;
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-async function repairCaseIds(btn) {
-  btn.disabled = true; btn.textContent = '🔄 計算中...';
-  const log = document.getElementById('repairCaseIdsLog');
-  if (log) log.textContent = '';
-  try {
-    await ensureFirebase();
-    const snap = await _fbDB.collection(COL_OUTING).get();
-    let maxId = 0;
-    const missing = [];
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (d.caseId) { if (d.caseId > maxId) maxId = d.caseId; }
-      else missing.push({ id: doc.id, date: d.date||'', timeOut: d.timeOut||'' });
-    });
-    if (!missing.length) {
-      if (log) log.textContent = '✅ 所有案件均已有編號，無需處理';
-      btn.textContent = '🔢 執行初始化';
-      return;
-    }
-    missing.sort((a,b) => (a.date+a.timeOut).localeCompare(b.date+b.timeOut));
-    let batch = _fbDB.batch(), n = 0;
-    for (const m of missing) {
-      maxId++;
-      batch.set(_fbDB.collection(COL_OUTING).doc(m.id), { caseId: maxId }, { merge: true });
-      n++;
-      if (n % 400 === 0) { await batch.commit(); batch = _fbDB.batch(); }
-    }
-    await batch.commit();
-    // 同步更新流水號計數器，避免之後新案件編號重複
-    await _fbDB.collection(COL_SETTINGS).doc('caseIdCounter').set({ value: maxId }, { merge: true });
-    const msg = `✅ 完成：已為 ${missing.length} 筆案件補上編號（最新編號 #${maxId}）`;
-    if (log) log.textContent = msg;
-    btn.textContent = '🔢 執行初始化';
   } catch(e) {
     const msg = '❌ 失敗：' + e.message;
     if (log) log.textContent = msg;
@@ -21547,35 +21387,6 @@ function showTempPassErr(msg) {
 // ════════════════════════════════════════
 // 後台：臨時密碼管理
 // ════════════════════════════════════════
-// 自動插入 v1.9.02 版本紀錄（若尚未存在）
-
-// ── 自動插入 v1.9.06 版本紀錄（若尚未存在）────────────────────────────────
-(async function seedV1906() {
-  try {
-    const TARGET = 'v1.9.06';
-    const all = await fbList(COL_CHANGELOG);
-    if (all.some(d => d.version === TARGET)) return;
-    // 先把其他 isLatest 取消
-    await Promise.all(all.filter(d => d.isLatest).map(d => fbUpdate(COL_CHANGELOG, d.id, { isLatest: false })));
-    await fbAdd(COL_CHANGELOG, {
-      version: TARGET,
-      date: '2026-05-31',
-      title: '成員申請追蹤、簽到防偽、定訓出席統計、公差英雄榜',
-      isLatest: true,
-      items: [
-        '【新功能】新增「我的申請記錄」頁面，成員可自行追蹤修正申請進度與審核結果',
-        '【新功能】簽到防偽機制：限制時間選單範圍（±60分鐘）、異常填報警告彈窗、系統自動標記⚠️並通知承辦人',
-        '【新功能】⚠️ 時間異常標記成員本人可見，點擊可查看填報與實際送出時間差異',
-        '【新功能】定訓與公告新增與會人員勾選清單（按職稱權重排序，排除承辦人）',
-        '【新功能】定訓出席統計表：含職稱欄、排除承辦人，可切換按次數或職稱排序',
-        '【新功能】新增「公差英雄榜」頁面，統計各成員全年公差出勤天數排行，含獎台視覺與成就勳章',
-        '【改善】導覽列「我的申請記錄」移至個人基本資料下方',
-        '【改善】Header 新增↻重新整理按鈕',
-        '【改善】首頁快速入口新增「我的申請記錄」捷徑',
-      ],
-    });
-  } catch(e) { /* 非關鍵，靜默略過 */ }
-})();
 
 </script>
 
