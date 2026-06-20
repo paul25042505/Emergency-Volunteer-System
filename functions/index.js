@@ -179,8 +179,7 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
     const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
     const dedupKey = `duty-tomorrow-${tomorrow}`;
 
-    if (await _isDuped(db, dedupKey)) return;
-    await _markDuped(db, dedupKey);
+    if (!(await _tryClaim(db, dedupKey))) return;
 
     const snap = await db.collection('dutySchedule').where('date', '==', tomorrow).get();
     if (snap.empty) return;
@@ -232,8 +231,7 @@ exports.scheduleNoSignoutReminder = onSchedule(
 
     for (const d of targets) {
       const dedupKey = `duty-nosignout-${today}-${d.end}-${d.memberName}`;
-      if (await _isDuped(db, dedupKey)) continue;
-      await _markDuped(db, dedupKey);
+      if (!(await _tryClaim(db, dedupKey))) continue;
 
       const attSnap = await db.collection('attendance')
         .where('date', '==', today)
@@ -263,8 +261,7 @@ exports.scheduleMonthlyScheduleOpen = onSchedule(
     const ym  = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
     const dedupKey = `monthly-open-${ym}`;
 
-    if (await _isDuped(db, dedupKey)) return;
-    await _markDuped(db, dedupKey);
+    if (!(await _tryClaim(db, dedupKey))) return;
 
     const title = '📋 下月班表開放排班';
     const body  = `${ym} 班表已開放，請盡快完成排班登記。`;
@@ -285,8 +282,7 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
     const ym  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const dedupKey = `monthly-confirm-${ym}`;
 
-    if (await _isDuped(db, dedupKey)) return;
-    await _markDuped(db, dedupKey);
+    if (!(await _tryClaim(db, dedupKey))) return;
 
     const title = '✅ 請確認本月任務';
     const body  = `${ym} 已開始，請確認本月班表與任務是否有問題。`;
@@ -343,10 +339,7 @@ exports.onBudgetAlert = onRequest(
 
     if (locked) {
       const dedupKey = `budget-lock-${todayStr}-${Math.round(threshold * 100)}`;
-      const dedupRef = db.collection('autoNotifLog').doc(dedupKey);
-      const already  = await dedupRef.get().then(d => d.exists);
-      if (!already) {
-        await dedupRef.set({ sentAt: now });
+      if (await _tryClaim(db, dedupKey)) {
         const title = '⚠️ Firestore 費用預算警報';
         const body  = `費用已達預算 ${pct}%（${currency} ${costAmount.toFixed(2)} / ${budgetAmount.toFixed(2)}），部分功能已鎖定。`;
         const tokens = await _getAdminTokens(null);
@@ -400,14 +393,15 @@ function _timeStr(d) {
   return d.toLocaleTimeString('sv-SE', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
 }
 
-async function _isDuped(db, key) {
-  const doc = await db.collection('autoNotifLog').doc(key).get();
-  return doc.exists;
-}
-
-
-async function _markDuped(db, key) {
-  await db.collection('autoNotifLog').doc(key).set({ sentAt: new Date() });
+// 原子性搶占：create() 在文件已存在時會失敗，藉此避免「先讀後寫」的競爭空隙
+// （兩個重複觸發的函式實例幾乎同時執行時，仍可能都通過 read-then-write 的檢查）
+async function _tryClaim(db, key) {
+  try {
+    await db.collection('autoNotifLog').doc(key).create({ sentAt: new Date() });
+    return true;
+  } catch (e) {
+    return false; // 已存在 → 已有其他實例搶先標記，視為重複
+  }
 }
 
 async function _getMemberTokens(db, memberName) {
