@@ -16206,7 +16206,22 @@ async function initFormPage() {
       unitSel.innerHTML = '<option value="' + _userUnit + '">' + _userUnit + '</option>';
       unitSel.disabled = true;
     }
-    if (_userUnit) { unitSel.value = _userUnit; filterFormMembers(); }
+    if (_userUnit) {
+      unitSel.value = _userUnit;
+      filterFormMembers();
+      // 預設選登入者（memberName → name → members 陣列比對）
+      const _memberSel = document.getElementById('memberSelect');
+      const _myName = (usr.memberName || usr.name || '').trim();
+      if (_memberSel && _myName) {
+        _memberSel.value = _myName;
+        if (!_memberSel.value) {
+          setTimeout(() => {
+            filterFormMembers();
+            _memberSel.value = _myName;
+          }, 400);
+        }
+      }
+    }
   }
 }
 
