@@ -10621,6 +10621,7 @@ async function loadStats() {
 
 
 let _caseStatsInited = false;
+let _caseStatsDocs = []; // 目前篩選條件下的協勤紀錄，供點擊案由查看明細用
 async function initCaseStatsPage() {
   const now = new Date();
   const yr = now.getFullYear();
@@ -10697,6 +10698,8 @@ async function loadCaseStats() {
     }
     if (emptyEl) emptyEl.style.display = 'none';
 
+    _caseStatsDocs = docs;
+
     const typeCount = {};
     docs.forEach(d => { const t = (d.caseType||'').trim()||'未分類'; typeCount[t] = (typeCount[t]||0)+1; });
     const total = docs.length;
@@ -10761,7 +10764,7 @@ async function loadCaseStats() {
     if (tbody) {
       tbody.innerHTML = sorted.map((e,i) => {
         const pct = total > 0 ? (e[1]/total*100).toFixed(1) : 0;
-        return `<tr style="border-bottom:1px solid var(--border);">
+        return `<tr onclick="showCaseTypeRecords('${e[0].replace(/'/g,"\\'")}')" style="border-bottom:1px solid var(--border);cursor:pointer;">
           <td style="padding:10px 14px;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:8px;">
             <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;display:inline-block;"></span>${e[0]}
           </td>
@@ -10777,6 +10780,37 @@ async function loadCaseStats() {
     showEmpty('⚠️', '載入失敗：' + (e.message||'請重新整理'));
     console.error('loadCaseStats error:', e);
   }
+}
+
+function showCaseTypeRecords(typeName) {
+  const records = _caseStatsDocs
+    .filter(d => ((d.caseType||'').trim()||'未分類') === typeName)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||'') || (b.timeOut||'').localeCompare(a.timeOut||''));
+
+  const overlay = document.createElement('div');
+  overlay.id = 'caseTypeRecordsOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">${typeName}（${records.length} 件）</div>
+        <button onclick="document.getElementById('caseTypeRecordsOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);line-height:1;">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:14px 20px 32px;">
+        ${records.map(r => `
+          <div style="padding:12px 14px;background:#f9f9f7;border-radius:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+              <span style="font-size:0.88rem;font-weight:700;color:var(--text);">${r.date||''}</span>
+              <span style="font-size:0.75rem;color:var(--text-light);">${r.timeOut||''}${r.timeBack?'–'+r.timeBack:''}</span>
+            </div>
+            <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:2px;">👤 ${r.memberName||''}${r.unit?'　'+r.unit:''}</div>
+            ${(r.district||r.address) ? `<div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:2px;">📍 ${[r.district,r.address].filter(Boolean).join(' ')}</div>` : ''}
+            ${r.services ? `<div style="font-size:0.8rem;color:var(--text-mid);">${r.services}</div>` : ''}
+          </div>`).join('') || '<div style="text-align:center;color:var(--text-light);padding:20px;">無資料</div>'}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 async function initItemsPage() {
