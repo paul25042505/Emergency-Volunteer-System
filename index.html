@@ -16570,7 +16570,7 @@ function filterFormMembers() {
   if (!unit) { sel.innerHTML = '<option value="">— 請先選擇分隊 —</option>'; return; }
   const filtered = members.filter(m => (m.unit || '') === unit);
   sel.innerHTML = '<option value="">— 請選擇義消成員 —</option>' +
-    filtered.map(m => '<option value="' + m.name + '">' + m.name + (m.title ? '（' + m.title + '）' : '') + '</option>').join('');
+    filtered.map(m => { const t = _memberTitle(m); return '<option value="' + m.name + '">' + m.name + (t ? '（' + t + '）' : '') + '</option>'; }).join('');
 }
 
 
