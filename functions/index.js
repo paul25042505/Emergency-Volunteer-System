@@ -293,6 +293,49 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   }
 );
 
+// ── 6. 每日 08:00：今明兩天有定訓時提醒所有訂閱者 ────────────────────
+// 取代舊的 .github/workflows/send-push.yml（用 raw web-push，與現有 FCM
+// 訂閱資料格式不相容，且 admin.credential 在新版 firebase-admin 會出錯）
+exports.scheduleTrainingReminder = onSchedule(
+  { schedule: '0 8 * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const today    = _dateStr(new Date());
+    const tomorrow = _dateStr(new Date(Date.now() + 86400000));
+
+    const [snapToday, snapTomorrow] = await Promise.all([
+      db.collection('trainingSchedule').where('date', '==', today).get(),
+      db.collection('trainingSchedule').where('date', '==', tomorrow).get(),
+    ]);
+    if (snapToday.empty && snapTomorrow.empty) return;
+
+    const tokens = await _getAllTokens(db);
+    if (!tokens.length) return;
+
+    if (!snapToday.empty) {
+      const dedupKey = `training-today-${today}`;
+      if (await _tryClaim(db, dedupKey)) {
+        const titles = snapToday.docs.map(d => d.data().topic || '定訓').join('、');
+        const title  = '🔔 今天有定訓！';
+        const body   = `${today} ${titles}，請準時出席`;
+        await _sendMulticast(tokens, { title, body });
+        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+      }
+    }
+
+    if (!snapTomorrow.empty) {
+      const dedupKey = `training-tomorrow-${tomorrow}`;
+      if (await _tryClaim(db, dedupKey)) {
+        const titles = snapTomorrow.docs.map(d => d.data().topic || '定訓').join('、');
+        const title  = '🔔 明天有定訓！';
+        const body   = `${tomorrow} ${titles}，請準時出席`;
+        await _sendMulticast(tokens, { title, body });
+        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+      }
+    }
+  }
+);
+
 // ── Cloud Billing 預算警報 → 設定鎖定狀態 ────────────────────────────
 // GCP Console 設定：Pub/Sub → 訂閱 → 建立推送訂閱
 //   → Topic：billing-budget-alerts
