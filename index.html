@@ -20246,7 +20246,7 @@ function renderDutyList(scrollDate) {
   const today       = new Date().toLocaleDateString('sv');
   const HOURS       = Array.from({length:16}, (_,i) => i+6);
   const usr         = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const myName      = usr.memberName || usr.name || '';
+  const myName      = (usr.memberName || usr.name || '').trim();
   const membersList = (_C && _C.peek && _C.peek(COL_MEMBERS)) || [];
   const getMemberTitle = name => { const m = membersList.find(x=>x.name===name); return m ? (m.title||'') : ''; };
 
@@ -20305,8 +20305,8 @@ function renderDutyList(scrollDate) {
       html += '<div style="font-size:0.78rem;color:#bbb;padding:2px 0 8px;letter-spacing:0.02em;">— 尚無備勤 —</div>';
     } else {
       dayDocs.forEach(doc => {
-        const canEdit  = doc.memberName===myName || usr.isAdmin || usr.isOfficer;
-        const isMine   = doc.memberName===myName;
+        const canEdit  = (doc.memberName||'').trim()===myName || usr.isAdmin || usr.isOfficer;
+        const isMine   = (doc.memberName||'').trim()===myName;
         const title    = getMemberTitle(doc.memberName||'');
         const avatarBg = isMine ? 'var(--red)' : '#5b8db8';
         html += '<div style="display:flex;align-items:center;gap:10px;background:'+(isMine?'#fff8f8':'#fafafa')+';border:1px solid '+(isMine?'#f5c6c6':'#e8e8e8')+';border-radius:12px;padding:10px 12px;margin-bottom:8px;">';
