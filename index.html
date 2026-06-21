@@ -2690,14 +2690,14 @@ function _dlCSV(content, filename) {
             <div>
               <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
               <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-                <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
+                <div style="font-size:1rem;font-weight:700;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYearDisplay">—</div>
                 <select id="statsYear" onchange="document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
               </div>
             </div>
             <div>
               <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
               <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-                <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
+                <div style="font-size:1rem;font-weight:700;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsMonthDisplay">—</div>
                 <select id="statsMonth" onchange="document.getElementById('statsMonthDisplay').textContent=this.value?this.value+'月':'全年';loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
                   <option value="">全年</option>
                   <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
@@ -2745,7 +2745,7 @@ function _dlCSV(content, filename) {
             <div>
               <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
               <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-                <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYear2Display">—</div>
+                <div style="font-size:1rem;font-weight:700;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="statsYear2Display">—</div>
                 <select id="statsYear2" onchange="document.getElementById('statsYear').value=this.value;document.getElementById('statsYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
               </div>
             </div>
@@ -2815,14 +2815,14 @@ function _dlCSV(content, filename) {
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
           <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-            <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseYearDisplay">—</div>
+            <div style="font-size:1rem;font-weight:700;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseYearDisplay">—</div>
             <select id="caseYear" onchange="document.getElementById('caseYearDisplay').textContent=this.options[this.selectedIndex].text.replace(' 年','');loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
           </div>
         </div>
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">月份</div>
           <div style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
-            <div style="font-size:1rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseMonthDisplay">—</div>
+            <div style="font-size:1rem;font-weight:700;color:white;font-family:'Noto Serif TC',serif;line-height:1;pointer-events:none;" id="caseMonthDisplay">—</div>
             <select id="caseMonth" onchange="document.getElementById('caseMonthDisplay').textContent=this.value?this.value+'月':'全年';loadCaseStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;">
               <option value="">全年</option>
               <option value="1">1 月</option><option value="2">2 月</option><option value="3">3 月</option>
