@@ -2875,10 +2875,6 @@ function _dlCSV(content, filename) {
         <div id="casePagePieChart"></div>
         <div id="casePageLegend" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;font-size:0.72rem;"></div>
       </div>
-      <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">各類型案件數</div>
-        <div id="casePageBarChart"></div>
-      </div>
     </div>
 
     <!-- Map -->
@@ -11004,7 +11000,7 @@ async function initCaseStatsPage() {
   await loadCaseStats();
 }
 
-let _casePieChart = null, _caseBarChart = null;
+let _casePieChart = null;
 async function loadCaseStats() {
   const year  = document.getElementById('caseYear')?.value  || '';
   const month = document.getElementById('caseMonth')?.value || '';
@@ -11093,24 +11089,6 @@ async function loadCaseStats() {
     // 圖例
     const legend = document.getElementById('casePageLegend');
     if (legend) legend.innerHTML = labels.map((l,i) => `<span style="display:flex;align-items:center;gap:3px;white-space:nowrap;"><span style="width:9px;height:9px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>${l}</span>`).join('');
-
-    // ── 橫條圖（純 HTML）──
-    const barEl = document.getElementById('casePageBarChart');
-    if (barEl) {
-      const maxVal = counts[0] || 1;
-      barEl.innerHTML = labels.map((l, i) => {
-        const pct = (counts[i] / maxVal * 100).toFixed(0);
-        return `<div style="margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-            <span style="font-size:0.78rem;color:#333;font-family:'Noto Sans TC',sans-serif;">${l}</span>
-            <span style="font-size:0.78rem;font-weight:700;color:${colors[i]};">${counts[i]}</span>
-          </div>
-          <div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
-            <div style="height:8px;background:${colors[i]};border-radius:4px;width:${pct}%;transition:width 0.4s ease;"></div>
-          </div>
-        </div>`;
-      }).join('');
-    }
 
     document.getElementById('caseChartsArea').style.display = 'grid';
 
