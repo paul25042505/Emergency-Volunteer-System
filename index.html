@@ -13831,29 +13831,14 @@ async function saveAnnounceForm() {
 
     if (doPush) {
       const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-      const sentAt = new Date().toLocaleString('sv').replace('T',' ');
-      const logId = await fbAdd(COL_PUSH_LOG, {
-        title, body: body || '', target: _anPushTarget, targetNames: [],
-        sentAt, sentBy: usr.memberName || usr.name || '管理員',
-        status: 'pending', successCount: 0, failCount: 0, source: 'announce'
-      }).catch(() => null);
+      // 只發送通知，不寫入推播訊息紀錄（公告紀錄已在系統公告分頁顯示，避免重複）
       fetch('https://broadcastpush-whi67k6epa-de.a.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, body: body || title, requestedBy: usr.memberName || '管理員', skipAnnouncement: true, pushTarget: _anPushTarget }),
       }).then(async res => {
-        if (!logId) return;
-        let result = {};
-        try { result = await res.json(); } catch(e) {}
-        const ok = res.ok;
-        await fbUpdate(COL_PUSH_LOG, logId, {
-          status: ok ? 'ok' : 'fail',
-          successCount: result.successCount ?? (ok ? 1 : 0),
-          failCount:    result.failCount    ?? (ok ? 0 : 1),
-          ...(ok ? {} : { errorMsg: result.error || result.message || `HTTP ${res.status}` }),
-        }).catch(() => {});
         // 舊版 Cloud Function 不支援 skipAnnouncement，會多寫一筆 broadcast，改回 system
-        if (ok) {
+        if (res.ok) {
           try {
             const cutoff = new Date(Date.now() - 30000);
             const extras = await fbQuery(COL_ANNOUNCE, [['type','==','broadcast'],['createdAt','>=',cutoff]]);
@@ -13862,9 +13847,7 @@ async function saveAnnounceForm() {
             }
           } catch(_) {}
         }
-      }).catch(async () => {
-        if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1 }).catch(() => {});
-      });
+      }).catch(() => {});
     }
 
     hideAnnounceForm();
@@ -14193,7 +14176,7 @@ async function loadPushLog() {
   if (!el) return;
   el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>載入中…</div>';
   try {
-    const docs = await fbList(COL_PUSH_LOG, 'sentAt', 'desc');
+    const docs = (await fbList(COL_PUSH_LOG, 'sentAt', 'desc')).filter(d => d.source !== 'announce');
     if (!docs.length) {
       el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>尚無推播紀錄</div>';
       return;
@@ -14205,7 +14188,7 @@ async function loadPushLog() {
       const targetNames = d.targetNames || d.targetMembers || [];
       const am = audMeta[d.target] || { clr:'#475569', bg:'#f1f5f9' };
       const targetLabel = d.target === 'all' ? '👥 全體成員' : d.target === 'admin' ? '🔑 管理員／承辦' : `👤 個人推播（${targetNames.length} 人）`;
-      const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務','announce':'📢 系統公告'};
+      const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務'};
       const sourceLabel = d.source ? (sourceMap[d.source] || null) : null;
       const names = targetNames.join('、');
       return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${sm.clr};">
