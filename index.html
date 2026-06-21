@@ -20,6 +20,11 @@
 <meta name="apple-mobile-web-app-title" content="救護義消系統">
 <meta name="color-scheme" content="light">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
 <style>
 :root {
   /* 主色：消防紅 */
@@ -2876,6 +2881,15 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
+    <!-- Map -->
+    <div id="caseMapCard" style="display:none;background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;font-weight:700;color:var(--text);">案件地點分布</div>
+        <span id="caseMapCount" style="font-size:0.68rem;color:var(--text-light);"></span>
+      </div>
+      <div id="caseMapEl" style="height:280px;border-radius:10px;overflow:hidden;"></div>
+    </div>
+
     <!-- Detail table -->
     <div id="caseDetailCard" style="display:none;background:white;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow:hidden;margin-bottom:16px;">
       <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
@@ -3685,6 +3699,13 @@ function _dlCSV(content, filename) {
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">掃描所有 <code>hasSig=false</code> 的打卡紀錄，若 attSigs 子集合有簽名資料，自動將 hasSig 更新為 true。<br><span style="color:var(--red);font-weight:600;">適用於：編輯紀錄後「查看簽名」按鈕消失的情況。</span></div>
         <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔑 執行修復</button>
         <div id="repairHasSigLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
+      </div>
+
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">案件地址定位（地圖用）</div>
+        <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">依「行政區＋詳細地址」呼叫免費 OpenStreetMap 定位服務，將座標寫回案件紀錄，供「案件統計」頁地圖顯示。<br><span style="color:var(--red);font-weight:600;">只會處理尚未定位過的案件，逐筆查詢避免超過服務限制，數量多時請耐心等候。</span></div>
+        <button id="geoBackfillBtn" onclick="repairGeocodeBackfill(this)" style="background:#00897b;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">📍 開始批次定位</button>
+        <div id="geoBackfillLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
 
     </div><!-- /adminSec-repair -->
@@ -5292,6 +5313,20 @@ async function _nextCaseId() {
   });
 }
 function _fmtCaseId(n) { return n ? String(n).padStart(4, '0') : ''; }
+
+// ── 案件地址定位：呼叫 Cloud Function（免費 Nominatim + 伺服端快取），失敗不影響送出流程 ──
+function _geocodeCase(docId, district, address) {
+  const full = ['台中市', district, address].filter(Boolean).join('');
+  if (!full) return;
+  fetch('https://geocodeaddress-whi67k6epa-de.a.run.app', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address: full }),
+  }).then(r => r.json()).then(d => {
+    if (d && !d.failed && typeof d.lat === 'number' && typeof d.lng === 'number') {
+      fbUpdate(COL_OUTING, docId, { lat: d.lat, lng: d.lng }).catch(() => {});
+    }
+  }).catch(() => {});
+}
 
 // ── 簽名分離輔助函式 ──
 // 簽名另存至 attSigs/{docId} 或 outSigs/{docId}，主文件不存大圖
@@ -8556,6 +8591,7 @@ function submitOutingForm() {
     note:data.note||'',memberName:data.memberName,hasSig:!!(data.signature),
   })).then(docId=>{
     fbSaveSig(COL_OUTING, docId, { signature: data.signature });
+    _geocodeCase(docId, data.district, data.address);
 
     syncAttServiceForDate(data.memberName, data.date);
     document.getElementById('successMsg').classList.add('show');
@@ -10977,7 +11013,7 @@ async function loadCaseStats() {
   // 簡化 empty state — 直接操作 innerHTML
   const emptyEl = document.getElementById('caseEmptyMsg');
   const showEmpty = (icon, text) => {
-    ['caseChartsArea','caseDetailCard'].forEach(id => {
+    ['caseChartsArea','caseMapCard','caseDetailCard'].forEach(id => {
       const el = document.getElementById(id); if (el) el.style.display = 'none';
     });
     if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.innerHTML = `<span class="empty-icon">${icon}</span>${text}`; }
@@ -11014,6 +11050,7 @@ async function loadCaseStats() {
     if (emptyEl) emptyEl.style.display = 'none';
 
     _caseStatsDocs = docs;
+    _renderCaseMap(docs);
 
     const typeCount = {};
     docs.forEach(d => { const t = (d.caseType||'').trim()||'未分類'; typeCount[t] = (typeCount[t]||0)+1; });
@@ -11098,6 +11135,46 @@ async function loadCaseStats() {
     showEmpty('⚠️', '載入失敗：' + (e.message||'請重新整理'));
     console.error('loadCaseStats error:', e);
   }
+}
+
+// 案件地點地圖（Leaflet + OpenStreetMap，僅顯示已定位的案件）
+let _caseMapInstance = null, _caseMapCluster = null;
+function _renderCaseMap(docs) {
+  const card  = document.getElementById('caseMapCard');
+  const mapEl = document.getElementById('caseMapEl');
+  if (!card || !mapEl) return;
+  if (typeof L === 'undefined') { card.style.display = 'none'; return; }
+
+  const pts = docs.filter(d => typeof d.lat === 'number' && typeof d.lng === 'number' && !isNaN(d.lat) && !isNaN(d.lng));
+  if (!pts.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  document.getElementById('caseMapCount').textContent = `${pts.length} / ${docs.length} 件已定位`;
+
+  if (!_caseMapInstance) {
+    _caseMapInstance = L.map(mapEl, { scrollWheelZoom: false }).setView([24.21, 120.70], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 18,
+    }).addTo(_caseMapInstance);
+    _caseMapCluster = (typeof L.markerClusterGroup === 'function') ? L.markerClusterGroup() : L.layerGroup();
+    _caseMapInstance.addLayer(_caseMapCluster);
+  } else {
+    _caseMapCluster.clearLayers();
+  }
+
+  pts.forEach(d => {
+    const loc = [d.district, d.address].filter(Boolean).join(' ');
+    const marker = L.marker([d.lat, d.lng]);
+    marker.bindPopup(`<div style="font-family:'Noto Sans TC',sans-serif;font-size:0.8rem;line-height:1.6;">
+      <strong>${d.caseType || '未分類'}</strong>${d.caseId ? `　#${_fmtCaseId(d.caseId)}` : ''}<br>
+      ${d.date || ''}${d.timeOut ? ' ' + d.timeOut : ''}<br>
+      📍 ${loc}
+    </div>`);
+    _caseMapCluster.addLayer(marker);
+  });
+
+  const bounds = L.latLngBounds(pts.map(d => [d.lat, d.lng]));
+  _caseMapInstance.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 });
+  setTimeout(() => _caseMapInstance && _caseMapInstance.invalidateSize(), 150);
 }
 
 function showCaseTypeRecords(typeName) {
@@ -15004,6 +15081,57 @@ async function repairHasSig(btn) {
   } catch(e) {
     const msg = '❌ 失敗：' + e.message;
     if (log) log.textContent = msg;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 案件地址定位回填：逐筆呼叫 geocodeAddress（伺服端有快取），每筆間隔避免超過服務限制
+async function repairGeocodeBackfill(btn) {
+  const log = document.getElementById('geoBackfillLog');
+  btn.disabled = true; btn.textContent = '🔄 定位中...';
+  if (log) log.textContent = '';
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_OUTING).get();
+    const todo = snap.docs.filter(d => {
+      const v = d.data();
+      return (typeof v.lat !== 'number' || typeof v.lng !== 'number') && !v.geocodeFailed && (v.address || v.district);
+    });
+    if (!todo.length) {
+      if (log) log.textContent = '✅ 所有案件皆已定位，無需處理。';
+      btn.textContent = '📍 開始批次定位'; btn.disabled = false;
+      return;
+    }
+    let ok = 0, fail = 0;
+    for (let i = 0; i < todo.length; i++) {
+      const doc = todo[i];
+      const v = doc.data();
+      const full = ['台中市', v.district, v.address].filter(Boolean).join('');
+      if (log) log.textContent = `定位中… (${i + 1}/${todo.length}) ${full}`;
+      try {
+        const res = await fetch('https://geocodeaddress-whi67k6epa-de.a.run.app', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: full }),
+        });
+        const d = await res.json();
+        if (d && !d.failed && typeof d.lat === 'number' && typeof d.lng === 'number') {
+          await _fbDB.collection(COL_OUTING).doc(doc.id).update({ lat: d.lat, lng: d.lng });
+          ok++;
+        } else {
+          await _fbDB.collection(COL_OUTING).doc(doc.id).update({ geocodeFailed: true });
+          fail++;
+        }
+      } catch (_) { fail++; }
+      // Nominatim 使用政策要求至少間隔 1 秒一次查詢（已快取的地址會直接命中，幾乎不耗時）
+      await new Promise(r => setTimeout(r, 1100));
+    }
+    _C.invalidate(COL_OUTING);
+    if (log) log.textContent = `✅ 完成：共 ${todo.length} 筆，成功定位 ${ok} 筆，失敗 ${fail} 筆。`;
+    btn.textContent = '📍 開始批次定位';
+  } catch (e) {
+    if (log) log.textContent = '❌ 失敗：' + e.message;
+    btn.textContent = '📍 開始批次定位';
   } finally {
     btn.disabled = false;
   }

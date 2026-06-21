@@ -4,6 +4,7 @@ const { onSchedule }        = require('firebase-functions/v2/scheduler');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
+const crypto                = require('crypto');
 
 initializeApp();
 
@@ -169,6 +170,44 @@ exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public
     res.json({ status: 'sent', count: uniqueTokens.length, successCount, failCount });
   } catch (err) {
     console.error('broadcastPush error:', err);
+    res.status(500).json({ error: err.message || 'internal error' });
+  }
+});
+
+// ── 地址定位：免費 OpenStreetMap Nominatim，結果存 Firestore 快取避免重複查詢 ──
+exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'public' }, async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
+
+  const address = (req.body?.address || '').trim();
+  if (!address) { res.status(400).json({ error: 'address is required' }); return; }
+
+  const db = getFirestore();
+  const cacheId = crypto.createHash('md5').update(address).digest('hex');
+  const cacheRef = db.collection('geocodeCache').doc(cacheId);
+
+  try {
+    const cached = await cacheRef.get();
+    if (cached.exists) {
+      const d = cached.data();
+      res.json({ lat: d.lat, lng: d.lng, failed: !!d.failed, cached: true });
+      return;
+    }
+
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=tw&q=' + encodeURIComponent(address);
+    const resp = await fetch(url, { headers: { 'User-Agent': 'EmergencyVolunteerSystem/1.0 (paul25042505@gmail.com)' } });
+    const results = await resp.json();
+
+    if (Array.isArray(results) && results.length) {
+      const lat = parseFloat(results[0].lat);
+      const lng = parseFloat(results[0].lon);
+      await cacheRef.set({ address, lat, lng, failed: false, createdAt: new Date() });
+      res.json({ lat, lng, failed: false });
+    } else {
+      await cacheRef.set({ address, lat: null, lng: null, failed: true, createdAt: new Date() });
+      res.json({ lat: null, lng: null, failed: true });
+    }
+  } catch (err) {
+    console.error('geocodeAddress error:', err);
     res.status(500).json({ error: err.message || 'internal error' });
   }
 });
