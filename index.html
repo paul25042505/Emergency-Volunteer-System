@@ -4510,6 +4510,12 @@ function _dlCSV(content, filename) {
       <div id="profileCertAlertMsg" style="font-size:0.82rem;color:#856404;margin-top:4px;"></div>
     </div>
 
+    <!-- 義消服務證到期警示（若效期不足6個月）-->
+    <div id="profileSvcCardAlert" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-weight:600;color:#856404;font-size:0.9rem;">🔔 義消服務證即將到期</div>
+      <div id="profileSvcCardAlertMsg" style="font-size:0.82rem;color:#856404;margin-top:4px;"></div>
+    </div>
+
     <!-- 基本資訊 -->
     <div class="section">
       <div class="section-head">
@@ -4616,12 +4622,50 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
+    <!-- 義消服務證 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">4</div>
+        <div class="section-title">義消服務證</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <!-- 檢視模式 -->
+        <div id="profileSvcCardView">
+          <div class="field">
+            <label>效期至</label>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+              <div id="profileSvcCardExpDisplay" style="font-size:0.92rem;color:var(--text);flex:1;">—</div>
+              <div id="profileSvcCardStatus" style="font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;"></div>
+            </div>
+          </div>
+          <!-- 編輯按鈕（成員隨時可自行更新）-->
+          <div style="margin-top:10px;">
+            <button onclick="profileShowSvcCardEdit()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:8px 18px;font-size:0.82rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;width:100%;">
+              ✏️ 更新義消服務證效期
+            </button>
+          </div>
+        </div>
 
+        <!-- 編輯模式（預設隱藏）-->
+        <div id="profileSvcCardEdit" style="display:none;">
+          <div class="field">
+            <label>效期至 <span class="req">*</span></label>
+            <input type="date" id="profileSvcCardExpInput" style="width:100%;">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button onclick="saveProfileSvcCard()" style="flex:1;background:var(--red);color:white;border:none;border-radius:6px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">儲存</button>
+            <button onclick="profileHideSvcCardEdit()" style="flex:1;background:white;color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:11px;font-size:0.88rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
+          </div>
+          <div id="profileSvcCardSaveStatus" style="font-size:0.75rem;color:#1a6b35;display:none;margin-top:8px;text-align:center;">✓ 義消服務證資訊已儲存</div>
+        </div>
+      </div>
+    </div>
 
     <!-- 歷年服務紀錄 -->
     <div class="section">
       <div class="section-head">
-        <div class="section-num">4</div>
+        <div class="section-num">5</div>
         <div class="section-title">歷年服務紀錄</div>
         <div class="section-line"></div>
       </div>
@@ -7219,6 +7263,17 @@ async function _renderDashTodo(me, attDocs, todayStr) {
     }
   }
 
+  // ⑤ 義消服務證快到期（≤180 天）
+  if (myMember?.svcCardExp) {
+    const diffDays = Math.floor((new Date(myMember.svcCardExp) - Date.now()) / 86400000);
+    if (diffDays <= 180) {
+      const sub = diffDays < 0
+        ? `服務證已於 ${myMember.svcCardExp} 過期`
+        : `還有 ${diffDays} 天到期（${myMember.svcCardExp}）`;
+      items.push({ em: '🪪', bg: '#fee2e2', title: '義消服務證即將到期', sub, nav: 'profilePage', page: '個人資料' });
+    }
+  }
+
   // ⑥ 申請審核中　⑦ 出勤紀錄待確認
   try {
     await ensureFirebase();
@@ -7472,7 +7527,7 @@ async function loadMembers(force) {
       members = wlDocs.filter(d=>d.status!=='retired').map(d=>({
         id: d.id, name: d.memberName||'', title: d.title||'',
         squad: d.squad||'', isSquadLeader: d.isSquadLeader||false,
-        unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
+        unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'', svcCardExp: d.svcCardExp||'',
         role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
       })).filter(m=>m.name).sort((a,b)=>{
         if((a.unit||'')!==(b.unit||''))return(a.unit||'')>(b.unit||'')?1:-1;
@@ -7482,7 +7537,7 @@ async function loadMembers(force) {
       });
     } else {
       const docs = await fbList(COL_MEMBERS);
-      members = docs.filter(d=>d.status!=='retired').map(d=>({name:d.name||'',title:d.title||'',unit:d.unit||'',cert:d.cert||'',certExp:d.certExp||''})).filter(m=>m.name);
+      members = docs.filter(d=>d.status!=='retired').map(d=>({name:d.name||'',title:d.title||'',unit:d.unit||'',cert:d.cert||'',certExp:d.certExp||'',svcCardExp:d.svcCardExp||''})).filter(m=>m.name);
     }
   } catch(e) {
     console.error('loadMembers 失敗:', e);
@@ -11683,7 +11738,7 @@ async function loadAdminWhitelist(filterUnit) {
       editBtn.style.cssText = 'flex:1;background:white;border:1px solid var(--border);border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
       editBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.onclick = function(){
-        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'');
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'');
       };
       btnRow.appendChild(editBtn);
 
@@ -11758,9 +11813,9 @@ async function adminAddWhitelist() {
   } catch(e) { alert('新增失敗：' + e.message); }
 }
 
-async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad) {
+async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad,svcCardExp) {
   if (!role || role==='member') role = isAdmin ? 'admin' : (role||'member');
-  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||'';
+  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||''; svcCardExp=svcCardExp||'';
   isSquadLeader=isSquadLeader||false; squad=squad||'';
   if (isSquadLeader && role==='member') role='squadLeader';
   let extraEmails=[];
@@ -11790,6 +11845,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     '<div class="field"><label>角色權限</label><select id="aeWlRole" style="width:100%;">'+roleOpts+'</select></div>'+
     '<div class="field"><label>證照等級</label><select id="aeWlCert" style="width:100%;">'+certOpts+'</select></div>'+
     '<div class="field"><label>證照效期</label><input type="date" id="aeWlCertExp" value="'+certExp+'" style="'+s+'"></div>'+
+    '<div class="field"><label>義消服務證效期</label><input type="date" id="aeWlSvcCardExp" value="'+svcCardExp+'" style="'+s+'"></div>'+
     '<div class="field"><label>手機號碼</label><input type="tel" id="aeWlPhone" value="'+phone+'" placeholder="例：0912345678" style="'+s+'"></div>';
   window.aeWlExtra=extraEmails.slice();
   window.aeWlAdd=function(){window.aeWlExtra.push('');document.getElementById('aeWlExtraList').innerHTML=buildExtraHtml(window.aeWlExtra);};
@@ -11800,7 +11856,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     const extras=window.aeWlExtra.map(e=>e.trim().toLowerCase()).filter(e=>e&&e!==main);
     try{
       const sq=document.getElementById('aeWlSquad')?.value||'';
-      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||''});
+      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',svcCardExp:document.getElementById('aeWlSvcCardExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||''});
       document.getElementById('adminEditModal').style.display='none';
       const curUnit=document.getElementById('adminWlFilterUnit')?.value||'';
       await loadAdminWhitelist(curUnit);await loadMembers(true);
@@ -14448,7 +14504,7 @@ async function initMembersPage() {
     await Promise.all([fbList(COL_WHITELIST).then(docs => {
       members = docs.filter(d => d.status !== 'retired').map(d => ({
         id: d.id, name: d.memberName||'', title: d.title||'',
-        squad: d.squad||'', unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'',
+        squad: d.squad||'', unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'', svcCardExp: d.svcCardExp||'',
         role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
       })).filter(m => m.name);
     }), loadUnits()]);
@@ -17718,6 +17774,41 @@ async function loadProfilePage() {
     certAlertEl.style.display = 'none';
   }
 
+  // 義消服務證
+  const svcCardExp = member.svcCardExp || profile.svcCardExp || '';
+  const svcExpEl    = document.getElementById('profileSvcCardExpDisplay');
+  const svcStatusEl = document.getElementById('profileSvcCardStatus');
+  const svcAlertEl  = document.getElementById('profileSvcCardAlert');
+  const svcAlertMsg = document.getElementById('profileSvcCardAlertMsg');
+
+  if (svcCardExp) {
+    svcExpEl.textContent = svcCardExp;
+    const today    = new Date();
+    const expDate  = new Date(svcCardExp);
+    const diffDays = Math.floor((expDate - today) / 86400000);
+    const diffMon  = diffDays / 30;
+
+    if (diffDays < 0) {
+      svcStatusEl.textContent = '已過期';
+      svcStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fde8e8;color:#b94a3a;';
+      svcAlertEl.style.display = '';
+      svcAlertMsg.textContent = `您的義消服務證已於 ${svcCardExp} 過期，請盡速更新。`;
+    } else if (diffMon < 6) {
+      svcStatusEl.textContent = `還有 ${diffDays} 天`;
+      svcStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fff3cd;color:#856404;';
+      svcAlertEl.style.display = '';
+      svcAlertMsg.textContent = `您的義消服務證將於 ${svcCardExp} 到期（剩餘 ${diffDays} 天），請提前安排展延。`;
+    } else {
+      svcStatusEl.textContent = `有效（剩 ${Math.floor(diffMon)} 個月）`;
+      svcStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#d4edda;color:#1a6b35;';
+      svcAlertEl.style.display = 'none';
+    }
+  } else {
+    svcExpEl.textContent = '（未設定）';
+    svcStatusEl.textContent = '';
+    svcAlertEl.style.display = 'none';
+  }
+
   // 載入上月紀錄確認區塊
   loadProfileConfirmSection();
 
@@ -17730,6 +17821,9 @@ async function loadProfilePage() {
   const certExpInput = document.getElementById('profileCertExpInput');
   if (certSel) certSel.value = cert || '';
   if (certExpInput) certExpInput.value = certExp || '';
+
+  const svcCardExpInput = document.getElementById('profileSvcCardExpInput');
+  if (svcCardExpInput) svcCardExpInput.value = svcCardExp || '';
 
   // 編輯按鈕永遠開放，成員可隨時更新證照資訊
 }
@@ -17901,6 +17995,56 @@ async function saveProfileCert() {
 
     status.style.display = '';
     setTimeout(() => profileHideCertEdit(), 1500);
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+function profileShowSvcCardEdit() {
+  document.getElementById('profileSvcCardView').style.display = 'none';
+  document.getElementById('profileSvcCardEdit').style.display = '';
+}
+
+function profileHideSvcCardEdit() {
+  document.getElementById('profileSvcCardEdit').style.display = 'none';
+  document.getElementById('profileSvcCardView').style.display = '';
+  document.getElementById('profileSvcCardSaveStatus').style.display = 'none';
+}
+
+async function saveProfileSvcCard() {
+  const svcCardExp = document.getElementById('profileSvcCardExpInput').value;
+  if (!svcCardExp) { alert('請填入效期'); return; }
+
+  const usr   = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const email = (usr.email || '').toLowerCase().trim();
+  const memberName = usr.memberName || usr.name || '';
+  const status = document.getElementById('profileSvcCardSaveStatus');
+
+  try {
+    await ensureFirebase();
+    // 更新 whitelist
+    const wlSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (!wlSnap.empty) await wlSnap.docs[0].ref.update({ svcCardExp });
+
+    // 更新 members
+    const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
+    if (!mSnap.empty) await mSnap.docs[0].ref.update({ svcCardExp });
+
+    // 更新顯示
+    document.getElementById('profileSvcCardExpDisplay').textContent = svcCardExp;
+    const diffDays = Math.floor((new Date(svcCardExp) - new Date()) / 86400000);
+    const svcStatusEl = document.getElementById('profileSvcCardStatus');
+    if (diffDays < 0) {
+      svcStatusEl.textContent = '已過期';
+      svcStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fde8e8;color:#b94a3a;';
+    } else if (diffDays < 180) {
+      svcStatusEl.textContent = `還有 ${diffDays} 天`;
+      svcStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#fff3cd;color:#856404;';
+    } else {
+      svcStatusEl.textContent = `有效（剩 ${Math.floor(diffDays/30)} 個月）`;
+      svcStatusEl.style.cssText = 'font-size:0.78rem;border-radius:12px;padding:3px 10px;font-weight:600;background:#d4edda;color:#1a6b35;';
+    }
+
+    status.style.display = '';
+    setTimeout(() => profileHideSvcCardEdit(), 1500);
   } catch(e) { alert('儲存失敗：' + e.message); }
 }
 
@@ -20663,7 +20807,7 @@ async function reloadMembersUnit() {
     const units = [...new Set(docs.map(d => (d.unit||'').trim()).filter(Boolean))].sort();
     members = docs.filter(d => d.status !== 'retired').map(d => ({
       id: d.id, name: d.memberName||'', title: d.title||'',
-      unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'',
+      unit: d.unit||'', cert: d.cert||'', certExp: d.certExp||'', svcCardExp: d.svcCardExp||'',
       role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
     })).filter(m => m.name);
 
