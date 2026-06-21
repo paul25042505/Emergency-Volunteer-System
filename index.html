@@ -13825,8 +13825,9 @@ async function saveAnnounceForm() {
     if (id) {
       await fbSet(COL_ANNOUNCE, id, { ...base, updatedAt: new Date().toLocaleString('sv').replace('T',' ') });
     } else {
-      // doPush 時下方會另外呼叫 broadcastPush 發送，標記 _pushed 避免 onNewAnnouncement 觸發器重複推播一次
-      await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date(), ...(doPush ? { _pushed: true } : {}) });
+      // 一律標記 _pushed，讓此表單建立的公告完全由下方「同時推播」勾選框決定要不要推播，
+      // 不依賴 onNewAnnouncement 觸發器（避免勾選框沒勾、但內容有填仍被自動推播的不一致行為）
+      await fbAdd(COL_ANNOUNCE, { ...base, createdAt: new Date(), _pushed: true });
     }
 
     if (doPush) {
