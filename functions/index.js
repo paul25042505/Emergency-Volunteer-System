@@ -149,16 +149,24 @@ exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public
 
     // 3. 發推播
     const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
+    const successCount = fcmResult.filter(r => r.success).length;
+    const failCount    = fcmResult.filter(r => !r.success).length;
+    // 全部發送失敗時視為整體失敗，讓呼叫端（client）知道要重試，而不是誤判為已送達
+    const allFailed = uniqueTokens.length > 0 && successCount === 0;
 
     await db.collection('broadcastRequests').add({
-      title, body, status: 'sent',
+      title, body, status: allFailed ? 'fail' : 'sent',
       createdBy: requestedBy || '管理員',
       createdAt: now, sentAt: now,
       recipientCount: uniqueTokens.length,
       fcmResult,
     });
 
-    res.json({ status: 'sent', count: uniqueTokens.length });
+    if (allFailed) {
+      res.status(502).json({ error: fcmResult[0]?.error || 'all recipients failed', successCount, failCount });
+      return;
+    }
+    res.json({ status: 'sent', count: uniqueTokens.length, successCount, failCount });
   } catch (err) {
     console.error('broadcastPush error:', err);
     res.status(500).json({ error: err.message || 'internal error' });
@@ -200,8 +208,8 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
       const shifts = memberMap[memberName].join('、');
       const body = `您明日（${tomorrow}）有排班：${shifts}，請準時出勤。`;
       const tokens = await _getMemberTokens(db, memberName);
-      if (tokens.length) await _sendMulticast(tokens, { title, body });
-      await _writeAutoNotif(db, { title, body, targetMembers: [memberName], dedupKey: `${dedupKey}-${memberName}` });
+      const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
+      await _writeAutoNotif(db, { title, body, targetMembers: [memberName], dedupKey: `${dedupKey}-${memberName}`, result });
     }
 
     console.log(`scheduleDutyTomorrowReminder: notified ${members.length} members for ${tomorrow}`);
@@ -244,8 +252,8 @@ exports.scheduleNoSignoutReminder = onSchedule(
       const title = '🔔 請記得簽退';
       const body  = `您今日 ${d.end} 的班次已結束超過 1 小時，請確認是否已簽退。`;
       const tokens = await _getMemberTokens(db, d.memberName);
-      if (tokens.length) await _sendMulticast(tokens, { title, body });
-      await _writeAutoNotif(db, { title, body, targetMembers: [d.memberName], dedupKey });
+      const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
+      await _writeAutoNotif(db, { title, body, targetMembers: [d.memberName], dedupKey, result });
     }
   }
 );
@@ -266,8 +274,8 @@ exports.scheduleMonthlyScheduleOpen = onSchedule(
     const title = '📋 下月班表開放排班';
     const body  = `${ym} 班表已開放，請盡快完成排班登記。`;
     const tokens = await _getAllTokens(db);
-    if (tokens.length) await _sendMulticast(tokens, { title, body });
-    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+    const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
+    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
     console.log(`scheduleMonthlyScheduleOpen: notified for ${ym}`);
   }
 );
@@ -287,8 +295,8 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
     const title = '✅ 請確認本月任務';
     const body  = `${ym} 已開始，請確認本月班表與任務是否有問題。`;
     const tokens = await _getAllTokens(db);
-    if (tokens.length) await _sendMulticast(tokens, { title, body });
-    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+    const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
+    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
     console.log(`scheduleMonthlyConfirmTask: notified for ${ym}`);
   }
 );
@@ -318,8 +326,8 @@ exports.scheduleTrainingReminder = onSchedule(
         const titles = snapToday.docs.map(d => d.data().topic || '定訓').join('、');
         const title  = '🔔 今天有定訓！';
         const body   = `${today} ${titles}，請準時出席`;
-        await _sendMulticast(tokens, { title, body });
-        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+        const result = await _sendMulticast(tokens, { title, body });
+        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
       }
     }
 
@@ -329,8 +337,8 @@ exports.scheduleTrainingReminder = onSchedule(
         const titles = snapTomorrow.docs.map(d => d.data().topic || '定訓').join('、');
         const title  = '🔔 明天有定訓！';
         const body   = `${tomorrow} ${titles}，請準時出席`;
-        await _sendMulticast(tokens, { title, body });
-        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey });
+        const result = await _sendMulticast(tokens, { title, body });
+        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
       }
     }
   }
@@ -461,13 +469,22 @@ async function _getAllTokens(db) {
   return [...new Set(tokens)];
 }
 
-async function _writeAutoNotif(db, { title, body, targetMembers, dedupKey }) {
+async function _writeAutoNotif(db, { title, body, targetMembers, dedupKey, result }) {
   const now = new Date();
   const today = _dateStr(now);
+
+  const summary = result || [];
+  const successCount = summary.filter(r => r.success).length;
+  const failCount    = summary.filter(r => !r.success).length;
+  // 完全沒有人訂閱推播時不算失敗（沒有可發送對象），只有「嘗試發送但全部失敗」才算失敗
+  const status   = summary.length && successCount === 0 ? 'fail' : 'sent';
+  const errorMsg = status === 'fail' ? (summary[0]?.error || 'unknown error') : null;
+
   await db.collection('pushLogs').add({
-    title, body, type: 'auto', status: 'sent',
+    title, body, type: 'auto', status, successCount, failCount,
     targetMembers: targetMembers || [],
     createdAt: now, sentBy: 'system', dedupKey,
+    ...(errorMsg ? { errorMsg } : {}),
   }).catch(() => {});
   await db.collection('announcements').add({
     title, body, text: `${title}\n${body}`,

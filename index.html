@@ -13849,6 +13849,7 @@ async function saveAnnounceForm() {
           status: ok ? 'ok' : 'fail',
           successCount: result.successCount ?? (ok ? 1 : 0),
           failCount:    result.failCount    ?? (ok ? 0 : 1),
+          ...(ok ? {} : { errorMsg: result.error || result.message || `HTTP ${res.status}` }),
         }).catch(() => {});
         // 舊版 Cloud Function 不支援 skipAnnouncement，會多寫一筆 broadcast，改回 system
         if (ok) {
@@ -13898,7 +13899,8 @@ async function loadAdminAnnouncements() {
   el.innerHTML = '<div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>';
   try {
     const today = new Date().toLocaleDateString('sv');
-    const docs  = await fbList(COL_ANNOUNCE);
+    // 公告＝發給全體／管理員的廣播；發給單一成員的個人推播只會出現在「推播」分頁
+    const docs  = (await fbList(COL_ANNOUNCE)).filter(d => (d.audience||'all') !== 'members');
     docs.sort((a,b) => {
       const p = (b.pinned?1:0) - (a.pinned?1:0);
       if (p !== 0) return p;
@@ -13912,46 +13914,22 @@ async function loadAdminAnnouncements() {
     docs.forEach(d => {
       const isActive  = d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today;
       const isExpired = (d.endDate||'9999') < today;
+      const statusClr   = isActive ? '#16a34a' : isExpired ? '#94a3b8' : '#d97706';
+      const statusBg    = isActive ? '#f0fdf4' : isExpired ? '#f1f5f9' : '#fffbeb';
+      const statusIcon  = isActive ? '✅' : isExpired ? '⏹' : '⏸';
+      const statusLabel = isActive ? '進行中' : isExpired ? '已過期' : '未啟用';
+
       const card = document.createElement('div');
-      card.style.cssText = `border:1px solid ${isActive ? '#a9dfbf' : 'var(--border)'};border-radius:8px;margin-bottom:10px;overflow:hidden;opacity:${isExpired?0.5:1};`;
+      card.style.cssText = `background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${statusClr};opacity:${isExpired?0.55:1};`;
 
-      // 頂部狀態列
+      // 頂部：狀態藥丸 + 發送時間
       const head = document.createElement('div');
-      head.style.cssText = `background:${isActive ? '#eafaf1' : 'var(--warm)'};padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;`;
+      head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;';
 
-      const statusBadge = document.createElement('span');
-      statusBadge.style.cssText = `font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;background:${isActive?'#27ae60':isExpired?'#95a5a6':'#e0d5c8'};color:white;`;
-      statusBadge.textContent = isActive ? '✓ 進行中' : isExpired ? '已過期' : '未啟用';
-
-      const typeBadges = document.createElement('div');
-      typeBadges.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;';
-      // 來源標籤
-      const srcMap = { broadcast:'📢 廣播', correction:'📝 修正申請', feedback:'💬 意見回饋', system:'🔔 系統公告', confirm:'📋 確認任務' };
-      const srcClr = { broadcast:'#c62828', correction:'#1565c0', feedback:'#6a1b9a', system:'#2e7d32', confirm:'#e65100' };
-      const srcBg  = { broadcast:'#ffebee', correction:'#e3f2fd', feedback:'#f3e5f5', system:'#e8f5e9', confirm:'#fff3e0' };
-      const srcType = d.type || 'system';
-      const srcB = document.createElement('span');
-      srcB.style.cssText = `font-size:0.68rem;background:${srcBg[srcType]||'#f5f5f5'};color:${srcClr[srcType]||'#555'};border-radius:10px;padding:2px 8px;font-weight:600;`;
-      srcB.textContent = srcMap[srcType] || '🔔 系統公告';
-      typeBadges.appendChild(srcB);
-      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='🚨 緊急'; typeBadges.appendChild(b); }
-      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:10px;padding:2px 8px;'; b.textContent='📌 置頂'; typeBadges.appendChild(b); }
-
-      // 廣播對象標籤
-      const audMap = { all:'👥 全體成員', admin:'🔑 管理員／承辦', members:'👤 指定人員' };
-      const audClr = { all:'#1565c0', admin:'#4a148c', members:'#e65100' };
-      const audBg  = { all:'#e3f2fd', admin:'#f3e5f5', members:'#fff3e0' };
-      const aud = d.audience || (srcType === 'broadcast' ? 'all' : null);
-      if (aud) {
-        const audB = document.createElement('span');
-        audB.style.cssText = `font-size:0.68rem;background:${audBg[aud]||'#f5f5f5'};color:${audClr[aud]||'#555'};border-radius:10px;padding:2px 8px;font-weight:600;`;
-        let audLabel = audMap[aud] || aud;
-        if (aud === 'members' && d.targetMembers && d.targetMembers.length) {
-          audLabel += `（${d.targetMembers.join('、')}）`;
-        }
-        audB.textContent = audLabel;
-        typeBadges.appendChild(audB);
-      }
+      const statusPill = document.createElement('span');
+      statusPill.style.cssText = `display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:${statusClr};background:${statusBg};border-radius:20px;padding:3px 10px;white-space:nowrap;`;
+      statusPill.textContent = `${statusIcon} ${statusLabel}`;
+      head.appendChild(statusPill);
 
       const _ts = d.createdAt;
       let createdAt = null;
@@ -13963,39 +13941,59 @@ async function loadAdminAnnouncements() {
       const sentStr = createdAt && !isNaN(createdAt)
         ? `${String(createdAt.getMonth()+1).padStart(2,'0')}/${String(createdAt.getDate()).padStart(2,'0')} ${String(createdAt.getHours()).padStart(2,'0')}:${String(createdAt.getMinutes()).padStart(2,'0')}`
         : '';
-
-      const rightWrap = document.createElement('div');
-      rightWrap.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;';
       if (sentStr) {
         const sentSpan = document.createElement('span');
-        sentSpan.style.cssText = 'font-size:0.78rem;font-weight:600;color:#c0392b;white-space:nowrap;';
-        sentSpan.textContent = `📤 發送：${sentStr}`;
-        rightWrap.appendChild(sentSpan);
+        sentSpan.style.cssText = 'font-size:0.68rem;color:#94a3b8;white-space:nowrap;';
+        sentSpan.textContent = `📤 ${sentStr}`;
+        head.appendChild(sentSpan);
       }
-      const dateSpan = document.createElement('span');
-      dateSpan.style.cssText = 'font-size:0.75rem;color:var(--text-light);white-space:nowrap;';
-      dateSpan.textContent = `${d.startDate||''} ～ ${d.endDate||''}`;
-      rightWrap.appendChild(dateSpan);
-
-      head.appendChild(statusBadge); head.appendChild(typeBadges); head.appendChild(rightWrap);
 
       // 內容：標題粗體 + 內文
       const body = document.createElement('div');
-      body.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border);';
       const titleEl = document.createElement('div');
-      titleEl.style.cssText = 'font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:2px;';
+      titleEl.style.cssText = 'font-size:0.87rem;font-weight:700;color:var(--text);margin-bottom:2px;';
       titleEl.textContent = d.title || (d.text||'').split('\n')[0] || '';
       body.appendChild(titleEl);
-      if (d.body || (d.text||'').includes('\n')) {
+      const bodyTxt = d.body || (d.text||'').split('\n').slice(1).join('\n').trim();
+      if (bodyTxt) {
         const bodyEl = document.createElement('div');
-        bodyEl.style.cssText = 'font-size:0.82rem;color:var(--text-mid);line-height:1.6;white-space:pre-wrap;';
-        bodyEl.textContent = d.body || (d.text||'').split('\n').slice(1).join('\n').trim();
+        bodyEl.style.cssText = 'font-size:0.8rem;color:#64748b;line-height:1.5;margin-bottom:8px;white-space:pre-wrap;';
+        bodyEl.textContent = bodyTxt;
         body.appendChild(bodyEl);
       }
 
+      // 標籤列：來源 + 對象（全體／管理員） + 緊急／置頂
+      const tagRow = document.createElement('div');
+      tagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;';
+      const srcMap = { broadcast:'📢 廣播', correction:'📝 修正申請', feedback:'💬 意見回饋', system:'🔔 系統公告', confirm:'📋 確認任務' };
+      const srcClr = { broadcast:'#c62828', correction:'#1565c0', feedback:'#6a1b9a', system:'#2e7d32', confirm:'#e65100' };
+      const srcBg  = { broadcast:'#ffebee', correction:'#e3f2fd', feedback:'#f3e5f5', system:'#e8f5e9', confirm:'#fff3e0' };
+      const srcType = d.type || 'system';
+      const srcB = document.createElement('span');
+      srcB.style.cssText = `font-size:0.68rem;background:${srcBg[srcType]||'#f5f5f5'};color:${srcClr[srcType]||'#555'};border-radius:20px;padding:2px 8px;font-weight:600;`;
+      srcB.textContent = srcMap[srcType] || '🔔 系統公告';
+      tagRow.appendChild(srcB);
+
+      const audMap = { all:'👥 全體成員', admin:'🔑 管理員／承辦' };
+      const audClr = { all:'#1565c0', admin:'#4a148c' };
+      const audBg  = { all:'#e3f2fd', admin:'#f3e5f5' };
+      const aud = d.audience || 'all';
+      if (audMap[aud]) {
+        const audB = document.createElement('span');
+        audB.style.cssText = `font-size:0.68rem;background:${audBg[aud]};color:${audClr[aud]};border-radius:20px;padding:2px 8px;font-weight:600;`;
+        audB.textContent = audMap[aud];
+        tagRow.appendChild(audB);
+      }
+      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.textContent='🚨 緊急'; tagRow.appendChild(b); }
+      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.textContent='📌 置頂'; tagRow.appendChild(b); }
+
+      const metaLine = document.createElement('div');
+      metaLine.style.cssText = 'font-size:0.7rem;color:#94a3b8;margin-bottom:2px;';
+      metaLine.textContent = `效期：${d.startDate||''} ～ ${d.endDate||''}`;
+
       // 操作列
       const foot = document.createElement('div');
-      foot.style.cssText = 'padding:8px 14px;display:flex;gap:6px;background:var(--cream);';
+      foot.style.cssText = 'display:flex;gap:6px;padding-top:8px;border-top:1px solid #f1f5f9;margin-top:6px;';
 
       const editBtn = document.createElement('button');
       editBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
@@ -14013,7 +14011,7 @@ async function loadAdminAnnouncements() {
       delBtn.addEventListener('click', () => deleteAnnounce(d.id, d.text||''));
 
       foot.appendChild(editBtn); foot.appendChild(toggleBtn); foot.appendChild(delBtn);
-      card.appendChild(head); card.appendChild(body); card.appendChild(foot);
+      card.appendChild(head); card.appendChild(body); card.appendChild(tagRow); card.appendChild(metaLine); card.appendChild(foot);
       el.appendChild(card);
     });
   } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：'+e.message+'</div>'; }
@@ -14156,8 +14154,9 @@ async function sendManualPush() {
     try { result = await res.json(); } catch(e) {}
     const successCount = result.successCount ?? (ok ? (targetNames.length || 1) : 0);
     const failCount    = result.failCount    ?? (ok ? 0 : (targetNames.length || 1));
+    const errorMsg     = ok ? null : (result.error || result.message || `HTTP ${res.status}`);
 
-    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount, failCount });
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount, failCount, ...(errorMsg ? { errorMsg } : {}) });
 
     if (ok) {
       // 寫入 COL_ANNOUNCE 讓通知中心「推播訊息」tab 顯示
@@ -14180,7 +14179,7 @@ async function sendManualPush() {
       statusEl.textContent = `❌ 推播失敗（HTTP ${res.status}${errMsg ? '：' + errMsg : ''}）`;
     }
   } catch(e) {
-    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: targetNames.length || 1 }).catch(()=>{});
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: targetNames.length || 1, errorMsg: e.message || String(e) }).catch(()=>{});
     statusEl.style.color = 'var(--red)';
     statusEl.textContent = '❌ 網路錯誤：' + e.message;
   } finally {
@@ -14198,32 +14197,33 @@ async function loadPushLog() {
       el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>尚無推播紀錄</div>';
       return;
     }
+    const statusMeta = { ok:{clr:'#16a34a',bg:'#f0fdf4',icon:'✅',label:'成功'}, fail:{clr:'#dc2626',bg:'#fef2f2',icon:'❌',label:'失敗'}, pending:{clr:'#f59e0b',bg:'#fffbeb',icon:'⏳',label:'處理中'} };
+    const audMeta = { all:{clr:'#1565c0',bg:'#e3f2fd'}, admin:{clr:'#4a148c',bg:'#f3e5f5'}, members:{clr:'#e65100',bg:'#fff3e0'} };
     el.innerHTML = docs.map(d => {
-      const statusColor = d.status === 'ok' ? '#16a34a' : d.status === 'fail' ? '#dc2626' : '#f59e0b';
-      const statusLabel = d.status === 'ok' ? '成功' : d.status === 'fail' ? '失敗' : '處理中';
-      const statusIcon  = d.status === 'ok' ? '✅' : d.status === 'fail' ? '❌' : '⏳';
-      const targetLabel = d.target === 'all' ? '全體成員' : d.target === 'admin' ? '管理員／承辦' : `指定成員（${(d.targetNames||d.targetMembers||[]).length} 人）`;
+      const sm = statusMeta[d.status] || statusMeta.pending;
+      const targetNames = d.targetNames || d.targetMembers || [];
+      const am = audMeta[d.target] || { clr:'#475569', bg:'#f1f5f9' };
+      const targetLabel = d.target === 'all' ? '👥 全體成員' : d.target === 'admin' ? '🔑 管理員／承辦' : `👤 個人推播（${targetNames.length} 人）`;
       const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務','announce':'📢 系統公告'};
       const sourceLabel = d.source ? (sourceMap[d.source] || null) : null;
-      const names = (d.targetNames||[]).join('、');
-      return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${statusColor};">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
-          <div style="font-size:0.87rem;font-weight:700;color:var(--text);flex:1;">${d.title||'—'}</div>
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-            <span style="font-size:0.9rem;">${statusIcon}</span>
-            <span style="font-size:0.72rem;font-weight:700;color:${statusColor};">${statusLabel}</span>
-          </div>
+      const names = targetNames.join('、');
+      return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${sm.clr};">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:${sm.clr};background:${sm.bg};border-radius:20px;padding:3px 10px;white-space:nowrap;">${sm.icon} ${sm.label}</span>
+          <span style="font-size:0.68rem;color:#94a3b8;white-space:nowrap;">${d.sentAt||''}</span>
         </div>
-        ${d.body ? `<div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">${d.body}</div>` : ''}
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
-          <span style="font-size:0.68rem;background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:20px;">📣 ${targetLabel}</span>
-          ${sourceLabel ? `<span style="font-size:0.68rem;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:20px;">${sourceLabel}</span>` : ''}
-          ${d.status==='ok' ? `<span style="font-size:0.68rem;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;">✔ ${d.successCount||0} 筆送達</span>` : ''}
-          ${d.status==='fail'&&d.failCount ? `<span style="font-size:0.68rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;">✘ ${d.failCount} 筆失敗</span>` : ''}
+        <div style="font-size:0.87rem;font-weight:700;color:var(--text);margin-bottom:2px;">${d.title||'—'}</div>
+        ${d.body ? `<div style="font-size:0.8rem;color:#64748b;line-height:1.5;margin-bottom:8px;white-space:pre-wrap;">${d.body}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          <span style="font-size:0.68rem;background:${am.bg};color:${am.clr};padding:2px 8px;border-radius:20px;font-weight:600;">${targetLabel}</span>
+          ${sourceLabel ? `<span style="font-size:0.68rem;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-weight:600;">${sourceLabel}</span>` : ''}
+          ${d.status==='ok' ? `<span style="font-size:0.68rem;background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;font-weight:600;">✔ ${d.successCount||0} 筆送達</span>` : ''}
+          ${d.status==='fail'&&d.failCount ? `<span style="font-size:0.68rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;font-weight:600;">✘ ${d.failCount} 筆失敗</span>` : ''}
         </div>
-        ${names ? `<div style="font-size:0.72rem;color:#94a3b8;margin-bottom:4px;">收件人：${names}</div>` : ''}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">
-          <div style="font-size:0.68rem;color:#94a3b8;">${d.sentAt||''} 由 ${d.sentBy||'—'} 發送</div>
+        ${names ? `<div style="font-size:0.7rem;color:#94a3b8;margin-bottom:4px;">收件人：${names}</div>` : ''}
+        ${d.status==='fail'&&d.errorMsg ? `<div style="font-size:0.7rem;color:#dc2626;background:#fef2f2;border-radius:6px;padding:4px 8px;margin-bottom:6px;">⚠️ ${d.errorMsg}</div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #f1f5f9;margin-top:2px;">
+          <div style="font-size:0.68rem;color:#94a3b8;">由 ${d.sentBy||'—'} 發送</div>
           <button onclick="deletePushLog('${d.id}')" style="background:none;border:none;color:#cbd5e1;font-size:0.7rem;cursor:pointer;padding:2px 4px;font-family:'Noto Sans TC',sans-serif;" title="刪除此筆紀錄">刪除</button>
         </div>
       </div>`;
@@ -14409,8 +14409,8 @@ async function _runAutoNotifications() {
       if (tmDuty.length) {
         const names = [...new Set(tmDuty.map(d => d.memberName))];
         const body  = tmDuty.map(d => `${d.memberName} ${d.start}–${d.end}`).join('、');
-        await _autoSendPush({ title: `📋 明日備勤提醒（${tomorrow}）`, body: `明日共 ${names.length} 位成員有備勤：${body}`, target: 'all', targetMembers: names, key, source: 'auto-duty-tomorrow' });
-        await markSent(key);
+        const ok = await _autoSendPush({ title: `📋 明日備勤提醒（${tomorrow}）`, body: `明日共 ${names.length} 位成員有備勤：${body}`, target: 'all', targetMembers: names, key, source: 'auto-duty-tomorrow' });
+        if (ok) await markSent(key); // 失敗時不標記已發送，留給下次（10分鐘後）重試
       }
     }
   }
@@ -14431,8 +14431,9 @@ async function _runAutoNotifications() {
           const myToday   = attAll.filter(r => r.memberName === duty.memberName && r.date === todayStr2);
           const hasCheckin  = myToday.some(r => r.checkinTime);
           const hasCheckout = myToday.some(r => r.checkoutTime);
+          let ok = true;
           if (hasCheckin && !hasCheckout) {
-            await _autoSendPush({
+            ok = await _autoSendPush({
               title: '⏰ 請記得簽退',
               body: `您今日 ${duty.end} 的班次已結束超過 1 小時，請確認是否已簽退。`,
               target: 'members',
@@ -14441,7 +14442,7 @@ async function _runAutoNotifications() {
               source: 'auto-duty-nosignout',
             });
           }
-          await markSent(key);
+          if (ok) await markSent(key); // 失敗時不標記已發送，留給下次（10分鐘後）重試
         }
       }
     }
@@ -14453,8 +14454,8 @@ async function _runAutoNotifications() {
     if (!sent(key)) {
       const nextDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const nextMonthStr = `${nextDate.getFullYear()}年${nextDate.getMonth() + 1}月`;
-      await _autoSendPush({ title: `📅 ${nextMonthStr}班表開放排班`, body: `${nextMonthStr}的班表已開放，請登入系統完成排班安排。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-open' });
-      await markSent(key);
+      const ok = await _autoSendPush({ title: `📅 ${nextMonthStr}班表開放排班`, body: `${nextMonthStr}的班表已開放，請登入系統完成排班安排。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-open' });
+      if (ok) await markSent(key);
     }
   }
 
@@ -14462,8 +14463,8 @@ async function _runAutoNotifications() {
   if (day === 1) {
     const key = `monthly-confirm-${month}`;
     if (!sent(key)) {
-      await _autoSendPush({ title: `✅ 本月確認任務`, body: `${now.getMonth() + 1}月已開始，請確認本月的備勤與任務安排是否有問題。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-confirm' });
-      await markSent(key);
+      const ok = await _autoSendPush({ title: `✅ 本月確認任務`, body: `${now.getMonth() + 1}月已開始，請確認本月的備勤與任務安排是否有問題。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-confirm' });
+      if (ok) await markSent(key);
     }
   }
 }
@@ -14482,12 +14483,15 @@ async function _autoSendPush({ title, body, target, targetMembers, key, source }
     const res = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     let result = {}; try { result = await res.json(); } catch(e) {}
     const ok = res.ok;
-    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount: result.successCount ?? (ok ? 1 : 0), failCount: result.failCount ?? (ok ? 0 : 1) }).catch(() => {});
+    const errorMsg = ok ? null : (result.error || result.message || `HTTP ${res.status}`);
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount: result.successCount ?? (ok ? 1 : 0), failCount: result.failCount ?? (ok ? 0 : 1), ...(errorMsg ? { errorMsg } : {}) }).catch(() => {});
     if (ok) {
       await fbAdd(COL_ANNOUNCE, { title, body, text: body ? `${title}\n${body}` : title, type: 'broadcast', active: true, audience: target, targetMembers: target === 'members' ? targetMembers : [], startDate: today, endDate: today, createdAt: new Date(), sentBy: '系統自動', ...(source ? { source } : {}) }).catch(() => {});
     }
+    return ok;
   } catch(e) {
-    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1 }).catch(() => {});
+    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1, errorMsg: e.message || String(e) }).catch(() => {});
+    return false;
   }
 }
 
