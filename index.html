@@ -3700,6 +3700,7 @@ function _dlCSV(content, filename) {
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">案件地址定位（地圖用）</div>
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">依「行政區＋詳細地址」呼叫免費 OpenStreetMap 定位服務，將座標寫回案件紀錄，供「案件統計」頁地圖顯示。<br><span style="color:var(--red);font-weight:600;">只會處理尚未定位過的案件，逐筆查詢避免超過服務限制，數量多時請耐心等候。</span></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-mid);margin-bottom:10px;cursor:pointer;font-weight:400;"><input type="checkbox" id="geoBackfillRetry" style="accent-color:#00897b;">包含先前定位失敗的案件，重新嘗試一次</label>
         <button id="geoBackfillBtn" onclick="repairGeocodeBackfill(this)" style="background:#00897b;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">📍 開始批次定位</button>
         <div id="geoBackfillLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
@@ -15071,17 +15072,19 @@ async function repairGeocodeBackfill(btn) {
   if (log) log.textContent = '';
   try {
     await ensureFirebase();
+    const retryFailed = !!document.getElementById('geoBackfillRetry')?.checked;
     const snap = await _fbDB.collection(COL_OUTING).get();
     const todo = snap.docs.filter(d => {
       const v = d.data();
-      return (typeof v.lat !== 'number' || typeof v.lng !== 'number') && !v.geocodeFailed && (v.address || v.district);
+      const notLocated = (typeof v.lat !== 'number' || typeof v.lng !== 'number');
+      return notLocated && (retryFailed || !v.geocodeFailed) && (v.address || v.district);
     });
     if (!todo.length) {
       if (log) log.textContent = '✅ 所有案件皆已定位，無需處理。';
       btn.textContent = '📍 開始批次定位'; btn.disabled = false;
       return;
     }
-    let ok = 0, fail = 0;
+    let ok = 0, fail = 0, notFound = 0;
     for (let i = 0; i < todo.length; i++) {
       const doc = todo[i];
       const v = doc.data();
@@ -15093,11 +15096,15 @@ async function repairGeocodeBackfill(btn) {
           body: JSON.stringify({ address: full }),
         });
         const d = await res.json();
-        if (d && !d.failed && typeof d.lat === 'number' && typeof d.lng === 'number') {
-          await _fbDB.collection(COL_OUTING).doc(doc.id).update({ lat: d.lat, lng: d.lng });
+        if (res.ok && d && !d.failed && typeof d.lat === 'number' && typeof d.lng === 'number') {
+          await _fbDB.collection(COL_OUTING).doc(doc.id).update({ lat: d.lat, lng: d.lng, geocodeFailed: false });
           ok++;
-        } else {
+        } else if (res.ok && d && d.failed) {
+          // 真的查無此地址（Nominatim 無結果）才標記永久失敗，避免每次都重查
           await _fbDB.collection(COL_OUTING).doc(doc.id).update({ geocodeFailed: true });
+          notFound++;
+        } else {
+          // 伺服端暫時性錯誤（例如服務忙線），不標記失敗，下次仍會重試
           fail++;
         }
       } catch (_) { fail++; }
@@ -15105,7 +15112,7 @@ async function repairGeocodeBackfill(btn) {
       await new Promise(r => setTimeout(r, 1100));
     }
     _C.invalidate(COL_OUTING);
-    if (log) log.textContent = `✅ 完成：共 ${todo.length} 筆，成功定位 ${ok} 筆，失敗 ${fail} 筆。`;
+    if (log) log.textContent = `✅ 完成：共 ${todo.length} 筆，成功定位 ${ok} 筆，查無地址 ${notFound} 筆，暫時性錯誤 ${fail} 筆（可重新執行）。`;
     btn.textContent = '📍 開始批次定位';
   } catch (e) {
     if (log) log.textContent = '❌ 失敗：' + e.message;

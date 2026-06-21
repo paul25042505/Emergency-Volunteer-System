@@ -195,6 +195,12 @@ exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'publi
 
     const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=tw&q=' + encodeURIComponent(address);
     const resp = await fetch(url, { headers: { 'User-Agent': 'EmergencyVolunteerSystem/1.0 (paul25042505@gmail.com)' } });
+    if (!resp.ok) {
+      // Nominatim 暫時性錯誤（如 403/429 限流）：不寫入快取，讓呼叫端可以重試
+      console.error('geocodeAddress: Nominatim returned', resp.status, address);
+      res.status(502).json({ error: `nominatim status ${resp.status}` });
+      return;
+    }
     const results = await resp.json();
 
     if (Array.isArray(results) && results.length) {
