@@ -9323,13 +9323,16 @@ function autoCalcEditHours() {
 }
 
 // 查當班時段出勤次數（簽到時間 ~ 簽退時間內）
+let _loadTodayCountSeq = 0;
 async function loadTodayCount(memberName) {
+  const seq = ++_loadTodayCountSeq;
   // attCheckoutTarget 是 key（docId），不是 memberName
   const session   = attSessions[attCheckoutTarget] || {};
   const date      = session.date || document.getElementById('attDate').value;
   const checkinT  = session.checkinTime || '';
   const checkoutT = document.getElementById('attCheckoutTime').value || '';
-  document.getElementById('attCount').value = 0;
+  document.getElementById('attCount').value   = 0;
+  document.getElementById('attService').value = 0;
   _attStatSync();
   if (!checkinT || !checkoutT) return;
 
@@ -9339,6 +9342,7 @@ async function loadTodayCount(memberName) {
 
   try {
     const docs = await fbQuery(COL_OUTING, [['date','==',date]]);
+    if (seq !== _loadTodayCountSeq) return; // 期間已有更新的呼叫，捨棄這次（較舊）的結果
     const matched = docs.filter(r => {
       if ((r.memberName||'') !== memberName) return false;
       const recOutMins  = r.timeOut  ? toMins(r.timeOut)  : null;
@@ -9348,9 +9352,12 @@ async function loadTodayCount(memberName) {
     });
     document.getElementById('attCount').value   = matched.length;
     document.getElementById('attService').value = matched.reduce((s, r) => s + (parseInt(r.serviceCount) || 0), 0);
+    _attStatSync();
   } catch(e) {
+    if (seq !== _loadTodayCountSeq) return;
     document.getElementById('attCount').value   = 0;
     document.getElementById('attService').value = 0;
+    _attStatSync();
   }
 }
 
