@@ -1030,6 +1030,7 @@ function importResultHtml(ok, fail, failList) {
   return html;
 }
 async function importAttCSV() {
+  if (!_requireAdmin()) return;
   const resultEl = document.getElementById('importAttResult');
   try {
     const file = document.getElementById('importAttFile').files[0];
@@ -1054,6 +1055,7 @@ async function importAttCSV() {
   } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
 }
 async function importOutCSV() {
+  if (!_requireAdmin()) return;
   const resultEl = document.getElementById('importOutResult');
   try {
     const file = document.getElementById('importOutFile').files[0];
@@ -7911,6 +7913,7 @@ async function _repairBuildDiffList(dateFrom, dateTo) {
 }
 
 async function repairPreview(btn) {
+  if (!_requireAdmin()) return;
   const area   = document.getElementById('repairPreviewArea');
   const execBtn= document.getElementById('repairExecBtn');
   const log    = document.getElementById('repairLog');
@@ -7990,6 +7993,7 @@ function repairUpdateExecBtn() {
 }
 
 async function repairAllAttService(btn) {
+  if (!_requireAdmin()) return;
   const log  = document.getElementById('repairLog');
   const area = document.getElementById('repairPreviewArea');
   const diffs = window._repairDiffs || [];
@@ -11960,6 +11964,14 @@ async function adminRestoreMember(id, name) {
   } catch(e) { alert('操作失敗：'+e.message); }
 }
 
+// 系統級/跨單位操作（訊息管理、批次匯入、資料修復）僅限真管理員，選單隱藏之外動作層也要擋
+function _requireAdmin() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  if (usr.isAdmin) return true;
+  alert('僅限管理員操作');
+  return false;
+}
+
 function _buildAdminMenu() {
   const grid = document.getElementById('adminMenuCards');
   if (!grid) return;
@@ -11968,14 +11980,14 @@ function _buildAdminMenu() {
   const items = [
     { id:'adminSec-wl',         icon:'👤', label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
     { id:'adminSec-casetypes',  icon:'🏷', label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
-    { id:'adminSec-announce',   icon:'📢', label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b' },
+    { id:'adminSec-announce',   icon:'📢', label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b', adminOnly:true },
     { id:'adminSec-feedback',   icon:'💬', label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
     { id:'adminSec-correction', icon:'📝', label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
     { id:'adminSec-schedule',   icon:'📅', label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
     { id:'adminSec-temppass',   icon:'🔑', label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
     { id:'adminSec-changelog',  icon:'📋', label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
-    { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1' },
-    { id:'adminSec-repair',     icon:'🔧', label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c' },
+    { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1', adminOnly:true },
+    { id:'adminSec-repair',     icon:'🔧', label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c', adminOnly:true },
     { id:'adminSec-confirm',    icon:'✅', label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
     { id:'adminSec-pushctrl',   icon:'🔔', label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
     { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
@@ -13561,6 +13573,7 @@ function setAnPushTarget(t) {
 }
 
 async function saveAnnounceForm() {
+  if (!_requireAdmin()) return;
   const id      = document.getElementById('anFormId').value;
   const title   = document.getElementById('anFormTitle').value.trim();
   const body    = document.getElementById('anFormText').value.trim();
@@ -13626,6 +13639,7 @@ async function saveAnnounceForm() {
 }
 
 async function toggleAnnounce(id, currentActive) {
+  if (!_requireAdmin()) return;
   try {
     await fbUpdate(COL_ANNOUNCE, id, { active: !currentActive });
     await loadAdminAnnouncements();
@@ -13634,6 +13648,7 @@ async function toggleAnnounce(id, currentActive) {
 }
 
 async function deleteAnnounce(id, text) {
+  if (!_requireAdmin()) return;
   if (!confirm(`確定刪除公告「${text.substring(0,20)}...」？`)) return;
   try {
     await fbDelete(COL_ANNOUNCE, id);
@@ -14722,6 +14737,7 @@ function initSettingsPage() {
 }
 
 async function repairHasSig(btn) {
+  if (!_requireAdmin()) return;
   btn.disabled = true; btn.textContent = '🔄 掃描中...';
   const log = document.getElementById('repairHasSigLog');
   if (log) log.textContent = '';
