@@ -6385,6 +6385,8 @@ function initPullToRefresh() {
     if (!el) return;
     el.addEventListener('touchstart', e => {
       if (refreshing) return;
+      // 服務證/天氣卡片自己處理下拉手勢（展開服務證、展開後另外算重新整理），這裡不要重複追蹤
+      if (e.target.closest && e.target.closest('#idCardPeek, #dashWeatherCard')) return;
       const scrollTop = isLogin ? 0 : el.scrollTop;
       if (scrollTop === 0) {
         startY = e.touches[0].clientY;
@@ -7731,10 +7733,8 @@ function _idCardTouchMove(e) {
   const progress = (newHeight - ID_CARD_COLLAPSED_H) / (_idCardFullHeight - ID_CARD_COLLAPSED_H || 1);
   el.style.marginBottom = (-8 + progress * 24) + 'px';
   if (e.cancelable) e.preventDefault();
-  if (revealing && newHeight >= _idCardFullHeight) {
-    // 剛好完全展開：從這一刻起，多拉的距離才開始算重新整理的進度
-    _idCardShowRefreshProgress(dy - (_idCardFullHeight - ID_CARD_COLLAPSED_H));
-  }
+  // 注意：完全展開後同一個手勢不會接著算重新整理進度，要放手再重新下拉才會觸發，
+  // 避免一次連續滑動把「展開」跟「重新整理」兩段揉在一起，分不出有沒有展開完成
 }
 function _idCardTouchEnd(e) {
   if (e) e.stopPropagation();
