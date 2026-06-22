@@ -174,12 +174,17 @@ exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public
   }
 });
 
-// ── 地址定位：免費 OpenStreetMap Nominatim，結果存 Firestore 快取避免重複查詢 ──
+// ── 地址定位：OpenCage（免費註冊金鑰，每日 2500 次額度），結果存 Firestore 快取避免重複查詢 ──
+// 匿名公開的 Nominatim／Photon 服務會把雲端共用對外 IP 視為自動化流量而靜默回空結果，
+// 改用需金鑰驗證的服務可避免被擋。金鑰存於 functions/.env（由部署流程寫入，見 deploy-functions.yml）
 exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
   const address = (req.body?.address || '').trim();
   if (!address) { res.status(400).json({ error: 'address is required' }); return; }
+
+  const apiKey = process.env.OPENCAGE_API_KEY;
+  if (!apiKey) { res.status(500).json({ error: 'OPENCAGE_API_KEY not configured' }); return; }
 
   const db = getFirestore();
   const cacheId = crypto.createHash('md5').update(address).digest('hex');
@@ -194,21 +199,20 @@ exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'publi
       return;
     }
 
-    // 使用 Photon（komoot 提供的免費 OSM 地址定位服務，無需 API Key，對伺服端自動查詢較友善）
-    // 以潭子區（本單位轄區）座標加權，讓同名地址優先比對鄰近地點
-    const url = 'https://photon.komoot.io/api/?limit=1&lat=24.21&lon=120.70&q=' + encodeURIComponent(address);
-    const resp = await fetch(url, { headers: { 'User-Agent': 'EmergencyVolunteerSystem/1.0 (paul25042505@gmail.com)' } });
+    const url = 'https://api.opencagedata.com/geocode/v1/json?limit=1&countrycode=tw&language=zh&key='
+      + apiKey + '&q=' + encodeURIComponent(address);
+    const resp = await fetch(url);
     if (!resp.ok) {
-      console.error('geocodeAddress: Photon returned', resp.status, address);
-      res.status(502).json({ error: `photon status ${resp.status}` });
+      console.error('geocodeAddress: OpenCage returned', resp.status, address);
+      res.status(502).json({ error: `opencage status ${resp.status}` });
       return;
     }
     const data = await resp.json();
-    const feat = Array.isArray(data?.features) ? data.features[0] : null;
-    const coords = feat?.geometry?.coordinates;
+    const result = Array.isArray(data?.results) ? data.results[0] : null;
+    const geo = result?.geometry;
 
-    if (Array.isArray(coords) && coords.length === 2) {
-      const lng = coords[0], lat = coords[1];
+    if (geo && typeof geo.lat === 'number' && typeof geo.lng === 'number') {
+      const { lat, lng } = geo;
       await cacheRef.set({ address, lat, lng, failed: false, createdAt: new Date() });
       res.json({ lat, lng, failed: false });
     } else {

@@ -25,5 +25,8 @@ jobs:
       - name: Install functions dependencies
         run: cd functions && npm install
 
+      - name: Write runtime secrets
+        run: echo "OPENCAGE_API_KEY=${{ secrets.OPENCAGE_API_KEY }}" > functions/.env
+
       - name: Deploy Firebase Functions
         run: npx firebase-tools@latest deploy --only functions --project rescue-volunteer-a33f1 --non-interactive --force
