@@ -5934,48 +5934,6 @@ function startSessionTimer() {
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbxw_las6IiW4y6gfnqdgVClgp3qewOkwvewUNGBkxnJ13_kGsPXLsXlJ7VwXj7foAakxQ/exec';
 const RPT3_URL = 'https://script.google.com/macros/s/AKfycbycbBLIqGUVCNWZJ9NpGqQxOvLXc7MbKGxRmGgNVdLaDjGC1OjMJWaGpz_rv7oNCy1PUQ/exec';
 
-// ── 共用 JSONP 請求（解決 Apps Script CORS 問題）──
-function jsonpFetch(url, scriptId, timeout) {
-  timeout = timeout || 15000;
-  return new Promise(function(resolve, reject) {
-    var cbName = '_jsonp_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    var script = document.createElement('script');
-    var done   = false;
-
-    function cleanup() {
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    window[cbName] = function(data) {
-      if (done) return;
-      done = true;
-      cleanup();
-      resolve(data);
-    };
-
-    var sep    = url.indexOf('?') >= 0 ? '&' : '?';
-    script.src = url + sep + 'callback=' + cbName;
-
-    script.onerror = function() {
-      if (done) return;
-      done = true;
-      cleanup();
-      reject(new Error('連線失敗'));
-    };
-
-    setTimeout(function() {
-      if (done) return;
-      done = true;
-      cleanup();
-      reject(new Error('連線逾時'));
-    }, timeout);
-
-    document.head.appendChild(script);
-  });
-}
-
-
 // ════════════════════════════════════════
 // 共用：日期正規化（修復2）
 // ════════════════════════════════════════
@@ -6162,14 +6120,6 @@ function warnCheckoutTimeAdjust(timeVal, diffMins) {
 // Navigation
 // ════════════════════════════════════════
 
-// 點擊頂部 header 回到頁面最上方（模仿 iOS 點狀態列行為）
-function scrollToPageTop(e) {
-  if (e.target.closest('button, a, input, select')) return;
-  const scroller = document.getElementById('appScroll');
-  if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// 動態取得 header 高度，修正 appScroll padding 和所有 sticky 元素
 // ════════════════════════════════════════
 // Pull to Refresh（下拉重新整理）
 // ════════════════════════════════════════
@@ -6262,13 +6212,6 @@ function initPullToRefresh() {
   setupPTR(document.getElementById('loginScreen'), true);
 }
 
-function headerRefresh(btn) {
-  btn.style.transition = 'transform 0.6s ease';
-  btn.style.transform  = 'rotate(360deg)';
-  btn.disabled = true;
-  setTimeout(() => location.reload(), 400);
-}
-
 async function refreshCurrentPage() {
   const pageId = window._currentPageId || '';
   switch(pageId) {
@@ -6331,48 +6274,10 @@ function syncHeaderHeight() {
   }));
 }
 
-function _positionAdminTabBar() { /* tab bar 已移除 */ }
-
 let _loadingCount = 0;
 let _loadingTimer = null;
 let _loadingShowTimer = null;
 let _loadingMaxTimer = null;
-function showLoading() {
-  _loadingCount++;
-  if (_loadingCount > 1) return;
-  clearTimeout(_loadingShowTimer);
-  clearTimeout(_loadingMaxTimer);
-  // 延遲 300ms 才顯示，快頁面不閃 spinner
-  _loadingShowTimer = setTimeout(() => {
-    if (_loadingCount === 0) return;
-    const bar = document.getElementById('globalLoadingBar');
-    if (!bar) return;
-    const spinner = document.getElementById('globalLoadingSpinner');
-    if (spinner && !spinner.querySelector('div')) {
-      const N = 12, R = 18, r = 3.2;
-      for (let i = 0; i < N; i++) {
-        const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
-        const x = R * Math.cos(angle) + R + r;
-        const y = R * Math.sin(angle) + R + r;
-        const dot = document.createElement('div');
-        dot.style.cssText = `position:absolute;width:${r*2}px;height:${r*2}px;border-radius:50%;background:#fff;`
-          + `left:${x - r}px;top:${y - r}px;`
-          + `animation:_dotFade 1.1s ease-in-out ${(i/N*1.1).toFixed(2)}s infinite;`;
-        spinner.appendChild(dot);
-      }
-      spinner.style.width  = (R*2 + r*2) + 'px';
-      spinner.style.height = (R*2 + r*2) + 'px';
-    }
-    bar.style.display = 'flex';
-    bar.style.opacity = '0';
-    requestAnimationFrame(() => {
-      bar.style.transition = 'opacity 0.15s ease';
-      bar.style.opacity = '1';
-    });
-    // 最多顯示 6 秒，強制結束避免卡住
-    _loadingMaxTimer = setTimeout(() => { _loadingCount = 1; hideLoading(); }, 6000);
-  }, 300);
-}
 function hideLoading() {
   _loadingCount = Math.max(0, _loadingCount - 1);
   if (_loadingCount > 0) return;
@@ -6637,86 +6542,11 @@ function navTo(pageId, fromHistory, forceDir) {
   if (_scrTop) _scrTop.scrollTop = 0;
 }
 
-function openDrawer() {}
-function closeDrawer() {}
-
 // ════════════════════════════════════════
 // Dashboard（修復2：日期比對）
 // ════════════════════════════════════════
 // ── 首頁日期時間每秒更新 ──
 let _dashClockTimer = null;
-// ── 24 節氣（天文演算法，永久有效）──
-// 原理：太陽黃經每隔 15° 為一個節氣，從春分(0°)開始
-function getSolarTermByAstro(date) {
-  const TERMS = [
-    '小寒','大寒','立春','雨水','驚蟄','春分',
-    '清明','穀雨','立夏','小滿','芒種','夏至',
-    '小暑','大暑','立秋','處暑','白露','秋分',
-    '寒露','霜降','立冬','小雪','大雪','冬至',
-  ];
-
-  // 計算儒略日
-  function toJD(y, m, d) {
-    if (m <= 2) { y--; m += 12; }
-    const A = Math.floor(y / 100);
-    const B = 2 - A + Math.floor(A / 4);
-    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5;
-  }
-
-  // 太陽黃經（度）
-  function sunLongitude(jd) {
-    const T  = (jd - 2451545.0) / 36525;
-    const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
-    const M  = (357.52911 + 35999.05029 * T - 0.0001537 * T * T) * Math.PI / 180;
-    const C  = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M)
-             + (0.019993 - 0.000101 * T) * Math.sin(2 * M)
-             + 0.000289 * Math.sin(3 * M);
-    let lng = (L0 + C) % 360;
-    if (lng < 0) lng += 360;
-    return lng;
-  }
-
-  // 求某年某黃經角的精確儒略日（二分法）
-  function termJD(year, angle) {
-    // 粗略估算起始點
-    let jd = toJD(year, 1, 1) + (angle + 280) % 360 / 360 * 365.25;
-    for (let i = 0; i < 50; i++) {
-      let lng = sunLongitude(jd);
-      let diff = angle - lng;
-      if (diff > 180) diff -= 360;
-      if (diff < -180) diff += 360;
-      if (Math.abs(diff) < 0.0001) break;
-      jd += diff / 360 * 365.25;
-    }
-    return jd;
-  }
-
-  // JD 轉台灣時間日期字串
-  function jdToTWDate(jd) {
-    const ms = (jd - 2440587.5) * 86400000 + 8 * 3600000; // UTC+8
-    const d  = new Date(ms);
-    return d.toLocaleDateString('sv');
-  }
-
-  // 今天日期字串
-  const todayStr = date.toLocaleDateString('sv');
-  const y = date.getFullYear();
-
-  // 檢查今年和明年初的所有節氣
-  for (let yr = y - 1; yr <= y + 1; yr++) {
-    for (let i = 0; i < 24; i++) {
-      const angle = (i * 15 + 285) % 360; // 小寒=285°起
-      const jd    = termJD(yr, angle);
-      const ds    = jdToTWDate(jd);
-      if (ds === todayStr) return TERMS[i];
-    }
-  }
-  return null;
-}
-
-function getSolarTerm(date) {
-  return getSolarTermByAstro(date);
-}
 
 function startDashClock() {
   function update() {
@@ -8025,13 +7855,6 @@ function aeInitCanvas(canvasId) {
   cv.addEventListener('touchend',   ()=>state.drawing=false);
 }
 function aeGetSig(id){ const s=_aeCtxMap[id]; if(!s||!s.hasSig)return''; return _sigToJpeg(document.getElementById(id)); }
-// ── 簽名放大 ──
-function viewSig(sig) {
-  if (!sig) return;
-  document.getElementById('sigModalImg').src = sig;
-  document.getElementById('sigModal').style.display = 'flex';
-}
-
 // ── 服務人次按鈕選擇 ──
 function autoZeroSvcIfNeeded(cb, targetId) {
   if (cb.checked) setSvcBtnByVal(targetId, 0);
@@ -8444,19 +8267,6 @@ function clearSvcBtns(targetId) {
     b.style.background  = 'var(--warm)';
     b.style.color       = '';
     b.style.borderColor = 'var(--border)';
-  });
-}
-
-// 開啟編輯 modal 時，根據現有數值同步高亮對應按鈕
-function syncSvcBtns(targetId) {
-  const el = document.getElementById(targetId);
-  if (!el) return;
-  const cur = String(el.value);
-  document.querySelectorAll(`.svc-btn[data-target="${targetId}"]`).forEach(b => {
-    const active = b.dataset.val === cur;
-    b.style.background  = active ? 'var(--red)' : 'var(--warm)';
-    b.style.color       = active ? 'white' : '';
-    b.style.borderColor = active ? 'var(--red)' : 'var(--border)';
   });
 }
 
@@ -9946,33 +9756,6 @@ function showCheckoutTimeAdjustInfo(idx) {
   );
 }
 
-function openAttEditNew() {
-  document.getElementById('aqEditRow').value = '';
-  document.getElementById('aqEditDate').value = new Date().toLocaleDateString('sv');
-  document.getElementById('aqEditName').value = '';
-  document.getElementById('aqEditName').removeAttribute('readonly');
-  document.getElementById('aqEditName').style.background = '';
-  const dutyAtt = document.getElementById('aqEditDutyAtt');
-  if (dutyAtt) { dutyAtt.checked = true; updateDutyStyle(); }
-  const aqNR = document.getElementById('aqEditReason'); if (aqNR) aqNR.value = '';
-  document.getElementById('aqEditCheckin').value  = '';
-  document.getElementById('aqEditCheckout').value = '';
-  document.getElementById('aqEditHours').value   = '';
-  document.getElementById('aqEditCount').value   = '';
-  document.getElementById('aqEditService').value = '';
-  const cinPrev  = document.getElementById('aqEditCheckinPrev');
-  const coutPrev = document.getElementById('aqEditCheckoutPrev');
-  const cinNote  = document.getElementById('aqEditCheckinPrevNote');
-  const coutNote = document.getElementById('aqEditCheckoutPrevNote');
-  if (cinPrev)  cinPrev.style.display  = 'none';
-  if (coutPrev) coutPrev.style.display = 'none';
-  if (cinNote)  cinNote.style.display  = 'none';
-  if (coutNote) coutNote.style.display = 'none';
-  const _aqm = document.getElementById('aqEditModal'); _aqm.style.display = 'block'; _aqm.scrollTop = 0;
-  autoCalcEditHours();
-  setTimeout(()=>{ aeInitCanvas('aqEditCheckinCanvas'); aeInitCanvas('aqEditCheckoutCanvas'); }, 50);
-}
-
 function openAttEdit(idx) {
   const r = aqFiltered[idx];
   document.getElementById('aqEditRow').value = idx;
@@ -10887,8 +10670,6 @@ async function loadStats() {
 
     document.getElementById('statsTableCard').style.display = 'block';
     document.getElementById('statsEmptyMsg').style.display = 'none';
-
-    // renderCaseTypeStats removed — see caseStatsPage
   } catch(e) {
     document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
   }
@@ -11182,26 +10963,6 @@ async function initItemsPage() {
   } catch(e) {
     if (container) container.innerHTML = `<div class="query-empty"><span class="empty-icon">⚠️</span>初始化失敗：${e.message}</div>`;
   }
-}
-
-function renderItemRecipients() {
-  const grid = document.getElementById('itemRecipients');
-  if (!grid) return;
-  if (members.length === 0) {
-    grid.innerHTML = '<div style="color:var(--text-light);font-size:0.82rem;">尚無成員，請先到「成員管理」新增</div>';
-    return;
-  }
-  grid.innerHTML = members.map(m => `
-    <label class="cb-item" style="font-size:0.82rem;">
-      <input type="checkbox" value="${m.name}" style="accent-color:var(--red);min-height:unset;">
-      ${m.name}
-    </label>
-  `).join('');
-  grid.querySelectorAll('.cb-item').forEach(el => {
-    el.querySelector('input').addEventListener('change', function() {
-      el.classList.toggle('checked', this.checked);
-    });
-  });
 }
 
 // 待領清單分隊篩選觸發（清單區的分隊 select onchange）
@@ -11925,7 +11686,6 @@ async function loadAdminAttendance() {
 
     const ths='padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
     const tds='padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
-    const sigA=(sig)=>sig?`<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">`:`<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;min-width:780px;';
     table.innerHTML = `<thead><tr>
@@ -12057,7 +11817,6 @@ async function loadAdminOuting() {
 
     const ths2='padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-mid);white-space:nowrap;background:var(--warm);';
     const tds2='padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.82rem;vertical-align:middle;';
-    const sigB=(sig)=>sig?`<img src="${sig}" style="height:40px;max-width:88px;display:block;border:1px solid var(--border);border-radius:3px;background:#fafaf8;object-fit:contain;cursor:pointer;" onclick="document.getElementById('sigModalImg').src=this.src;document.getElementById('sigModal').style.display='flex';">`:`<span style="color:var(--text-light);font-size:0.72rem;">未簽名</span>`;
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;min-width:780px;';
     table.innerHTML = `<thead><tr>
@@ -12314,12 +12073,6 @@ function adminShowSection(sectionId) {
       if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
     }
   }
-}
-
-// _positionAdminTabBar 已於上方定義為 no-op
-
-function adminScrollTo(sectionId) {
-  adminShowSection(sectionId);
 }
 
 var _adminTabObserver = null;
@@ -13805,23 +13558,6 @@ function setAnPushTarget(t) {
     btn.style.color = active ? 'white' : '#64748b';
     btn.style.borderColor = active ? '#1e3a8a' : '#e2e8f0';
   });
-}
-
-function toggleAnFormMember() {
-  const isMember = document.getElementById('anFormPushMember')?.checked;
-  const row = document.getElementById('anFormMemberRow');
-  if (row) row.style.display = isMember ? '' : 'none';
-  if (isMember) {
-    // 填充成員姓名 datalist
-    const dl = document.getElementById('anFormMemberList');
-    if (dl && !dl.dataset.loaded) {
-      fbList('whitelist').then(docs => {
-        dl.innerHTML = docs.map(d => `<option value="${d.memberName||''}">`).join('');
-        dl.dataset.loaded = '1';
-      }).catch(() => {});
-    }
-    document.getElementById('anFormMemberName')?.focus();
-  }
 }
 
 async function saveAnnounceForm() {
@@ -16506,9 +16242,6 @@ function hideChangelogForm() {
   container.innerHTML = '';
   _clItems = [];
 }
-// 以下舊函式不再使用，保留空函式避免其他地方呼叫出錯
-
-
 // ════════════════════════════════════════
 // 協勤案件登錄：分隊篩選成員
 // ════════════════════════════════════════
@@ -16635,25 +16368,6 @@ let _easyCheckoutTarget = null;
 function _sigEasyCheckinSetHasSig()  { _easyCheckinHasSig  = true; }
 function _sigEasyCheckoutSetHasSig() { _easyCheckoutHasSig = true; }
 
-// ── 簽到退頁面的簡易模式切換 ──
-function toggleAttEasyMode() {
-  const sec = document.getElementById('attEasySection');
-  const main = document.getElementById('attMain');
-  const btn = document.getElementById('attEasyBtn');
-  const isOpen = sec.style.display !== 'none';
-  if (isOpen) {
-    sec.style.display = 'none';
-    main.style.display = 'block';
-    btn.textContent = '👴 簡易模式';
-  } else {
-    sec.style.display = 'block';
-    main.style.display = 'none';
-    btn.textContent = '← 一般模式';
-    _easyFillGreeting('attEasyGreetName', 'attEasyGreetDate');
-    easyBack();
-    easyInitUnits();
-  }
-}
 
 
 async function easyInitUnits() {
@@ -17206,23 +16920,10 @@ async function meetingLoadAttendees(preSelected) {
   }
 }
 
-function meetingCheckAll(check) {
-  document.querySelectorAll('.meeting-att-chk').forEach(c => c.checked = check);
-  updateMeetingAttCount();
-}
-
 function updateMeetingAttCount() {
   const cnt = document.querySelectorAll('.meeting-att-chk:checked').length;
   const el = document.getElementById('meetingAttCount');
   if (el) el.textContent = cnt > 0 ? `已勾選 ${cnt} 人` : '';
-}
-
-function goMeetingStats() {
-  navTo('meetingPage');
-  setTimeout(function() {
-    var p = document.getElementById('meetingStatsPanel');
-    if (p && p.style.display === 'none') toggleMeetingStats();
-  }, 400);
 }
 
 async function toggleMeetingStats(btn) {
@@ -17546,174 +17247,6 @@ const CHART_COLORS = [
   '#16a085','#2980b9','#8e44ad','#7f8c8d','#2c3e50',
   '#d35400','#1abc9c','#3498db','#9b59b6','#34495e'
 ];
-
-function renderCaseTypeStats(outDocs, filterUnit, memberUnitMap, year, month) {
-  const section = document.getElementById('caseStatsSection');
-  if (!section) return;
-
-  // 所有協勤紀錄都納入，沒有 caseType 的歸為「未分類」
-  let docs = [...outDocs];
-  if (filterUnit) {
-    docs = docs.filter(d => (memberUnitMap[d.memberName]||'') === filterUnit);
-  }
-
-  if (!docs.length) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = '';
-
-  // ── 統計案由數量 ──
-  const typeCount = {};
-  docs.forEach(d => {
-    const t = (d.caseType || '').trim() || '未分類';
-    typeCount[t] = (typeCount[t]||0) + 1;
-  });
-  const total = docs.length;
-  const sorted = Object.entries(typeCount).sort((a,b) => b[1]-a[1]);
-  const labels = sorted.map(e=>e[0]);
-  const counts = sorted.map(e=>e[1]);
-  const colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
-
-  // ── 數字摘要 ──
-  const topType = sorted[0];
-  const uniqueTypes = sorted.length;
-  const overview = document.getElementById('caseStatsOverview');
-  overview.innerHTML = `
-    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">案件總數</div></div>
-    <div class="stat-card"><div class="stat-num">${uniqueTypes}</div><div class="stat-label">案由數</div></div>
-    <div class="stat-card"><div class="stat-num" style="font-size:1.1rem;">${topType[0]}</div><div class="stat-label">最多案由</div></div>
-    <div class="stat-card"><div class="stat-num">${topType[1]}</div><div class="stat-label">${topType[0]} 件數</div></div>
-  `;
-
-  // ── 圓餅圖 & 長條圖（用 setTimeout 確保 canvas 已渲染完成）──
-  if (_pieChart) { _pieChart.destroy(); _pieChart = null; }
-  if (_barChart) { _barChart.destroy(); _barChart = null; }
-
-  // 圓餅圖圖例（先渲染文字，不需要等 canvas）
-  const legend = document.getElementById('caseTypeLegend');
-  if (legend) {
-    legend.innerHTML = labels.map((l,i) =>
-      `<span style="display:flex;align-items:center;gap:4px;white-space:nowrap;">
-        <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>${l}
-      </span>`
-    ).join('');
-  }
-
-  // ── 圓餅圖（SVG）──
-  (function() {
-    const el = document.getElementById('caseTypePieChart');
-    if (!el) return;
-    const size = 200, cx = size/2, cy = size/2, r = 80, ir = 48;
-    let startAngle = -Math.PI/2;
-    let slices = '';
-    counts.forEach((cnt, i) => {
-      const angle = (cnt/total) * Math.PI * 2;
-      const endAngle = startAngle + angle;
-      const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
-      const x2 = cx + r * Math.cos(endAngle),   y2 = cy + r * Math.sin(endAngle);
-      const ix1 = cx + ir * Math.cos(startAngle), iy1 = cy + ir * Math.sin(startAngle);
-      const ix2 = cx + ir * Math.cos(endAngle),   iy2 = cy + ir * Math.sin(endAngle);
-      const large = angle > Math.PI ? 1 : 0;
-      const pct = Math.round(cnt/total*100);
-      slices += `<path d="M${ix1},${iy1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${ix2},${iy2} A${ir},${ir} 0 ${large},0 ${ix1},${iy1} Z"
-        fill="${colors[i]}" stroke="#fff" stroke-width="2">
-        <title>${labels[i]}：${cnt} 件（${pct}%）</title></path>`;
-      startAngle = endAngle;
-    });
-    el.innerHTML = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:200px;display:block;margin:0 auto;">
-      ${slices}
-      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="#1e1a17">${total}</text>
-      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9" fill="#9c8c80">件</text>
-    </svg>`;
-  })();
-
-  // ── 長條圖（SVG）──
-  (function() {
-    const el = document.getElementById('caseTypeBarChart');
-    if (!el) return;
-    const W = 280, barH = 28, gap = 8, padL = 70, padR = 50, padT = 8, padB = 8;
-    const H = padT + (barH + gap) * counts.length + padB;
-    const maxVal = Math.max(...counts, 1);
-    let bars = '';
-    counts.forEach((cnt, i) => {
-      const y = padT + i * (barH + gap);
-      const bw = Math.max(4, (cnt / maxVal) * (W - padL - padR));
-      const label = labels[i].length > 6 ? labels[i].slice(0,6)+'…' : labels[i];
-      bars += `<rect x="${padL}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${colors[i]}"/>
-        <text x="${padL - 6}" y="${y + barH/2}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#5a4f46">${label}</text>
-        <text x="${padL + bw + 5}" y="${y + barH/2}" dominant-baseline="middle" font-size="11" font-weight="600" fill="${colors[i]}">${cnt}</text>`;
-    });
-    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;">${bars}</svg>`;
-  })();
-
-  // ── 分隊比較（僅全部分隊時顯示）──
-  const compareCard = document.getElementById('caseUnitCompareCard');
-  if (!filterUnit && Object.keys(memberUnitMap).length > 0) {
-    // 取所有分隊
-    const allUnits = [...new Set(Object.values(memberUnitMap).filter(Boolean))].sort();
-    // 取 Top 6 類型
-    const topTypes = labels.slice(0, 6);
-    const unitDatasets = topTypes.map((type, i) => ({
-      label: type,
-      data: allUnits.map(u => {
-        const uDocs = outDocs.filter(d =>
-          d.caseType === type && (memberUnitMap[d.memberName]||'') === u
-        );
-        return uDocs.length;
-      }),
-      backgroundColor: colors[i],
-      borderRadius: 3,
-    }));
-
-    setTimeout(() => {
-    const unitCanvas = document.getElementById('caseUnitChart');
-    if (_unitChart) { _unitChart.destroy(); _unitChart = null; }
-    if (unitCanvas && allUnits.length > 1) {
-      unitCanvas.width  = unitCanvas.parentElement.clientWidth || 560;
-      unitCanvas.height = 280;
-      _unitChart = new Chart(unitCanvas, {
-        type: 'bar',
-        data: { labels: allUnits, datasets: unitDatasets },
-        options: {
-          responsive: false,
-          width: unitCanvas.width,
-          height: unitCanvas.height,
-          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } },
-          scales: {
-            x: { stacked: false, grid: { display: false }, ticks: { font: { size: 11 } } },
-            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }
-          }
-        }
-      });
-        compareCard.style.display = '';
-      } else {
-        compareCard.style.display = 'none';
-      }
-    }, 100);
-  } else {
-    compareCard.style.display = 'none';
-  }
-
-  // ── 明細表格 ──
-  const tbody = document.getElementById('caseTypeTableBody');
-  if (tbody) {
-    tbody.innerHTML = sorted.map(([type, cnt]) => {
-      const pct = Math.round(cnt/total*100);
-      return `<tr>
-        <td style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:0.85rem;font-weight:500;">${type}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;font-size:0.88rem;font-weight:600;color:var(--red);">${cnt}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;font-size:0.85rem;">${pct}%</td>
-        <td style="padding:10px 12px;border-bottom:1px solid var(--border);">
-          <div style="background:var(--border);border-radius:4px;height:8px;min-width:80px;">
-            <div style="background:var(--red);border-radius:4px;height:8px;width:${pct}%;transition:width 0.4s;"></div>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-  }
-}
-
 
 // ════════════════════════════════════════
 // 個人基本資料
@@ -18755,10 +18288,22 @@ async function loadAdminCorrections() {
   }
 }
 
+// 非真管理員僅能處理自己單位成員的申請（與 loadAdminCorrections 的列表過濾範圍一致）
+async function _corrUnitAllowed(corrData) {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+  if (usr.isAdmin) return true;
+  await loadMembers();
+  const m = members.find(x => x.name === corrData.memberName);
+  return !!m && m.unit === usr.unit;
+}
+
 // 駁回：不涉及資料異動，直接標記狀態即可
 async function rejectCorrection(corrId) {
   if (!confirm('確定要駁回這筆修正申請嗎？')) return;
   try {
+    const corrData = await fbGet(COL_CORRECTION, corrId);
+    if (!corrData) { alert('找不到申請資料'); return; }
+    if (!(await _corrUnitAllowed(corrData))) { alert('您沒有權限處理其他單位的申請'); return; }
     await fbUpdate(COL_CORRECTION, corrId, {
       status: 'rejected',
       handledAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -18774,6 +18319,7 @@ async function reviewCorrection(corrId, docId, type) {
   try {
     const corrData = await fbGet(COL_CORRECTION, corrId);
     if (!corrData) { alert('找不到申請資料'); return; }
+    if (!(await _corrUnitAllowed(corrData))) { alert('您沒有權限處理其他單位的申請'); return; }
 
     // 刪除申請：沒有欄位可比對，用確認對話框取代開窗編輯
     if (corrData.requestType === 'delete') {
@@ -19196,8 +18742,6 @@ async function initDutyPage() {
   onDutyTimeChange();
   setTimeout(() => scrollToDutyDate(now.toLocaleDateString('sv')), 150);
 }
-function onDutyDateChange() { onDutyTimeChange(); }
-
 function onDutyTimeChange() {
   const dateStr = document.getElementById('dutyDate')?.value || '';
   const start   = document.getElementById('dutyStart')?.value || '';
@@ -19266,15 +18810,6 @@ function dutyMonthNav(delta) {
   if (_dutyMonth > 11) { _dutyMonth = 0;  _dutyYear++; }
   if (_dutyMonth < 0)  { _dutyMonth = 11; _dutyYear--; }
   renderDutyView();
-}
-
-function toggleDutyForm() {
-  const body  = document.getElementById('dutyFormBody');
-  const arrow = document.getElementById('dutyFormArrow');
-  if (!body) return;
-  const open = body.style.display === 'none' || body.style.display === '';
-  body.style.display = open ? 'block' : 'none';
-  if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
 }
 
 function dutyView(v, scrollToDate) {
@@ -20405,23 +19940,6 @@ async function saveMeetingForm(editId, overlay) {
     if (overlay) overlay.remove();
     renderDutyMeeting();
   } catch(e) { alert('儲存失敗：'+e.message); }
-}
-
-function renderDutyCalSkeleton() {
-  const grid = document.getElementById('dutyCalGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
-  const skelStyle = 'min-height:96px;border-radius:8px;background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:pulse 1.4s ease-in-out infinite;';
-  for (let i = 0; i < firstDay; i++)
-    grid.appendChild(Object.assign(document.createElement('div'), {style:'min-height:60px;'}));
-  for (let d = 0; d < daysInMonth; d++) {
-    const cell = document.createElement('div');
-    cell.style.cssText = skelStyle;
-    grid.appendChild(cell);
-  }
 }
 
 function renderDutyCalendar() {
