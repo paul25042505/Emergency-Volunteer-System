@@ -5418,6 +5418,116 @@ async function fbUploadMemberPhoto(file, memberId) {
   await ref.put(blob, { contentType: 'image/jpeg' });
   return await ref.getDownloadURL();
 }
+// 大頭照裁切：顯示人形輪廓參考線，讓使用者拖曳/縮放後裁出 5:7 證件照，回傳 Blob 或 null（取消）
+function openPhotoCropModal(file) {
+  return new Promise((resolve) => {
+    const FW = 260, FH = 364; // 裁切框尺寸（5:7，對應 idCardPhotoBox）
+    const OUT_W = 350, OUT_H = 490;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const imgW = img.naturalWidth, imgH = img.naturalHeight;
+      const minScale = Math.max(FW / imgW, FH / imgH);
+      const maxScale = minScale * 3;
+      let curScale = minScale;
+      let offX = (FW - imgW * curScale) / 2;
+      let offY = (FH - imgH * curScale) / 2;
+
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px;';
+      overlay.innerHTML =
+        '<div style="background:#fff;border-radius:14px;padding:18px;max-width:320px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">'+
+          '<div style="font-weight:700;font-size:0.95rem;margin-bottom:12px;color:var(--text);">調整照片位置</div>'+
+          '<div style="font-size:0.75rem;color:var(--text-light);margin-bottom:10px;">拖曳移動、滑動縮放，將臉部對齊輪廓</div>'+
+          '<div id="pcFrame" style="position:relative;width:'+FW+'px;height:'+FH+'px;overflow:hidden;border-radius:8px;background:#1a1a1a;margin:0 auto;touch-action:none;cursor:grab;">'+
+            '<img id="pcImg" src="'+url+'" style="position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;">'+
+            '<svg width="'+FW+'" height="'+FH+'" viewBox="0 0 '+FW+' '+FH+'" style="position:absolute;inset:0;pointer-events:none;">'+
+              '<ellipse cx="'+(FW/2)+'" cy="'+(FH*0.33)+'" rx="'+(FW*0.22)+'" ry="'+(FH*0.21)+'" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="5,5" opacity="0.85"/>'+
+              '<path d="M'+(FW*0.19)+','+FH+' C'+(FW*0.19)+','+(FH*0.66)+' '+(FW*0.36)+','+(FH*0.58)+' '+(FW/2)+','+(FH*0.58)+' C'+(FW*0.64)+','+(FH*0.58)+' '+(FW*0.81)+','+(FH*0.66)+' '+(FW*0.81)+','+FH+'" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="5,5" opacity="0.85"/>'+
+            '</svg>'+
+          '</div>'+
+          '<input type="range" id="pcZoom" min="0" max="100" value="0" style="width:100%;margin:14px 0 16px;">'+
+          '<div style="display:flex;gap:10px;">'+
+            '<button type="button" id="pcCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text-mid);font-weight:600;cursor:pointer;">取消</button>'+
+            '<button type="button" id="pcConfirm" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--red);color:#fff;font-weight:600;cursor:pointer;">確認裁切</button>'+
+          '</div>'+
+        '</div>';
+      document.body.appendChild(overlay);
+
+      const frameEl = overlay.querySelector('#pcFrame');
+      const imgEl = overlay.querySelector('#pcImg');
+      const zoomEl = overlay.querySelector('#pcZoom');
+
+      function applyTransform() {
+        imgEl.style.width = (imgW * curScale) + 'px';
+        imgEl.style.height = (imgH * curScale) + 'px';
+        imgEl.style.transform = 'translate(' + offX + 'px,' + offY + 'px)';
+      }
+      function clamp() {
+        offX = Math.min(0, Math.max(FW - imgW * curScale, offX));
+        offY = Math.min(0, Math.max(FH - imgH * curScale, offY));
+      }
+      clamp(); applyTransform();
+
+      zoomEl.addEventListener('input', () => {
+        const t = zoomEl.value / 100;
+        const newScale = minScale + t * (maxScale - minScale);
+        const cxImg = (FW / 2 - offX) / curScale;
+        const cyImg = (FH / 2 - offY) / curScale;
+        curScale = newScale;
+        offX = FW / 2 - cxImg * curScale;
+        offY = FH / 2 - cyImg * curScale;
+        clamp(); applyTransform();
+      });
+
+      let dragging = false, startX = 0, startY = 0, startOffX = 0, startOffY = 0;
+      function pointerDown(e) {
+        dragging = true;
+        const p = e.touches ? e.touches[0] : e;
+        startX = p.clientX; startY = p.clientY;
+        startOffX = offX; startOffY = offY;
+        frameEl.style.cursor = 'grabbing';
+      }
+      function pointerMove(e) {
+        if (!dragging) return;
+        const p = e.touches ? e.touches[0] : e;
+        offX = startOffX + (p.clientX - startX);
+        offY = startOffY + (p.clientY - startY);
+        clamp(); applyTransform();
+        if (e.touches) e.preventDefault();
+      }
+      function pointerUp() { dragging = false; frameEl.style.cursor = 'grab'; }
+      frameEl.addEventListener('mousedown', pointerDown);
+      frameEl.addEventListener('touchstart', pointerDown, { passive: true });
+      window.addEventListener('mousemove', pointerMove);
+      window.addEventListener('touchmove', pointerMove, { passive: false });
+      window.addEventListener('mouseup', pointerUp);
+      window.addEventListener('touchend', pointerUp);
+
+      function cleanup() {
+        window.removeEventListener('mousemove', pointerMove);
+        window.removeEventListener('touchmove', pointerMove);
+        window.removeEventListener('mouseup', pointerUp);
+        window.removeEventListener('touchend', pointerUp);
+        URL.revokeObjectURL(url);
+        overlay.remove();
+      }
+
+      overlay.querySelector('#pcCancel').onclick = () => { cleanup(); resolve(null); };
+      overlay.querySelector('#pcConfirm').onclick = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = OUT_W; canvas.height = OUT_H;
+        const ctx = canvas.getContext('2d');
+        const sx = -offX / curScale, sy = -offY / curScale;
+        const sw = FW / curScale, sh = FH / curScale;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
+        canvas.toBlob(blob => { cleanup(); resolve(blob); }, 'image/jpeg', 0.92);
+      };
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
 async function loadAndViewSig(col, docId, btn) {
   btn.disabled = true; btn.textContent = '載入中...';
   try {
@@ -11802,16 +11912,19 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
   window.aeWlPhotoFileChange=async function(input){
     const file=input.files&&input.files[0];
     if(!file)return;
+    const cropped=await openPhotoCropModal(file);
+    input.value='';
+    if(!cropped)return;
     const btn=document.getElementById('aeWlPhotoBtn');
     const orig=btn.innerHTML;
     btn.disabled=true;btn.textContent='上傳中...';
     try{
-      const url=await fbUploadMemberPhoto(file,id);
+      const url=await fbUploadMemberPhoto(cropped,id);
       document.getElementById('aeWlPhotoUrl').value=url;
       const prev=document.getElementById('aeWlPhotoPreview');
       prev.src=url;prev.style.display='';
     }catch(e){alert('上傳失敗：'+e.message);}
-    finally{btn.disabled=false;btn.innerHTML=orig;input.value='';}
+    finally{btn.disabled=false;btn.innerHTML=orig;}
   };
   adminEditSave=async function(){
     var r=document.getElementById('aeWlRole').value||'member';
@@ -17446,11 +17559,14 @@ async function profileAvatarFileChange(input) {
   const file = input.files && input.files[0];
   if (!file) return;
   if (!_profileMemberId) { alert('找不到使用者資料，請重新登入再試'); input.value=''; return; }
+  const cropped = await openPhotoCropModal(file);
+  input.value = '';
+  if (!cropped) return;
   const avatarEl = document.getElementById('profileAvatar');
   const prevHtml = avatarEl.innerHTML;
   avatarEl.innerHTML = '<span style="font-size:0.65rem;">上傳中</span>';
   try {
-    const url = await fbUploadMemberPhoto(file, _profileMemberId);
+    const url = await fbUploadMemberPhoto(cropped, _profileMemberId);
     await fbUpdate(COL_WHITELIST, _profileMemberId, { photoUrl: url });
     avatarEl.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
     const m = members.find(m => m.id === _profileMemberId);
@@ -17458,8 +17574,6 @@ async function profileAvatarFileChange(input) {
   } catch(e) {
     avatarEl.innerHTML = prevHtml;
     alert('上傳失敗：' + e.message);
-  } finally {
-    input.value = '';
   }
 }
 async function loadProfilePage() {
