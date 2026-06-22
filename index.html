@@ -5312,8 +5312,14 @@ async function _nextCaseId() {
 function _fmtCaseId(n) { return n ? String(n).padStart(4, '0') : ''; }
 
 // ── 案件地址定位：呼叫 Cloud Function（免費 Nominatim + 伺服端快取），失敗不影響送出流程 ──
+// 組合完整地址：行政區/地址欄位若已包含「台中市」/「臺中市」前綴（常見於舊資料匯入），先去除再統一補上，避免重複
+function _buildFullAddress(district, address) {
+  const strip = s => (s || '').replace(/^(台中市|臺中市)/, '').trim();
+  return ['台中市', strip(district), strip(address)].filter(Boolean).join('');
+}
+
 function _geocodeCase(docId, district, address) {
-  const full = ['台中市', district, address].filter(Boolean).join('');
+  const full = _buildFullAddress(district, address);
   if (!full) return;
   fetch('https://geocodeaddress-whi67k6epa-de.a.run.app', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -15088,8 +15094,8 @@ async function repairGeocodeBackfill(btn) {
     for (let i = 0; i < todo.length; i++) {
       const doc = todo[i];
       const v = doc.data();
-      const full = ['台中市', v.district, v.address].filter(Boolean).join('');
-      if (log) log.textContent = `定位中… (${i + 1}/${todo.length}) ${full}`;
+      const full = _buildFullAddress(v.district, v.address);
+      if (log) log.textContent = `定位中… (${i + 1}/${todo.length}) ${full}\n✅成功 ${ok}　❓查無 ${notFound}　⚠️暫時性錯誤 ${fail}`;
       try {
         const res = await fetch('https://geocodeaddress-whi67k6epa-de.a.run.app', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
