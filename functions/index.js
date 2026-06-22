@@ -4,7 +4,6 @@ const { onSchedule }        = require('firebase-functions/v2/scheduler');
 const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
-const crypto                = require('crypto');
 
 initializeApp();
 
@@ -170,63 +169,6 @@ exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public
     res.json({ status: 'sent', count: uniqueTokens.length, successCount, failCount });
   } catch (err) {
     console.error('broadcastPush error:', err);
-    res.status(500).json({ error: err.message || 'internal error' });
-  }
-});
-
-// ── 地址定位：OpenCage（免費註冊金鑰，每日 2500 次額度），結果存 Firestore 快取避免重複查詢 ──
-// 匿名公開的 Nominatim／Photon 服務會把雲端共用對外 IP 視為自動化流量而靜默回空結果，
-// 改用需金鑰驗證的服務可避免被擋。金鑰存於 functions/.env（由部署流程寫入，見 deploy-functions.yml）
-exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'public' }, async (req, res) => {
-  if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
-
-  const address = (req.body?.address || '').trim();
-  if (!address) { res.status(400).json({ error: 'address is required' }); return; }
-
-  const force = !!req.body?.force; // 強制重新查詢，無視快取（用於修正先前查到錯誤座標的案例）
-
-  const apiKey = process.env.OPENCAGE_API_KEY;
-  if (!apiKey) { res.status(500).json({ error: 'OPENCAGE_API_KEY not configured' }); return; }
-
-  const db = getFirestore();
-  const cacheId = crypto.createHash('md5').update(address).digest('hex');
-  const cacheRef = db.collection('geocodeCache').doc(cacheId);
-
-  try {
-    if (!force) {
-      const cached = await cacheRef.get();
-      // 只信任「成功」的快取；失敗結果不快取，避免供應商暫時性問題被永久當成查無地址
-      if (cached.exists && !cached.data().failed) {
-        const d = cached.data();
-        res.json({ lat: d.lat, lng: d.lng, failed: false, cached: true });
-        return;
-      }
-    }
-
-    // 限制搜尋範圍在台中市行政區內，避免同名路段被誤判到外縣市（例如誤配到新莊）
-    const url = 'https://api.opencagedata.com/geocode/v1/json?limit=1&countrycode=tw&language=zh'
-      + '&bounds=120.40,23.95,121.05,24.45&proximity=24.1477,120.6736'
-      + '&key=' + apiKey + '&q=' + encodeURIComponent(address);
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      console.error('geocodeAddress: OpenCage returned', resp.status, address);
-      res.status(502).json({ error: `opencage status ${resp.status}` });
-      return;
-    }
-    const data = await resp.json();
-    const result = Array.isArray(data?.results) ? data.results[0] : null;
-    const geo = result?.geometry;
-
-    if (geo && typeof geo.lat === 'number' && typeof geo.lng === 'number') {
-      const { lat, lng } = geo;
-      await cacheRef.set({ address, lat, lng, failed: false, createdAt: new Date() });
-      res.json({ lat, lng, failed: false });
-    } else {
-      await cacheRef.set({ address, lat: null, lng: null, failed: true, createdAt: new Date() });
-      res.json({ lat: null, lng: null, failed: true });
-    }
-  } catch (err) {
-    console.error('geocodeAddress error:', err);
     res.status(500).json({ error: err.message || 'internal error' });
   }
 });
