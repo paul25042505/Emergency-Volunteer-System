@@ -770,6 +770,11 @@ tr:hover td { background: #fdfcfb; }
   width: 9px; height: 9px; border-radius: 50%;
   background: var(--red); border: 1.5px solid white;
   display: none;
+  animation: bellBadgeBreathe 1.6s ease-in-out infinite;
+}
+@keyframes bellBadgeBreathe {
+  0%, 100% { background: var(--red); }
+  50% { background: #ffffff; }
 }
 
 /* ══ Hero card ══ */
