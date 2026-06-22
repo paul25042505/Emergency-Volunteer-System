@@ -19810,7 +19810,7 @@ async function renderDutyMeeting() {
       }
 
       // ══ 行動按鈕 ══
-      const adminFillBtn = isAdmin ? '<button onclick="meetingAdminRsvp(\''+doc.id+'\')" style="flex:0 0 auto;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📝 代填</button>' : '';
+      const adminFillBtn = canManage ? '<button onclick="meetingAdminRsvp(\''+doc.id+'\')" style="flex:0 0 auto;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:10px;padding:11px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;white-space:nowrap;">📝 代填</button>' : '';
       html += '<div style="padding:'+(rsvp.length?'0':'4px')+' 14px 14px;">';
       html += '<div style="display:flex;gap:8px;">';
       if (ended) {
@@ -20037,12 +20037,15 @@ async function meetingUnrsvp(id) {
 
 async function meetingAdminRsvp(id) {
   const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  if (!u.isAdmin && !u.isOfficer) return;
+  const isElevated = u.isAdmin || u.isOfficer || u.isSquadLeader || u.role === 'squadLeader' || u.role === 'cadre';
+  if (!isElevated) return;
 
   let docs = [];
   try { docs = await fbList(COL_MEETING_EVENTS); } catch(e) {}
   const doc = docs.find(d => d.id === id);
   if (!doc) return;
+  // 非真管理員僅能代填本單位任務（與卡片上按鈕可見範圍一致）
+  if (!u.isAdmin && (!doc.unit || doc.unit !== (u.unit||''))) return;
 
   await loadMembers();
   const userUnit = u.unit || '';
@@ -20529,6 +20532,9 @@ function renderDutyList(scrollDate) {
   const HOURS       = Array.from({length:16}, (_,i) => i+6);
   const usr         = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   const myName      = (usr.memberName || usr.name || '').trim();
+  const isTrueAdmin = !!usr.isAdmin;
+  const isElevated  = usr.isAdmin || usr.isOfficer || usr.isSquadLeader || usr.role === 'squadLeader' || usr.role === 'cadre';
+  const userUnit    = usr.unit || '';
   const membersList = (_C && _C.peek && _C.peek(COL_MEMBERS)) || [];
   const getMemberTitle = name => { const m = membersList.find(x=>x.name===name); return m ? (m.title||'') : ''; };
 
@@ -20587,7 +20593,8 @@ function renderDutyList(scrollDate) {
       html += '<div style="font-size:0.78rem;color:#bbb;padding:2px 0 8px;letter-spacing:0.02em;">— 尚無備勤 —</div>';
     } else {
       dayDocs.forEach(doc => {
-        const canEdit  = (doc.memberName||'').trim()===myName || usr.isAdmin || usr.isOfficer;
+        const canManage = isTrueAdmin || (isElevated && !!doc.unit && doc.unit === userUnit);
+        const canEdit  = (doc.memberName||'').trim()===myName || canManage;
         const isMine   = (doc.memberName||'').trim()===myName;
         const title    = getMemberTitle(doc.memberName||'');
         const avatarBg = isMine ? 'var(--red)' : '#5b8db8';
