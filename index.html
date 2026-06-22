@@ -10966,6 +10966,12 @@ async function initCaseStatsPage() {
     if (uSel && uSel.options.length <= 1) {
       _unitsList.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; uSel.appendChild(o); });
     }
+    // 非管理員/承辦人鎖定分隊
+    const _usrCs = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    if (!(_usrCs.isAdmin || _usrCs.isOfficer) && uSel) {
+      uSel.value = _usrCs.unit || '';
+      uSel.disabled = true;
+    }
   }
   await loadCaseStats();
 }
@@ -10974,7 +10980,9 @@ let _casePieChart = null;
 async function loadCaseStats() {
   const year  = document.getElementById('caseYear')?.value  || '';
   const month = document.getElementById('caseMonth')?.value || '';
-  const filterUnit = document.getElementById('caseUnit')?.value || '';
+  const _usrCs2 = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const _isAdminCs = _usrCs2.isAdmin || _usrCs2.isOfficer;
+  const filterUnit = _isAdminCs ? (document.getElementById('caseUnit')?.value || '') : (_usrCs2.unit || '');
 
   // 簡化 empty state — 直接操作 innerHTML
   const emptyEl = document.getElementById('caseEmptyMsg');
