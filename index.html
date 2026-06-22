@@ -18599,7 +18599,9 @@ async function loadAdminCorrections() {
     docs.sort((a,b) => {
       if (a.status==='pending' && b.status!=='pending') return -1;
       if (b.status==='pending' && a.status!=='pending') return 1;
-      return 0;
+      const at = a.submittedAt?.seconds || 0;
+      const bt = b.submittedAt?.seconds || 0;
+      return bt - at;
     });
 
     if (!docs.length) {
