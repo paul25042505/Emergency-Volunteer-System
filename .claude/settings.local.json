@@ -18,7 +18,8 @@
       "Bash(git commit -m 'fix: 桌面版列表移除左右 padding，占滿畫面 *)",
       "Bash(git commit -m 'fix: 後台簽到退/協勤紀錄列表桌面版全寬，其他頁面不影響 *)",
       "Bash(git commit -m 'fix: 簽名改顯示縮圖、成員管理證照不換列 *)",
-      "Bash(git commit -m 'fix: 成員管理證照欄不換列、表格可橫向捲動 *)"
+      "Bash(git commit -m 'fix: 成員管理證照欄不換列、表格可橫向捲動 *)",
+      "Bash(cp /root/.claude/uploads/2644cacf-eadf-5783-b591-a84ab0e93502/0894df81-IMG_8411.png /home/user/Emergency-Volunteer-System/badge-phoenix.png && ls -la /home/user/Emergency-Volunteer-System/badge-phoenix.png)"
     ]
   }
 }
