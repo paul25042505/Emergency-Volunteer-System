@@ -15023,12 +15023,27 @@ function _showIOSInstallGuide() {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
+// 裝置訂閱文件 ID：以 email（登入唯一身分）+ 裝置 ID 組成，
+// 避免同名成員共用同一筆訂閱互相覆蓋，也讓同一人多裝置各自保留訂閱（不會互相覆蓋 token）
+function _pushDeviceId() {
+  let id = localStorage.getItem('_pushDeviceId');
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+    localStorage.setItem('_pushDeviceId', id);
+  }
+  return id;
+}
+function _pushSubDocId(usr) {
+  const key = (usr.email || usr.memberName || 'unknown').replace(/\//g, '_');
+  return `${key}__${_pushDeviceId()}`;
+}
+
 // 取得 FCM token 並儲存到 Firestore
 async function _initFCM() {
   const _fcmDebug = async (msg) => {
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
     if (!usr.memberName) return;
-    try { await firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).set({ _fcmDebug: msg }, { merge: true }); } catch(e) {}
+    try { await firebase.firestore().collection(COL_PUSH_SUBS).doc(_pushSubDocId(usr)).set({ _fcmDebug: msg }, { merge: true }); } catch(e) {}
   };
   try {
     if (!('serviceWorker' in navigator)) { await _fcmDebug('no serviceWorker'); return; }
@@ -15069,20 +15084,27 @@ async function _savePushSubscription(fcmToken) {
     else if (/Android/.test(ua)) platform = 'Android';
     const browser = /CriOS|Chrome/.test(ua) ? 'Chrome' : /FxiOS|Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Other';
     const doc = {
+      email: usr.email || '',
       memberName: usr.memberName,
       unit: usr.unit || '',
       isAdmin: usr.isAdmin || false,
       isOfficer: usr.isOfficer || false,
       platform, browser,
+      deviceId: _pushDeviceId(),
     };
     if (fcmToken) doc.fcmToken = fcmToken;
-    const ref = firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName);
+    const ref = firebase.firestore().collection(COL_PUSH_SUBS).doc(_pushSubDocId(usr));
     const existing = await ref.get();
     // grantedAt 只在第一次建立時寫入，之後每次開 App 重新整理訂閱都不再覆蓋，避免日期一直變成「今天」
     if (!existing.exists || !existing.data().grantedAt) {
       doc.grantedAt = firebase.firestore.FieldValue.serverTimestamp();
     }
     await ref.set(doc, { merge: true });
+
+    // 舊版以姓名當文件 ID，遷移到新版（email + 裝置 ID）後清掉舊文件，避免變成重複裝置
+    if (ref.id !== usr.memberName) {
+      firebase.firestore().collection(COL_PUSH_SUBS).doc(usr.memberName).delete().catch(() => {});
+    }
   } catch(e) {}
 }
 
