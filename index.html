@@ -796,19 +796,30 @@ tr:hover td { background: #fdfcfb; }
   width: 120px; height: 120px; border-radius: 50%;
   background: rgba(255,255,255,0.04); pointer-events: none;
 }
-/* 義消證偷看標籤：藏在天氣卡片後面，只露出一點點，點擊展開完整服務證 */
+/* 義消證偷看標籤：藏在天氣卡片後面，只露出一點點，點擊或下滑展開完整服務證（不開彈窗，原地展開） */
 .idcard-peek {
   position: relative; z-index: 0;
-  margin: 0 18px -28px; height: 46px;
+  margin: 0 18px -28px; height: 46px; overflow: hidden;
   background: linear-gradient(135deg, #d8261c 0%, #8F0D16 100%);
   border: 1.5px solid #e0b94a; border-bottom: none;
   border-radius: 14px 14px 0 0;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
   box-shadow: 0 -2px 6px rgba(0,0,0,0.15);
+  transition: height 0.32s cubic-bezier(.25,.8,.25,1), margin-bottom 0.32s cubic-bezier(.25,.8,.25,1), border-radius 0.32s ease;
+  touch-action: pan-y;
 }
+.idcard-peek.expanded {
+  height: 226px; margin: 0 18px 16px; border-radius: 14px; border-bottom: 1.5px solid #e0b94a;
+}
+.idcard-peek-tab {
+  height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.idcard-peek.expanded .idcard-peek-tab { display: none; }
 .idcard-peek-badge { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; margin-top: 2px; }
 .idcard-peek-label { font-size: 0.68rem; font-weight: 700; color: #f3d77a; letter-spacing: 0.06em; margin-top: 2px; }
+.idcard-full { display: none; padding: 6px 16px 16px; gap: 14px; }
+.idcard-peek.expanded .idcard-full { display: flex; }
+.idcard-kai { font-family: 'DFKai-SB','BiauKai','KaiTi','STKaiti',serif; }
 #dashHourlyScroll::-webkit-scrollbar { display: none; }
 .dash-wth-cell {
   background: rgba(255,255,255,0.12);
@@ -1646,10 +1657,36 @@ function _dlCSV(content, filename) {
     <!-- 氣象警特報 Banner（在天氣卡上方，優先顯示） -->
     <div id="dashAlertBanner" style="display:none;margin-bottom:12px;"></div>
 
-    <!-- 義消證偷看標籤 -->
-    <div class="idcard-peek" onclick="openIdCard()">
-      <img src="/Emergency-Volunteer-System/badge-phoenix.png" alt="" class="idcard-peek-badge">
-      <span class="idcard-peek-label">義消服務證</span>
+    <!-- 義消證偷看標籤：點一下或下滑展開，原地顯示不開彈窗 -->
+    <div class="idcard-peek" id="idCardPeek" onclick="toggleIdCard()"
+      ontouchstart="_idCardTouchStart(event)" ontouchmove="_idCardTouchMove(event)" ontouchend="_idCardTouchEnd()">
+      <div class="idcard-peek-tab">
+        <img src="/Emergency-Volunteer-System/badge-phoenix.png" alt="" class="idcard-peek-badge">
+        <span class="idcard-peek-label">義消服務證</span>
+      </div>
+      <div class="idcard-full">
+        <!-- 左：徽章區 -->
+        <div style="flex:0 0 42%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;">
+          <svg xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 140 60" style="width:100%;max-width:130px;height:46px;">
+            <path id="idCardArcPath" d="M8,55 A62,62 0 0 1 132,55" fill="none"/>
+            <text class="idcard-kai" font-size="15" font-weight="700" fill="#f3d77a" letter-spacing="1">
+              <textPath href="#idCardArcPath" xlink:href="#idCardArcPath" startOffset="50%" text-anchor="middle">義勇消防人員</textPath>
+            </text>
+          </svg>
+          <img src="/Emergency-Volunteer-System/badge-phoenix.png" alt="" style="width:56px;height:auto;margin:4px 0;">
+          <div class="idcard-kai" style="color:#f3d77a;font-weight:800;font-size:1.05rem;letter-spacing:0.2em;">服務證</div>
+        </div>
+        <!-- 右：照片＋姓名 -->
+        <div style="flex:1;display:flex;flex-direction:column;background:white;border-radius:6px;overflow:hidden;">
+          <div id="idCardPhotoBox" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:90px;background:#f4f4f4;">
+            <div style="text-align:center;color:#999;font-weight:700;font-size:1.3rem;line-height:1.3;">照<br>片</div>
+          </div>
+          <div style="border-top:1px solid #ddd;padding:7px 6px;text-align:center;">
+            <div style="font-size:0.55rem;color:#9a9a9a;letter-spacing:0.15em;margin-bottom:2px;">姓　名</div>
+            <div id="idCardName" style="font-size:0.95rem;font-weight:800;color:#222;">—</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 天氣卡片 -->
@@ -7423,8 +7460,26 @@ async function loadMembers(force) {
   if (document.getElementById('memberList')) renderMemberList();
 }
 
-// 義消服務證：照片之後由後台「成員帳號管理」逐一補上 photoUrl，沒有就顯示「照片」佔位
-async function openIdCard() {
+// 義消服務證：原地展開（不開彈窗），點一下或下滑展開、再點一下或上滑收合
+// 照片之後由後台「成員帳號管理」逐一補上 photoUrl，沒有就顯示「照片」佔位
+let _idCardExpanded = false;
+let _idCardTouchY = null;
+let _idCardSwiped = false;
+
+function toggleIdCard() {
+  if (_idCardSwiped) { _idCardSwiped = false; return; } // 已經被滑動手勢處理過，避免 touchend 後又觸發一次 click
+  _idCardSetExpanded(!_idCardExpanded);
+}
+
+function _idCardSetExpanded(expand) {
+  const el = document.getElementById('idCardPeek');
+  if (!el) return;
+  _idCardExpanded = expand;
+  el.classList.toggle('expanded', expand);
+  if (expand) _idCardFill();
+}
+
+async function _idCardFill() {
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const name = usr.memberName || usr.name || '—';
   document.getElementById('idCardName').textContent = name;
@@ -7444,10 +7499,26 @@ async function openIdCard() {
   } else {
     photoBox.innerHTML = placeholderHtml;
   }
-  document.getElementById('idCardModal').style.display = 'flex';
 }
-function closeIdCard() {
-  document.getElementById('idCardModal').style.display = 'none';
+
+function _idCardTouchStart(e) {
+  _idCardTouchY = e.touches[0].clientY;
+}
+function _idCardTouchMove(e) {
+  if (_idCardTouchY == null) return;
+  const dy = e.touches[0].clientY - _idCardTouchY;
+  if (!_idCardExpanded && dy > 18) {
+    _idCardSetExpanded(true);
+    _idCardSwiped = true;
+    _idCardTouchY = null;
+  } else if (_idCardExpanded && dy < -18) {
+    _idCardSetExpanded(false);
+    _idCardSwiped = true;
+    _idCardTouchY = null;
+  }
+}
+function _idCardTouchEnd() {
+  _idCardTouchY = null;
 }
 
 function renderMemberList() {
@@ -21158,33 +21229,6 @@ function showTempPassErr(msg) {
       <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:20px;">目前累積：<span id="milestoneTotal">0</span> 小時</div>
       <button onclick="closeMilestoneModal()" class="btn-search" style="width:100%;min-height:unset;padding:12px;">太棒了！</button>
     </div>
-  </div>
-</div>
-
-<!-- 義消服務證 Modal -->
-<div id="idCardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9600;align-items:center;justify-content:center;padding:24px;" onclick="if(event.target===this) closeIdCard()">
-  <div style="width:100%;max-width:380px;">
-    <div style="position:relative;background:linear-gradient(135deg,#d8261c 0%,#8F0D16 100%);border:5px solid #e0b94a;border-radius:18px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,0.45);">
-      <div style="display:flex;gap:14px;">
-        <!-- 左：徽章區 -->
-        <div style="flex:0 0 42%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 0;">
-          <div style="color:#f3d77a;font-weight:700;font-size:0.92rem;letter-spacing:0.15em;text-align:center;line-height:1.4;">義勇消防<br>人員</div>
-          <img src="/Emergency-Volunteer-System/badge-phoenix.png" alt="" style="width:70px;height:auto;margin:8px 0;">
-          <div style="color:#f3d77a;font-weight:800;font-size:1.15rem;letter-spacing:0.2em;font-family:'Noto Serif TC',serif;">服務證</div>
-        </div>
-        <!-- 右：照片＋姓名 -->
-        <div style="flex:1;display:flex;flex-direction:column;background:white;border-radius:6px;overflow:hidden;">
-          <div id="idCardPhotoBox" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:120px;background:#f4f4f4;">
-            <div style="text-align:center;color:#999;font-weight:700;font-size:1.3rem;line-height:1.3;">照<br>片</div>
-          </div>
-          <div style="border-top:1px solid #ddd;padding:8px 6px;text-align:center;">
-            <div style="font-size:0.55rem;color:#9a9a9a;letter-spacing:0.15em;margin-bottom:2px;">姓　名</div>
-            <div id="idCardName" style="font-size:1rem;font-weight:800;color:#222;">—</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button onclick="closeIdCard()" style="display:block;margin:18px auto 0;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:white;border-radius:20px;padding:8px 24px;font-size:0.82rem;cursor:pointer;">關閉</button>
   </div>
 </div>
 
