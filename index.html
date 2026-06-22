@@ -12577,8 +12577,7 @@ function _startNotifListeners() {
       if (corrFirst) { corrFirst = false; return; }
       snap.docChanges().forEach(ch => {
         if (ch.type === 'added') {
-          const d = ch.doc.data();
-          _fireAdminNotif('📝 新修正申請', `${d.memberName || '成員'} 提交了資料修正申請`);
+          // 通知交給雲端推播負責，這裡只更新 badge，避免跟伺服器端 FCM 推播重複顯示
           _loadAdminBadges();
         }
       });
@@ -12591,32 +12590,11 @@ function _startNotifListeners() {
       if (fbFirst) { fbFirst = false; return; }
       snap.docChanges().forEach(ch => {
         if (ch.type === 'added') {
-          const d = ch.doc.data();
-          _fireAdminNotif('💬 新意見回饋', `${d.name || '成員'} 提交了意見回饋`);
           _loadAdminBadges();
         }
       });
     }, () => {});
   _adminNotifUnsub.push(fbUnsub);
-}
-
-function _fireAdminNotif(title, body) {
-  if (Notification.permission !== 'granted') return;
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification(title, {
-        body,
-        icon: '/Emergency-Volunteer-System/icon-192.png',
-        badge: '/Emergency-Volunteer-System/icon-192.png',
-        vibrate: [200, 100, 200],
-      });
-    }).catch(() => {});
-    return;
-  }
-  try {
-    const n = new Notification(title, { body, icon: '/Emergency-Volunteer-System/icon-192.png' });
-    n.onclick = () => { window.focus(); navTo('adminPage'); n.close(); };
-  } catch(e) {}
 }
 
 // ════════════════════════════════════════
@@ -15070,11 +15048,8 @@ async function _initFCM() {
     const token = await messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
     await _fcmDebug(token ? 'token OK: ' + token.substring(0,20) + '...' : 'token null');
     await _savePushSubscription(token);
-    messaging.onMessage(payload => {
-      const n = payload.notification || {};
-      const title = n.title || '新通知';
-      const body  = n.body  || '';
-      _showForegroundPush(title, body);
+    messaging.onMessage(() => {
+      // Service Worker 的 push 監聽器已會顯示系統通知（前景也會），這裡只更新 badge，避免重複顯示
       _updateBellBadge();
     });
   } catch(e) {
@@ -19537,17 +19512,6 @@ async function gongchaBroadcast(id) {
       if (bi) bi.value = fresh.body;
     }).catch(() => {});
   } catch(e) { alert('載入失敗：' + e.message); }
-}
-
-function _showForegroundPush(title, body) {
-  const existing = document.getElementById('_fgPushBanner');
-  if (existing) existing.remove();
-  const el = document.createElement('div');
-  el.id = '_fgPushBanner';
-  el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#003049;color:#fff;padding:14px 16px 12px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
-  el.innerHTML = `<span style="font-size:1.4rem;line-height:1">🔔</span><div style="flex:1"><div style="font-weight:700;font-size:0.95rem;margin-bottom:2px">${title}</div><div style="font-size:0.85rem;opacity:0.88">${body}</div></div><button onclick="document.getElementById('_fgPushBanner')?.remove()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:0 4px;line-height:1">×</button>`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 6000);
 }
 
 function _showToast(msg, duration = 3000) {
