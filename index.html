@@ -4502,7 +4502,7 @@ function _dlCSV(content, filename) {
       <div style="position:absolute;bottom:-30px;left:-14px;width:90px;height:90px;background:rgba(255,255,255,0.05);border-radius:50%;pointer-events:none;"></div>
       <div style="position:relative;width:72px;margin:0 auto 14px;">
         <div id="profileAvatar" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;border:3px solid rgba(255,255,255,0.35);color:white;overflow:hidden;">?</div>
-        <button type="button" onclick="document.getElementById('profileAvatarFile').click()" style="position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:white;border:2px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:0.8rem;cursor:pointer;padding:0;">📷</button>
+        <button type="button" onclick="document.getElementById('profileAvatarFile').click()" style="position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:white;border:2px solid var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;color:var(--red);"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></button>
         <input type="file" id="profileAvatarFile" accept="image/*" style="display:none" onchange="profileAvatarFileChange(this)">
       </div>
       <div id="profileHeroName" style="font-size:1.3rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;margin-bottom:8px;letter-spacing:0.02em;">—</div>
@@ -11790,7 +11790,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     '<div class="field"><label>義消證照片 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（上傳照片或貼上圖片連結）</span></label>'+
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'+
         '<img id="aeWlPhotoPreview" src="'+photoUrl+'" style="width:50px;height:70px;object-fit:cover;border-radius:4px;background:#f4f4f4;border:1px solid var(--border);'+(photoUrl?'':'display:none;')+'">'+
-        '<button type="button" id="aeWlPhotoBtn" onclick="document.getElementById(\'aeWlPhotoFile\').click()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-size:0.85rem;color:var(--text-mid);cursor:pointer;">📷 上傳照片</button>'+
+        '<button type="button" id="aeWlPhotoBtn" onclick="document.getElementById(\'aeWlPhotoFile\').click()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-size:0.85rem;color:var(--text-mid);cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>上傳照片</button>'+
         '<input type="file" id="aeWlPhotoFile" accept="image/*" style="display:none" onchange="aeWlPhotoFileChange(this)">'+
       '</div>'+
       '<input type="url" id="aeWlPhotoUrl" value="'+photoUrl+'" placeholder="https://..." style="'+s+'">'+
@@ -11803,7 +11803,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     const file=input.files&&input.files[0];
     if(!file)return;
     const btn=document.getElementById('aeWlPhotoBtn');
-    const orig=btn.textContent;
+    const orig=btn.innerHTML;
     btn.disabled=true;btn.textContent='上傳中...';
     try{
       const url=await fbUploadMemberPhoto(file,id);
@@ -11811,7 +11811,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
       const prev=document.getElementById('aeWlPhotoPreview');
       prev.src=url;prev.style.display='';
     }catch(e){alert('上傳失敗：'+e.message);}
-    finally{btn.disabled=false;btn.textContent=orig;input.value='';}
+    finally{btn.disabled=false;btn.innerHTML=orig;input.value='';}
   };
   adminEditSave=async function(){
     var r=document.getElementById('aeWlRole').value||'member';
