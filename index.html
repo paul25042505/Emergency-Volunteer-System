@@ -4500,7 +4500,11 @@ function _dlCSV(content, filename) {
     <div style="background:linear-gradient(135deg,#c0392b 0%,var(--red) 100%);border-radius:20px;padding:28px 20px 22px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden;">
       <div style="position:absolute;top:-24px;right:-24px;width:110px;height:110px;background:rgba(255,255,255,0.06);border-radius:50%;pointer-events:none;"></div>
       <div style="position:absolute;bottom:-30px;left:-14px;width:90px;height:90px;background:rgba(255,255,255,0.05);border-radius:50%;pointer-events:none;"></div>
-      <div id="profileAvatar" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;margin:0 auto 14px;border:3px solid rgba(255,255,255,0.35);color:white;position:relative;">?</div>
+      <div style="position:relative;width:72px;margin:0 auto 14px;">
+        <div id="profileAvatar" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;border:3px solid rgba(255,255,255,0.35);color:white;overflow:hidden;">?</div>
+        <button type="button" onclick="document.getElementById('profileAvatarFile').click()" style="position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:white;border:2px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:0.8rem;cursor:pointer;padding:0;">📷</button>
+        <input type="file" id="profileAvatarFile" accept="image/*" style="display:none" onchange="profileAvatarFileChange(this)">
+      </div>
       <div id="profileHeroName" style="font-size:1.3rem;font-weight:800;color:white;font-family:'Noto Serif TC',serif;margin-bottom:8px;letter-spacing:0.02em;">—</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
         <span id="profileHeroBadge" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:3px 14px;font-size:0.75rem;font-weight:600;color:white;">—</span>
@@ -17437,6 +17441,27 @@ const CHART_COLORS = [
 // ════════════════════════════════════════
 // 個人基本資料
 // ════════════════════════════════════════
+var _profileMemberId = '';
+async function profileAvatarFileChange(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (!_profileMemberId) { alert('找不到使用者資料，請重新登入再試'); input.value=''; return; }
+  const avatarEl = document.getElementById('profileAvatar');
+  const prevHtml = avatarEl.innerHTML;
+  avatarEl.innerHTML = '<span style="font-size:0.65rem;">上傳中</span>';
+  try {
+    const url = await fbUploadMemberPhoto(file, _profileMemberId);
+    await fbUpdate(COL_WHITELIST, _profileMemberId, { photoUrl: url });
+    avatarEl.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
+    const m = members.find(m => m.id === _profileMemberId);
+    if (m) m.photoUrl = url;
+  } catch(e) {
+    avatarEl.innerHTML = prevHtml;
+    alert('上傳失敗：' + e.message);
+  } finally {
+    input.value = '';
+  }
+}
 async function loadProfilePage() {
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const email     = usr.email || '';
@@ -17464,8 +17489,13 @@ async function loadProfilePage() {
   document.getElementById('profilePhone').value       = profile.phone || '';
 
   // Hero 卡片
+  _profileMemberId = member.id || '';
   const avatarEl = document.getElementById('profileAvatar');
-  if (avatarEl) avatarEl.textContent = memberName ? memberName.charAt(0) : '?';
+  if (avatarEl) {
+    avatarEl.innerHTML = member.photoUrl
+      ? '<img src="'+member.photoUrl+'" style="width:100%;height:100%;object-fit:cover;">'
+      : (memberName ? memberName.charAt(0) : '?');
+  }
   const el = id => document.getElementById(id);
   if (el('profileHeroName')) el('profileHeroName').textContent = memberName || '—';
   if (el('profileHeroBadge')) el('profileHeroBadge').textContent = titleVal;
