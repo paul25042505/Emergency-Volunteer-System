@@ -5312,10 +5312,18 @@ async function _nextCaseId() {
 }
 function _fmtCaseId(n) { return n ? String(n).padStart(4, '0') : ''; }
 
-// ── 案件地址定位：呼叫 Cloud Function（免費 Nominatim + 伺服端快取），失敗不影響送出流程 ──
+// ── 案件地址定位：呼叫 Cloud Function（OpenCage + 伺服端快取），失敗不影響送出流程 ──
+// 清理地址中會讓定位查詢失敗的雜訊：樓層、備注符號、門牌「-」應為「之」等
+function _cleanAddrForGeocode(s) {
+  if (!s) return '';
+  let out = s.split('@')[0]; // "@慈濟醫院附近" 之類的備注一律忽略
+  out = out.replace(/\d+樓\d*室?/g, ''); // "32號5樓" -> "32號"（樓層資訊查無此地址）
+  out = out.replace(/(\d+)-(\d+)號/g, '$1之$2號'); // "32-16號" -> "32之16號"
+  return out.trim();
+}
 // 組合完整地址：行政區/地址欄位若已包含「台中市」/「臺中市」前綴（常見於舊資料匯入），先去除再統一補上，避免重複
 function _buildFullAddress(district, address) {
-  const strip = s => (s || '').replace(/^(台中市|臺中市)/, '').trim();
+  const strip = s => _cleanAddrForGeocode(s || '').replace(/^(台中市|臺中市)/, '').trim();
   return ['台中市', strip(district), strip(address)].filter(Boolean).join('');
 }
 
