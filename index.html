@@ -5417,7 +5417,7 @@ async function fbUploadMemberPhoto(file, memberId) {
   await ensureFirebase();
   const blob = await _photoFileToBlob(file);
   const ref = _fbStorage.ref('memberPhotos/' + memberId + '.jpg');
-  await ref.put(blob, { contentType: 'image/jpeg' });
+  await ref.put(blob, { contentType: 'image/jpeg', cacheControl: 'public, max-age=604800' });
   return await ref.getDownloadURL();
 }
 // 大頭照裁切：顯示人形輪廓參考線，讓使用者拖曳/縮放後裁出 5:7 證件照，回傳 Blob 或 null（取消）
