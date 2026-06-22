@@ -11851,6 +11851,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
   }
   var s='background:white;border:1px solid var(--border);border-radius:4px;padding:10px 13px;font-size:0.92rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);min-height:42px;box-sizing:border-box;width:100%;';
   document.getElementById('adminEditTitle').textContent='編輯帳號資料';
+  document.getElementById('adminEditSaveBtn').textContent='儲　存';
   document.getElementById('adminEditFields').innerHTML=
     '<div class="field"><label>主要 Email</label><input type="email" id="aeWlEmail" value="'+email+'" style="'+s+'"></div>'+
     '<div class="field"><label>額外信箱 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（其他 Google 帳號）</span></label><div id="aeWlExtraList">'+buildExtraHtml(extraEmails)+'</div></div>'+
@@ -11961,6 +11962,7 @@ async function adminEditAtt(id) {
   try { doc=await fbGetWithSig(COL_ATTEND,id); } catch(e){alert('讀取資料失敗：'+e.message);return;}
   if(!doc){alert('找不到資料');return;}
   document.getElementById('adminEditTitle').textContent='編輯簽到簽退';
+  document.getElementById('adminEditSaveBtn').textContent='儲　存';
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeADate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>類別</label><select id="aeADuty" style="width:100%;"><option ${(doc.dutyType||'協勤')==='協勤'?'selected':''}>協勤</option><option ${doc.dutyType==='公差'?'selected':''}>公差</option></select></div>
@@ -12008,7 +12010,7 @@ async function adminEditAtt(id) {
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('attQueryPage')?.classList.contains('active')) await doAttQuery();
       else await loadAdminAttendance();
-    } catch(e){alert('儲存失敗：'+e.message);}
+    } catch(e){alert('儲存失敗：'+e.message); throw e;}
   };
   const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
 }
@@ -12090,6 +12092,7 @@ async function loadAdminOuting() {
 async function adminEditOut(id) {
   const doc=await fbGetWithSig(COL_OUTING,id); if(!doc){alert('找不到資料');return;}
   document.getElementById('adminEditTitle').textContent='編輯協勤紀錄'+(doc.caseId?' #'+_fmtCaseId(doc.caseId):'');
+  document.getElementById('adminEditSaveBtn').textContent='儲　存';
   document.getElementById('adminEditFields').innerHTML=`
     <div class="field"><label>日期</label><input type="date" id="aeODate" value="${doc.date||''}" style="width:100%;"></div>
     <div class="field"><label>案由</label><input type="text" id="aeOCaseType" value="${doc.caseType||''}" style="width:100%;"></div>
@@ -12146,7 +12149,7 @@ async function adminEditOut(id) {
       document.getElementById('adminEditModal').style.display='none';
       if(document.getElementById('queryPage')?.classList.contains('active')) await doQuery();
       else await loadAdminOuting();
-    } catch(e){alert('儲存失敗：'+e.message);}
+    } catch(e){alert('儲存失敗：'+e.message); throw e;}
   };
   const _adm2=document.getElementById('adminEditModal'); _adm2.style.display='block'; _adm2.scrollTop=0;
 }
@@ -18712,13 +18715,13 @@ async function loadAdminCorrections() {
         <!-- 操作按鈕 -->
         ${isPending ? `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #F3F4F6;">
-          <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','rejected')"
+          <button onclick="rejectCorrection('${d.id}')"
             style="padding:12px;background:white;color:#6B7280;border:none;border-right:1px solid #F3F4F6;font-size:0.82rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:0 0 0 14px;">
-            拒絕
+            駁回
           </button>
-          <button onclick="handleCorrection('${d.id}','${d.docId||''}','${d.type}','approved')"
+          <button onclick="reviewCorrection('${d.id}','${d.docId||''}','${d.type}')"
             style="padding:12px;background:${scfg.bar};color:white;border:none;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;border-radius:0 0 14px 0;">
-            ${isDeleteReq ? '核准刪除' : '核准修改'}
+            ${isDeleteReq ? '核准刪除' : '查看紀錄'}
           </button>
         </div>` : `<div style="height:4px;background:${scfg.bar};opacity:0.6;"></div>`}
       `;
@@ -18729,78 +18732,106 @@ async function loadAdminCorrections() {
   }
 }
 
-async function handleCorrection(corrId, docId, type, action) {
+// 駁回：不涉及資料異動，直接標記狀態即可
+async function rejectCorrection(corrId) {
+  if (!confirm('確定要駁回這筆修正申請嗎？')) return;
   try {
     await fbUpdate(COL_CORRECTION, corrId, {
-      status: action,
+      status: 'rejected',
       handledAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-
-    if (action === 'approved' && docId) {
-      const corrData = await fbGet(COL_CORRECTION, corrId);
-
-      // 刪除申請：直接刪除原始紀錄
-      if (corrData && corrData.requestType === 'delete') {
-        const col = type === 'outing' ? COL_OUTING : COL_ATTEND;
-        await fbDelete(col, docId);
-        await loadAdminCorrections();
-        alert('✅ 已核准並刪除該筆紀錄。');
-        return;
-      }
-
-      const fields = (corrData && corrData.correctedFields) || {};
-
-      // 先開啟編輯 Modal
-      if (type === 'outing') {
-        adminEditOut(docId);
-      } else {
-        adminEditAtt(docId);
-      }
-
-      // 等 500ms：adminEditAtt/Out 內部有 setTimeout(50ms) 初始化 canvas
-      // 500ms 足夠讓 DOM 渲染和 canvas 初始化都完成
-      setTimeout(() => {
-        try {
-          if (type === 'outing') {
-            const map = {
-              aeODate: fields.date, aeOCaseType: fields.caseType,
-              aeOOut: fields.timeOut, aeOBack: fields.timeBack,
-              aeODist: fields.district, aeOAddr: fields.address,
-              aeOSvc: fields.services, aeONote: fields.note,
-              aeOName: fields.memberName,
-            };
-            Object.entries(map).forEach(([id, val]) => {
-              if (val !== undefined && val !== '') {
-                const el = document.getElementById(id);
-                if (el) { el.value = val; console.log('filled', id, val); }
-                else console.warn('not found', id);
-              }
-            });
-            if (fields.signature) drawSigToCanvas('aeOSigCanvas', fields.signature);
-            document.getElementById('adminEditTitle').innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－協勤紀錄（請確認後核准）';
-          } else {
-            const map = {
-              aeAIn: fields.checkinTime, aeAOut: fields.checkoutTime,
-              aeAHours: fields.hours,   aeACount: fields.count,
-              aeASvc: fields.service,   aeADuty: fields.dutyType,
-            };
-            Object.entries(map).forEach(([id, val]) => {
-              if (val !== undefined && val !== '') {
-                const el = document.getElementById(id);
-                if (el) { el.value = val; console.log('filled', id, val); }
-                else console.warn('not found', id);
-              }
-            });
-            if (fields.checkinSig)  drawSigToCanvas('aeACheckinCanvas',  fields.checkinSig);
-            if (fields.checkoutSig) drawSigToCanvas('aeACheckoutCanvas', fields.checkoutSig);
-            document.getElementById('adminEditTitle').innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－簽到退紀錄（請確認後核准）';
-          }
-        } catch(fillErr) { console.error('fillFields error:', fillErr); }
-      }, 500);
-    }
-
     await loadAdminCorrections();
     _loadAdminBadges();
+  } catch(e) { alert('操作失敗：' + e.message); }
+}
+
+// 查看紀錄：先讓管理員確認/編輯成員申請的修正內容，按下「核准」才會真正套用並標記已核准
+// （避免「已核准但資料其實沒改到」的不一致——核准狀態只在資料真的寫入成功後才更新）
+async function reviewCorrection(corrId, docId, type) {
+  try {
+    const corrData = await fbGet(COL_CORRECTION, corrId);
+    if (!corrData) { alert('找不到申請資料'); return; }
+
+    // 刪除申請：沒有欄位可比對，用確認對話框取代開窗編輯
+    if (corrData.requestType === 'delete') {
+      if (!confirm(`確定核准並刪除這筆${type === 'outing' ? '協勤' : '簽到退'}紀錄嗎？此操作無法復原。`)) return;
+      const col = type === 'outing' ? COL_OUTING : COL_ATTEND;
+      await fbDelete(col, docId);
+      await fbUpdate(COL_CORRECTION, corrId, {
+        status: 'approved',
+        handledAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      await loadAdminCorrections();
+      _loadAdminBadges();
+      alert('✅ 已核准並刪除該筆紀錄。');
+      return;
+    }
+
+    const fields = corrData.correctedFields || {};
+
+    // 先開啟編輯 Modal
+    if (type === 'outing') {
+      adminEditOut(docId);
+    } else {
+      adminEditAtt(docId);
+    }
+
+    // 等 500ms：adminEditAtt/Out 內部有 setTimeout(50ms) 初始化 canvas
+    // 500ms 足夠讓 DOM 渲染和 canvas 初始化都完成
+    setTimeout(() => {
+      try {
+        if (type === 'outing') {
+          const map = {
+            aeODate: fields.date, aeOCaseType: fields.caseType,
+            aeOOut: fields.timeOut, aeOBack: fields.timeBack,
+            aeODist: fields.district, aeOAddr: fields.address,
+            aeOSvc: fields.services, aeONote: fields.note,
+            aeOName: fields.memberName,
+          };
+          Object.entries(map).forEach(([id, val]) => {
+            if (val !== undefined && val !== '') {
+              const el = document.getElementById(id);
+              if (el) { el.value = val; console.log('filled', id, val); }
+              else console.warn('not found', id);
+            }
+          });
+          if (fields.signature) drawSigToCanvas('aeOSigCanvas', fields.signature);
+          document.getElementById('adminEditTitle').innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－協勤紀錄（請確認後核准）';
+        } else {
+          const map = {
+            aeAIn: fields.checkinTime, aeAOut: fields.checkoutTime,
+            aeAHours: fields.hours,   aeACount: fields.count,
+            aeASvc: fields.service,   aeADuty: fields.dutyType,
+          };
+          Object.entries(map).forEach(([id, val]) => {
+            if (val !== undefined && val !== '') {
+              const el = document.getElementById(id);
+              if (el) { el.value = val; console.log('filled', id, val); }
+              else console.warn('not found', id);
+            }
+          });
+          if (fields.checkinSig)  drawSigToCanvas('aeACheckinCanvas',  fields.checkinSig);
+          if (fields.checkoutSig) drawSigToCanvas('aeACheckoutCanvas', fields.checkoutSig);
+          document.getElementById('adminEditTitle').innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－簽到退紀錄（請確認後核准）';
+        }
+        document.getElementById('adminEditSaveBtn').textContent = '核准';
+
+        // 包裝原本的儲存按鈕：先執行原本的資料寫入，成功後才標記此申請為已核准
+        const originalSave = adminEditSave;
+        adminEditSave = async () => {
+          try { await originalSave(); }
+          catch(e) { return; } // 原函式已自行 alert 失敗訊息，不繼續標記核准
+          try {
+            await fbUpdate(COL_CORRECTION, corrId, {
+              status: 'approved',
+              handledAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+          } catch(e) { alert('已儲存紀錄，但核准狀態更新失敗：' + e.message); }
+          await loadAdminCorrections();
+          _loadAdminBadges();
+        };
+      } catch(fillErr) { console.error('fillFields error:', fillErr); }
+    }, 500);
   } catch(e) { alert('操作失敗：' + e.message); }
 }
 
@@ -21441,7 +21472,7 @@ function showTempPassErr(msg) {
       <div id="adminEditFields"></div>
     </div>
     <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
-      <button onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
+      <button id="adminEditSaveBtn" onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
       <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
     </div>
   </div>
