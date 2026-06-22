@@ -35,6 +35,7 @@ jobs:
           cp icon-512.png /tmp/deploy-icon-512.png 2>/dev/null || true
           cp manifest.json /tmp/deploy-manifest.json 2>/dev/null || true
           cp firebase.json /tmp/deploy-firebase.json 2>/dev/null || true
+          cp badge-phoenix.png /tmp/deploy-badge-phoenix.png 2>/dev/null || true
 
           # Switch to gh-pages branch (preserves preview/ folder)
           git fetch origin gh-pages || true
@@ -53,8 +54,9 @@ jobs:
           [ -f /tmp/deploy-icon-512.png ] && cp /tmp/deploy-icon-512.png icon-512.png
           [ -f /tmp/deploy-manifest.json ] && cp /tmp/deploy-manifest.json manifest.json
           [ -f /tmp/deploy-firebase.json ] && cp /tmp/deploy-firebase.json firebase.json
+          [ -f /tmp/deploy-badge-phoenix.png ] && cp /tmp/deploy-badge-phoenix.png badge-phoenix.png
 
-          git add index.html firebase-messaging-sw.js icon-192.png icon-512.png manifest.json firebase.json
+          git add index.html firebase-messaging-sw.js icon-192.png icon-512.png manifest.json firebase.json badge-phoenix.png
           git diff --staged --quiet && echo "No changes to deploy" && exit 0
           git commit -m "deploy: $MAIN_COMMIT"
           git push origin gh-pages
