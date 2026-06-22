@@ -18617,14 +18617,18 @@ async function loadAdminCorrections() {
       checkinSig: '簽到簽名', checkoutSig: '簽退簽名', signature: '義消簽名',
     };
 
-    // 預先撈所有原始紀錄的簽名（docId → { checkinSig, checkoutSig, signature }）
+    // 預先撈所有原始紀錄的簽名（docId → { checkinSig, checkoutSig, signature }）+ 時間異常標記
     const docSigCache = {};
     await Promise.all(docs.filter(d => d.docId).map(async d => {
       if (docSigCache[d.docId]) return;
       try {
         const col = d.type === 'outing' ? COL_OUTING : COL_ATTEND;
         const orig = await fbGetWithSig(col, d.docId);
-        if (orig) docSigCache[d.docId] = { checkinSig: orig.checkinSig||'', checkoutSig: orig.checkoutSig||'', signature: orig.signature||'' };
+        if (orig) docSigCache[d.docId] = {
+          checkinSig: orig.checkinSig||'', checkoutSig: orig.checkoutSig||'', signature: orig.signature||'',
+          timeAdjusted: orig.timeAdjusted||false, checkinRecordedAt: orig.checkinRecordedAt||'',
+          checkoutTimeAdjusted: orig.checkoutTimeAdjusted||false, checkoutRecordedAt: orig.checkoutRecordedAt||'',
+        };
         else docSigCache[d.docId] = { _notFound: true };
       } catch(e) { /* 原始紀錄可能已刪除 */ }
     }));
@@ -18684,6 +18688,14 @@ async function loadAdminCorrections() {
       const recType   = d.type === 'outing' ? '協勤' : '簽到退';
       const reqType   = isDeleteReq ? '刪除' : '修正';
       const typeChip  = `${recType}紀錄 ${reqType}`;
+      // 原始紀錄若已被系統標記「時間異常」，在修正申請卡片上一併提示，避免管理員核准時沒注意到
+      const origFlags = docSigCache[d.docId] || {};
+      const anomalyParts = [];
+      if (origFlags.timeAdjusted)         anomalyParts.push(`簽到實際送出 ${origFlags.checkinRecordedAt||'不明'}`);
+      if (origFlags.checkoutTimeAdjusted) anomalyParts.push(`簽退實際送出 ${origFlags.checkoutRecordedAt||'不明'}`);
+      const anomalyChip = anomalyParts.length
+        ? `<span style="font-size:0.72rem;font-weight:700;background:#FFF3CD;color:#856404;border:1px solid #FFC107;border-radius:6px;padding:2px 8px;" title="${anomalyParts.join('；')}">⚠️ 原紀錄時間異常</span>`
+        : '';
       const reasonTags = d.reasonTags ? `<span style="font-size:0.72rem;background:#FEF9C3;color:#854D0E;border-radius:6px;padding:2px 8px;">${d.reasonTags}</span>` : '';
       const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:#6B7280;margin-top:4px;">補充：${d.reason}</div>` : '';
       const submittedAt = d.submittedAt?.seconds
@@ -18707,6 +18719,7 @@ async function loadAdminCorrections() {
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-size:0.72rem;color:#6B7280;background:#F3F4F6;border-radius:6px;padding:2px 8px;">${typeChip}</span>
+            ${anomalyChip}
             ${submittedAt ? `<span style="font-size:0.7rem;color:#9CA3AF;margin-left:auto;">送出 ${submittedAt}</span>` : ''}
           </div>
         </div>
