@@ -3701,6 +3701,7 @@ function _dlCSV(content, filename) {
         <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">案件地址定位（地圖用）</div>
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">依「行政區＋詳細地址」呼叫免費 OpenStreetMap 定位服務，將座標寫回案件紀錄，供「案件統計」頁地圖顯示。<br><span style="color:var(--red);font-weight:600;">只會處理尚未定位過的案件，逐筆查詢避免超過服務限制，數量多時請耐心等候。</span></div>
         <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-mid);margin-bottom:10px;cursor:pointer;font-weight:400;"><input type="checkbox" id="geoBackfillRetry" style="accent-color:#00897b;">包含先前定位失敗的案件，重新嘗試一次</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-mid);margin-bottom:10px;cursor:pointer;font-weight:400;"><input type="checkbox" id="geoBackfillForce" style="accent-color:#00897b;">強制重新定位所有案件（修正先前查到錯誤位置的案件，會耗用較多查詢額度）</label>
         <button id="geoBackfillBtn" onclick="repairGeocodeBackfill(this)" style="background:#00897b;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">📍 開始批次定位</button>
         <div id="geoBackfillLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
       </div>
@@ -15079,11 +15080,14 @@ async function repairGeocodeBackfill(btn) {
   try {
     await ensureFirebase();
     const retryFailed = !!document.getElementById('geoBackfillRetry')?.checked;
+    const force = !!document.getElementById('geoBackfillForce')?.checked;
     const snap = await _fbDB.collection(COL_OUTING).get();
     const todo = snap.docs.filter(d => {
       const v = d.data();
+      if (!(v.address || v.district)) return false;
+      if (force) return true; // 強制模式：所有有地址的案件都重新查詢一次
       const notLocated = (typeof v.lat !== 'number' || typeof v.lng !== 'number');
-      return notLocated && (retryFailed || !v.geocodeFailed) && (v.address || v.district);
+      return notLocated && (retryFailed || !v.geocodeFailed);
     });
     if (!todo.length) {
       if (log) log.textContent = '✅ 所有案件皆已定位，無需處理。';
@@ -15099,7 +15103,7 @@ async function repairGeocodeBackfill(btn) {
       try {
         const res = await fetch('https://geocodeaddress-whi67k6epa-de.a.run.app', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address: full }),
+          body: JSON.stringify({ address: full, force }),
         });
         const d = await res.json();
         if (res.ok && d && !d.failed && typeof d.lat === 'number' && typeof d.lng === 'number') {

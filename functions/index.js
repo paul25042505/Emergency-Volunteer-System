@@ -183,6 +183,8 @@ exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'publi
   const address = (req.body?.address || '').trim();
   if (!address) { res.status(400).json({ error: 'address is required' }); return; }
 
+  const force = !!req.body?.force; // 強制重新查詢，無視快取（用於修正先前查到錯誤座標的案例）
+
   const apiKey = process.env.OPENCAGE_API_KEY;
   if (!apiKey) { res.status(500).json({ error: 'OPENCAGE_API_KEY not configured' }); return; }
 
@@ -191,16 +193,20 @@ exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'publi
   const cacheRef = db.collection('geocodeCache').doc(cacheId);
 
   try {
-    const cached = await cacheRef.get();
-    // 只信任「成功」的快取；失敗結果不快取，避免供應商暫時性問題被永久當成查無地址
-    if (cached.exists && !cached.data().failed) {
-      const d = cached.data();
-      res.json({ lat: d.lat, lng: d.lng, failed: false, cached: true });
-      return;
+    if (!force) {
+      const cached = await cacheRef.get();
+      // 只信任「成功」的快取；失敗結果不快取，避免供應商暫時性問題被永久當成查無地址
+      if (cached.exists && !cached.data().failed) {
+        const d = cached.data();
+        res.json({ lat: d.lat, lng: d.lng, failed: false, cached: true });
+        return;
+      }
     }
 
-    const url = 'https://api.opencagedata.com/geocode/v1/json?limit=1&countrycode=tw&language=zh&key='
-      + apiKey + '&q=' + encodeURIComponent(address);
+    // 限制搜尋範圍在台中市行政區內，避免同名路段被誤判到外縣市（例如誤配到新莊）
+    const url = 'https://api.opencagedata.com/geocode/v1/json?limit=1&countrycode=tw&language=zh'
+      + '&bounds=120.40,23.95,121.05,24.45&proximity=24.1477,120.6736'
+      + '&key=' + apiKey + '&q=' + encodeURIComponent(address);
     const resp = await fetch(url);
     if (!resp.ok) {
       console.error('geocodeAddress: OpenCage returned', resp.status, address);
