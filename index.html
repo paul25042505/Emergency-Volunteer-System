@@ -18694,7 +18694,10 @@ async function loadAdminCorrections() {
       if (origFlags.timeAdjusted)         anomalyParts.push(`簽到實際送出 ${origFlags.checkinRecordedAt||'不明'}`);
       if (origFlags.checkoutTimeAdjusted) anomalyParts.push(`簽退實際送出 ${origFlags.checkoutRecordedAt||'不明'}`);
       const anomalyChip = anomalyParts.length
-        ? `<span style="font-size:0.72rem;font-weight:700;background:#FFF3CD;color:#856404;border:1px solid #FFC107;border-radius:6px;padding:2px 8px;" title="${anomalyParts.join('；')}">⚠️ 原紀錄時間異常</span>`
+        ? `<span style="font-size:0.72rem;font-weight:700;background:#FFF3CD;color:#856404;border:1px solid #FFC107;border-radius:6px;padding:2px 8px;">⚠️ 原紀錄時間異常</span>`
+        : '';
+      const anomalyDetail = anomalyParts.length
+        ? `<div style="margin:8px 14px 0;padding:6px 10px;background:#FFF8E1;border-left:3px solid #FFC107;border-radius:6px;font-size:0.74rem;color:#856404;">⚠️ 原始紀錄時間異常：${anomalyParts.join('；')}</div>`
         : '';
       const reasonTags = d.reasonTags ? `<span style="font-size:0.72rem;background:#FEF9C3;color:#854D0E;border-radius:6px;padding:2px 8px;">${d.reasonTags}</span>` : '';
       const reasonNote = d.reason ? `<div style="font-size:0.78rem;color:#6B7280;margin-top:4px;">補充：${d.reason}</div>` : '';
@@ -18723,6 +18726,8 @@ async function loadAdminCorrections() {
             ${submittedAt ? `<span style="font-size:0.7rem;color:#9CA3AF;margin-left:auto;">送出 ${submittedAt}</span>` : ''}
           </div>
         </div>
+        <!-- 時間異常提示 -->
+        ${anomalyDetail}
         <!-- 原因 -->
         ${reasonTags||reasonNote ? `<div style="padding:10px 14px 0;">${reasonTags}${reasonNote}</div>` : ''}
         <!-- 對比表 -->
