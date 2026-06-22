@@ -1691,7 +1691,8 @@ function _dlCSV(content, filename) {
     </div>
 
     <!-- 天氣卡片 -->
-    <div class="dash-hero" id="dashWeatherCard">
+    <div class="dash-hero" id="dashWeatherCard"
+      ontouchstart="_idCardTouchStart(event)" ontouchmove="_idCardTouchMove(event)" ontouchend="_idCardTouchEnd()">
       <canvas id="weatherCardCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:20px;opacity:0.55;"></canvas>
       <!-- 日期 & 時間列 -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
