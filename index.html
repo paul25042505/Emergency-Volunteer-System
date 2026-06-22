@@ -11716,6 +11716,12 @@ async function loadAdminWhitelist(filterUnit) {
         certBadge.textContent = d.cert + (d.certExp ? '  效期 '+d.certExp : '');
         badgeRow.appendChild(certBadge);
       }
+      if (d.svcCardExp) {
+        var svcBadge = document.createElement('span');
+        svcBadge.style.cssText = 'font-size:0.65rem;background:#fdf2e9;color:#9a5b1a;border:1px solid #f5d6b8;border-radius:8px;padding:2px 7px;';
+        svcBadge.textContent = '義消證 效期 '+d.svcCardExp;
+        badgeRow.appendChild(svcBadge);
+      }
       if (d.status === 'retired') {
         var retiredBadge = document.createElement('span');
         retiredBadge.style.cssText = 'font-size:0.65rem;background:#f1f1f1;color:#888;border:1px solid #ddd;border-radius:8px;padding:2px 7px;font-weight:600;';
