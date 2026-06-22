@@ -770,11 +770,13 @@ tr:hover td { background: #fdfcfb; }
   width: 9px; height: 9px; border-radius: 50%;
   background: var(--red); border: 1.5px solid white;
   display: none;
-  animation: bellBadgeBreathe 1.6s ease-in-out infinite;
 }
-@keyframes bellBadgeBreathe {
-  0%, 100% { background: var(--red); }
-  50% { background: #ffffff; }
+.bell-btn.has-unread {
+  animation: bellBtnBreathe 1.6s ease-in-out infinite;
+}
+@keyframes bellBtnBreathe {
+  0%, 100% { background: var(--card-bg); color: var(--text-mid); }
+  50% { background: var(--red); color: #fff; }
 }
 
 /* ══ Hero card ══ */
@@ -13487,6 +13489,7 @@ function _updateBellBadge() {
         const lastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
         const show = ts > lastSeen;
         document.querySelectorAll('.bell-badge').forEach(el => el.style.display = show ? 'block' : 'none');
+        document.querySelectorAll('.bell-btn').forEach(el => el.classList.toggle('has-unread', show));
       }, () => {});
   } catch(e) {}
 }
@@ -13613,6 +13616,7 @@ async function openNoticePanel() {
   _noticeLastSeen = parseInt(localStorage.getItem('bellLastSeen') || '0');
   localStorage.setItem('bellLastSeen', Date.now().toString());
   document.querySelectorAll('.bell-badge').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.bell-btn').forEach(el => el.classList.remove('has-unread'));
   const panel = document.getElementById('noticePanel');
   panel.style.display = 'block';
   _initNoticePanelSwipe();
