@@ -1217,7 +1217,7 @@ function _dlCSV(content, filename) {
     <!-- 開發者快速登入（僅 localhost 顯示）-->
     <div id="devLoginArea" style="display:none;margin-top:20px;border-top:1px dashed #e0d5c8;padding-top:16px;">
       <div style="font-size:0.72rem;color:var(--text-light);text-align:center;margin-bottom:10px;letter-spacing:0.06em;">🛠 開發者快速登入</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
         <button onclick="devLoginAs('admin')"
           style="padding:10px 4px;border:1.5px solid #ffc107;border-radius:8px;background:#fff3cd;color:#856404;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
           ⚙️ 系統管理員
@@ -1225,6 +1225,10 @@ function _dlCSV(content, filename) {
         <button onclick="devLoginAs('officer')"
           style="padding:10px 4px;border:1.5px solid #9ec5fe;border-radius:8px;background:#cfe2ff;color:#084298;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
           📋 分隊承辦人
+        </button>
+        <button onclick="devLoginAs('cadre')"
+          style="padding:10px 4px;border:1.5px solid #c4b5fd;border-radius:8px;background:#ede9fe;color:#5b21b6;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
+          🎖 幹部
         </button>
         <button onclick="devLoginAs('member')"
           style="padding:10px 4px;border:1.5px solid #ced4da;border-radius:8px;background:#e9ecef;color:#495057;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;min-height:unset;">
@@ -3269,6 +3273,8 @@ function _dlCSV(content, filename) {
               <label style="font-size:0.78rem;">角色權限</label>
               <select id="adminWlRole" style="width:100%;">
                 <option value="member">一般成員</option>
+                <option value="squadLeader">小隊長</option>
+                <option value="cadre">幹部</option>
                 <option value="officer">分隊承辦人</option>
                 <option value="admin">系統管理員</option>
               </select>
@@ -5785,7 +5791,7 @@ async function quickLoginAs(idx) {
   if (lt) {
     if (ltAvatar) ltAvatar.textContent = (u.name || '?')[0];
     if (ltName)   ltName.textContent   = u.name || '';
-    if (ltRole)   ltRole.textContent   = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : u.isSquadLeader ? '小隊長' : '隊員');
+    if (ltRole)   ltRole.textContent   = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : (u.isSquadLeader || u.role==='squadLeader') ? '小隊長' : u.role==='cadre' ? '幹部' : '隊員');
     if (ltBar)    ltBar.style.width    = '10%';
     if (ltLabel)  ltLabel.textContent  = '驗證身份中…';
     lt.style.display = 'flex';
@@ -5813,7 +5819,7 @@ async function quickLoginAs(idx) {
 
   if (ltBar)   ltBar.style.width   = '35%';
   if (ltLabel) ltLabel.textContent = '載入資料中…';
-  if (ltRole)  ltRole.textContent  = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : u.isSquadLeader ? '小隊長' : '隊員');
+  if (ltRole)  ltRole.textContent  = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : (u.isSquadLeader || u.role==='squadLeader') ? '小隊長' : u.role==='cadre' ? '幹部' : '隊員');
 
   // 儲存 session
   sessionStorage.setItem('rescue_user', JSON.stringify({
@@ -11652,6 +11658,7 @@ async function loadAdminWhitelist(filterUnit) {
       admin:       {label:'系統管理員',bg:'#fff3cd',color:'#856404',border:'#ffc107'},
       officer:     {label:'分隊承辦人',bg:'#cfe2ff',color:'#084298',border:'#9ec5fe'},
       squadLeader: {label:'小隊長',    bg:'#f0fdf4',color:'#166534',border:'#86efac'},
+      cadre:       {label:'幹部',      bg:'#ede9fe',color:'#5b21b6',border:'#c4b5fd'},
       member:      {label:'一般成員',  bg:'#e9ecef',color:'#495057',border:'#ced4da'},
     };
 
@@ -11836,7 +11843,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
   var titleOpts='<option value="">請選擇</option>'+TITLES.map(t=>'<option value="'+t+'"'+(t===title?' selected':'')+'>'+t+'</option>').join('');
   var SQUADS=['第一小隊','第二小隊','第三小隊'];
   var squadOpts='<option value=""'+(squad===''?' selected':'')+'>（無）</option>'+SQUADS.map(s=>'<option value="'+s+'"'+(s===squad?' selected':'')+'>'+s+'</option>').join('');
-  var roleOpts='<option value="member"'+(role==='member'?' selected':'')+'>一般成員</option><option value="squadLeader"'+(role==='squadLeader'?' selected':'')+'>小隊長</option><option value="officer"'+(role==='officer'?' selected':'')+'>分隊承辦人</option><option value="admin"'+(role==='admin'?' selected':'')+'>系統管理員</option>';
+  var roleOpts='<option value="member"'+(role==='member'?' selected':'')+'>一般成員</option><option value="squadLeader"'+(role==='squadLeader'?' selected':'')+'>小隊長</option><option value="cadre"'+(role==='cadre'?' selected':'')+'>幹部</option><option value="officer"'+(role==='officer'?' selected':'')+'>分隊承辦人</option><option value="admin"'+(role==='admin'?' selected':'')+'>系統管理員</option>';
   var certOpts='<option value=""'+(cert===''?' selected':'')+'>無</option><option value="EMT-1"'+(cert==='EMT-1'?' selected':'')+'>EMT-1</option><option value="EMT-2"'+(cert==='EMT-2'?' selected':'')+'>EMT-2</option><option value="EMT-P"'+(cert==='EMT-P'?' selected':'')+'>EMT-P（中級）</option>';
   function buildExtraHtml(arr){
     return arr.map((em,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="email" value="'+em+'" style="flex:1;background:white;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);box-sizing:border-box;" oninput="window.aeWlExtra['+i+']=this.value.trim().toLowerCase()"><button type="button" onclick="window.aeWlRemove('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:6px 10px;font-size:0.82rem;color:#b94a3a;cursor:pointer;">✕</button></div>').join('')
@@ -15014,7 +15021,7 @@ function _initMorePage() {
   const tl = document.getElementById('moreTitle');
   if (av) av.textContent = (u.name||'?').slice(0,1);
   if (nm) nm.textContent = u.name || '—';
-  if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : u.isSquadLeader ? '小隊長' : '隊員');
+  if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : (u.isSquadLeader || u.role==='squadLeader') ? '小隊長' : u.role==='cadre' ? '幹部' : '隊員');
   const adminBtn = document.getElementById('moreAdminBtn');
   if (adminBtn) adminBtn.style.display = (u.isAdmin || u.isOfficer) ? 'flex' : 'none';
   _updatePushToggleUI();
@@ -16582,6 +16589,7 @@ function devLoginAs(role) {
   var profiles = {
     admin:   { email: 'paul25042505@gmail.com', name: '林伯霖（測試）', role: 'admin',   isAdmin: true,  isOfficer: false, unit: '潭子分隊' },
     officer: { email: 'officer@dev.test',       name: devName || '承辦人（測試）', role: 'officer', isAdmin: false, isOfficer: true,  unit: selUnit },
+    cadre:   { email: 'cadre@dev.test',         name: devName || '幹部（測試）',  role: 'cadre',   isAdmin: false, isOfficer: false, unit: selUnit },
     member:  { email: 'member@dev.test',         name: devName || '隊員（測試）',  role: 'member',  isAdmin: false, isOfficer: false, unit: selUnit },
   };
   var p = profiles[role] || profiles.member;
@@ -19266,7 +19274,7 @@ async function renderDutyGongcha() {
   const el = document.getElementById('dutyGongchaContent');
   if (!el) return;
   const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const isAdmin = u.isAdmin || u.isOfficer || u.isSquadLeader;
+  const isAdmin = u.isAdmin || u.isOfficer || u.isSquadLeader || u.role === 'squadLeader' || u.role === 'cadre';
   el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);">載入中…</div>';
   let docs = [];
   try { docs = await fbList(COL_GONGCHA_MISSIONS, 'date', 'desc'); } catch(e) {}
@@ -19617,7 +19625,7 @@ async function renderDutyMeeting() {
   const el = document.getElementById('dutyMeetingContent');
   if (!el) return;
   const u = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
-  const isAdmin = u.isAdmin || u.isOfficer || u.isSquadLeader;
+  const isAdmin = u.isAdmin || u.isOfficer || u.isSquadLeader || u.role === 'squadLeader' || u.role === 'cadre';
   el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-light);">載入中…</div>';
   let docs = [];
   try { docs = await fbList(COL_MEETING_EVENTS, 'date', 'desc'); } catch(e) {}
