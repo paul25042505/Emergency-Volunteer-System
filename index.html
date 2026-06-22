@@ -18769,7 +18769,7 @@ async function handleCorrection(corrId, docId, type, action) {
               }
             });
             if (fields.signature) drawSigToCanvas('aeOSigCanvas', fields.signature);
-            document.getElementById('adminEditTitle').textContent = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－協勤紀錄（請確認後儲存）';
+            document.getElementById('adminEditTitle').innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－協勤紀錄（請確認後核准）';
           } else {
             const map = {
               aeAIn: fields.checkinTime, aeAOut: fields.checkoutTime,
@@ -18785,7 +18785,7 @@ async function handleCorrection(corrId, docId, type, action) {
             });
             if (fields.checkinSig)  drawSigToCanvas('aeACheckinCanvas',  fields.checkinSig);
             if (fields.checkoutSig) drawSigToCanvas('aeACheckoutCanvas', fields.checkoutSig);
-            document.getElementById('adminEditTitle').textContent = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－簽到退紀錄（請確認後儲存）';
+            document.getElementById('adminEditTitle').innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg> 核准修正－簽到退紀錄（請確認後核准）';
           }
         } catch(fillErr) { console.error('fillFields error:', fillErr); }
       }, 500);
