@@ -5420,12 +5420,16 @@ async function fbUploadMemberPhoto(file, memberId) {
 }
 // 大頭照裁切：顯示人形輪廓參考線，讓使用者拖曳/縮放後裁出 5:7 證件照，回傳 Blob 或 null（取消）
 function openPhotoCropModal(file) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const FW = 260, FH = 364; // 裁切框尺寸（5:7，對應 idCardPhotoBox）
     const OUT_W = 350, OUT_H = 490;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
+    // 用 dataURL 而非 blob URL：iOS 已加到主畫面的 PWA（standalone 模式）對 blob: URL 在 <img> 內常會載入失敗
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('讀取圖片失敗'));
+    reader.onload = () => {
+      const url = reader.result;
+      const img = new Image();
+      img.onload = () => {
       const imgW = img.naturalWidth, imgH = img.naturalHeight;
       const minScale = Math.max(FW / imgW, FH / imgH);
       const maxScale = minScale * 3;
@@ -5509,7 +5513,6 @@ function openPhotoCropModal(file) {
         window.removeEventListener('touchmove', pointerMove);
         window.removeEventListener('mouseup', pointerUp);
         window.removeEventListener('touchend', pointerUp);
-        URL.revokeObjectURL(url);
         overlay.remove();
       }
 
@@ -5523,9 +5526,11 @@ function openPhotoCropModal(file) {
         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
         canvas.toBlob(blob => { cleanup(); resolve(blob); }, 'image/jpeg', 0.92);
       };
+      };
+      img.onerror = () => reject(new Error('圖片格式不支援或讀取失敗'));
+      img.src = url;
     };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-    img.src = url;
+    reader.readAsDataURL(file);
   });
 }
 async function loadAndViewSig(col, docId, btn) {
@@ -11912,7 +11917,9 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
   window.aeWlPhotoFileChange=async function(input){
     const file=input.files&&input.files[0];
     if(!file)return;
-    const cropped=await openPhotoCropModal(file);
+    let cropped;
+    try{cropped=await openPhotoCropModal(file);}
+    catch(e){input.value='';alert('照片載入失敗：'+e.message);return;}
     input.value='';
     if(!cropped)return;
     const btn=document.getElementById('aeWlPhotoBtn');
@@ -17559,7 +17566,9 @@ async function profileAvatarFileChange(input) {
   const file = input.files && input.files[0];
   if (!file) return;
   if (!_profileMemberId) { alert('找不到使用者資料，請重新登入再試'); input.value=''; return; }
-  const cropped = await openPhotoCropModal(file);
+  let cropped;
+  try { cropped = await openPhotoCropModal(file); }
+  catch(e) { input.value=''; alert('照片載入失敗：' + e.message); return; }
   input.value = '';
   if (!cropped) return;
   const avatarEl = document.getElementById('profileAvatar');
