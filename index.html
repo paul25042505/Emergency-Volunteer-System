@@ -805,12 +805,12 @@ tr:hover td { background: #fdfcfb; }
   border-radius: 14px 14px 0 0;
   cursor: pointer;
   box-shadow: 0 -2px 6px rgba(0,0,0,0.15);
-  transition: height 0.32s cubic-bezier(.25,.8,.25,1), margin-bottom 0.32s cubic-bezier(.25,.8,.25,1), border-radius 0.32s ease;
+  transition: height 0.32s cubic-bezier(.25,.8,.25,1), margin-bottom 0.32s cubic-bezier(.25,.8,.25,1), border-radius 0.32s ease, border-width 0.32s ease;
   touch-action: pan-y;
 }
 .idcard-peek.expanded {
-  height: 240px; margin: 0 18px 16px; border-radius: 14px;
-  border: 5px solid #e0b94a;
+  margin: 0 18px 16px; border-radius: 14px;
+  border: 15px solid #e0b94a;
   box-shadow: inset 0 0 0 3px #8F0D16, 0 -2px 6px rgba(0,0,0,0.15);
 }
 .idcard-peek-tab {
@@ -819,7 +819,7 @@ tr:hover td { background: #fdfcfb; }
 .idcard-peek.expanded .idcard-peek-tab { display: none; }
 .idcard-peek-badge { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; margin-top: 2px; }
 .idcard-peek-label { font-size: 0.68rem; font-weight: 700; color: #f3d77a; letter-spacing: 0.06em; margin-top: 2px; }
-.idcard-full { display: none; padding: 6px 16px 16px; gap: 14px; }
+.idcard-full { display: none; padding: 6px 16px 16px; gap: 10px; }
 .idcard-peek.expanded .idcard-full { display: flex; }
 .idcard-kai { font-family: 'cwTeX Kai','Kaiti TC','Kaiti SC','DFKai-SB','BiauKai','KaiTi','STKaiti',serif; }
 #dashHourlyScroll::-webkit-scrollbar { display: none; }
@@ -1667,19 +1667,19 @@ function _dlCSV(content, filename) {
         <span class="idcard-peek-label idcard-kai">義消服務證</span>
       </div>
       <div class="idcard-full">
-        <!-- 左：徽章區（佔 2/3） -->
-        <div style="flex:2;display:flex;flex-direction:column;align-items:center;justify-content:space-between;">
-          <svg xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 140 64" style="width:100%;max-width:160px;height:48px;">
-            <path id="idCardArcPath" d="M10,58 A75,75 0 0 1 130,58" fill="none"/>
-            <text class="idcard-kai" font-size="15" font-weight="700" fill="#f3d77a" letter-spacing="1">
+        <!-- 左：徽章區（佔 2/3，整體垂直水平置中） -->
+        <div style="flex:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+          <svg xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 150 70" style="width:100%;max-width:210px;height:64px;">
+            <path id="idCardArcPath" d="M8,64 A80,80 0 0 1 142,64" fill="none"/>
+            <text class="idcard-kai" font-size="20" font-weight="700" fill="#f3d77a" letter-spacing="1">
               <textPath href="#idCardArcPath" xlink:href="#idCardArcPath" startOffset="50%" text-anchor="middle">義勇消防人員</textPath>
             </text>
           </svg>
-          <img src="/Emergency-Volunteer-System/badge-phoenix.png" alt="" style="width:78px;height:auto;margin:2px 0;">
-          <div class="idcard-kai" style="color:#f3d77a;font-weight:800;font-size:1.05rem;letter-spacing:0.2em;">服務證</div>
+          <img src="/Emergency-Volunteer-System/badge-phoenix.png" alt="" style="width:100px;height:auto;margin:2px 0;">
+          <div class="idcard-kai" style="color:#f3d77a;font-weight:800;font-size:1.5rem;letter-spacing:0.2em;">服務證</div>
         </div>
-        <!-- 右：照片＋姓名（佔 1/3，照片為一寸照比例 5:7） -->
-        <div style="flex:1;display:flex;flex-direction:column;background:white;border-radius:6px;overflow:hidden;">
+        <!-- 右：照片＋姓名（佔 1/3，照片為一寸照比例 5:7，整體垂直水平置中） -->
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:white;border-radius:6px;overflow:hidden;">
           <div id="idCardPhotoBox" style="width:100%;aspect-ratio:5/7;display:flex;align-items:center;justify-content:center;background:#f4f4f4;">
             <div class="idcard-kai" style="text-align:center;color:#999;font-weight:700;font-size:1.3rem;line-height:1.3;">照<br>片</div>
           </div>
@@ -7476,6 +7476,7 @@ function _idCardSetExpanded(expand) {
   const el = document.getElementById('idCardPeek');
   if (!el) return;
   _idCardExpanded = expand;
+  el.style.height = expand ? (el.offsetWidth * 5.4 / 9) + 'px' : '';
   el.classList.toggle('expanded', expand);
   if (expand) _idCardFill();
 }
