@@ -19,13 +19,22 @@ exports.onNewAnnouncement = onDocumentCreated(
     if (!data) return;
     if (data._pushed) return; // 已由其他路徑推播，略過
 
-    const { title, body, audience, relatedUnit } = data;
+    const { title, body, audience, targetMembers } = data;
     if (!title || !body) return;
 
     const db = getFirestore();
     let tokens;
     if (audience === 'admin') {
       tokens = await _getAdminTokens(null);
+    } else if (targetMembers && targetMembers.length) {
+      // 指定成員範圍（例如單位限定的廣播）：僅推給名單內成員
+      const snap = await db.collection('pushSubscriptions').get();
+      const arr = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        if (d.fcmToken && d.memberName && targetMembers.includes(d.memberName)) arr.push(d.fcmToken);
+      });
+      tokens = [...new Set(arr)];
     } else {
       // audience === 'all'：推給所有訂閱者
       const snap = await db.collection('pushSubscriptions').get();
