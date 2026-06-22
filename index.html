@@ -753,7 +753,7 @@ tr:hover td { background: #fdfcfb; }
   background: linear-gradient(135deg, #C62828, #8E0000);
   color: white; display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(198,40,40,0.3);
+  box-shadow: 0 2px 8px rgba(198,40,40,0.3); overflow: hidden;
 }
 .dash-actions { display: flex; align-items: center; gap: 6px; }
 .dash-icon-btn {
@@ -3861,7 +3861,7 @@ function _dlCSV(content, filename) {
 
     <!-- 個人資料區塊 -->
     <div onclick="navTo('profilePage')" id="moreUserCard" style="background:white;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;cursor:pointer;border-bottom:1px solid #f0f0f0;">
-      <div id="moreAvatar" style="width:80px;height:80px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);">?</div>
+      <div id="moreAvatar" style="width:80px;height:80px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);overflow:hidden;">?</div>
       <div id="moreName" style="font-size:1.15rem;font-weight:800;color:var(--text);letter-spacing:0.03em;">—</div>
       <div id="moreTitle" style="font-size:0.78rem;color:var(--text-light);margin-top:4px;"></div>
       <div style="font-size:0.7rem;color:#3498db;margin-top:6px;">編輯個人資料 ›</div>
@@ -5802,6 +5802,25 @@ async function handleGoogleLogin(response) {
   }
 }
 
+// 頭像：找到 member.photoUrl 就套用大頭照，蓋掉所有「圓圈+姓氏」位置
+async function _avatarPhotoFor(name) {
+  try { await loadMembers(); } catch(e) {}
+  const m = members.find(x => x.name === name);
+  return (m && m.photoUrl) || '';
+}
+function _applyAvatarPhoto(name, photoUrl) {
+  if (!photoUrl) return;
+  const html = '<img src="'+photoUrl+'" style="width:100%;height:100%;object-fit:cover;">';
+  ['dash', 'duty', 'ops', 'manage'].forEach(prefix => {
+    const el = document.getElementById(prefix + 'GreetAvatar');
+    if (el) el.innerHTML = html;
+  });
+  const hAv = document.getElementById('headerAvatar');
+  if (hAv) hAv.innerHTML = html;
+  const mAv = document.getElementById('moreAvatar');
+  if (mAv) mAv.innerHTML = html;
+}
+
 // ── 顯示主系統 ──
 function showApp(name, email, isAdmin, isOfficer, role, title) {
   // 記憶上次登入（最多3筆，用於快速登入頭像）
@@ -5838,6 +5857,7 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   if (userInfo) userInfo.textContent = name || email;
   const avatar = document.getElementById('headerAvatar');
   if (avatar) avatar.textContent = (name||email||'?').charAt(0).toUpperCase();
+  _avatarPhotoFor(name).then(photoUrl => _applyAvatarPhoto(name, photoUrl)).catch(()=>{});
   if (isAdmin || isOfficer) {
     const adminNav = document.getElementById('nav-admin');
     if (adminNav) adminNav.style.display = '';
@@ -15079,6 +15099,7 @@ function _initMorePage() {
   const nm = document.getElementById('moreName');
   const tl = document.getElementById('moreTitle');
   if (av) av.textContent = (u.name||'?').slice(0,1);
+  _avatarPhotoFor(u.name).then(photoUrl => _applyAvatarPhoto(u.name, photoUrl)).catch(()=>{});
   if (nm) nm.textContent = u.name || '—';
   if (tl) tl.textContent = u.title || (u.isAdmin ? '系統管理員' : u.isOfficer ? '分隊承辦人' : (u.isSquadLeader || u.role==='squadLeader') ? '小隊長' : u.role==='cadre' ? '幹部' : '隊員');
   const adminBtn = document.getElementById('moreAdminBtn');
@@ -17583,6 +17604,7 @@ async function profileAvatarFileChange(input) {
     avatarEl.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
     const m = members.find(m => m.id === _profileMemberId);
     if (m) m.photoUrl = url;
+    _applyAvatarPhoto(m ? m.name : '', url);
   } catch(e) {
     avatarEl.innerHTML = prevHtml;
     alert('上傳失敗：' + e.message);
