@@ -187,25 +187,28 @@ exports.geocodeAddress = onRequest({ region: REGION, cors: true, invoker: 'publi
 
   try {
     const cached = await cacheRef.get();
-    if (cached.exists) {
+    // 只信任「成功」的快取；失敗結果不快取，避免供應商暫時性問題被永久當成查無地址
+    if (cached.exists && !cached.data().failed) {
       const d = cached.data();
-      res.json({ lat: d.lat, lng: d.lng, failed: !!d.failed, cached: true });
+      res.json({ lat: d.lat, lng: d.lng, failed: false, cached: true });
       return;
     }
 
-    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=tw&q=' + encodeURIComponent(address);
+    // 使用 Photon（komoot 提供的免費 OSM 地址定位服務，無需 API Key，對伺服端自動查詢較友善）
+    // 以潭子區（本單位轄區）座標加權，讓同名地址優先比對鄰近地點
+    const url = 'https://photon.komoot.io/api/?limit=1&lat=24.21&lon=120.70&q=' + encodeURIComponent(address);
     const resp = await fetch(url, { headers: { 'User-Agent': 'EmergencyVolunteerSystem/1.0 (paul25042505@gmail.com)' } });
     if (!resp.ok) {
-      // Nominatim 暫時性錯誤（如 403/429 限流）：不寫入快取，讓呼叫端可以重試
-      console.error('geocodeAddress: Nominatim returned', resp.status, address);
-      res.status(502).json({ error: `nominatim status ${resp.status}` });
+      console.error('geocodeAddress: Photon returned', resp.status, address);
+      res.status(502).json({ error: `photon status ${resp.status}` });
       return;
     }
-    const results = await resp.json();
+    const data = await resp.json();
+    const feat = Array.isArray(data?.features) ? data.features[0] : null;
+    const coords = feat?.geometry?.coordinates;
 
-    if (Array.isArray(results) && results.length) {
-      const lat = parseFloat(results[0].lat);
-      const lng = parseFloat(results[0].lon);
+    if (Array.isArray(coords) && coords.length === 2) {
+      const lng = coords[0], lat = coords[1];
       await cacheRef.set({ address, lat, lng, failed: false, createdAt: new Date() });
       res.json({ lat, lng, failed: false });
     } else {
