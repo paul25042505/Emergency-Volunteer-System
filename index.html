@@ -5642,13 +5642,6 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
     const reportNav = document.getElementById('nav-report');
     if (reportNav) reportNav.style.display = 'none';
   }
-  // 分隊承辦人隱藏「簽到簽退登錄」和「協勤案件登錄」
-  if (isOfficer && !isAdmin) {
-    ['nav-attendance', 'nav-form', 'quick-attendance', 'quick-form'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-  }
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.style.display = 'inline';
   startIdleTimer();
