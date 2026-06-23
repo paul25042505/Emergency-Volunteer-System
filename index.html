@@ -16175,7 +16175,11 @@ function showDetail(id) {
     '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
 
   document.getElementById('detailContent').innerHTML = html;
-  mermaid.run({ querySelector: '#detailContent .mermaid' }).catch(function () {});
+  try {
+    if (typeof mermaid !== 'undefined' && mermaid.run) {
+      mermaid.run({ querySelector: '#detailContent .mermaid' }).catch(function () {});
+    }
+  } catch (e) { console.warn('mermaid render failed', e); }
   window.scrollTo(0, 0);
   notifyResize();
   setTimeout(notifyResize, 500);
@@ -16195,7 +16199,9 @@ function toggleAns(id) {
   notifyResize();
 }
 
-mermaid.initialize({ startOnLoad: false, theme: 'default' });
+try {
+  if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'default' });
+} catch (e) { console.warn('mermaid init failed', e); }
 renderList();
 notifyResize();
 window.addEventListener('load', notifyResize);
