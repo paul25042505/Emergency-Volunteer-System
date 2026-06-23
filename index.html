@@ -15875,7 +15875,81 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;background:#f8f9fa;padding:14px 14px 30px;margin:0;}
+  /* ══════ Taichung EMS Command Center — Design Tokens ══════ */
+  :root{
+    --ems-red:#C1121F; --ems-red-dark:#8F0D16; --ems-red-deep:#4A0E12; --ems-red-faint:rgba(193,18,31,.08);
+    --ems-blue:#0B3D91; --ems-blue-dark:#062868; --ems-blue-faint:rgba(11,61,145,.08);
+    --ems-hiviz:#DFFF00; --ems-hiviz-dim:rgba(223,255,0,.18); --ems-hiviz-ink:#1A1D23;
+    --ems-text:#1A1D23; --ems-text-mid:#52596A; --ems-text-light:#8B92A3; --ems-border:#E9ECF1;
+    --ems-bg:#F2F4F7; --ems-surface:#FFFFFF; --ems-surface-2:#F8F9FB;
+    --ems-ok:#1F8A4C; --ems-caution:#B45309; --ems-crit:#C1121F;
+    --ems-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;
+    --ems-font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+    --ems-sp-1:4px; --ems-sp-2:8px; --ems-sp-3:12px; --ems-sp-4:16px; --ems-sp-5:20px; --ems-sp-6:24px; --ems-sp-8:32px; --ems-sp-10:40px;
+    --ems-radius-sm:4px; --ems-radius:8px; --ems-radius-lg:12px;
+    --ems-shadow-sm:0 1px 2px rgba(0,0,0,.06); --ems-shadow:0 2px 6px rgba(0,0,0,.08);
+    --ems-ease:cubic-bezier(.2,.7,.3,1); --ems-dur-fast:120ms; --ems-dur:200ms;
+    --ems-map-opacity:.06;
+    --ems-map-svg:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g fill='none' stroke='%238F0D16' stroke-width='1'><path d='M0 20 Q30 0 60 20 T120 20'/><path d='M0 60 Q30 40 60 60 T120 60'/><path d='M0 100 Q30 80 60 100 T120 100'/><circle cx='20' cy='40' r='18'/><circle cx='90' cy='90' r='24'/></g></svg>");
+    --bs-primary:var(--ems-red); --bs-primary-rgb:193,18,31;
+    --bs-border-radius:var(--ems-radius); --bs-border-color:var(--ems-border);
+    --bs-body-color:var(--ems-text); --bs-body-bg:var(--ems-bg);
+    --bs-card-border-color:var(--ems-border); --bs-card-border-radius:var(--ems-radius-lg);
+    --bs-link-color:var(--ems-red); --bs-link-hover-color:var(--ems-red-dark);
+  }
+  [data-theme="dark"]{
+    --ems-bg:#0E0F12; --ems-surface:#17191D; --ems-surface-2:#1D2025; --ems-border:#2A2D33;
+    --ems-text:#F2F3F5; --ems-text-mid:#B5BAC4; --ems-text-light:#7B8190;
+    --ems-red:#FF3B47; --ems-red-dark:#C1121F; --ems-red-deep:#2A0608;
+    --ems-blue:#4D8DFF; --ems-blue-dark:#0B3D91;
+    --ems-hiviz:#EBFF4D; --ems-hiviz-dim:rgba(235,255,77,.22);
+    --ems-map-opacity:.09;
+  }
+
+  body{font-family:var(--ems-font);background:var(--ems-bg);color:var(--ems-text);padding:0 0 30px;margin:0;}
+  .ems-body-pad{padding:14px 14px 0;}
+
+  /* ── A. 指揮列 Command Header ── */
+  .ems-cmdbar{background:var(--ems-red-deep);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:.72rem;letter-spacing:.04em;}
+  .ems-cmdbar-crumb{opacity:.85;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ems-cmdbar-crumb span{opacity:.5;margin:0 4px;}
+  .ems-cmdbar-status{display:flex;align-items:center;flex-shrink:0;margin-left:10px;}
+  .ems-cmdbar-xp{font-family:var(--ems-font-mono);font-weight:700;white-space:nowrap;}
+  .ems-live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ems-hiviz);margin-right:6px;box-shadow:0 0 0 0 rgba(223,255,0,.6);animation:ems-pulse 1.8s infinite;}
+  @keyframes ems-pulse{0%{box-shadow:0 0 0 0 rgba(223,255,0,.5);}70%{box-shadow:0 0 0 5px rgba(223,255,0,0);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
+  @media (prefers-reduced-motion:reduce){ .ems-live-dot{animation:none;} }
+
+  /* ── B. 警示燈分隔線 Strobe Divider ── */
+  .ems-strobe{height:5px;width:100%;background:repeating-linear-gradient(90deg,var(--ems-red) 0 16px,var(--ems-red-dark) 16px 18px,var(--ems-blue) 18px 34px,var(--ems-blue-dark) 34px 36px);}
+  .ems-strobe.loading{background-size:200% 100%;animation:ems-strobe-scan 2.4s linear infinite;}
+  @keyframes ems-strobe-scan{from{background-position:0 0;}to{background-position:-72px 0;}}
+  @media (prefers-reduced-motion:reduce){ .ems-strobe.loading{animation:none;} }
+  [data-theme="dark"] .ems-strobe{filter:brightness(.85);}
+
+  /* ── C. 地圖浮水印 Map Watermark ── */
+  .ems-view-wrap{position:relative;}
+  .ems-map-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--ems-map-opacity);background-image:var(--ems-map-svg);background-size:120px;background-repeat:repeat;mix-blend-mode:multiply;}
+  .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView{position:relative;z-index:1;}
+
+  /* ── D. 反光黃狀態系統 Hi-Vis Status ── */
+  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ems-radius-sm);}
+  .ems-hiviz-ring{box-shadow:0 0 0 2px var(--ems-hiviz);}
+  @keyframes ems-shine-once{0%{box-shadow:0 0 0 0 var(--ems-hiviz-dim);}60%{box-shadow:0 0 0 8px var(--ems-hiviz-dim);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
+  .ems-shine-once{animation:ems-shine-once .9s var(--ems-ease) 1;}
+  @media (prefers-reduced-motion:reduce){ .ems-shine-once{animation:none;} }
+
+  /* ── Bootstrap 5.3 元件覆寫 ── */
+  .btn-primary{background:var(--ems-red);border-color:var(--ems-red);}
+  .btn-primary:hover{background:var(--ems-red-dark);border-color:var(--ems-red-dark);}
+  .btn-outline-secondary{color:var(--ems-text-mid);border-color:var(--ems-border);}
+  .badge.bg-success{background:var(--ems-ok)!important;}
+  .badge.bg-secondary{background:var(--ems-text-light)!important;}
+  .alert-warning{background:#FFFBEA;border:none;border-left:4px solid var(--ems-caution);border-radius:var(--ems-radius-sm);color:#5C3D00;}
+  .progress{background:var(--ems-border);}
+  .progress-bar{background-image:repeating-linear-gradient(90deg,transparent 0 18px,rgba(0,0,0,.08) 18px 19px);}
+  .card{background:var(--ems-surface);color:var(--ems-text);}
+  .text-muted{color:var(--ems-text-light)!important;}
+
   .chapter-card{cursor:pointer;transition:box-shadow .15s,transform .15s;}
   .chapter-card:active{transform:scale(0.99);}
   .chapter-card.locked{cursor:not-allowed;}
@@ -15884,26 +15958,42 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .zone-card.locked,.zone-card.soon{cursor:not-allowed;}
   .zone-card.soon{filter:grayscale(0.5);opacity:0.6;}
   .zone-card.locked{opacity:0.6;}
-  .xp-card{background:linear-gradient(135deg,#c1121f,#8f0d16);color:#fff;border-radius:14px;padding:16px;}
-  .flashcard{background:#fff;border-radius:16px;padding:32px 20px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:600;line-height:1.6;box-shadow:0 2px 10px rgba(0,0,0,.06);}
-  .mnemonic-box{background:#fff7e6;border:1px dashed #f0ad4e;border-radius:10px;padding:14px;}
-  .reflect-box{background:#eef6ff;border:1px dashed #6ea8fe;border-radius:10px;padding:12px;margin-top:8px;}
-  .reveal-box{display:none;background:#eef6ff;border-radius:8px;padding:10px;margin-top:6px;font-size:0.88rem;}
+  .xp-card{background:linear-gradient(135deg,var(--ems-red),var(--ems-red-dark));color:#fff;border-radius:var(--ems-radius-lg);padding:16px;}
+  .flashcard{background:var(--ems-surface);border-radius:var(--ems-radius-lg);padding:32px 20px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:600;line-height:1.6;box-shadow:var(--ems-shadow);}
+  .mnemonic-box{background:#FDFFE8;border:1.5px dashed var(--ems-hiviz);border-radius:var(--ems-radius);padding:14px;}
+  .reflect-box{background:var(--ems-blue-faint);border:1.5px dashed var(--ems-blue);border-radius:var(--ems-radius);padding:12px;margin-top:8px;}
+  .reveal-box{display:none;background:var(--ems-blue-faint);border-radius:var(--ems-radius);padding:10px;margin-top:6px;font-size:0.88rem;}
   .quiz-opt:disabled{opacity:0.85;}
   #dashboardView,#zoneView,#nodeView,#practiceView{display:none;}
   .mermaid{overflow-x:auto;}
 </style>
 </head>
 <body>
+  <div class="ems-cmdbar">
+    <div class="ems-cmdbar-crumb" id="emsCmdCrumb">EMS ACADEMY</div>
+    <div class="ems-cmdbar-status">
+      <span class="ems-live-dot"></span>
+      <span class="ems-cmdbar-xp" id="emsCmdXp">LV.1 · 0 XP</span>
+    </div>
+  </div>
+  <div class="ems-strobe" id="emsStrobe"></div>
+
+  <div class="ems-body-pad">
   <div class="alert alert-warning small py-2 px-3 mb-3">
     ⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。
   </div>
 
-  <div id="dashboardView"></div>
+  <div class="ems-view-wrap">
+    <div class="ems-map-watermark"></div>
+    <div id="dashboardView"></div>
+  </div>
 
-  <div id="zoneView">
-    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="showDashboard()">← 返回首頁</button>
-    <div id="zoneContent"></div>
+  <div class="ems-view-wrap">
+    <div class="ems-map-watermark"></div>
+    <div id="zoneView">
+      <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="showDashboard()">← 返回首頁</button>
+      <div id="zoneContent"></div>
+    </div>
   </div>
 
   <div id="nodeView">
@@ -15916,6 +16006,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   <div id="practiceView">
     <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="exitPractice()">← 返回首頁</button>
     <div id="practiceContent"></div>
+  </div>
   </div>
 
 <script>
@@ -16211,6 +16302,13 @@ var emsState = {
 
 function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function updateEmsCmdBar(crumb) {
+  var crumbEl = document.getElementById('emsCmdCrumb');
+  var xpEl = document.getElementById('emsCmdXp');
+  if (crumbEl) crumbEl.innerHTML = crumb ? ('EMS ACADEMY<span>›</span>' + esc(crumb)) : 'EMS ACADEMY';
+  if (xpEl) xpEl.textContent = 'LV.' + emsState.level + ' · ' + emsState.xp + ' XP';
+}
+
 function notifyResize() {
   setTimeout(function () {
     parent.postMessage({ type: 'emtResize', height: document.documentElement.scrollHeight }, '*');
@@ -16326,6 +16424,7 @@ function loadProgress() {
       emsState.xpForNextLevel = p.xpForNextLevel || 100;
       emsState.completedNodes = p.completedNodes || [];
     }
+    updateEmsCmdBar();
     renderDashboard();
     notifyResize();
   };
@@ -16403,6 +16502,7 @@ function showDashboard() {
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
+  updateEmsCmdBar();
   renderDashboard();
   window.scrollTo(0, 0);
   notifyResize();
@@ -16416,6 +16516,7 @@ function showZone(zi) {
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
+  updateEmsCmdBar(z.title);
   renderZoneContent();
   window.scrollTo(0, 0);
   notifyResize();
@@ -16478,6 +16579,7 @@ function showNode(chapterId) {
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'block';
+  updateEmsCmdBar(c.title);
   renderSlide();
   window.scrollTo(0, 0);
 }
@@ -16653,6 +16755,7 @@ function startPractice() {
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
+  updateEmsCmdBar('模擬考場');
   renderPracticeQuestion();
   window.scrollTo(0, 0);
   notifyResize();
