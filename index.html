@@ -4046,7 +4046,14 @@ function _dlCSV(content, filename) {
           <button onclick="_startRolePreview('cadre')" style="padding:9px 4px;border:1px solid var(--border);border-radius:9px;background:#F4F6F9;font-size:0.74rem;font-weight:600;color:var(--text);cursor:pointer;">幹部</button>
           <button onclick="_startRolePreview('member')" style="padding:9px 4px;border:1px solid var(--border);border-radius:9px;background:#F4F6F9;font-size:0.74rem;font-weight:600;color:var(--text);cursor:pointer;">隊員</button>
         </div>
-        <button id="rolePreviewExitBtn" onclick="_exitRolePreview()" style="display:none;width:100%;margin-top:10px;padding:10px;border:none;border-radius:9px;background:var(--red-faint);color:var(--red);font-size:0.8rem;font-weight:700;cursor:pointer;">結束預覽，返回本人帳號</button>
+
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;">
+          <div style="font-size:0.74rem;color:var(--text-light);margin-bottom:8px;">或指定成員：查看該成員實際登入後會看到的畫面（含其本人資料/紀錄）</div>
+          <select id="rolePreviewMemberSelect" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:9px;font-size:0.82rem;color:var(--text);margin-bottom:8px;background:white;"><option value="">— 選擇成員 —</option></select>
+          <button onclick="_startMemberPreview()" style="width:100%;padding:10px;border:none;border-radius:9px;background:#eef0ff;color:#4338ca;font-size:0.8rem;font-weight:700;cursor:pointer;">以該成員身分檢視</button>
+        </div>
+
+        <button id="rolePreviewExitBtn" onclick="_exitRolePreview()" style="display:none;width:100%;margin-top:14px;padding:10px;border:none;border-radius:9px;background:var(--red-faint);color:var(--red);font-size:0.8rem;font-weight:700;cursor:pointer;">結束預覽，返回本人帳號</button>
       </div>
     </div>
 
@@ -15313,11 +15320,22 @@ function initSettingsPage() {
   const realRaw = sessionStorage.getItem('rescue_user_real_backup');
   const real = realRaw ? JSON.parse(realRaw) : usr;
   const sec = document.getElementById('settingsRolePreviewSection');
-  if (sec) sec.style.display = (real.email === _ROLE_PREVIEW_OWNER_EMAIL) ? '' : 'none';
+  const isOwner = real.email === _ROLE_PREVIEW_OWNER_EMAIL;
+  if (sec) sec.style.display = isOwner ? '' : 'none';
   const statusEl = document.getElementById('settingsRolePreviewStatus');
   const exitBtn  = document.getElementById('rolePreviewExitBtn');
-  if (statusEl) statusEl.textContent = realRaw ? `目前預覽身分：${_ROLE_PREVIEW_LABELS[usr.role] || usr.role}` : '尚未啟用預覽';
+  if (statusEl) statusEl.textContent = realRaw ? `目前預覽身分：${usr.memberName || usr.name || ''}（${_ROLE_PREVIEW_LABELS[usr.role] || usr.role}）` : '尚未啟用預覽';
   if (exitBtn) exitBtn.style.display = realRaw ? '' : 'none';
+
+  if (isOwner) {
+    loadMembers().then(() => {
+      const sel = document.getElementById('rolePreviewMemberSelect');
+      if (!sel || sel.dataset.filled) return;
+      sel.dataset.filled = '1';
+      sel.innerHTML = '<option value="">— 選擇成員 —</option>' +
+        members.map(m => `<option value="${m.id}">${m.name}（${m.unit || '未分隊'}）</option>`).join('');
+    }).catch(() => {});
+  }
 }
 
 // 角色預覽：暫時切換目前帳號的權限旗標，檢視其他角色看到的畫面
@@ -15339,6 +15357,26 @@ function _startRolePreview(role) {
   location.reload();
 }
 
+// 角色預覽：以指定成員的真實白名單資料登入檢視（會看到該成員本人的資料/紀錄）
+async function _startMemberPreview() {
+  const sel = document.getElementById('rolePreviewMemberSelect');
+  const id = sel && sel.value;
+  if (!id) { alert('請先選擇成員'); return; }
+  let d;
+  try { d = await fbGet(COL_WHITELIST, id); } catch(e) {}
+  if (!d) { alert('找不到該成員的白名單資料'); return; }
+  const cur = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const realRaw = sessionStorage.getItem('rescue_user_real_backup');
+  if (!realRaw) sessionStorage.setItem('rescue_user_real_backup', JSON.stringify(cur));
+  sessionStorage.setItem('rescue_user', JSON.stringify({
+    email: d.email || '', name: d.memberName || '', memberName: d.memberName || '',
+    isAdmin: d.isAdmin || false, isOfficer: d.isOfficer || false,
+    isSquadLeader: d.isSquadLeader || false, role: d.role || (d.isAdmin ? 'admin' : d.isOfficer ? 'officer' : 'member'),
+    unit: d.unit || '', squad: d.squad || '', title: d.title || '',
+  }));
+  location.reload();
+}
+
 function _exitRolePreview() {
   const realRaw = sessionStorage.getItem('rescue_user_real_backup');
   if (realRaw) {
@@ -15355,10 +15393,12 @@ function _renderRolePreviewBanner() {
   if (!realRaw) { if (existing) existing.remove(); return; }
   if (existing) return;
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const real = JSON.parse(realRaw);
+  const nameTxt = (usr.memberName && usr.memberName !== real.memberName) ? `${usr.memberName}・` : '';
   const bar = document.createElement('div');
   bar.id = 'rolePreviewBanner';
   bar.style.cssText = 'flex-shrink:0;order:-1;background:#7c3aed;color:white;font-size:0.76rem;font-weight:600;text-align:center;padding:6px 12px;cursor:pointer;';
-  bar.textContent = `🔎 預覽模式：${_ROLE_PREVIEW_LABELS[usr.role] || usr.role}視角（點此返回本人帳號）`;
+  bar.textContent = `🔎 預覽模式：${nameTxt}${_ROLE_PREVIEW_LABELS[usr.role] || usr.role}視角（點此返回本人帳號）`;
   bar.onclick = _exitRolePreview;
   document.body.prepend(bar);
 }
