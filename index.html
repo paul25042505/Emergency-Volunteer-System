@@ -2537,14 +2537,11 @@ function _dlCSV(content, filename) {
   <div class="form-wrap" style="padding-top:16px;">
 
     <!-- 英雄卡 -->
-    <div style="background:linear-gradient(145deg,#0d1a2e 0%,#1a3a5c 55%,#1e4d7a 100%);border-radius:22px;padding:22px 20px 20px;margin-bottom:16px;box-shadow:0 8px 28px rgba(13,26,46,0.40);position:relative;overflow:hidden;">
-      <div style="position:absolute;right:-24px;top:-24px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
-      <div style="position:absolute;left:-16px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
-
+    <div style="background:linear-gradient(145deg,#0d1a2e 0%,#1a3a5c 55%,#1e4d7a 100%);border-radius:22px;padding:22px 18px 20px;margin-bottom:18px;box-shadow:0 8px 32px rgba(13,26,46,0.4);">
       <!-- 標題 -->
-      <div style="margin-bottom:16px;">
-        <div style="font-size:1.15rem;font-weight:800;color:white;letter-spacing:0.04em;">出席統計</div>
-        <div style="font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-top:2px;">ATTENDANCE STATISTICS</div>
+      <div style="margin-bottom:14px;">
+        <div style="font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:white;letter-spacing:0.08em;">出席統計</div>
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.55);letter-spacing:0.14em;margin-top:2px;">ATTENDANCE STATISTICS</div>
       </div>
 
       <!-- 篩選列 -->
@@ -21106,9 +21103,9 @@ async function loadGongchaStats() {
 
   const summaryEl = document.getElementById('gcSummary');
   if (summaryEl) {
-    const cellStyle = 'padding:16px 6px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);';
-    const numStyle  = 'font-size:2.4rem;font-weight:900;color:white;font-family:\'Noto Serif TC\',serif;line-height:1;';
-    const lblStyle  = 'font-size:0.6rem;color:rgba(255,255,255,0.6);margin-top:5px;letter-spacing:0.06em;';
+    const cellStyle = 'padding:12px 4px 10px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:68px;';
+    const numStyle  = 'font-size:1.75rem;font-weight:900;color:white;font-family:\'Noto Serif TC\',serif;line-height:1;flex:1;display:flex;align-items:center;';
+    const lblStyle  = 'font-size:0.57rem;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:4px;';
     const lastCell  = cellStyle.replace('border-right:1px solid rgba(255,255,255,0.1);','');
     window._gcUniqueDates  = uniqueDates;
     window._gcDateReasons  = dateReasonsMap;
@@ -21124,7 +21121,7 @@ async function loadGongchaStats() {
         <div style="${lblStyle}">👥 參與人次</div>
       </div>
       <div style="${lastCell}">
-        <div style="font-size:${topPerson && topPerson.count > 0 ? '2.4' : '1.8'}rem;font-weight:900;color:#7effd4;font-family:'Noto Serif TC',serif;line-height:1;">${topPerson && topPerson.count > 0 ? topPerson.count : '—'}</div>
+        <div style="${numStyle}color:#7effd4;">${topPerson && topPerson.count > 0 ? topPerson.count : '—'}</div>
         <div style="${lblStyle}">🏆 ${topPerson && topPerson.count > 0 ? topPerson.name : '尚無資料'}</div>
       </div>`;
   }
