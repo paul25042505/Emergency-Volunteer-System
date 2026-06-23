@@ -4682,10 +4682,41 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
-    <!-- 證照狀態 -->
+    <!-- 個人介紹 -->
     <div class="section">
       <div class="section-head">
         <div class="section-num">3</div>
+        <div class="section-title">個人介紹</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="card">
+        <div class="field">
+          <label>職業</label>
+          <input type="text" id="profileOccupation" placeholder="例：軍人、學生、工程師"
+            style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div class="card-divider"></div>
+        <div class="field">
+          <label>生日</label>
+          <input type="date" id="profileBirthday" style="width:100%;">
+        </div>
+        <div class="card-divider"></div>
+        <div class="field">
+          <label>自我介紹 <span style="font-size:0.72rem;color:var(--text-light);font-weight:400;">（會顯示在成員資料中，讓大家認識你）</span></label>
+          <textarea id="profileIntro" rows="3" placeholder="簡短的自我介紹"
+            style="width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;box-sizing:border-box;outline:none;resize:vertical;"
+            onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+        <button onclick="saveProfileIntro()" style="width:100%;margin-top:14px;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">儲存</button>
+        <div id="profileIntroStatus" style="font-size:0.75rem;color:#1a6b35;display:none;margin-top:8px;text-align:center;">✓ 已儲存</div>
+      </div>
+    </div>
+
+    <!-- 證照狀態 -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">4</div>
         <div class="section-title">證照狀態</div>
         <div class="section-line"></div>
       </div>
@@ -4740,7 +4771,7 @@ function _dlCSV(content, filename) {
     <!-- 義消服務證 -->
     <div class="section">
       <div class="section-head">
-        <div class="section-num">4</div>
+        <div class="section-num">5</div>
         <div class="section-title">義消服務證</div>
         <div class="section-line"></div>
       </div>
@@ -4780,7 +4811,7 @@ function _dlCSV(content, filename) {
     <!-- 歷年服務紀錄 -->
     <div class="section">
       <div class="section-head">
-        <div class="section-num">5</div>
+        <div class="section-num">6</div>
         <div class="section-title">歷年服務紀錄</div>
         <div class="section-line"></div>
       </div>
@@ -7637,6 +7668,12 @@ function _avatarHtml(m, size, av) {
   return m.photoUrl
     ? '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#f4f4f4;"><img src="' + m.photoUrl + '" data-av="' + av + '" data-initial="' + (m.name||'?').slice(0,1) + '" data-size="' + size + '" style="width:100%;height:100%;object-fit:cover;" onerror="_avatarFallback(this)"></div>'
     : '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:' + (size*0.26) + 'px;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>';
+}
+
+function _fmtBirthdayMD(dateStr) {
+  const parts = (dateStr||'').split('-');
+  if (parts.length < 3) return dateStr || '';
+  return parseInt(parts[1],10) + '月' + parseInt(parts[2],10) + '日';
 }
 
 function _avatarFallback(img) {
@@ -11935,7 +11972,7 @@ async function loadAdminWhitelist(filterUnit) {
       editBtn.style.cssText = 'flex:1;background:white;border:1px solid var(--border);border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
       editBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.onclick = function(){
-        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'');
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'', d.occupation||'', d.birthday||'');
       };
       btnRow.appendChild(editBtn);
 
@@ -12010,9 +12047,9 @@ async function adminAddWhitelist() {
   } catch(e) { alert('新增失敗：' + e.message); }
 }
 
-async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad,svcCardExp,photoUrl,intro) {
+async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad,svcCardExp,photoUrl,intro,occupation,birthday) {
   if (!role || role==='member') role = isAdmin ? 'admin' : (role||'member');
-  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||''; svcCardExp=svcCardExp||''; photoUrl=photoUrl||''; intro=intro||'';
+  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||''; svcCardExp=svcCardExp||''; photoUrl=photoUrl||''; intro=intro||''; occupation=occupation||''; birthday=birthday||'';
   isSquadLeader=isSquadLeader||false; squad=squad||'';
   if (isSquadLeader && role==='member') role='squadLeader';
   let extraEmails=[];
@@ -12053,6 +12090,8 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
       '<input type="url" id="aeWlPhotoUrl" value="'+photoUrl+'" placeholder="https://..." style="'+s+'">'+
     '</div>'+
     '<div class="field"><label>手機號碼</label><input type="tel" id="aeWlPhone" value="'+phone+'" placeholder="例：0912345678" style="'+s+'"></div>'+
+    '<div class="field"><label>職業</label><input type="text" id="aeWlOccupation" value="'+occupation+'" placeholder="例：軍人、學生、工程師" style="'+s+'"></div>'+
+    '<div class="field"><label>生日</label><input type="date" id="aeWlBirthday" value="'+birthday+'" style="'+s+'"></div>'+
     '<div class="field"><label>個人介紹</label><textarea id="aeWlIntro" rows="3" placeholder="簡短的自我介紹（會顯示在成員詳細資料中）" style="'+s+'resize:vertical;font-family:\'Noto Sans TC\',sans-serif;">'+intro.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</textarea></div>';
   window.aeWlExtra=extraEmails.slice();
   window.aeWlAdd=function(){window.aeWlExtra.push('');document.getElementById('aeWlExtraList').innerHTML=buildExtraHtml(window.aeWlExtra);};
@@ -12082,7 +12121,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     const extras=window.aeWlExtra.map(e=>e.trim().toLowerCase()).filter(e=>e&&e!==main);
     try{
       const sq=document.getElementById('aeWlSquad')?.value||'';
-      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',svcCardExp:document.getElementById('aeWlSvcCardExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||'',photoUrl:document.getElementById('aeWlPhotoUrl').value.trim()||'',intro:document.getElementById('aeWlIntro').value.trim()||''});
+      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',svcCardExp:document.getElementById('aeWlSvcCardExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||'',photoUrl:document.getElementById('aeWlPhotoUrl').value.trim()||'',intro:document.getElementById('aeWlIntro').value.trim()||'',occupation:document.getElementById('aeWlOccupation').value.trim()||'',birthday:document.getElementById('aeWlBirthday').value||''});
       document.getElementById('adminEditModal').style.display='none';
       const curUnit=document.getElementById('adminWlFilterUnit')?.value||'';
       await loadAdminWhitelist(curUnit);await loadMembers(true);
@@ -14807,6 +14846,9 @@ async function openMemberProfile(id) {
       (t ? '<span style="font-size:0.76rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:4px 13px;font-weight:700;">' + t + '</span>' : '')
       + (m.unit ? '<span style="font-size:0.76rem;background:#f4f6fa;color:#5d6d7e;border-radius:20px;padding:4px 13px;font-weight:600;">' + m.unit + '</span>' : '')
       + (m.cert ? '<span style="font-size:0.76rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:4px 13px;font-weight:600;">' + m.cert + '</span>' : '');
+    document.getElementById('mpInfo').innerHTML =
+      (d.occupation ? '<span>💼 ' + d.occupation + '</span>' : '')
+      + (d.birthday ? '<span>🎂 ' + _fmtBirthdayMD(d.birthday) + '</span>' : '');
     const introEl = document.getElementById('mpIntro');
     introEl.textContent = d.intro || '尚未填寫個人介紹';
     introEl.style.color = d.intro ? 'var(--text-mid)' : 'var(--text-light)';
@@ -14817,7 +14859,7 @@ async function openMemberProfile(id) {
       editWrap.style.display = 'block';
       editWrap.querySelector('button').onclick = function() {
         closeMemberProfile();
-        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'');
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'', d.occupation||'', d.birthday||'');
       };
     } else {
       editWrap.style.display = 'none';
@@ -17787,6 +17829,9 @@ async function loadProfilePage() {
   document.getElementById('profileTitle').textContent = titleVal;
   document.getElementById('profileEmail').textContent = email || '—';
   document.getElementById('profilePhone').value       = profile.phone || '';
+  document.getElementById('profileOccupation').value  = profile.occupation || '';
+  document.getElementById('profileBirthday').value    = profile.birthday || '';
+  document.getElementById('profileIntro').value       = profile.intro || '';
 
   // Hero 卡片
   _profileMemberId = member.id || '';
@@ -18155,6 +18200,24 @@ async function saveProfilePhone() {
     const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
     if (!snap.empty) {
       await snap.docs[0].ref.update({ phone });
+      status.style.display = '';
+      setTimeout(() => { status.style.display = 'none'; }, 2500);
+    }
+  } catch(e) { alert('儲存失敗：' + e.message); }
+}
+
+async function saveProfileIntro() {
+  const usr        = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const email      = (usr.email || '').toLowerCase().trim();
+  const occupation = document.getElementById('profileOccupation').value.trim();
+  const birthday   = document.getElementById('profileBirthday').value;
+  const intro      = document.getElementById('profileIntro').value.trim();
+  const status     = document.getElementById('profileIntroStatus');
+  try {
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
+    if (!snap.empty) {
+      await snap.docs[0].ref.update({ occupation, birthday, intro });
       status.style.display = '';
       setTimeout(() => { status.style.display = 'none'; }, 2500);
     }
@@ -21585,6 +21648,7 @@ function showTempPassErr(msg) {
       <div id="mpAvatar" style="display:flex;justify-content:center;"></div>
       <div id="mpName" style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:800;color:var(--text);margin-top:16px;"></div>
       <div id="mpBadges" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;"></div>
+      <div id="mpInfo" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:0.82rem;color:var(--text-mid);"></div>
     </div>
     <div style="padding:4px 20px 22px;">
       <div style="background:#f9fafb;border-radius:12px;padding:16px;">
