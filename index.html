@@ -4035,6 +4035,21 @@ function _dlCSV(content, filename) {
       </button>
     </div>
 
+    <!-- 角色預覽（僅本人帳號可見） -->
+    <div id="settingsRolePreviewSection" style="display:none;background:white;margin-bottom:12px;">
+      <div style="padding:10px 18px 4px;font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.08em;">進階（僅本人可見）</div>
+      <div style="padding:12px 18px;">
+        <div id="settingsRolePreviewStatus" style="font-size:0.78rem;color:var(--text-mid);margin-bottom:10px;">尚未啟用預覽</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <button onclick="_startRolePreview('admin')" style="padding:9px 4px;border:1px solid var(--border);border-radius:9px;background:#F4F6F9;font-size:0.74rem;font-weight:600;color:var(--text);cursor:pointer;">管理員</button>
+          <button onclick="_startRolePreview('officer')" style="padding:9px 4px;border:1px solid var(--border);border-radius:9px;background:#F4F6F9;font-size:0.74rem;font-weight:600;color:var(--text);cursor:pointer;">承辦人</button>
+          <button onclick="_startRolePreview('cadre')" style="padding:9px 4px;border:1px solid var(--border);border-radius:9px;background:#F4F6F9;font-size:0.74rem;font-weight:600;color:var(--text);cursor:pointer;">幹部</button>
+          <button onclick="_startRolePreview('member')" style="padding:9px 4px;border:1px solid var(--border);border-radius:9px;background:#F4F6F9;font-size:0.74rem;font-weight:600;color:var(--text);cursor:pointer;">隊員</button>
+        </div>
+        <button id="rolePreviewExitBtn" onclick="_exitRolePreview()" style="display:none;width:100%;margin-top:10px;padding:10px;border:none;border-radius:9px;background:var(--red-faint);color:var(--red);font-size:0.8rem;font-weight:700;cursor:pointer;">結束預覽，返回本人帳號</button>
+      </div>
+    </div>
+
     <div class="site-footer-placeholder"></div>
   </div>
 </div>
@@ -5987,6 +6002,7 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   setTimeout(_updateBellBadge, 500);
   // 自動通知排程（管理員/幹部才執行）
   if (isAdmin || isOfficer) setTimeout(_startAutoNotifScheduler, 4000);
+  _renderRolePreviewBanner();
 }
 
 // ── 檢查既有 session（重新整理不需再登入）──
@@ -15284,11 +15300,67 @@ function openEbook(title, url) {
 
 function initEmsQueryPage() {}
 
+const _ROLE_PREVIEW_OWNER_EMAIL = 'paul25042505@gmail.com';
+const _ROLE_PREVIEW_LABELS = { admin:'管理員', officer:'承辦人', cadre:'幹部', member:'隊員' };
+
 function initSettingsPage() {
-  const usr = window._currentUser || {};
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const isAdmin = usr.isAdmin || usr.role === 'admin';
   const toolBox = document.getElementById('settingsAdminTools');
   if (toolBox) toolBox.style.display = isAdmin ? '' : 'none';
+
+  // 角色預覽：以真實帳號 email 判斷是否顯示（預覽中也要看真實帳號，不能看當前偽裝身分）
+  const realRaw = sessionStorage.getItem('rescue_user_real_backup');
+  const real = realRaw ? JSON.parse(realRaw) : usr;
+  const sec = document.getElementById('settingsRolePreviewSection');
+  if (sec) sec.style.display = (real.email === _ROLE_PREVIEW_OWNER_EMAIL) ? '' : 'none';
+  const statusEl = document.getElementById('settingsRolePreviewStatus');
+  const exitBtn  = document.getElementById('rolePreviewExitBtn');
+  if (statusEl) statusEl.textContent = realRaw ? `目前預覽身分：${_ROLE_PREVIEW_LABELS[usr.role] || usr.role}` : '尚未啟用預覽';
+  if (exitBtn) exitBtn.style.display = realRaw ? '' : 'none';
+}
+
+// 角色預覽：暫時切換目前帳號的權限旗標，檢視其他角色看到的畫面
+function _startRolePreview(role) {
+  const cur = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const realRaw = sessionStorage.getItem('rescue_user_real_backup');
+  if (!realRaw) sessionStorage.setItem('rescue_user_real_backup', JSON.stringify(cur));
+  const base = realRaw ? JSON.parse(realRaw) : cur;
+  const profiles = {
+    admin:   { role:'admin',   isAdmin:true,  isOfficer:false },
+    officer: { role:'officer', isAdmin:false, isOfficer:true  },
+    cadre:   { role:'cadre',   isAdmin:false, isOfficer:false },
+    member:  { role:'member',  isAdmin:false, isOfficer:false },
+  };
+  const p = profiles[role] || profiles.member;
+  sessionStorage.setItem('rescue_user', JSON.stringify({
+    ...base, role: p.role, isAdmin: p.isAdmin, isOfficer: p.isOfficer, title: _ROLE_PREVIEW_LABELS[role] || ''
+  }));
+  location.reload();
+}
+
+function _exitRolePreview() {
+  const realRaw = sessionStorage.getItem('rescue_user_real_backup');
+  if (realRaw) {
+    sessionStorage.setItem('rescue_user', realRaw);
+    sessionStorage.removeItem('rescue_user_real_backup');
+  }
+  location.reload();
+}
+
+// 預覽模式時，於畫面頂部顯示固定提示條，避免忘記目前是偽裝身分
+function _renderRolePreviewBanner() {
+  const existing = document.getElementById('rolePreviewBanner');
+  const realRaw = sessionStorage.getItem('rescue_user_real_backup');
+  if (!realRaw) { if (existing) existing.remove(); return; }
+  if (existing) return;
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const bar = document.createElement('div');
+  bar.id = 'rolePreviewBanner';
+  bar.style.cssText = 'flex-shrink:0;order:-1;background:#7c3aed;color:white;font-size:0.76rem;font-weight:600;text-align:center;padding:6px 12px;cursor:pointer;';
+  bar.textContent = `🔎 預覽模式：${_ROLE_PREVIEW_LABELS[usr.role] || usr.role}視角（點此返回本人帳號）`;
+  bar.onclick = _exitRolePreview;
+  document.body.prepend(bar);
 }
 
 async function repairHasSig(btn) {
