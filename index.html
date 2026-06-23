@@ -3966,7 +3966,7 @@ function _dlCSV(content, filename) {
         <div style="width:36px;height:36px;border-radius:10px;background:#fdecea;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
-        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">EMT學習系統</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">救護義消EMT-1/EMT-2學習章節（試做版）</div></div>
+        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">EMS Academy 學習中心</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">遊戲化能力樹學習・XP升級・闖關挑戰</div></div>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
@@ -4360,7 +4360,7 @@ function _dlCSV(content, filename) {
 </div>
 
 
-<!-- ══════ PAGE：EMT學習系統 ══════ -->
+<!-- ══════ PAGE：EMS Academy 學習中心 ══════ -->
 <div class="page" id="emtStudyPage">
   <div class="form-wrap" style="padding-bottom:40px;">
     <iframe id="emtStudyIframe" style="width:100%;border:none;display:block;min-height:300px;" scrolling="no"></iframe>
@@ -5346,6 +5346,7 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 var _fbDB = null;
 var _fbStorage = null;
 var COL_WHITELIST = 'whitelist', COL_MEMBERS = 'members';
+var COL_EMS_PROGRESS = 'emsProgress';
 var COL_SETTINGS = 'settings';
 var COL_OUTING = 'outingRecords', COL_ATTEND = 'attendance';
 var COL_ITEMS = 'items', COL_FEEDBACK = 'feedback', COL_UNITS = 'units', COL_CHANGELOG = 'changelogs';
@@ -6738,14 +6739,16 @@ function goBack() {
       return;
     }
   }
-  // 若目前在 EMT學習系統且 iframe 內部正顯示章節詳情/練習模式，先退回 iframe 內的章節列表
+  // 若目前在 EMS Academy 且 iframe 內部正顯示關卡內容/章節列表/練習模式，先退回上一層而非直接離開頁面
   if (window._currentPageId === 'emtStudyPage') {
     const ifr = document.getElementById('emtStudyIframe');
     try {
       const idoc = ifr && ifr.contentDocument;
-      const detailView = idoc && idoc.getElementById('detailView');
+      const nodeView = idoc && idoc.getElementById('nodeView');
+      const zoneView = idoc && idoc.getElementById('zoneView');
       const practiceView = idoc && idoc.getElementById('practiceView');
-      if (detailView && detailView.style.display === 'block') { ifr.contentWindow.showList(); return; }
+      if (nodeView && nodeView.style.display === 'block') { ifr.contentWindow.exitNode(); return; }
+      if (zoneView && zoneView.style.display === 'block') { ifr.contentWindow.showDashboard(); return; }
       if (practiceView && practiceView.style.display === 'block') { ifr.contentWindow.exitPractice(); return; }
     } catch (e) { /* 跨來源或尚未載入時忽略，走預設返回邏輯 */ }
   }
@@ -6839,7 +6842,7 @@ function navTo(pageId, fromHistory, forceDir) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識', lawRefPage:'法規查詢', emtStudyPage:'EMT學習系統' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識', lawRefPage:'法規查詢', emtStudyPage:'EMS Academy' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -15859,7 +15862,7 @@ function _lawRefToggle(btn) {
 // ════════════════════════════════════════
 // 救護義消EMT學習系統（iframe 隔離 Bootstrap/Mermaid，避免與全站 .card 樣式衝突）
 // ════════════════════════════════════════
-const EMT_STUDY_HTML = `<!DOCTYPE html>
+const EMS_ACADEMY_HTML = `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
@@ -15870,13 +15873,19 @@ const EMT_STUDY_HTML = `<!DOCTYPE html>
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;background:#f8f9fa;padding:14px 14px 30px;margin:0;}
   .chapter-card{cursor:pointer;transition:box-shadow .15s,transform .15s;}
   .chapter-card:active{transform:scale(0.99);}
+  .chapter-card.locked{cursor:not-allowed;}
+  .zone-card{cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  .zone-card:active{transform:scale(0.99);}
+  .zone-card.locked,.zone-card.soon{cursor:not-allowed;}
+  .zone-card.soon{filter:grayscale(0.5);opacity:0.6;}
+  .zone-card.locked{opacity:0.6;}
+  .xp-card{background:linear-gradient(135deg,#c1121f,#8f0d16);color:#fff;border-radius:14px;padding:16px;}
+  .flashcard{background:#fff;border-radius:16px;padding:32px 20px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:600;line-height:1.6;box-shadow:0 2px 10px rgba(0,0,0,.06);}
   .mnemonic-box{background:#fff7e6;border:1px dashed #f0ad4e;border-radius:10px;padding:14px;}
   .reflect-box{background:#eef6ff;border:1px dashed #6ea8fe;border-radius:10px;padding:12px;margin-top:8px;}
   .reveal-box{display:none;background:#eef6ff;border-radius:8px;padding:10px;margin-top:6px;font-size:0.88rem;}
-  .quiz-q{margin-bottom:12px;}
   .quiz-opt:disabled{opacity:0.85;}
-  #detailView{display:none;}
-  #practiceView{display:none;}
+  #dashboardView,#zoneView,#nodeView,#practiceView{display:none;}
   .mermaid{overflow-x:auto;}
 </style>
 </head>
@@ -15885,25 +15894,28 @@ const EMT_STUDY_HTML = `<!DOCTYPE html>
     ⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。
   </div>
 
-  <div id="listView">
-    <h5 class="fw-bold mb-1">救護義消EMT學習系統</h5>
-    <p class="text-muted small">依台灣EMT-1/EMT-2與消防署緊急救護教材編寫之學習參考章節（試做版）</p>
-    <div class="row g-2" id="chapterList"></div>
+  <div id="dashboardView"></div>
+
+  <div id="zoneView">
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="showDashboard()">← 返回首頁</button>
+    <div id="zoneContent"></div>
   </div>
 
-  <div id="detailView">
-    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="showList()">← 返回章節列表</button>
-    <div id="detailContent"></div>
+  <div id="nodeView">
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="exitNode()">← 返回章節列表</button>
+    <div id="nodeSlideBar"></div>
+    <div id="nodeSlideContent"></div>
+    <div id="nodeSlideNav"></div>
   </div>
 
   <div id="practiceView">
-    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="exitPractice()">← 返回章節列表</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="exitPractice()">← 返回首頁</button>
     <div id="practiceContent"></div>
   </div>
 
 <script>
 window.onerror = function (msg, src, line, col, err) {
-  var box = document.getElementById('chapterList');
+  var box = document.getElementById('dashboardView');
   if (box && !box.children.length) {
     box.innerHTML = '<div class="text-danger small" style="white-space:pre-wrap;">頁面發生錯誤：' + String(msg) + ' (line ' + line + ')</div>';
   }
@@ -16173,43 +16185,31 @@ var CHAPTERS = [
   }
 ];
 
+
+var ZONES = [
+  { icon: '🎓', title: '新手訓練營', desc: 'EMS體系・救護法規・PPE・出勤安全', color: '#198754', chapterIds: [1], status: 'active' },
+  { icon: '🩺', title: '病人評估中心', desc: '呼吸道評估・ABCDE創傷評估・出血控制與休克', color: '#0d6efd', chapterIds: [2, 4, 3], status: 'active' },
+  { icon: '💔', title: '內科急症中心', desc: '胸痛評估・ACS／STEMI辨識與處置', color: '#6f42c1', chapterIds: [5], status: 'active' },
+  { icon: '🚑', title: '創傷中心', desc: '頭胸腹創傷・骨折・脊椎損傷・燒燙傷', color: '#fd7e14', status: 'soon' },
+  { icon: '👶', title: '特殊病患中心', desc: '小兒・孕婦・長者・精神行為急症', color: '#d63384', status: 'soon' },
+  { icon: '🧯', title: '特殊事件中心', desc: 'START檢傷・大量傷病患・HAZMAT', color: '#20c997', status: 'soon' },
+  { icon: '🎭', title: '情境模擬中心', desc: '分支劇情・OHCA／創傷／急產模擬', color: '#6610f2', status: 'soon' },
+  { icon: '🏆', title: '模擬考場', desc: 'EMT-1／EMT-2／義消題庫・錯題本', color: '#dc3545', status: 'soon' }
+];
+
+var emsState = {
+  xp: 0, level: 1, xpIntoLevel: 0, xpForNextLevel: 100,
+  completedNodes: [],
+  curZoneIdx: null, curChapter: null, slides: [], slideIdx: 0,
+  nodeAnswered: {}, _completeCalled: false
+};
+
 function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function notifyResize() {
   setTimeout(function () {
     parent.postMessage({ type: 'emtResize', height: document.documentElement.scrollHeight }, '*');
   }, 60);
-}
-
-function renderList() {
-  var box = document.getElementById('chapterList');
-  var cards = CHAPTERS.map(function (c) {
-    return '<div class="col-12">' +
-      '<div class="card chapter-card shadow-sm" style="border-left:5px solid ' + c.color + ';" onclick="showDetail(' + c.id + ')">' +
-        '<div class="card-body d-flex align-items-center gap-3">' +
-          '<div style="font-size:1.6rem;">' + c.icon + '</div>' +
-          '<div class="flex-grow-1">' +
-            '<div class="fw-bold">第' + c.id + '章・' + esc(c.title) + '</div>' +
-            '<div class="text-muted small mt-1">' + esc(c.subtitle) + '</div>' +
-          '</div>' +
-          '<div class="text-muted">›</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-  var practiceCard = '<div class="col-12">' +
-    '<div class="card chapter-card shadow-sm" style="border-left:5px dashed #6c757d;" onclick="startPractice()">' +
-      '<div class="card-body d-flex align-items-center gap-3">' +
-        '<div style="font-size:1.6rem;">📝</div>' +
-        '<div class="flex-grow-1">' +
-          '<div class="fw-bold">題庫練習模式</div>' +
-          '<div class="text-muted small mt-1">全章節隨機抽題・即時計分・錯題回顧</div>' +
-        '</div>' +
-        '<div class="text-muted">›</div>' +
-      '</div>' +
-    '</div>' +
-  '</div>';
-  box.innerHTML = cards + practiceCard;
 }
 
 function sectionCard(headerColor, icon, label, bodyHtml) {
@@ -16253,83 +16253,307 @@ function chainOfSurvival(color) {
   '</div>';
 }
 
-function showDetail(id) {
-  var c = CHAPTERS.filter(function (x) { return x.id === id; })[0];
-  if (!c) return;
-  document.getElementById('listView').style.display = 'none';
-  var dv = document.getElementById('detailView');
-  dv.style.display = 'block';
-
-  var html = '';
-  html += '<div class="mb-3"><span class="badge" style="background:' + c.color + ';">第' + c.id + '章</span> <span class="fw-bold fs-5 ms-1">' + esc(c.title) + '</span>' +
-          '<div class="text-muted small mt-1">' + esc(c.subtitle) + '</div></div>';
-
-  if (c.highlights) html += highlightStrip(c.highlights, c.color);
-
-  html += sectionCard(c.color, '🎯', '學習目標',
-    '<ul class="mb-0">' + c.goals.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>');
-
-  html += sectionCard(c.color, '📖', '學理基礎',
-    (c.id === 1 ? chainOfSurvival(c.color) : '') +
-    c.theory.map(function (t) { return '<p class="mb-2">' + esc(t) + '</p>'; }).join(''));
-
-  html += sectionCard(c.color, '🔀', '流程圖',
-    '<div class="mermaid">' + c.flow + '</div>');
-
-  html += sectionCard(c.color, '🧠', '心智圖',
-    '<div class="mermaid">' + c.mindmap + '</div>');
-
-  html += sectionCard(c.color, '🏥', '臨床案例',
-    c.cases.map(function (cs, ci) {
-      var gid = 'case_' + c.id + '_' + ci;
-      return '<div class="mb-2" style="background:#f8f9fa;border-radius:8px;padding:10px;">' + esc(cs.scenario) + '</div>' +
-        '<div class="reflect-box">' +
-          '<div class="fw-semibold mb-1">🤔 思考與反思</div>' +
-          '<div class="mb-2">' + esc(cs.reflect) + '</div>' +
-          '<button type="button" class="btn btn-sm btn-outline-primary" data-target="' + gid + '" onclick="toggleBox(this)">查看參考方向</button>' +
-          '<div id="' + gid + '" class="reveal-box">' + esc(cs.guide) + '</div>' +
-        '</div>';
-    }).join(''));
-
-  html += sectionCard(c.color, '⚠️', '常見錯誤',
-    '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
-
-  html += sectionCard(c.color, '📝', '測驗題',
-    '<div class="mb-2 small text-muted">點選答案立即看結果與詳解。</div>' +
-    c.quiz.map(function (qz, qi) {
-      var qid = 'q_' + c.id + '_' + qi;
-      var opts = qz.opts.map(function (o, oi) {
-        return '<button type="button" class="btn btn-outline-secondary btn-sm d-block w-100 text-start mb-1 quiz-opt" data-oi="' + oi + '" data-correct="' + qz.a + '" onclick="selectQuizOption(this)">' + String.fromCharCode(65 + oi) + '. ' + esc(o) + '</button>';
-      }).join('');
-      return '<div class="quiz-q" id="' + qid + '_wrap">' +
-        '<div class="fw-semibold mb-2">Q' + (qi + 1) + '. ' + esc(qz.q) + '</div>' +
-        opts +
-        '<div id="' + qid + '_ans" class="reveal-box">' + esc(qz.ex) + '</div>' +
-      '</div>';
-    }).join('<hr>'));
-
-  html += sectionCard(c.color, '✅', '重點整理',
-    '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
-
-  html += sectionCard(c.color, '💡', '記憶口訣',
-    '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
-
-  document.getElementById('detailContent').innerHTML = html;
-  try {
-    if (typeof mermaid !== 'undefined' && mermaid.run) {
-      mermaid.run({ querySelector: '#detailContent .mermaid' }).catch(function () {});
-    }
-  } catch (e) { console.warn('mermaid render failed', e); }
-  window.scrollTo(0, 0);
-  notifyResize();
-  setTimeout(notifyResize, 500);
+function emsLevelTitle(lv) {
+  if (lv >= 10) return '救護楷模';
+  if (lv >= 7) return '資深義消';
+  if (lv >= 4) return '熟練義消';
+  if (lv >= 2) return '見習義消';
+  return '新進學員';
 }
 
-function showList() {
-  document.getElementById('detailView').style.display = 'none';
-  document.getElementById('listView').style.display = 'block';
+function flatNodesForZone(z) {
+  if (!z.chapterIds) return [];
+  return z.chapterIds.map(function (id) {
+    return CHAPTERS.filter(function (c) { return c.id === id; })[0];
+  }).filter(Boolean);
+}
+
+function activeZoneIdxs() {
+  var arr = [];
+  ZONES.forEach(function (z, idx) { if (z.status !== 'soon') arr.push(idx); });
+  return arr;
+}
+
+function isNodeCompleted(id) {
+  return emsState.completedNodes.indexOf(id) !== -1;
+}
+
+function isZoneUnlocked(zi) {
+  var idxs = activeZoneIdxs();
+  var pos = idxs.indexOf(zi);
+  if (pos <= 0) return true;
+  var prevZone = ZONES[idxs[pos - 1]];
+  var nodes = flatNodesForZone(prevZone);
+  return nodes.every(function (c) { return isNodeCompleted(c.id); });
+}
+
+function findZoneIndexForChapter(chapterId) {
+  for (var i = 0; i < ZONES.length; i++) {
+    var z = ZONES[i];
+    if (z.status !== 'soon' && z.chapterIds && z.chapterIds.indexOf(chapterId) !== -1) return i;
+  }
+  return -1;
+}
+
+function findNextNode() {
+  var idxs = activeZoneIdxs();
+  for (var k = 0; k < idxs.length; k++) {
+    var zi = idxs[k];
+    if (!isZoneUnlocked(zi)) break;
+    var nodes = flatNodesForZone(ZONES[zi]);
+    for (var j = 0; j < nodes.length; j++) {
+      if (!isNodeCompleted(nodes[j].id)) return { chapter: nodes[j], zoneIdx: zi };
+    }
+  }
+  return null;
+}
+
+function loadProgress() {
+  if (!parent.emsAcademyApi) { renderDashboard(); notifyResize(); return; }
+  parent.emsAcademyApi.getProgress().then(function (p) {
+    emsState.xp = p.xp || 0;
+    emsState.level = p.level || 1;
+    emsState.xpIntoLevel = p.xpIntoLevel || 0;
+    emsState.xpForNextLevel = p.xpForNextLevel || 100;
+    emsState.completedNodes = p.completedNodes || [];
+    renderDashboard();
+    notifyResize();
+  }).catch(function () { renderDashboard(); notifyResize(); });
+}
+
+function renderZoneCard(z, zi) {
+  if (z.status === 'soon') {
+    return '<div class="col-6"><div class="card zone-card soon h-100"><div class="card-body text-center py-3">' +
+      '<div style="font-size:1.6rem;">' + z.icon + '</div>' +
+      '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
+      '<span class="badge bg-secondary mt-1">敬請期待</span>' +
+    '</div></div></div>';
+  }
+  var nodes = flatNodesForZone(z);
+  var doneCount = nodes.filter(function (c) { return isNodeCompleted(c.id); }).length;
+  if (!isZoneUnlocked(zi)) {
+    return '<div class="col-6"><div class="card zone-card locked h-100"><div class="card-body text-center py-3">' +
+      '<div style="font-size:1.6rem;">🔒</div>' +
+      '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
+      '<div class="text-muted" style="font-size:0.65rem;">完成前一關卡解鎖</div>' +
+    '</div></div></div>';
+  }
+  return '<div class="col-6"><div class="card zone-card h-100" style="border-top:4px solid ' + z.color + ';" onclick="showZone(' + zi + ')"><div class="card-body text-center py-3">' +
+    '<div style="font-size:1.6rem;">' + z.icon + '</div>' +
+    '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
+    '<div class="text-muted" style="font-size:0.65rem;">' + doneCount + ' / ' + nodes.length + ' 完成</div>' +
+  '</div></div></div>';
+}
+
+function renderDashboard() {
+  var box = document.getElementById('dashboardView');
+  var nextNode = findNextNode();
+  var pct = emsState.xpForNextLevel ? Math.round((emsState.xpIntoLevel / emsState.xpForNextLevel) * 100) : 0;
+  var html = '';
+  html += '<div class="d-flex align-items-center justify-content-between mb-3">' +
+            '<div><h5 class="fw-bold mb-0">🚒 EMS Academy</h5><div class="text-muted small">義消救護學習中心</div></div>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="startPractice()">📝 題庫練習</button>' +
+          '</div>';
+  html += '<div class="xp-card mb-3">' +
+            '<div class="d-flex justify-content-between align-items-center mb-2">' +
+              '<div><span class="fs-4 fw-bold">Lv.' + emsState.level + '</span> <span class="small opacity-75 ms-1">' + emsLevelTitle(emsState.level) + '</span></div>' +
+              '<div class="small opacity-75">累積 ' + emsState.xp + ' XP</div>' +
+            '</div>' +
+            '<div class="progress" style="height:8px;background:rgba(255,255,255,.25);">' +
+              '<div class="progress-bar" style="width:' + pct + '%;background:#fff;"></div>' +
+            '</div>' +
+            '<div class="small opacity-75 mt-1">' + emsState.xpIntoLevel + ' / ' + emsState.xpForNextLevel + ' XP 進入下一等級</div>' +
+          '</div>';
+  if (nextNode) {
+    html += '<div class="card shadow-sm mb-3" style="border-left:5px solid ' + nextNode.chapter.color + ';cursor:pointer;" onclick="showNode(' + nextNode.chapter.id + ')">' +
+              '<div class="card-body d-flex align-items-center gap-3">' +
+                '<div style="font-size:1.6rem;">' + nextNode.chapter.icon + '</div>' +
+                '<div class="flex-grow-1"><div class="small text-muted">▶ 繼續學習</div><div class="fw-bold">' + esc(nextNode.chapter.title) + '</div></div>' +
+                '<div class="text-muted">›</div>' +
+              '</div>' +
+            '</div>';
+  } else {
+    html += '<div class="alert alert-success small">🎉 目前所有開放關卡都已完成，敬請期待更多分區上線！</div>';
+  }
+  html += '<div class="fw-semibold small text-muted mb-2">🗺️ 能力樹地圖</div>';
+  html += '<div class="row g-2 mb-3">' + ZONES.map(function (z, zi) { return renderZoneCard(z, zi); }).join('') + '</div>';
+  box.innerHTML = html;
+}
+
+function showDashboard() {
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('dashboardView').style.display = 'block';
+  renderDashboard();
   window.scrollTo(0, 0);
   notifyResize();
+}
+
+function showZone(zi) {
+  var z = ZONES[zi];
+  if (!z || z.status === 'soon' || !isZoneUnlocked(zi)) return;
+  emsState.curZoneIdx = zi;
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('zoneView').style.display = 'block';
+  renderZoneContent();
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function renderZoneContent() {
+  var zi = emsState.curZoneIdx;
+  var z = ZONES[zi];
+  var nodes = flatNodesForZone(z);
+  var html = '<div class="mb-3"><span class="fs-4">' + z.icon + '</span> <span class="fw-bold fs-5 ms-1">' + esc(z.title) + '</span>' +
+    '<div class="text-muted small mt-1">' + esc(z.desc) + '</div></div>';
+  html += '<div class="row g-2">' + nodes.map(function (c, i) {
+    var completed = isNodeCompleted(c.id);
+    var locked = i > 0 && !isNodeCompleted(nodes[i - 1].id);
+    var statusBadge = completed ? '<span class="badge bg-success">已完成</span>' : (locked ? '<span class="badge bg-secondary">🔒 鎖定</span>' : '<span class="badge" style="background:' + c.color + ';">可學習</span>');
+    return '<div class="col-12"><div class="card chapter-card shadow-sm' + (locked ? ' locked' : '') + '" style="border-left:5px solid ' + c.color + ';' + (locked ? 'opacity:0.55;' : '') + '" onclick="' + (locked ? '' : 'showNode(' + c.id + ')') + '">' +
+      '<div class="card-body d-flex align-items-center gap-3">' +
+        '<div style="font-size:1.6rem;">' + c.icon + '</div>' +
+        '<div class="flex-grow-1"><div class="fw-bold">' + esc(c.title) + '</div><div class="text-muted small mt-1">' + esc(c.subtitle) + '</div></div>' +
+        statusBadge +
+      '</div>' +
+    '</div></div>';
+  }).join('') + '</div>';
+  document.getElementById('zoneContent').innerHTML = html;
+  notifyResize();
+}
+
+function buildSlides(c) {
+  var slides = [];
+  slides.push({ type: 'intro' });
+  if (c.id === 1) slides.push({ type: 'chain' });
+  c.theory.forEach(function (t, i) { slides.push({ type: 'theory', text: t, i: i, n: c.theory.length }); });
+  slides.push({ type: 'flow' });
+  c.cases.forEach(function (cs, i) { slides.push({ type: 'case', cs: cs, i: i }); });
+  c.quiz.forEach(function (qz, i) { slides.push({ type: 'quiz', qz: qz, i: i, n: c.quiz.length }); });
+  slides.push({ type: 'mistakes' });
+  slides.push({ type: 'summary' });
+  slides.push({ type: 'mnemonic' });
+  slides.push({ type: 'complete' });
+  return slides;
+}
+
+function showNode(chapterId) {
+  var c = CHAPTERS.filter(function (x) { return x.id === chapterId; })[0];
+  if (!c) return;
+  var zi = findZoneIndexForChapter(chapterId);
+  if (zi !== -1) {
+    if (!isZoneUnlocked(zi)) return;
+    var nodes = flatNodesForZone(ZONES[zi]);
+    var pos = nodes.map(function (n) { return n.id; }).indexOf(chapterId);
+    if (pos > 0 && !isNodeCompleted(nodes[pos - 1].id)) return;
+    emsState.curZoneIdx = zi;
+  }
+  emsState.curChapter = c;
+  emsState.slides = buildSlides(c);
+  emsState.slideIdx = 0;
+  emsState.nodeAnswered = {};
+  emsState._completeCalled = false;
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'block';
+  renderSlide();
+  window.scrollTo(0, 0);
+}
+
+function exitNode() {
+  document.getElementById('nodeView').style.display = 'none';
+  if (emsState.curZoneIdx !== null && emsState.curZoneIdx !== undefined) showZone(emsState.curZoneIdx);
+  else showDashboard();
+}
+
+function renderSlide() {
+  var c = emsState.curChapter;
+  var slides = emsState.slides;
+  var idx = emsState.slideIdx;
+  var slide = slides[idx];
+  var content = document.getElementById('nodeSlideContent');
+  var navBox = document.getElementById('nodeSlideNav');
+  var barBox = document.getElementById('nodeSlideBar');
+
+  if (slide.type === 'complete') {
+    if (!emsState._completeCalled) { emsState._completeCalled = true; completeNode(); }
+    return;
+  }
+
+  var pct = Math.round(((idx + 1) / slides.length) * 100);
+  barBox.innerHTML = '<div class="progress mb-3" style="height:6px;"><div class="progress-bar" style="width:' + pct + '%;background:' + c.color + ';"></div></div>';
+
+  var html = '';
+  if (slide.type === 'intro') {
+    html += '<div class="mb-2"><span class="badge" style="background:' + c.color + ';">學習關卡</span></div>' +
+      '<div class="fw-bold fs-5 mb-1">' + esc(c.title) + '</div>' +
+      '<div class="text-muted small mb-3">' + esc(c.subtitle) + '</div>';
+    if (c.highlights) html += highlightStrip(c.highlights, c.color);
+    html += sectionCard(c.color, '🎯', '學習目標', '<ul class="mb-0">' + c.goals.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>');
+  } else if (slide.type === 'chain') {
+    html += chainOfSurvival(c.color);
+  } else if (slide.type === 'theory') {
+    html += '<div class="text-center text-muted small mb-2">📖 學理基礎 ' + (slide.i + 1) + ' / ' + slide.n + '</div>' +
+      '<div class="flashcard" style="border-left:6px solid ' + c.color + ';">' + esc(slide.text) + '</div>';
+  } else if (slide.type === 'flow') {
+    html += sectionCard(c.color, '🔀', '流程圖', '<div class="mermaid">' + c.flow + '</div>');
+  } else if (slide.type === 'case') {
+    var gid = 'nodecase_' + idx;
+    html += sectionCard(c.color, '🏥', '臨床案例',
+      '<div class="mb-2" style="background:#f8f9fa;border-radius:8px;padding:10px;">' + esc(slide.cs.scenario) + '</div>' +
+      '<div class="reflect-box">' +
+        '<div class="fw-semibold mb-1">🤔 思考與反思</div>' +
+        '<div class="mb-2">' + esc(slide.cs.reflect) + '</div>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary" data-target="' + gid + '" onclick="toggleBox(this)">查看參考方向</button>' +
+        '<div id="' + gid + '" class="reveal-box">' + esc(slide.cs.guide) + '</div>' +
+      '</div>');
+  } else if (slide.type === 'quiz') {
+    var qz = slide.qz;
+    html += '<div class="text-center text-muted small mb-2">📝 隨堂測驗 ' + (slide.i + 1) + ' / ' + slide.n + '</div>' +
+      '<div class="card shadow-sm"><div class="card-body">' +
+        '<div class="fw-semibold mb-2">' + esc(qz.q) + '</div>' +
+        qz.opts.map(function (o, oi) {
+          return '<button type="button" class="btn btn-outline-secondary btn-sm d-block w-100 text-start mb-1 quiz-opt" data-oi="' + oi + '" data-correct="' + qz.a + '" onclick="selectNodeQuizOption(this)">' + String.fromCharCode(65 + oi) + '. ' + esc(o) + '</button>';
+        }).join('') +
+        '<div class="reveal-box">' + esc(qz.ex) + '</div>' +
+      '</div></div>';
+  } else if (slide.type === 'mistakes') {
+    html += sectionCard(c.color, '⚠️', '常見錯誤', '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
+  } else if (slide.type === 'summary') {
+    html += sectionCard(c.color, '✅', '重點整理', '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
+  } else if (slide.type === 'mnemonic') {
+    html += sectionCard(c.color, '💡', '記憶口訣', '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
+  }
+  content.innerHTML = html;
+
+  try {
+    if (slide.type === 'flow' && typeof mermaid !== 'undefined' && mermaid.run) {
+      mermaid.run({ querySelector: '#nodeSlideContent .mermaid' }).catch(function () {});
+    }
+  } catch (e) { console.warn('mermaid render failed', e); }
+
+  var isQuizUnanswered = slide.type === 'quiz' && !emsState.nodeAnswered[idx];
+  navBox.innerHTML = '<div class="d-flex gap-2 mt-3">' +
+    '<button type="button" id="nodePrevBtn" class="btn btn-outline-secondary btn-sm" ' + (idx === 0 ? 'disabled' : '') + ' onclick="nodePrev()">‹ 上一步</button>' +
+    '<button type="button" id="nodeNextBtn" class="btn btn-primary btn-sm flex-grow-1" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 🎉' : '繼續 →')) + '</button>' +
+  '</div>';
+
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function nodePrev() {
+  if (emsState.slideIdx > 0) { emsState.slideIdx--; renderSlide(); }
+}
+
+function nodeNext() {
+  var slide = emsState.slides[emsState.slideIdx];
+  if (slide.type === 'quiz' && !emsState.nodeAnswered[emsState.slideIdx]) return;
+  if (emsState.slideIdx < emsState.slides.length - 1) { emsState.slideIdx++; renderSlide(); }
 }
 
 function toggleBox(btn) {
@@ -16340,8 +16564,8 @@ function toggleBox(btn) {
   notifyResize();
 }
 
-function selectQuizOption(btn) {
-  var wrap = btn.closest('.quiz-q');
+function selectNodeQuizOption(btn) {
+  var wrap = btn.closest('.card-body');
   if (!wrap || wrap.dataset.answered) return;
   wrap.dataset.answered = '1';
   var correct = parseInt(btn.getAttribute('data-correct'), 10);
@@ -16356,6 +16580,29 @@ function selectQuizOption(btn) {
   }
   var ansBox = wrap.querySelector('.reveal-box');
   if (ansBox) ansBox.style.display = 'block';
+  emsState.nodeAnswered[emsState.slideIdx] = true;
+  var nextBtn = document.getElementById('nodeNextBtn');
+  if (nextBtn) { nextBtn.disabled = false; nextBtn.textContent = '繼續 →'; }
+  notifyResize();
+}
+
+function completeNode() {
+  var c = emsState.curChapter;
+  var firstTime = emsState.completedNodes.indexOf(c.id) === -1;
+  var xpGain = firstTime ? 60 : 0;
+  document.getElementById('nodeSlideContent').innerHTML = '<div class="text-center py-4">' +
+      '<div style="font-size:3rem;">🎉</div>' +
+      '<div class="fs-5 fw-bold mt-2">' + (firstTime ? '完成本節！' : '複習完成！') + '</div>' +
+      (firstTime ? '<div class="text-success fw-semibold mt-1">+ ' + xpGain + ' XP</div>' : '<div class="text-muted mt-1">已完成過，無額外經驗值</div>') +
+      '<button type="button" class="btn btn-primary mt-3" onclick="exitNode()">返回章節列表</button>' +
+    '</div>';
+  document.getElementById('nodeSlideNav').innerHTML = '';
+  document.getElementById('nodeSlideBar').innerHTML = '';
+  if (firstTime && parent.emsAcademyApi) {
+    parent.emsAcademyApi.saveProgress(c.id, xpGain).then(function (p) {
+      emsState.xp = p.xp; emsState.level = p.level; emsState.xpIntoLevel = p.xpIntoLevel; emsState.xpForNextLevel = p.xpForNextLevel; emsState.completedNodes = p.completedNodes;
+    }).catch(function () {});
+  }
   notifyResize();
 }
 
@@ -16384,8 +16631,9 @@ function startPractice() {
   practiceState.idx = 0;
   practiceState.score = 0;
   practiceState.wrong = [];
-  document.getElementById('listView').style.display = 'none';
-  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
   renderPracticeQuestion();
   window.scrollTo(0, 0);
@@ -16394,9 +16642,7 @@ function startPractice() {
 
 function exitPractice() {
   document.getElementById('practiceView').style.display = 'none';
-  document.getElementById('listView').style.display = 'block';
-  window.scrollTo(0, 0);
-  notifyResize();
+  showDashboard();
 }
 
 function renderPracticeQuestion() {
@@ -16478,7 +16724,7 @@ function renderPracticeResult() {
   }
   html += '<div class="d-flex gap-2 mt-3">' +
     '<button type="button" class="btn btn-primary btn-sm" onclick="startPractice()">重新測驗</button>' +
-    '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="exitPractice()">返回章節列表</button>' +
+    '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="exitPractice()">返回首頁</button>' +
   '</div>';
   box.innerHTML = html;
   notifyResize();
@@ -16489,12 +16735,11 @@ function boot() {
     if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'default' });
   } catch (e) { console.warn('mermaid init failed', e); }
   try {
-    renderList();
+    loadProgress();
   } catch (e) {
-    var box = document.getElementById('chapterList');
-    if (box) box.innerHTML = '<div class="text-danger small">章節列表載入失敗：' + esc(String(e && e.message || e)) + '</div>';
+    var box = document.getElementById('dashboardView');
+    if (box) box.innerHTML = '<div class="text-danger small">載入失敗：' + esc(String(e && e.message || e)) + '</div>';
   }
-  notifyResize();
 }
 boot();
 window.addEventListener('load', notifyResize);
@@ -16507,8 +16752,50 @@ function initEmtStudyPage() {
   const ifr = document.getElementById('emtStudyIframe');
   if (!ifr || ifr.dataset.loaded) return;
   ifr.dataset.loaded = '1';
-  ifr.srcdoc = EMT_STUDY_HTML;
+  ifr.srcdoc = EMS_ACADEMY_HTML;
 }
+
+function emsXpForLevel(lv) { return Math.round(100 * lv * (1 + lv * 0.05)); }
+function emsComputeLevel(totalXp) {
+  let lv = 1, remain = totalXp || 0;
+  while (remain >= emsXpForLevel(lv)) { remain -= emsXpForLevel(lv); lv++; }
+  return { level: lv, xpIntoLevel: remain, xpForNextLevel: emsXpForLevel(lv) };
+}
+function _emsCurrentMemberName() {
+  try { return JSON.parse(sessionStorage.getItem('rescue_user') || '{}').memberName || ''; } catch (e) { return ''; }
+}
+window.emsAcademyApi = {
+  async getProgress() {
+    const name = _emsCurrentMemberName();
+    let data = { xp: 0, completedNodes: [] };
+    if (name) {
+      try {
+        await ensureFirebase();
+        const snap = await _fbDB.collection(COL_EMS_PROGRESS).doc(name).get();
+        if (snap.exists) data = snap.data();
+      } catch (e) { /* 離線或讀取失敗時，視為新進度 */ }
+    }
+    const lvInfo = emsComputeLevel(data.xp || 0);
+    return { xp: data.xp || 0, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes: data.completedNodes || [] };
+  },
+  async saveProgress(nodeId, xpGain) {
+    const name = _emsCurrentMemberName();
+    if (!name) return window.emsAcademyApi.getProgress();
+    await ensureFirebase();
+    const ref = _fbDB.collection(COL_EMS_PROGRESS).doc(name);
+    const snap = await ref.get();
+    const data = snap.exists ? snap.data() : {};
+    const completedNodes = Array.isArray(data.completedNodes) ? data.completedNodes.slice() : [];
+    let xp = data.xp || 0;
+    if (completedNodes.indexOf(nodeId) === -1) {
+      completedNodes.push(nodeId);
+      xp += xpGain;
+    }
+    const lvInfo = emsComputeLevel(xp);
+    await ref.set({ memberName: name, xp, level: lvInfo.level, completedNodes, updatedAt: new Date().toISOString() }, { merge: true });
+    return { xp, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes };
+  }
+};
 
 window.addEventListener('message', (ev) => {
   if (ev && ev.data && ev.data.type === 'emtResize') {
