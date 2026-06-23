@@ -17217,6 +17217,184 @@ function renderPracticeResult() {
   }
 }
 
+var SCENARIOS = [
+  {
+    id: 'ohca1', caseNo: 'SIM-2026-0142', callTime: '14:32', icon: '❤️',
+    title: 'OHCA：賣場內倒地', dispatch: '50歲男性，賣場內倒地，意識不清，路人已開始CPR。',
+    xpGain: 80, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '到場評估：患者倒地無反應，路人持續CPR中，胸部有起伏但無自發呼吸，未能觸及頸動脈搏動。',
+        vitals: { HR: { v: '--', s: 'crit' }, BP: { v: '--/--', s: 'crit' }, SpO2: { v: '--', s: 'crit' }, GCS: { v: '3', s: 'crit' } },
+        choices: [
+          { label: '立即接手高品質CPR，並接上AED分析心律', correct: true, feedback: '正確：OHCA首要為高品質CPR與早期電擊。AED分析：心室顫動（VF），建議電擊。', next: 'n2' },
+          { label: '先建立靜脈管路給予腎上腺素', correct: false, feedback: '錯誤：應優先進行CPR與早期電擊，給藥並非OHCA第一步處置。', next: 'n2' }
+        ]
+      },
+      n2: {
+        narrative: '電擊一次後繼續CPR兩分鐘，再次分析心律時監視器顯示恢復為規律心律，可觸及微弱頸動脈搏動。',
+        vitals: { HR: { v: '58', s: 'caution' }, BP: { v: '82/50', s: 'caution' }, SpO2: { v: '89%', s: 'caution' }, GCS: { v: '6', s: 'caution' } },
+        choices: [
+          { label: '確認ROSC（恢復自發循環），準備呼吸道處置並儘速轉送', correct: true, feedback: '正確：觸及脈搏應立即停止按壓，轉為ROSC後處置並儘速轉送。', next: 'end_ok' },
+          { label: '忽略可觸及的脈搏，持續胸外按壓', correct: false, feedback: '錯誤：觸及脈搏即應停止按壓，繼續按壓可能對已恢復循環的患者造成傷害。', next: 'end_caution' }
+        ]
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: 'ROSC（恢復自發循環）成功，患者送醫後生命徵象逐漸穩定。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '雖恢復循環，但後續處置流程有誤，建議複習CPR/ROSC後處置準則。' }
+    }
+  },
+  {
+    id: 'trauma1', caseNo: 'SIM-2026-0207', callTime: '21:05', icon: '🩸',
+    title: '創傷：車禍大出血', dispatch: '28歲女性，機車自撞，大腿撕裂傷大量出血，意識略微模糊。',
+    xpGain: 80, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '到場評估：大腿傷口噴射狀出血，患者臉色蒼白、皮膚濕冷，主訴頭暈。',
+        vitals: { HR: { v: '128', s: 'crit' }, BP: { v: '84/52', s: 'crit' }, SpO2: { v: '94%', s: 'caution' }, GCS: { v: '14', s: 'caution' } },
+        choices: [
+          { label: '立即直接加壓止血，必要時使用止血帶並記錄上止血帶時間', correct: true, feedback: '正確：危及生命的大出血應優先止血，使用止血帶須記錄上止血帶時間。', next: 'n2' },
+          { label: '先進行完整身體評估再處理傷口', correct: false, feedback: '錯誤：大出血屬立即威脅生命的狀況，應優先止血，不可延後處理。', next: 'n2' }
+        ]
+      },
+      n2: {
+        narrative: '出血已控制，患者主訴口渴、躁動不安，膚色仍蒼白濕冷。',
+        vitals: { HR: { v: '118', s: 'caution' }, BP: { v: '90/58', s: 'caution' }, SpO2: { v: '96%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '採休克姿勢、保暖，並快速轉送醫院', correct: true, feedback: '正確：休克處置三原則：止血、保暖、平躺抬腳（無禁忌時）並儘速轉送。', next: 'end_ok' },
+          { label: '讓患者自行走動到救護車以節省時間', correct: false, feedback: '錯誤：休克病人不應自行走動，應以擔架搬運，避免循環狀況惡化。', next: 'end_caution' }
+        ]
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '出血控制得宜、休克處置正確，患者送醫後生命徵象穩定。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '止血處置正確，但休克後續處置有誤，建議複習出血控制與休克處理章節。' }
+    }
+  }
+];
+
+var scenarioState = { scenario: null, nodeKey: null, history: [] };
+
+function showScenarioCenter() {
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'block';
+  updateEmsCmdBar('情境模擬中心');
+  renderScenarioCenter();
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function renderScenarioCenter() {
+  var box = document.getElementById('scenarioContent');
+  var html = '<div class="ems-section-label mb-2">CAD DISPATCH 派遣清單</div><div class="row g-2">';
+  html += SCENARIOS.map(function (sc) {
+    var done = emsState.completedScenarios.indexOf(sc.id) !== -1;
+    return '<div class="col-12"><div class="ems-cad-card" style="cursor:pointer;" onclick="' + "startScenario('" + sc.id + "')" + '">' +
+        '<div class="d-flex justify-content-between align-items-start mb-1">' +
+          '<span class="cad-id">案件 #' + esc(sc.caseNo) + '</span>' +
+          '<span class="cad-time">' + esc(sc.callTime) + (done ? ' · <span class="text-success">✓已完成</span>' : '') + '</span>' +
+        '</div>' +
+        '<div class="d-flex align-items-center gap-2 mb-2">' +
+          '<div style="font-size:1.4rem;">' + sc.icon + '</div>' +
+          '<div><div class="fw-semibold">' + esc(sc.title) + '</div><div class="text-muted small">' + esc(sc.dispatch) + '</div></div>' +
+        '</div>' +
+        '<button type="button" class="btn btn-danger btn-sm w-100">🚑 出車</button>' +
+      '</div></div>';
+  }).join('') + '</div>';
+  box.innerHTML = html;
+  notifyResize();
+}
+
+function startScenario(id) {
+  var sc = SCENARIOS.filter(function (s) { return s.id === id; })[0];
+  if (!sc) return;
+  scenarioState.scenario = sc;
+  scenarioState.nodeKey = sc.start;
+  scenarioState.history = [];
+  renderScenarioNode();
+  window.scrollTo(0, 0);
+}
+
+function exitScenario() {
+  scenarioState.scenario = null;
+  renderScenarioCenter();
+  window.scrollTo(0, 0);
+}
+
+function renderScenarioNode() {
+  var sc = scenarioState.scenario;
+  var node = sc.nodes[scenarioState.nodeKey];
+  if (node.type === 'end') { renderScenarioDebrief(node); return; }
+  var vitalsHtml = Object.keys(node.vitals).map(function (k) {
+    var v = node.vitals[k];
+    return '<div class="m-item"><div class="m-label">' + k + '</div><div class="m-val ' + v.s + '">' + esc(v.v) + '</div></div>';
+  }).join('');
+  var html = '<button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick="exitScenario()">← 返回派遣清單</button>' +
+    '<div class="ems-section-label mb-2">' + esc(sc.title) + '</div>' +
+    '<div class="mb-3">' + esc(node.narrative) + '</div>' +
+    '<div class="ems-monitor mb-3">' + vitalsHtml + '</div>' +
+    '<div id="scenarioChoices">' + node.choices.map(function (c, ci) {
+      return '<button type="button" class="ems-quiz-opt" onclick="' + ('chooseScenario(' + ci + ')') + '"><span class="opt-tag">' + String.fromCharCode(65 + ci) + '</span><span>' + esc(c.label) + '</span></button>';
+    }).join('') + '</div>' +
+    '<div id="scenarioFeedback" class="ems-answer-card" style="display:none;"><span class="ex-tag">回饋</span><span id="scenarioFeedbackText"></span></div>' +
+    '<button type="button" id="scenarioNextBtn" class="btn btn-primary mt-3" style="display:none;" onclick="scenarioNext()">繼續</button>';
+  document.getElementById('scenarioContent').innerHTML = html;
+  notifyResize();
+}
+
+function chooseScenario(ci) {
+  var sc = scenarioState.scenario;
+  var node = sc.nodes[scenarioState.nodeKey];
+  var choice = node.choices[ci];
+  scenarioState.history.push({ label: choice.label, correct: choice.correct, feedback: choice.feedback });
+  var btns = document.querySelectorAll('#scenarioChoices .ems-quiz-opt');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].disabled = true;
+    if (i === ci) btns[i].classList.add(choice.correct ? 'correct' : 'wrong');
+  }
+  document.getElementById('scenarioFeedback').style.display = 'block';
+  document.getElementById('scenarioFeedbackText').textContent = choice.feedback;
+  document.getElementById('scenarioNextBtn').style.display = 'inline-block';
+  scenarioState.nodeKey = choice.next;
+  notifyResize();
+}
+
+function scenarioNext() {
+  renderScenarioNode();
+  window.scrollTo(0, 0);
+}
+
+function renderScenarioDebrief(node) {
+  var sc = scenarioState.scenario;
+  var firstTime = emsState.completedScenarios.indexOf(sc.id) === -1;
+  var xpGain = firstTime ? sc.xpGain : 0;
+  var outcomeLabel = node.outcome === 'ok' ? 'DEBRIEF · 處置成功' : 'DEBRIEF · 仍有進步空間';
+  var html = '<div class="ems-sim-outcome ' + node.outcome + ' mb-3">' +
+      '<span class="tag">' + outcomeLabel + '</span>' +
+      '<span>' + esc(node.summary) + '</span>' +
+    '</div>' +
+    '<div class="ems-section-label mb-2">決策回顧</div>' +
+    scenarioState.history.map(function (h, hi) {
+      return '<div class="ems-answer-card mb-2"><span class="ex-tag">STEP ' + (hi + 1) + '</span>' +
+        '<div>' + esc(h.label) + '</div>' +
+        '<div class="' + (h.correct ? 'text-success' : 'text-danger') + ' small mt-1">' + esc(h.feedback) + '</div></div>';
+    }).join('') +
+    (firstTime ? ('<div class="text-success fw-semibold ems-shine-once mt-2">+ ' + xpGain + ' XP</div>') : '<div class="text-muted mt-2">已完成過，無額外經驗值</div>') +
+    '<div class="d-flex gap-2 mt-3">' +
+      '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="' + ("startScenario('" + sc.id + "')") + '">重新模擬</button>' +
+      '<button type="button" class="btn btn-primary btn-sm" onclick="showScenarioCenter()">返回派遣清單</button>' +
+    '</div>';
+  document.getElementById('scenarioContent').innerHTML = html;
+  if (firstTime && parent.emsAcademyApi) {
+    parent.emsAcademyApi.saveScenarioXp(sc.id, xpGain).then(function (p) {
+      emsState.xp = p.xp; emsState.level = p.level; emsState.xpIntoLevel = p.xpIntoLevel; emsState.xpForNextLevel = p.xpForNextLevel; emsState.completedScenarios = p.completedScenarios;
+      updateEmsCmdBar('情境模擬中心');
+    }).catch(function () {});
+  }
+  notifyResize();
+}
+
 function boot() {
   try {
     if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'default' });
