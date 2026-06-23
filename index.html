@@ -2592,7 +2592,7 @@ function _dlCSV(content, filename) {
     <div class="section" style="margin-bottom:16px;">
       <div class="section-head">
         <div class="section-num">🔍</div>
-        <div class="section-title">資料核對</div>
+        <div class="section-title">協勤費核對</div>
         <div class="section-line"></div>
       </div>
       <div class="filter-card">
@@ -10714,7 +10714,9 @@ async function loadVerifyData() {
         return o.timeOut >= a.checkinTime && o.timeOut <= a.checkoutTime;
       });
       matchedOutings.sort((x, y) => (x.timeOut||'').localeCompare(y.timeOut||''));
+      // 依規定：救護空跑、救災出勤中途返隊之次數及費用不予計算
       const totalMins = matchedOutings.reduce((sum, o) => {
+        if (o.caseType === '空跑') return sum;
         const m = _verifyMins(o.timeOut, o.timeBack);
         return sum + (m > 0 ? m : 0);
       }, 0);
@@ -10769,26 +10771,29 @@ function _verifyGroupCardHTML(g) {
     ? g.allOutings.map(o => {
         const parentId = g.sessions.find(s => s.outings.some(oo => oo.id === o.id))?.id || '';
         const om = _verifyMins(o.timeOut, o.timeBack);
+        const isSkip = o.caseType === '空跑';
         const caseInfo = [o.caseId?'#'+_fmtCaseId(o.caseId):'', o.caseType, o.district].filter(Boolean).join('・');
-        return `<div id="orow-${o.id}" style="border-top:1px solid #f0f0f0;padding:6px 0;">
+        const skipNote = isSkip ? '<div style="font-size:0.62rem;color:#6c757d;margin-top:2px;">⛔ 空跑不列入次數及費用計算（依「臺中市政府消防局義消協勤時數次數及費用請領規定」第四點第三項）</div>' : '';
+        return `<div id="orow-${o.id}" style="border-top:1px solid #f0f0f0;padding:6px 0;${isSkip?'background:#f5f5f5;':''}">
           <div style="display:flex;align-items:center;">
             <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
               <div style="white-space:nowrap;">
                 <div style="font-size:0.6rem;color:var(--text-light);">出動</div>
-                <div id="otime-out-${o.id}" style="font-size:0.92rem;font-weight:600;color:var(--text);">${o.timeOut||'—'}</div>
+                <div id="otime-out-${o.id}" style="font-size:0.92rem;font-weight:600;color:${isSkip?'var(--text-light)':'var(--text)'};">${o.timeOut||'—'}</div>
               </div>
               <div style="color:#ccc;flex-shrink:0;">→</div>
               <div style="white-space:nowrap;">
                 <div style="font-size:0.6rem;color:var(--text-light);">返隊</div>
-                <div id="otime-back-${o.id}" style="font-size:0.92rem;font-weight:600;color:var(--text);">${o.timeBack||'—'}</div>
+                <div id="otime-back-${o.id}" style="font-size:0.92rem;font-weight:600;color:${isSkip?'var(--text-light)':'var(--text)'};">${o.timeBack||'—'}</div>
               </div>
               <div style="min-width:0;">
-                <div id="vomin-${o.id}" style="font-size:0.88rem;font-weight:600;color:${om>=0?'var(--text-mid)':'#ccc'};">${om>=0?om+'分':'—'}</div>
-                ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${caseInfo}</div>`:''}
+                <div id="vomin-${o.id}" style="font-size:0.88rem;font-weight:600;color:${isSkip?'#ccc':(om>=0?'var(--text-mid)':'#ccc')};${isSkip?'text-decoration:line-through;':''}">${om>=0?om+'分':'—'}</div>
+                ${caseInfo?`<div style="font-size:0.6rem;color:var(--text-light);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${isSkip?'<span style="background:#e9ecef;color:#6c757d;padding:1px 5px;border-radius:4px;">⛔ 空跑</span>':caseInfo}</div>`:''}
               </div>
             </div>
             <button id="oeditbtn-${o.id}" onclick="toggleOutingEdit('${o.id}')" style="background:none;border:none;flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:1rem;"><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg></button>
           </div>
+          ${skipNote}
           <div id="oedit-${o.id}" style="display:none;margin-top:6px;background:#fafafa;border-radius:8px;padding:10px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
               <div>
@@ -10902,7 +10907,7 @@ async function confirmOutingEdit(outingId, sessionId, anchorId) {
 
   // 重算當日合計
   if (session) {
-    session.totalOutingMins = session.outings.reduce((sum, o) => { const m = _verifyMins(o.timeOut, o.timeBack); return sum + (m > 0 ? m : 0); }, 0);
+    session.totalOutingMins = session.outings.reduce((sum, o) => { if (o.caseType === '空跑') return sum; const m = _verifyMins(o.timeOut, o.timeBack); return sum + (m > 0 ? m : 0); }, 0);
     group.dayTotal    = group.sessions.reduce((sum, s) => sum + s.totalOutingMins, 0);
     group.dayQualifies = group.dayTotal >= 60;
     group.sessions.forEach(s => { s.dayTotal = group.dayTotal; s.dayQualifies = group.dayQualifies; });
