@@ -15860,9 +15860,12 @@ const EMT_STUDY_HTML = `<!DOCTYPE html>
   .chapter-card{cursor:pointer;transition:box-shadow .15s,transform .15s;}
   .chapter-card:active{transform:scale(0.99);}
   .mnemonic-box{background:#fff7e6;border:1px dashed #f0ad4e;border-radius:10px;padding:14px;}
-  .quiz-ans{display:none;background:#eef6ff;border-radius:8px;padding:10px;margin-top:6px;font-size:0.88rem;}
+  .reflect-box{background:#eef6ff;border:1px dashed #6ea8fe;border-radius:10px;padding:12px;margin-top:8px;}
+  .reveal-box{display:none;background:#eef6ff;border-radius:8px;padding:10px;margin-top:6px;font-size:0.88rem;}
   .quiz-q{margin-bottom:12px;}
+  .quiz-opt:disabled{opacity:0.85;}
   #detailView{display:none;}
+  #practiceView{display:none;}
   .mermaid{overflow-x:auto;}
 </style>
 </head>
@@ -15874,12 +15877,18 @@ const EMT_STUDY_HTML = `<!DOCTYPE html>
   <div id="listView">
     <h5 class="fw-bold mb-1">救護義消EMT學習系統</h5>
     <p class="text-muted small">依台灣EMT-1/EMT-2與消防署緊急救護教材編寫之學習參考章節（試做版）</p>
+    <button type="button" class="btn btn-primary btn-sm w-100 mb-3" onclick="startPractice()">📝 題庫練習模式（隨機抽題、即時計分）</button>
     <div class="row g-2" id="chapterList"></div>
   </div>
 
   <div id="detailView">
     <button class="btn btn-sm btn-outline-secondary mb-3" onclick="showList()">← 返回章節列表</button>
     <div id="detailContent"></div>
+  </div>
+
+  <div id="practiceView">
+    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="exitPractice()">← 返回章節列表</button>
+    <div id="practiceContent"></div>
   </div>
 
 <script>
@@ -15910,7 +15919,9 @@ var CHAPTERS = [
     flow: 'flowchart TD\\n  A["發現疑似OHCA病人"] --> B{"檢查反應與呼吸"}\\n  B -->|"無反應且無呼吸/僅喘息"| C["呼叫求救/啟動EMS, 取AED"]\\n  B -->|"有反應或正常呼吸"| Z["持續觀察, 必要時其他處置"]\\n  C --> D["立即開始胸外按壓 30:2"]\\n  D --> E["AED到達, 開機並貼上電極片"]\\n  E --> F{"AED分析心律"}\\n  F -->|"建議電擊"| G["確保無人接觸, 給予電擊"]\\n  F -->|"不建議電擊"| H["立即繼續CPR"]\\n  G --> H\\n  H --> I["每2分鐘重新分析心律"]\\n  I --> J{"病人恢復反應/正常呼吸?"}\\n  J -->|"否"| F\\n  J -->|"是"| K["恢復姿勢, 持續監測, 交接高級救護"]',
     mindmap: 'mindmap\\n  root((BLS CPR AED))\\n    評估\\n      檢查反應\\n      檢查呼吸\\n      啟動EMS\\n    胸外按壓\\n      速率100-120\\n      深度5-6cm\\n      完全回彈\\n      減少中斷\\n    人工呼吸\\n      30比2比例\\n      避免過度通氣\\n    AED\\n      開機貼片\\n      心律分析\\n      電擊安全\\n    團隊\\n      角色分配\\n      換手時機',
     cases: [
-      '50歲男性於賣場突然倒地，旁人發現其無反應、胸口無起伏。民眾立即呼叫119並開始CPR，2分鐘後義消到場接手按壓並使用AED，分析後建議電擊一次，電擊後持續CPR至救護車到達，病人於到院前恢復自發循環（ROSC）。'
+      { scenario: '50歲男性於賣場突然倒地，旁人發現其無反應、胸口無起伏。民眾立即呼叫119並開始CPR，2分鐘後義消到場接手按壓並使用AED，分析後建議電擊一次，電擊後持續CPR至救護車到達，病人於到院前恢復自發循環（ROSC）。',
+        reflect: '如果AED分析後顯示「不建議電擊」，你接下來應該怎麼做？為什麼按壓品質往往比「盡快電擊」更重要？',
+        guide: 'AED顯示「不建議電擊」時應立即恢復CPR並持續按壓，2分鐘後才再次分析，不可因等待電擊而中斷按壓。胸外按壓的品質（深度、頻率、減少中斷）才是維持腦部與心臟灌流的關鍵，電擊只是針對特定可電擊心律的輔助手段，並非每次分析都會建議電擊。' }
     ],
     mistakes: [
       '按壓深度不足或速率過快/過慢',
@@ -15953,7 +15964,9 @@ var CHAPTERS = [
     flow: 'flowchart TD\\n  A["病人呼吸道評估"] --> B{"病人清醒可咳嗽說話?"}\\n  B -->|"是, 部分阻塞"| C["鼓勵咳嗽, 持續觀察, 準備求援"]\\n  B -->|"否, 完全阻塞/無法發聲"| D{"病人有無意識?"}\\n  D -->|"清醒"| E["施行腹部衝擊法/背部叩擊"]\\n  D -->|"無意識"| F["平躺, 開始CPR, 每次打開呼吸道檢查異物"]\\n  E --> G{"異物排出?"}\\n  G -->|"否"| E\\n  G -->|"是"| H["評估呼吸狀況, 持續監測"]\\n  F --> I["持續CPR並聯絡進階救護"]',
     mindmap: 'mindmap\\n  root((呼吸道評估與處置))\\n    評估\\n      Look Listen Feel\\n      部分阻塞\\n      完全阻塞\\n    開放手法\\n      壓額抬下巴法\\n      推下巴上提法\\n    輔助器具\\n      OPA口咽呼吸道\\n      NPA鼻咽呼吸道\\n    異物哽塞處理\\n      背部叩擊\\n      腹部衝擊法\\n      無意識後CPR\\n    禁忌與注意\\n      顱底骨折禁NPA\\n      嘔吐反射禁OPA',
     cases: [
-      '65歲女性用餐時突然無法言語、雙手抓喉，臉色發紅後逐漸發紫。義消立即辨識為完全異物哽塞，自其背後施行腹部衝擊法數次後異物咳出，病人恢復呼吸與意識。'
+      { scenario: '65歲女性用餐時突然無法言語、雙手抓喉，臉色發紅後逐漸發紫。義消立即辨識為完全異物哽塞，自其背後施行腹部衝擊法數次後異物咳出，病人恢復呼吸與意識。',
+        reflect: '如果多次腹部衝擊法後異物仍未排出，你應該繼續重複動作，還是改變策略？若病人在過程中突然失去意識，下一步該做什麼？',
+        guide: '只要病人仍有意識，應持續重複腹部衝擊法直到異物排出或病人失去意識，不可中途放棄等待。一旦病人失去意識，應立即讓其平躺並開始CPR，每次打開呼吸道時檢查口腔是否能看到異物並移除，同時盡速求援。' }
     ],
     mistakes: [
       '對創傷病人使用壓額抬下巴法而非推下巴法，可能加重頸椎損傷',
@@ -15997,7 +16010,9 @@ var CHAPTERS = [
     flow: 'flowchart TD\\n  A["發現外出血病人"] --> B{"出血量大且持續?"}\\n  B -->|"輕微"| C["直接加壓止血, 觀察"]\\n  B -->|"大量/動脈性出血"| D["立即直接加壓並加壓敷料"]\\n  D --> E{"加壓無法止血或肢體損傷嚴重?"}\\n  E -->|"是"| F["使用止血帶, 記錄上止血帶時間"]\\n  E -->|"否"| C\\n  F --> G["評估休克徵象: 心跳, 皮膚, 意識"]\\n  C --> G\\n  G --> H{"出現休克徵象?"}\\n  H -->|"是"| I["平躺抬腿, 保暖, 給氧, 盡速轉送"]\\n  H -->|"否"| J["持續監測生命徵象"]',
     mindmap: 'mindmap\\n  root((出血控制與休克))\\n    止血處置\\n      直接加壓\\n      加壓敷料\\n      止血帶\\n    休克分類\\n      低血容性\\n      心源性\\n      阻塞性\\n      分布性\\n    休克徵象\\n      代償期 心跳快 皮膚濕冷\\n      失代償期 血壓降 意識改變\\n    處置原則\\n      平躺抬腿\\n      保暖\\n      給氧\\n      盡速轉送\\n    止血帶注意\\n      記錄時間\\n      持續加壓無效才用',
     cases: [
-      '30歲男性工地意外造成右大腿撕裂傷大量出血，直接加壓無法有效止血，傷者面色蒼白、心跳加速且焦躁不安。義消立即於傷口上方使用止血帶並記錄上止血帶時間，同時讓病人平躺抬腿保暖，盡速通知救護車轉送。'
+      { scenario: '30歲男性工地意外造成右大腿撕裂傷大量出血，直接加壓無法有效止血，傷者面色蒼白、心跳加速且焦躁不安。義消立即於傷口上方使用止血帶並記錄上止血帶時間，同時讓病人平躺抬腿保暖，盡速通知救護車轉送。',
+        reflect: '為什麼義消不應該為了「確認止血效果」而中途放鬆已上好的止血帶？如果傷者意識逐漸變得模糊，這代表休克進入哪個階段，你該如何調整處置優先順序？',
+        guide: '止血帶一旦上止，不應中途放鬆檢查，因為再次出血會更難控制且加重休克；應等待專業醫療人員評估後再決定是否放鬆。意識變模糊代表休克已進入失代償期（血壓下降、腦部灌流不足），此時應優先確保ABC（呼吸道、呼吸、循環）穩定並爭取最快轉送，而非停留在現場做更多非必要處置。' }
     ],
     mistakes: [
       '止血帶綁太鬆或位置不對（應綁在傷口上方近端，而非直接綁在傷口上）',
@@ -16042,7 +16057,9 @@ var CHAPTERS = [
     flow: 'flowchart TD\\n  A["到達創傷現場"] --> B["現場安全評估"]\\n  B --> C["A: 呼吸道評估+頸椎保護"]\\n  C --> D["B: 呼吸評估, 給氧"]\\n  D --> E["C: 循環評估, 止血"]\\n  E --> F["D: 意識神經評估 AVPU"]\\n  F --> G["E: 暴露檢查, 保暖避免失溫"]\\n  G --> H{"發現立即威脅生命狀況?"}\\n  H -->|"是"| I["立即處置, 不延誤轉送"]\\n  H -->|"否"| J["執行二級評估頭到腳檢查+SAMPLE病史"]\\n  I --> K["盡速轉送醫療機構"]\\n  J --> K',
     mindmap: 'mindmap\\n  root((創傷ABCDE評估))\\n    A 呼吸道\\n      頸椎保護\\n      暢通評估\\n    B 呼吸\\n      速率胸壁起伏\\n      給氧\\n    C 循環\\n      脈搏止血\\n      休克徵象\\n    D 意識神經\\n      AVPU GCS\\n      瞳孔\\n    E 暴露\\n      檢查傷口\\n      保暖防失溫\\n    後續\\n      二級評估\\n      SAMPLE病史\\n      轉送決策',
     cases: [
-      '機車事故傷者意識清醒但主訴頸部疼痛，現場義消先評估現場安全後，採頸椎保護下檢查呼吸道暢通，呼吸正常、橈動脈可觸及，AVPU評估為清醒，暴露檢查發現左小腿開放性外傷出血。依ABCDE處置：維持頸椎中立、給氧觀察、直接加壓止血小腿傷口，並安排脊椎固定後盡速轉送。'
+      { scenario: '機車事故傷者意識清醒但主訴頸部疼痛，現場義消先評估現場安全後，採頸椎保護下檢查呼吸道暢通，呼吸正常、橈動脈可觸及，AVPU評估為清醒，暴露檢查發現左小腿開放性外傷出血。依ABCDE處置：維持頸椎中立、給氧觀察、直接加壓止血小腿傷口，並安排脊椎固定後盡速轉送。',
+        reflect: '小腿傷口的出血明顯可見，但頸部疼痛只是病人的主訴、沒有明顯外觀異常，你會優先處理哪一個？這個案例如何體現「初級評估先於二級評估」的原則？',
+        guide: '即使小腿出血更顯眼，仍應先完成ABCDE初級評估（包含頸椎保護）以排除立即威脅生命的傷害，再處置明顯但非致命的小腿出血；兩者可同時進行（如一人加壓止血、另一人維持頸椎中立），但評估順序與優先處置邏輯不能因為「看起來更嚴重」而打亂。這正是初級評估「先找出會致命的問題」而非「先處理最明顯的傷」的核心精神。' }
     ],
     mistakes: [
       '跳過初級評估直接進行詳細頭到腳檢查，延誤威脅生命傷害的處置',
@@ -16087,7 +16104,9 @@ var CHAPTERS = [
     flow: 'flowchart TD\\n  A["病人主訴胸痛/胸悶"] --> B["評估生命徵象, 給氧監測"]\\n  B --> C["執行OPQRST病史詢問"]\\n  C --> D{"符合ACS高風險表現?"}\\n  D -->|"是, 含冒冷汗/放射痛/呼吸困難"| E["立即讓病人休息, 避免活動"]\\n  D -->|"否, 症狀輕微"| F["持續觀察, 記錄生命徵象變化"]\\n  E --> G["聯絡救護車盡速轉送具心臟急症處置能力醫院"]\\n  F --> H{"症狀惡化?"}\\n  H -->|"是"| E\\n  H -->|"否"| I["持續監測直到專業救護到達"]\\n  G --> I',
     mindmap: 'mindmap\\n  root((心臟血管急症))\\n    辨識\\n      典型胸痛壓迫感\\n      放射肩臂下顎\\n      非典型表現\\n    病史詢問\\n      OPQRST\\n    高風險徵象\\n      冒冷汗\\n      呼吸困難\\n      意識改變\\n    到院前處置\\n      休息減少活動\\n      給氧監測\\n      盡速轉送\\n    義消角色限制\\n      不可自行給藥\\n      協助服用自備藥物\\n      及時回報專業人員',
     cases: [
-      '58歲男性自述胸口悶痛已持續20分鐘，伴隨冒冷汗與左臂痠麻感，自評疼痛程度8/10。義消到場後立即讓病人停止活動採舒適坐姿休息，執行OPQRST詢問確認症狀符合高風險表現，給氧並持續監測生命徵象，同時聯絡救護車盡速轉送至具備心導管處置能力之醫院，轉送途中症狀無明顯緩解。'
+      { scenario: '58歲男性自述胸口悶痛已持續20分鐘，伴隨冒冷汗與左臂痠麻感，自評疼痛程度8/10。義消到場後立即讓病人停止活動採舒適坐姿休息，執行OPQRST詢問確認症狀符合高風險表現，給氧並持續監測生命徵象，同時聯絡救護車盡速轉送至具備心導管處置能力之醫院，轉送途中症狀無明顯緩解。',
+        reflect: '如果病人堅持「休息一下就好，不用叫救護車」，你會如何應對？病人隨身攜帶的硝化甘油，義消可以做到什麼程度的協助，界線又在哪裡？',
+        guide: '應向病人清楚說明其症狀（持續胸痛、冒冷汗、放射痛）符合高風險表現，可能是急性冠心症，延誤就醫風險極高，仍應堅持聯絡救護車並耐心溝通，而非因病人拒絕就妥協放棄轉送。對於病人自備的硝化甘油，義消只能協助病人自行服用其本人的處方藥物並立即回報專業救護人員，絕不可自行決定給藥、調整劑量或提供非病人自己的藥物。' }
     ],
     mistakes: [
       '將胸痛誤判為單純肌肉痛或腸胃不適而延誤轉送',
@@ -16170,22 +16189,31 @@ function showDetail(id) {
     '<div class="mermaid">' + c.mindmap + '</div>');
 
   html += sectionCard(c.color, '🏥', '臨床案例',
-    c.cases.map(function (cs) { return '<p class="mb-2" style="background:#f8f9fa;border-radius:8px;padding:10px;">' + esc(cs) + '</p>'; }).join(''));
+    c.cases.map(function (cs, ci) {
+      var gid = 'case_' + c.id + '_' + ci;
+      return '<div class="mb-2" style="background:#f8f9fa;border-radius:8px;padding:10px;">' + esc(cs.scenario) + '</div>' +
+        '<div class="reflect-box">' +
+          '<div class="fw-semibold mb-1">🤔 思考與反思</div>' +
+          '<div class="mb-2">' + esc(cs.reflect) + '</div>' +
+          '<button type="button" class="btn btn-sm btn-outline-primary" data-target="' + gid + '" onclick="toggleBox(this)">查看參考方向</button>' +
+          '<div id="' + gid + '" class="reveal-box">' + esc(cs.guide) + '</div>' +
+        '</div>';
+    }).join(''));
 
   html += sectionCard(c.color, '⚠️', '常見錯誤',
     '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
 
   html += sectionCard(c.color, '📝', '測驗題',
+    '<div class="mb-2 small text-muted">點選答案立即看結果與詳解。</div>' +
     c.quiz.map(function (qz, qi) {
       var qid = 'q_' + c.id + '_' + qi;
       var opts = qz.opts.map(function (o, oi) {
-        return '<div>' + String.fromCharCode(65 + oi) + '. ' + esc(o) + (oi === qz.a ? ' <span class="text-success small">✓正解</span>' : '') + '</div>';
+        return '<button type="button" class="btn btn-outline-secondary btn-sm d-block w-100 text-start mb-1 quiz-opt" data-oi="' + oi + '" data-correct="' + qz.a + '" onclick="selectQuizOption(this)">' + String.fromCharCode(65 + oi) + '. ' + esc(o) + '</button>';
       }).join('');
-      return '<div class="quiz-q">' +
-        '<div class="fw-semibold mb-1">Q' + (qi + 1) + '. ' + esc(qz.q) + '</div>' +
-        '<div class="small text-muted mb-1">' + opts + '</div>' +
-        '<button class="btn btn-sm btn-outline-primary" onclick="toggleAns(\\'' + qid + '\\')">顯示解析</button>' +
-        '<div id="' + qid + '" class="quiz-ans">' + esc(qz.ex) + '</div>' +
+      return '<div class="quiz-q" id="' + qid + '_wrap">' +
+        '<div class="fw-semibold mb-2">Q' + (qi + 1) + '. ' + esc(qz.q) + '</div>' +
+        opts +
+        '<div id="' + qid + '_ans" class="reveal-box">' + esc(qz.ex) + '</div>' +
       '</div>';
     }).join('<hr>'));
 
@@ -16213,10 +16241,155 @@ function showList() {
   notifyResize();
 }
 
-function toggleAns(id) {
+function toggleBox(btn) {
+  var id = btn.getAttribute('data-target');
   var el = document.getElementById(id);
   if (!el) return;
   el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+  notifyResize();
+}
+
+function selectQuizOption(btn) {
+  var wrap = btn.closest('.quiz-q');
+  if (!wrap || wrap.dataset.answered) return;
+  wrap.dataset.answered = '1';
+  var correct = parseInt(btn.getAttribute('data-correct'), 10);
+  var oi = parseInt(btn.getAttribute('data-oi'), 10);
+  var btns = wrap.querySelectorAll('.quiz-opt');
+  for (var i = 0; i < btns.length; i++) {
+    var b = btns[i];
+    b.disabled = true;
+    var boi = parseInt(b.getAttribute('data-oi'), 10);
+    if (boi === correct) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-success'); }
+    else if (boi === oi) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-danger'); }
+  }
+  var ansBox = wrap.querySelector('.reveal-box');
+  if (ansBox) ansBox.style.display = 'block';
+  notifyResize();
+}
+
+var practiceState = { questions: [], idx: 0, score: 0, wrong: [] };
+
+function buildQuestionBank() {
+  var all = [];
+  CHAPTERS.forEach(function (c) {
+    c.quiz.forEach(function (qz) {
+      all.push({ chapterId: c.id, chapterTitle: c.title, color: c.color, q: qz.q, opts: qz.opts, a: qz.a, ex: qz.ex });
+    });
+  });
+  return all;
+}
+
+function shuffleArr(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+function startPractice() {
+  practiceState.questions = shuffleArr(buildQuestionBank());
+  practiceState.idx = 0;
+  practiceState.score = 0;
+  practiceState.wrong = [];
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'block';
+  renderPracticeQuestion();
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function exitPractice() {
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('listView').style.display = 'block';
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function renderPracticeQuestion() {
+  var total = practiceState.questions.length;
+  var idx = practiceState.idx;
+  var box = document.getElementById('practiceContent');
+  delete box.dataset.answered;
+  if (idx >= total) { renderPracticeResult(); return; }
+  var qz = practiceState.questions[idx];
+  var pct = Math.round((idx / total) * 100);
+  var html = '<div class="mb-2 small text-muted">第 ' + (idx + 1) + ' / ' + total + ' 題</div>' +
+    '<div class="progress mb-3" style="height:6px;"><div class="progress-bar" style="width:' + pct + '%;background:' + qz.color + ';"></div></div>' +
+    '<div class="mb-2"><span class="badge" style="background:' + qz.color + ';">第' + qz.chapterId + '章</span> <span class="small text-muted">' + esc(qz.chapterTitle) + '</span></div>' +
+    '<div class="fw-semibold mb-2">' + esc(qz.q) + '</div>';
+  html += qz.opts.map(function (o, oi) {
+    return '<button type="button" class="btn btn-outline-secondary btn-sm d-block w-100 text-start mb-1 quiz-opt" data-oi="' + oi + '" onclick="answerPractice(this)">' + String.fromCharCode(65 + oi) + '. ' + esc(o) + '</button>';
+  }).join('');
+  html += '<div id="practiceAns" class="reveal-box"></div>' +
+    '<button type="button" id="practiceNextBtn" class="btn btn-primary btn-sm mt-2" style="display:none;" onclick="nextPractice()">' + (idx + 1 < total ? '下一題' : '查看結果') + '</button>';
+  box.innerHTML = html;
+  notifyResize();
+}
+
+function answerPractice(btn) {
+  var box = document.getElementById('practiceContent');
+  if (box.dataset.answered) return;
+  box.dataset.answered = '1';
+  var qz = practiceState.questions[practiceState.idx];
+  var oi = parseInt(btn.getAttribute('data-oi'), 10);
+  var correct = qz.a;
+  var isCorrect = oi === correct;
+  if (isCorrect) practiceState.score++;
+  else practiceState.wrong.push(qz);
+  var btns = box.querySelectorAll('.quiz-opt');
+  for (var i = 0; i < btns.length; i++) {
+    var b = btns[i];
+    b.disabled = true;
+    var boi = parseInt(b.getAttribute('data-oi'), 10);
+    if (boi === correct) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-success'); }
+    else if (boi === oi) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-danger'); }
+  }
+  var ansBox = document.getElementById('practiceAns');
+  if (ansBox) {
+    ansBox.innerHTML = (isCorrect ? '✅ 答對了！' : '❌ 答錯了。') + ' ' + esc(qz.ex);
+    ansBox.style.display = 'block';
+  }
+  var nextBtn = document.getElementById('practiceNextBtn');
+  if (nextBtn) nextBtn.style.display = 'inline-block';
+  notifyResize();
+}
+
+function nextPractice() {
+  practiceState.idx++;
+  renderPracticeQuestion();
+  window.scrollTo(0, 0);
+}
+
+function renderPracticeResult() {
+  var total = practiceState.questions.length;
+  var score = practiceState.score;
+  var pct = total ? Math.round((score / total) * 100) : 0;
+  var levelMsg = pct >= 90 ? '🏆 表現優異！基礎相當扎實。' : pct >= 70 ? '👍 基礎穩固，再加強錯題部分即可。' : '📚 建議重新複習相關章節後再次練習。';
+  var box = document.getElementById('practiceContent');
+  var html = '<div class="text-center mb-3">' +
+      '<div style="font-size:2.2rem;font-weight:700;">' + score + ' / ' + total + '</div>' +
+      '<div class="text-muted mb-2">正確率 ' + pct + '%</div>' +
+      '<div class="fw-semibold">' + levelMsg + '</div>' +
+    '</div>';
+  if (practiceState.wrong.length) {
+    html += '<div class="fw-bold mb-2">錯題回顧</div>';
+    html += practiceState.wrong.map(function (qz) {
+      return '<div class="mb-2" style="background:#fff5f5;border-radius:8px;padding:10px;">' +
+        '<div class="small text-muted">第' + qz.chapterId + '章・' + esc(qz.chapterTitle) + '</div>' +
+        '<div class="fw-semibold mb-1">' + esc(qz.q) + '</div>' +
+        '<div class="small">正解：' + esc(qz.opts[qz.a]) + '</div>' +
+        '<div class="small text-muted">' + esc(qz.ex) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+  html += '<div class="d-flex gap-2 mt-3">' +
+    '<button type="button" class="btn btn-primary btn-sm" onclick="startPractice()">重新測驗</button>' +
+    '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="exitPractice()">返回章節列表</button>' +
+  '</div>';
+  box.innerHTML = html;
   notifyResize();
 }
 
