@@ -7447,8 +7447,8 @@ async function loadDashboard() {
   // ③ 背景同步職稱（不阻塞任何渲染）
   _bgSyncTitle(_su).catch(() => {});
 
-  // ④ 待辦提示
-  _renderDashTodo(_me, staleAtt || [], todayStr).catch(() => {});
+  // ④ 待辦提示（需等 members 載入完成才能判斷證照/服務證效期，避免 members 為空導致提示永遠不出現）
+  loadMembers().then(() => _renderDashTodo(_me, staleAtt || [], todayStr)).catch(() => {});
 }
 
 async function _renderDashTodo(me, attDocs, todayStr) {
