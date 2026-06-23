@@ -16355,6 +16355,11 @@ function renderZoneCard(z, zi) {
 
 function renderDashboard() {
   var box = document.getElementById('dashboardView');
+  // dashboardView 預設 CSS 為 display:none，初次載入路徑（loadProgress）從未切換顯示，需在此明確顯示，否則內容渲染完成後仍永遠不可見
+  box.style.display = 'block';
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
   var nextNode = findNextNode();
   var pct = emsState.xpForNextLevel ? Math.round((emsState.xpIntoLevel / emsState.xpForNextLevel) * 100) : 0;
   var html = '';
