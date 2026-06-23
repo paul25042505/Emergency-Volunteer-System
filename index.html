@@ -7489,7 +7489,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
   if (upcomingNoReply.length)
     items.push({ em: '📅', bg: '#e0f2fe', title: `${upcomingNoReply.length} 個會議未回覆出席`, sub: upcomingNoReply.map(d => d.title || d.date).join('、'), fn: "navTo('dutyPage');setTimeout(function(){dutyView('meeting')},400)", page: '會議登記' });
 
-  // ④ 急救憑證快到期（≤30 天）
+  // ④ 急救憑證快到期（≤30 天）／已選證照但尚未填寫效期
   const myMember = (members || []).find(m => m.name === me);
   if (myMember?.certExp) {
     const diffDays = Math.floor((new Date(myMember.certExp) - Date.now()) / 86400000);
@@ -7499,6 +7499,8 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         : `還有 ${diffDays} 天到期（${myMember.certExp}）`;
       items.push({ em: '🩺', bg: '#fee2e2', title: '急救憑證即將到期', sub, nav: 'profilePage', page: '個人資料' });
     }
+  } else if (myMember?.cert) {
+    items.push({ em: '🩺', bg: '#fee2e2', title: '尚未填寫急救憑證效期', sub: `請至個人資料補填 ${myMember.cert} 證照效期`, nav: 'profilePage', page: '個人資料' });
   }
 
   // ⑤ 義消服務證快到期（≤180 天）
