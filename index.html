@@ -11903,7 +11903,7 @@ async function loadAdminWhitelist(filterUnit) {
       editBtn.style.cssText = 'flex:1;background:white;border:1px solid var(--border);border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:var(--text-mid);font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
       editBtn.innerHTML = '<svg style="width:13px;height:13px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯';
       editBtn.onclick = function(){
-        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'');
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'');
       };
       btnRow.appendChild(editBtn);
 
@@ -11978,9 +11978,9 @@ async function adminAddWhitelist() {
   } catch(e) { alert('新增失敗：' + e.message); }
 }
 
-async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad,svcCardExp,photoUrl) {
+async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,certExp,phone,isSquadLeader,squad,svcCardExp,photoUrl,intro) {
   if (!role || role==='member') role = isAdmin ? 'admin' : (role||'member');
-  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||''; svcCardExp=svcCardExp||''; photoUrl=photoUrl||'';
+  cert=cert||''; certExp=certExp||''; title=title||''; phone=phone||''; svcCardExp=svcCardExp||''; photoUrl=photoUrl||''; intro=intro||'';
   isSquadLeader=isSquadLeader||false; squad=squad||'';
   if (isSquadLeader && role==='member') role='squadLeader';
   let extraEmails=[];
@@ -12020,7 +12020,8 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
       '</div>'+
       '<input type="url" id="aeWlPhotoUrl" value="'+photoUrl+'" placeholder="https://..." style="'+s+'">'+
     '</div>'+
-    '<div class="field"><label>手機號碼</label><input type="tel" id="aeWlPhone" value="'+phone+'" placeholder="例：0912345678" style="'+s+'"></div>';
+    '<div class="field"><label>手機號碼</label><input type="tel" id="aeWlPhone" value="'+phone+'" placeholder="例：0912345678" style="'+s+'"></div>'+
+    '<div class="field"><label>個人介紹</label><textarea id="aeWlIntro" rows="3" placeholder="簡短的自我介紹（會顯示在成員詳細資料中）" style="'+s+'resize:vertical;font-family:\'Noto Sans TC\',sans-serif;">'+intro.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</textarea></div>';
   window.aeWlExtra=extraEmails.slice();
   window.aeWlAdd=function(){window.aeWlExtra.push('');document.getElementById('aeWlExtraList').innerHTML=buildExtraHtml(window.aeWlExtra);};
   window.aeWlRemove=function(i){window.aeWlExtra.splice(i,1);document.getElementById('aeWlExtraList').innerHTML=buildExtraHtml(window.aeWlExtra);};
@@ -12049,10 +12050,11 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
     const extras=window.aeWlExtra.map(e=>e.trim().toLowerCase()).filter(e=>e&&e!==main);
     try{
       const sq=document.getElementById('aeWlSquad')?.value||'';
-      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',svcCardExp:document.getElementById('aeWlSvcCardExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||'',photoUrl:document.getElementById('aeWlPhotoUrl').value.trim()||''});
+      await fbSet(COL_WHITELIST,id,{email:main,extraEmails:extras,memberName:document.getElementById('aeWlName').value.trim(),unit:document.getElementById('aeWlUnit').value.trim(),squad:sq,title:document.getElementById('aeWlTitle').value||'',role:r,isAdmin:r==='admin',isOfficer:r==='officer',isSquadLeader:r==='squadLeader',cert:document.getElementById('aeWlCert').value||'',certExp:document.getElementById('aeWlCertExp').value||'',svcCardExp:document.getElementById('aeWlSvcCardExp').value||'',phone:document.getElementById('aeWlPhone').value.trim()||'',photoUrl:document.getElementById('aeWlPhotoUrl').value.trim()||'',intro:document.getElementById('aeWlIntro').value.trim()||''});
       document.getElementById('adminEditModal').style.display='none';
       const curUnit=document.getElementById('adminWlFilterUnit')?.value||'';
       await loadAdminWhitelist(curUnit);await loadMembers(true);
+      if (document.getElementById('memberListContainer')) filterMemberList();
     }catch(e){alert('儲存失敗：'+e.message);}
   };
   const _adm = document.getElementById('adminEditModal'); _adm.style.display = 'block'; _adm.scrollTop = 0;
@@ -14656,7 +14658,7 @@ async function initMembersPage() {
       members = docs.filter(d => d.status !== 'retired').map(d => ({
         id: d.id, name: d.memberName||'', title: d.title||'',
         squad: d.squad||'', unit: (d.unit||'').trim(), cert: d.cert||'', certExp: d.certExp||'', svcCardExp: d.svcCardExp||'',
-        role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'',
+        role: d.role||(d.isAdmin?'admin':'member'), email: d.email||'', photoUrl: d.photoUrl||'',
       })).filter(m => m.name);
     }), loadUnits()]);
   } catch(e) {
@@ -14726,17 +14728,23 @@ function filterMemberList() {
     return { bg:'#f4f6fa', fg:'#5d6d7e', av:'#7f8c8d' };
   };
 
+  const usrMl = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const canEditMl = !!(usrMl.isAdmin || usrMl.isOfficer);
+
+  const avatarHtml = (m, size, av) => m.photoUrl
+    ? '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#f4f4f4;"><img src="' + m.photoUrl + '" data-av="' + av + '" data-initial="' + (m.name||'?').slice(0,1) + '" data-size="' + size + '" style="width:100%;height:100%;object-fit:cover;" onerror="_avatarFallback(this)"></div>'
+    : '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:' + (size*0.26) + 'px;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>';
+
   const makeCard = m => {
     const t = _memberTitle(m) || '';        // 顯示完整職稱（含小隊前綴）
     const c = titleColor(t);
-    return '<div style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;">'
+    return '<div onclick="' + (canEditMl ? 'openMemberEditFromList(' + _jsStr(m.id) + ')' : '') + '" style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;' + (canEditMl ? 'cursor:pointer;' : '') + '">'
       + '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">'
-      + '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;margin:0 auto 6px;">' + (m.name||'?').slice(0,1) + '</div>'
+      + '<div style="margin:0 auto 6px;">' + avatarHtml(m, 40, c.av) + '</div>'
       + '<div style="font-size:0.82rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>'
       + '</div>'
       + '<div style="padding:6px 6px 8px;">'
       + (t ? '<div style="text-align:center;margin-bottom:4px;"><span style="font-size:0.64rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:2px 7px;font-weight:700;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + t + '</span></div>' : '')
-      + (m.role==='admin' ? '<div style="text-align:center;margin-bottom:3px;"><span style="font-size:0.6rem;background:#d6eaf8;color:#2471a3;border-radius:20px;padding:1px 6px;font-weight:600;">管理員</span></div>' : '')
       + (m.cert ? '<div style="text-align:center;"><span style="font-size:0.62rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 7px;">' + m.cert + '</span></div>' : '')
       + '</div></div>';
   };
@@ -14753,8 +14761,8 @@ function filterMemberList() {
     html += '<div style="display:flex;flex-direction:column;gap:8px;">';
     officers.forEach(m => {
       const c = titleColor(m.title);
-      html += '<div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;">'
-        + '<div style="width:40px;height:40px;border-radius:50%;background:' + c.av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>'
+      html += '<div onclick="' + (canEditMl ? 'openMemberEditFromList(' + _jsStr(m.id) + ')' : '') + '" style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;' + (canEditMl ? 'cursor:pointer;' : '') + '">'
+        + avatarHtml(m, 40, c.av)
         + '<div style="flex:1;"><div style="font-size:0.92rem;font-weight:700;">' + (m.name||'') + '</div>'
         + '<div style="font-size:0.72rem;color:' + c.fg + ';margin-top:2px;">分隊承辦人</div></div>'
         + (m.cert ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span>' : '')
@@ -14764,6 +14772,27 @@ function filterMemberList() {
   }
 
   container.innerHTML = html;
+}
+
+function _avatarFallback(img) {
+  const wrap = img.parentElement;
+  const size = parseFloat(img.dataset.size) || 40;
+  wrap.style.background = img.dataset.av || '#aab4c0';
+  wrap.style.color = 'white';
+  wrap.style.display = 'flex';
+  wrap.style.alignItems = 'center';
+  wrap.style.justifyContent = 'center';
+  wrap.style.fontSize = (size * 0.26) + 'px';
+  wrap.style.fontWeight = '800';
+  wrap.textContent = img.dataset.initial || '?';
+}
+
+async function openMemberEditFromList(id) {
+  try {
+    const d = await fbGet(COL_WHITELIST, id);
+    if (!d) { alert('找不到此成員資料'); return; }
+    adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'');
+  } catch(e) { alert('載入失敗：' + e.message); }
 }
 
 // ════════════════════════════════════════
