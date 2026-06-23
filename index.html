@@ -821,8 +821,12 @@ tr:hover td { background: #fdfcfb; }
 .idcard-peek.expanded .idcard-peek-tab { display: none; }
 .idcard-peek-badge { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; margin-top: 2px; }
 .idcard-peek-label { font-size: 0.68rem; font-weight: 700; color: #f3d77a; letter-spacing: 0.06em; margin-top: 2px; }
-.idcard-full { display: none; padding: 6px 16px 16px; gap: 10px; }
-.idcard-peek.expanded .idcard-full { display: flex; }
+.idcard-full {
+  display: flex; padding: 6px 16px 16px; gap: 10px;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.35s ease 0.05s, visibility 0.35s ease 0.05s;
+}
+.idcard-peek.expanded .idcard-full { opacity: 1; visibility: visible; }
 .idcard-kai { font-family: 'Noto Sans TC','PingFang TC','Microsoft JhengHei','Heiti TC',sans-serif; }
 #dashHourlyScroll::-webkit-scrollbar { display: none; }
 .dash-wth-cell {
