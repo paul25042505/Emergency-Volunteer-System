@@ -3879,11 +3879,10 @@ function _dlCSV(content, filename) {
   <div class="form-wrap" style="padding:0;background:#F4F6F9;">
 
     <!-- 個人資料區塊 -->
-    <div onclick="navTo('profilePage')" id="moreUserCard" style="background:white;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;cursor:pointer;border-bottom:1px solid #f0f0f0;">
+    <div id="moreUserCard" style="background:white;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;border-bottom:1px solid #f0f0f0;">
       <div id="moreAvatar" style="width:80px;height:80px;border-radius:50%;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin-bottom:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);overflow:hidden;">?</div>
       <div id="moreName" style="font-size:1.15rem;font-weight:800;color:var(--text);letter-spacing:0.03em;">—</div>
       <div id="moreTitle" style="font-size:0.78rem;color:var(--text-light);margin-top:4px;"></div>
-      <div style="font-size:0.7rem;color:#3498db;margin-top:6px;">編輯個人資料 ›</div>
     </div>
 
     <!-- 快捷圖示列 -->
@@ -4021,6 +4020,13 @@ function _dlCSV(content, filename) {
     <!-- 帳號 -->
     <div style="background:white;margin-bottom:12px;">
       <div style="padding:10px 18px 4px;font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.08em;">帳號</div>
+      <button onclick="navTo('profilePage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;border-top:1px solid #f5f5f5;cursor:pointer;text-align:left;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">個人資料</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">編輯姓名、電話、Email 等資料</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
       <button onclick="if(confirm('確定要登出？'))logout()" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;border-top:1px solid #f5f5f5;cursor:pointer;text-align:left;">
         <div style="width:36px;height:36px;border-radius:10px;background:#fff1f2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
