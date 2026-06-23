@@ -2985,11 +2985,17 @@ function _dlCSV(content, filename) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">年份</div>
-          <select id="gcYear" onchange="loadGongchaStats()" style="width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:white;padding:10px 12px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;outline:none;text-align:center;"></select>
+          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="gcYearDisplay">—</div>
+            <select id="gcYear" onchange="document.getElementById('gcYearDisplay').textContent=this.options[this.selectedIndex].text;loadGongchaStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"></select>
+          </div>
         </div>
         <div>
           <div style="font-size:0.58rem;color:rgba(255,255,255,0.55);font-weight:600;letter-spacing:0.1em;margin-bottom:5px;text-align:center;">分隊別</div>
-          <select id="gcUnit" onchange="loadGongchaStats()" style="width:100%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:white;padding:10px 12px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;outline:none;text-align:center;"><option value="" style="color:#333;">全部分隊</option></select>
+          <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:12px;height:42px;display:flex;align-items:center;justify-content:center;position:relative;">
+            <div style="font-size:0.82rem;font-weight:700;color:white;line-height:1;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;text-align:center;" id="gcUnitDisplay">全部分隊</div>
+            <select id="gcUnit" onchange="document.getElementById('gcUnitDisplay').textContent=this.value||'全部分隊';loadGongchaStats();" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px;"><option value="" style="color:#333;">全部分隊</option></select>
+          </div>
         </div>
       </div>
       <!-- KPI strip (populated by loadGongchaStats) -->
@@ -20931,6 +20937,8 @@ async function loadGongchaStats() {
       if (y === curY) o.selected = true;
       yrSel.appendChild(o);
     }
+    const yrDisp = document.getElementById('gcYearDisplay');
+    if (yrDisp) yrDisp.textContent = yrSel.options[yrSel.selectedIndex].text;
   }
 
   // ── populate unit select ──────────────────────────────────────────────────
