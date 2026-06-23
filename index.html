@@ -14617,22 +14617,8 @@ async function _runAutoNotifications() {
   const sent     = (key) => sentKeys.has(key);
   const markSent = (key) => fbAdd(COL_AUTO_NOTIF_LOG, { key, sentAt: now.toLocaleString('sv').replace('T',' ') }).catch(() => {});
 
-  // ── 1. 明日排班提醒（每天 20:00–20:09）
-  if (hour === 20 && minute < 10) {
-    const tomorrowDate = new Date(now); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrow = tomorrowDate.toLocaleDateString('sv');
-    const key = `duty-tomorrow-${tomorrow}`;
-    if (!sent(key)) {
-      const dutyDocs = await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
-      const tmDuty   = dutyDocs.filter(d => d.date === tomorrow);
-      if (tmDuty.length) {
-        const names = [...new Set(tmDuty.map(d => d.memberName))];
-        const body  = tmDuty.map(d => `${d.memberName} ${d.start}–${d.end}`).join('、');
-        const ok = await _autoSendPush({ title: `📋 明日備勤提醒（${tomorrow}）`, body: `明日共 ${names.length} 位成員有備勤：${body}`, target: 'all', targetMembers: names, key, source: 'auto-duty-tomorrow' });
-        if (ok) await markSent(key); // 失敗時不標記已發送，留給下次（10分鐘後）重試
-      }
-    }
-  }
+  // 明日排班提醒已改由伺服器端 scheduleDutyTomorrowReminder（functions/index.js）
+  // 逐一推播給當天有排班的人，不再發公告；此處不再重複實作。
 
   // ── 2. 未簽退提醒（班次結束後 1 小時內，10 分鐘視窗）
   {
