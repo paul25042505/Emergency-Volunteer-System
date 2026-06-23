@@ -16310,15 +16310,23 @@ function findNextNode() {
 
 function loadProgress() {
   if (!parent.emsAcademyApi) { renderDashboard(); notifyResize(); return; }
-  parent.emsAcademyApi.getProgress().then(function (p) {
-    emsState.xp = p.xp || 0;
-    emsState.level = p.level || 1;
-    emsState.xpIntoLevel = p.xpIntoLevel || 0;
-    emsState.xpForNextLevel = p.xpForNextLevel || 100;
-    emsState.completedNodes = p.completedNodes || [];
+  var done = false;
+  var finish = function (p) {
+    if (done) return;
+    done = true;
+    if (p) {
+      emsState.xp = p.xp || 0;
+      emsState.level = p.level || 1;
+      emsState.xpIntoLevel = p.xpIntoLevel || 0;
+      emsState.xpForNextLevel = p.xpForNextLevel || 100;
+      emsState.completedNodes = p.completedNodes || [];
+    }
     renderDashboard();
     notifyResize();
-  }).catch(function () { renderDashboard(); notifyResize(); });
+  };
+  // Firebase 載入緩慢或失敗時不應讓畫面永遠空白，逾時即以預設進度先顯示儀表板
+  setTimeout(function () { finish(null); }, 4000);
+  parent.emsAcademyApi.getProgress().then(finish).catch(function () { finish(null); });
 }
 
 function renderZoneCard(z, zi) {
