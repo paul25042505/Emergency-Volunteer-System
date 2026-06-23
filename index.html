@@ -14941,6 +14941,10 @@ async function openMemberProfile(id) {
 
     document.getElementById('mpHeader').style.background = 'linear-gradient(180deg,' + c.bg + ' 0%, white 100%)';
     document.getElementById('mpAvatar').innerHTML = _avatarHtml(m, 96, c.av);
+    if (m.photoUrl) {
+      const mpImg = document.querySelector('#mpAvatar img');
+      if (mpImg) { mpImg.style.cursor = 'pointer'; mpImg.onclick = function() { openPhotoViewer(m.photoUrl); }; }
+    }
     document.getElementById('mpName').textContent = m.name || '';
     document.getElementById('mpBadges').innerHTML =
       (m.unit ? '<span style="font-size:0.76rem;background:#f4f6fa;color:#5d6d7e;border-radius:20px;padding:4px 13px;font-weight:600;">' + m.unit + '</span>' : '')
@@ -14979,6 +14983,15 @@ async function openMemberProfile(id) {
 function closeMemberProfile() {
   const modal = document.getElementById('memberProfileModal');
   if (modal) modal.style.display = 'none';
+}
+
+function openPhotoViewer(url) {
+  if (!url) return;
+  document.getElementById('photoViewerImg').src = url;
+  document.getElementById('photoViewerModal').style.display = 'flex';
+}
+function closePhotoViewer() {
+  document.getElementById('photoViewerModal').style.display = 'none';
 }
 
 // ════════════════════════════════════════
@@ -22335,6 +22348,12 @@ function showTempPassErr(msg) {
       </div>
     </div>
   </div>
+</div>
+
+<!-- 頭像全圖檢視 Modal -->
+<div id="photoViewerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9600;align-items:center;justify-content:center;" onclick="closePhotoViewer()">
+  <img id="photoViewerImg" style="max-width:92vw;max-height:85vh;border-radius:8px;object-fit:contain;">
+  <button onclick="closePhotoViewer()" style="position:absolute;top:max(env(safe-area-inset-top,0px),16px);right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;color:white;font-size:1.2rem;cursor:pointer;">✕</button>
 </div>
 
 <!-- 服務時數里程碑 慶祝 Modal -->
