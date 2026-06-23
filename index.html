@@ -16001,6 +16001,42 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .ems-log-row{display:flex;align-items:center;gap:8px;background:var(--ems-surface);border:1px solid var(--ems-border);border-left:3px solid var(--ems-red);border-radius:var(--ems-radius-sm);padding:8px 10px;font-size:.82rem;}
   .ems-log-tag{font-family:var(--ems-font-mono);font-weight:700;font-size:.7rem;color:var(--ems-text-light);flex-shrink:0;}
 
+  /* ── M. 模擬考場 Test Station ── */
+  .ems-station-card{background:var(--ems-surface);border:1px solid var(--ems-border);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius);padding:12px 14px;cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  .ems-station-card:active{transform:scale(.99);}
+  .ems-station-card.disabled{opacity:.5;cursor:not-allowed;}
+  .ems-station-card .st-title{font-weight:700;}
+  .ems-station-card .st-meta{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-text-light);margin-top:4px;}
+  .ems-timer{display:inline-block;background:#0E0F12;color:var(--ems-red);font-family:var(--ems-font-mono);font-weight:700;font-size:1rem;padding:4px 10px;border-radius:var(--ems-radius-sm);letter-spacing:.05em;}
+  .ems-timer.low{animation:ems-timerblink 1.1s var(--ems-ease) infinite;}
+  @keyframes ems-timerblink{0%,100%{opacity:1;}50%{opacity:.45;}}
+  .ems-passline-wrap{position:relative;height:14px;border-radius:var(--ems-radius-sm);background:var(--ems-border);overflow:visible;margin:10px 0 22px;}
+  .ems-passline-fill{height:100%;border-radius:var(--ems-radius-sm);background:var(--ems-ok);transition:width .3s var(--ems-ease);}
+  .ems-passline-fill.fail{background:var(--ems-red);}
+  .ems-passline-mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ems-text);}
+  .ems-passline-mark::after{content:'及格線';position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--ems-text-light);white-space:nowrap;}
+  .ems-chbar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.78rem;}
+  .ems-chbar-track{flex:1;height:8px;border-radius:var(--ems-radius-sm);background:var(--ems-border);overflow:hidden;}
+  .ems-chbar-fill{height:100%;}
+  .ems-caserow{display:flex;flex-direction:column;gap:4px;border-left:4px solid var(--ems-red);background:var(--ems-surface);border:1px solid var(--ems-border);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-bottom:8px;}
+  .ems-caserow .cr-meta{font-family:var(--ems-font-mono);font-size:.68rem;color:var(--ems-text-light);}
+
+  /* ── N. 情境模擬中心 Scenario Simulation ── */
+  .ems-cad-card{background:#fff;border:2px solid var(--ems-red);border-radius:var(--ems-radius);padding:16px;color:var(--ems-text);}
+  .ems-cad-card .cad-id{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-red);letter-spacing:.05em;}
+  .ems-cad-card .cad-time{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-text-light);}
+  .ems-monitor{background:#0E0F12;border-radius:var(--ems-radius);padding:10px 14px;display:flex;justify-content:space-between;font-family:var(--ems-font-mono);color:#fff;}
+  .ems-monitor .m-item{text-align:center;flex:1;}
+  .ems-monitor .m-label{font-size:.58rem;opacity:.6;text-transform:uppercase;}
+  .ems-monitor .m-val{font-size:1.1rem;font-weight:700;}
+  .ems-monitor .m-val.ok{color:#39FF6A;}
+  .ems-monitor .m-val.caution{color:#FFD23F;}
+  .ems-monitor .m-val.crit{color:#FF4D4D;}
+  .ems-sim-outcome{border-radius:var(--ems-radius);padding:14px;display:flex;align-items:center;gap:10px;}
+  .ems-sim-outcome.ok{background:rgba(31,138,76,.08);border:1px solid var(--ems-ok);}
+  .ems-sim-outcome.caution{background:rgba(180,83,9,.08);border:1px solid var(--ems-caution);}
+  .ems-sim-outcome .tag{font-family:var(--ems-font-mono);font-weight:800;font-size:.85rem;letter-spacing:.05em;}
+
   /* ── Bootstrap 5.3 元件覆寫 ── */
   .btn-primary{background:var(--ems-red);border-color:var(--ems-red);}
   .btn-primary:hover{background:var(--ems-red-dark);border-color:var(--ems-red-dark);}
@@ -16021,7 +16057,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .reflect-box{background:var(--ems-blue-faint);border:1.5px dashed var(--ems-blue);border-radius:var(--ems-radius);padding:12px;margin-top:8px;}
   .reveal-box{display:none;background:var(--ems-blue-faint);border-radius:var(--ems-radius);padding:10px;margin-top:6px;font-size:0.88rem;}
   .quiz-opt:disabled{opacity:0.85;}
-  #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView{display:none;}
+  #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView,#scenarioView{display:none;}
   .mermaid{overflow-x:auto;}
 </style>
 </head>
@@ -16070,6 +16106,14 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
     <div id="achievementView">
       <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="showDashboard()">← 返回首頁</button>
       <div id="achievementContent"></div>
+    </div>
+  </div>
+
+  <div class="ems-view-wrap">
+    <div class="ems-map-watermark"></div>
+    <div id="scenarioView">
+      <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="showDashboard()">← 返回首頁</button>
+      <div id="scenarioContent"></div>
     </div>
   </div>
   </div>
@@ -16354,13 +16398,13 @@ var ZONES = [
   { icon: '🚑', title: '創傷中心', desc: '頭胸腹創傷・骨折・脊椎損傷・燒燙傷', color: '#fd7e14', status: 'soon' },
   { icon: '👶', title: '特殊病患中心', desc: '小兒・孕婦・長者・精神行為急症', color: '#d63384', status: 'soon' },
   { icon: '🧯', title: '特殊事件中心', desc: 'START檢傷・大量傷病患・HAZMAT', color: '#20c997', status: 'soon' },
-  { icon: '🎭', title: '情境模擬中心', desc: '分支劇情・OHCA／創傷／急產模擬', color: '#6610f2', status: 'soon' },
-  { icon: '🏆', title: '模擬考場', desc: 'EMT-1／EMT-2／義消題庫・錯題本', color: '#dc3545', status: 'soon' }
+  { icon: '🎭', title: '情境模擬中心', desc: '分支劇情模擬・OHCA案例上線中', color: '#6610f2', status: 'active', route: 'scenario' },
+  { icon: '🏆', title: '模擬考場', desc: '綜合題庫・分區題庫・錯題本複習', color: '#dc3545', status: 'active', route: 'examhall' }
 ];
 
 var emsState = {
   xp: 0, level: 1, xpIntoLevel: 0, xpForNextLevel: 100,
-  completedNodes: [], memberName: '',
+  completedNodes: [], completedScenarios: [], wrongQuestions: [], examHistory: {}, memberName: '',
   curZoneIdx: null, curChapter: null, slides: [], slideIdx: 0,
   nodeAnswered: {}, _completeCalled: false
 };
@@ -16468,6 +16512,7 @@ function isNodeCompleted(id) {
 }
 
 function isZoneUnlocked(zi) {
+  if (ZONES[zi] && ZONES[zi].route) return true;
   var idxs = activeZoneIdxs();
   var pos = idxs.indexOf(zi);
   if (pos <= 0) return true;
@@ -16509,6 +16554,9 @@ function loadProgress() {
       emsState.xpIntoLevel = p.xpIntoLevel || 0;
       emsState.xpForNextLevel = p.xpForNextLevel || 100;
       emsState.completedNodes = p.completedNodes || [];
+      emsState.completedScenarios = p.completedScenarios || [];
+      emsState.wrongQuestions = p.wrongQuestions || [];
+      emsState.examHistory = p.examHistory || {};
       emsState.memberName = p.name || '';
     }
     updateEmsCmdBar();
@@ -16540,6 +16588,14 @@ function renderZoneCard(z, zi) {
       '<div style="font-size:1.6rem;">' + z.icon + '</div>' +
       '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
       '<span class="badge bg-secondary mt-1">敬請期待</span>' +
+    '</div></div>';
+  }
+  if (z.route) {
+    var routeFn = z.route === 'scenario' ? 'showScenarioCenter()' : 'showTestStation()';
+    return '<div class="col-6"><div class="ems-zone-tile h-100" style="--zone-color:' + z.color + ';" onclick="' + routeFn + '">' +
+      '<div style="font-size:1.6rem;">' + z.icon + '</div>' +
+      '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
+      '<div class="text-muted" style="font-size:0.65rem;">點擊進入</div>' +
     '</div></div>';
   }
   var nodes = flatNodesForZone(z);
@@ -16576,7 +16632,7 @@ function renderDashboard() {
             '<div class="ems-section-label">OPERATOR STATUS</div>' +
             '<div class="d-flex gap-2">' +
               '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showAchievements()">🏆 我的成就</button>' +
-              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="startPractice()">📝 題庫練習</button>' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showTestStation()">📝 題庫練習</button>' +
             '</div>' +
           '</div>';
   html += '<div class="ems-status-panel mb-3">' +
@@ -16619,6 +16675,7 @@ function showDashboard() {
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
   updateEmsCmdBar();
   renderDashboard();
@@ -16628,12 +16685,13 @@ function showDashboard() {
 
 function showZone(zi) {
   var z = ZONES[zi];
-  if (!z || z.status === 'soon' || !isZoneUnlocked(zi)) return;
+  if (!z || z.status === 'soon' || z.route || !isZoneUnlocked(zi)) return;
   emsState.curZoneIdx = zi;
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
   updateEmsCmdBar(z.title);
   renderZoneContent();
@@ -16646,6 +16704,7 @@ function showAchievements() {
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'block';
   updateEmsCmdBar('我的成就');
   renderAchievements();
@@ -16762,6 +16821,7 @@ function showNode(chapterId) {
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'block';
   updateEmsCmdBar(c.title);
   renderSlide();
@@ -16909,16 +16969,28 @@ function completeNode() {
   notifyResize();
 }
 
-var practiceState = { questions: [], idx: 0, score: 0, wrong: [] };
+var EMS_EXAM_PASS_PCT = 70;
+var EMS_EXAM_SEC_PER_Q = 45;
+var practiceState = { categoryKey: null, categoryLabel: '', questions: [], idx: 0, score: 0, wrong: [], answered: [], secLeft: 0, timer: null };
 
-function buildQuestionBank() {
+function lookupQuizItem(chapterId, qi) {
+  var c = CHAPTERS.filter(function (x) { return x.id === chapterId; })[0];
+  if (!c || !c.quiz[qi]) return null;
+  var qz = c.quiz[qi];
+  return { chapterId: c.id, chapterTitle: c.title, color: c.color, qi: qi, q: qz.q, opts: qz.opts, a: qz.a, ex: qz.ex };
+}
+
+function buildQuestionBank(chapterIds) {
   var all = [];
   CHAPTERS.forEach(function (c) {
-    c.quiz.forEach(function (qz) {
-      all.push({ chapterId: c.id, chapterTitle: c.title, color: c.color, q: qz.q, opts: qz.opts, a: qz.a, ex: qz.ex });
-    });
+    if (chapterIds && chapterIds.indexOf(c.id) === -1) return;
+    c.quiz.forEach(function (qz, i) { all.push(lookupQuizItem(c.id, i)); });
   });
   return all;
+}
+
+function buildWrongQuestionBank() {
+  return emsState.wrongQuestions.map(function (w) { return lookupQuizItem(w.chapterId, w.qi); }).filter(Boolean);
 }
 
 function shuffleArr(arr) {
@@ -16929,23 +17001,96 @@ function shuffleArr(arr) {
   return arr;
 }
 
-function startPractice() {
-  practiceState.questions = shuffleArr(buildQuestionBank());
-  practiceState.idx = 0;
-  practiceState.score = 0;
-  practiceState.wrong = [];
+function testStationCategories() {
+  var cats = [];
+  cats.push({ key: 'all', label: '綜合題庫', icon: '📚', count: buildQuestionBank().length });
+  activeZoneIdxs().forEach(function (zi) {
+    var z = ZONES[zi];
+    if (z.route) return;
+    var nodes = flatNodesForZone(z);
+    var count = nodes.reduce(function (n, c) { return n + c.quiz.length; }, 0);
+    if (count > 0) cats.push({ key: 'zone-' + zi, label: z.title, icon: z.icon, count: count, chapterIds: z.chapterIds });
+  });
+  cats.push({ key: 'wrong', label: '錯題本複習', icon: '📖', count: emsState.wrongQuestions.length });
+  return cats;
+}
+
+function showTestStation() {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
   updateEmsCmdBar('模擬考場');
+  renderTestStation();
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function renderTestStation() {
+  var box = document.getElementById('practiceContent');
+  var html = '<div class="ems-section-label mb-2">TEST STATION 題庫選擇</div>';
+  html += '<div class="row g-2 mb-3">' + testStationCategories().map(function (cat) {
+    var hist = emsState.examHistory[cat.key];
+    var disabled = cat.count === 0;
+    var meta = (hist ? ('上次成績 ' + hist.score + '/' + hist.total + '（' + hist.pct + '%）') : '尚無紀錄') + ' ・ 及格線 ' + EMS_EXAM_PASS_PCT + '%';
+    var onclick = disabled ? "emsToast('目前沒有可用題目')" : "startExam('" + cat.key + "')";
+    return '<div class="col-12"><div class="ems-station-card' + (disabled ? ' disabled' : '') + '" onclick="' + onclick + '">' +
+        '<div class="d-flex align-items-center gap-2">' +
+          '<div style="font-size:1.3rem;">' + cat.icon + '</div>' +
+          '<div class="flex-grow-1"><div class="st-title">' + esc(cat.label) + '</div><div class="st-meta">' + cat.count + ' 題 ・ ' + esc(meta) + '</div></div>' +
+        '</div>' +
+      '</div></div>';
+  }).join('') + '</div>';
+  box.innerHTML = html;
+  notifyResize();
+}
+
+function startExam(categoryKey) {
+  var cats = testStationCategories();
+  var cat = cats.filter(function (c) { return c.key === categoryKey; })[0];
+  if (!cat || cat.count === 0) { emsToast('目前沒有可用題目'); return; }
+  var pool = categoryKey === 'all' ? buildQuestionBank()
+    : categoryKey === 'wrong' ? buildWrongQuestionBank()
+    : buildQuestionBank(cat.chapterIds);
+  practiceState.categoryKey = categoryKey;
+  practiceState.categoryLabel = cat.label;
+  practiceState.questions = shuffleArr(pool);
+  practiceState.idx = 0;
+  practiceState.score = 0;
+  practiceState.wrong = [];
+  practiceState.answered = [];
+  practiceState.secLeft = practiceState.questions.length * EMS_EXAM_SEC_PER_Q;
+  clearInterval(practiceState.timer);
+  practiceState.timer = setInterval(tickExamTimer, 1000);
   renderPracticeQuestion();
   window.scrollTo(0, 0);
   notifyResize();
 }
 
+function tickExamTimer() {
+  practiceState.secLeft--;
+  var t = document.getElementById('examTimer');
+  if (t) {
+    t.textContent = formatExamTime(practiceState.secLeft);
+    t.classList.toggle('low', practiceState.secLeft <= 60);
+  }
+  if (practiceState.secLeft <= 0) {
+    clearInterval(practiceState.timer);
+    practiceState.idx = practiceState.questions.length;
+    renderPracticeResult();
+  }
+}
+
+function formatExamTime(sec) {
+  sec = Math.max(0, sec);
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
 function exitPractice() {
+  clearInterval(practiceState.timer);
   document.getElementById('practiceView').style.display = 'none';
   showDashboard();
 }
@@ -16957,15 +17102,17 @@ function renderPracticeQuestion() {
   delete box.dataset.answered;
   if (idx >= total) { renderPracticeResult(); return; }
   var qz = practiceState.questions[idx];
-  var pct = Math.round((idx / total) * 100);
-  var html = '<div class="mb-2 small text-muted">第 ' + (idx + 1) + ' / ' + total + ' 題</div>' +
-    '<div class="progress mb-3" style="height:6px;"><div class="progress-bar" style="width:' + pct + '%;background:' + qz.color + ';"></div></div>' +
+  var html = '<div class="d-flex align-items-center justify-content-between mb-2">' +
+      '<span class="ems-timer" id="examTimer">' + formatExamTime(practiceState.secLeft) + '</span>' +
+      '<span class="small text-muted">第 ' + (idx + 1) + ' / ' + total + ' 題</span>' +
+    '</div>' +
+    '<div class="progress mb-3" style="height:6px;"><div class="progress-bar" style="width:' + Math.round((idx / total) * 100) + '%;"></div></div>' +
     '<div class="mb-2"><span class="badge" style="background:' + qz.color + ';">第' + qz.chapterId + '章</span> <span class="small text-muted">' + esc(qz.chapterTitle) + '</span></div>' +
     '<div class="fw-semibold mb-2">' + esc(qz.q) + '</div>';
   html += qz.opts.map(function (o, oi) {
-    return '<button type="button" class="btn btn-outline-secondary btn-sm d-block w-100 text-start mb-1 quiz-opt" data-oi="' + oi + '" onclick="answerPractice(this)">' + String.fromCharCode(65 + oi) + '. ' + esc(o) + '</button>';
+    return '<button type="button" class="ems-quiz-opt" data-oi="' + oi + '" onclick="answerPractice(this)"><span class="opt-tag">' + String.fromCharCode(65 + oi) + '</span><span>' + esc(o) + '</span></button>';
   }).join('');
-  html += '<div id="practiceAns" class="reveal-box"></div>' +
+  html += '<div id="practiceAns" class="ems-answer-card"><span class="ex-tag">EX.</span><span id="practiceAnsText"></span></div>' +
     '<button type="button" id="practiceNextBtn" class="btn btn-primary btn-sm mt-2" style="display:none;" onclick="nextPractice()">' + (idx + 1 < total ? '下一題' : '查看結果') + '</button>';
   box.innerHTML = html;
   notifyResize();
@@ -16979,21 +17126,21 @@ function answerPractice(btn) {
   var oi = parseInt(btn.getAttribute('data-oi'), 10);
   var correct = qz.a;
   var isCorrect = oi === correct;
+  practiceState.answered.push({ chapterId: qz.chapterId, qi: qz.qi, correct: isCorrect });
   if (isCorrect) practiceState.score++;
-  else practiceState.wrong.push(qz);
-  var btns = box.querySelectorAll('.quiz-opt');
+  else { qz._wrongOpt = oi; practiceState.wrong.push(qz); }
+  var btns = box.querySelectorAll('.ems-quiz-opt');
   for (var i = 0; i < btns.length; i++) {
     var b = btns[i];
     b.disabled = true;
     var boi = parseInt(b.getAttribute('data-oi'), 10);
-    if (boi === correct) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-success'); }
-    else if (boi === oi) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-danger'); }
+    if (boi === correct) b.classList.add('correct');
+    else if (boi === oi) b.classList.add('wrong');
   }
+  var ansText = document.getElementById('practiceAnsText');
+  if (ansText) ansText.textContent = esc(qz.ex);
   var ansBox = document.getElementById('practiceAns');
-  if (ansBox) {
-    ansBox.innerHTML = (isCorrect ? '✅ 答對了！' : '❌ 答錯了。') + ' ' + esc(qz.ex);
-    ansBox.style.display = 'block';
-  }
+  if (ansBox) ansBox.style.display = 'block';
   var nextBtn = document.getElementById('practiceNextBtn');
   if (nextBtn) nextBtn.style.display = 'inline-block';
   notifyResize();
@@ -17006,33 +17153,68 @@ function nextPractice() {
 }
 
 function renderPracticeResult() {
+  clearInterval(practiceState.timer);
   var total = practiceState.questions.length;
   var score = practiceState.score;
   var pct = total ? Math.round((score / total) * 100) : 0;
-  var levelMsg = pct >= 90 ? '🏆 表現優異！基礎相當扎實。' : pct >= 70 ? '👍 基礎穩固，再加強錯題部分即可。' : '📚 建議重新複習相關章節後再次練習。';
+  var passed = pct >= EMS_EXAM_PASS_PCT;
+  var levelMsg = passed ? '🏆 通過及格線！基礎相當扎實。' : '📚 尚未達及格線，建議重新複習相關章節後再次測驗。';
   var box = document.getElementById('practiceContent');
-  var html = '<div class="text-center mb-3">' +
+  var html = '<div class="text-center mb-2">' +
       '<div style="font-size:2.2rem;font-weight:700;">' + score + ' / ' + total + '</div>' +
       '<div class="text-muted mb-2">正確率 ' + pct + '%</div>' +
       '<div class="fw-semibold">' + levelMsg + '</div>' +
     '</div>';
+  html += '<div class="ems-passline-wrap"><div class="ems-passline-fill' + (passed ? '' : ' fail') + '" style="width:' + pct + '%;"></div><div class="ems-passline-mark" style="left:' + EMS_EXAM_PASS_PCT + '%;"></div></div>';
+
+  var byChapter = {};
+  practiceState.answered.forEach(function (a) {
+    var c = CHAPTERS.filter(function (x) { return x.id === a.chapterId; })[0];
+    if (!c) return;
+    if (!byChapter[c.id]) byChapter[c.id] = { title: c.title, color: c.color, correct: 0, total: 0 };
+    byChapter[c.id].total++;
+    if (a.correct) byChapter[c.id].correct++;
+  });
+  var chKeys = Object.keys(byChapter);
+  if (chKeys.length) {
+    html += '<div class="ems-section-label mb-2">各章節正確率</div>';
+    html += chKeys.map(function (k) {
+      var ch = byChapter[k];
+      var chPct = Math.round((ch.correct / ch.total) * 100);
+      return '<div class="ems-chbar-row"><span style="flex:0 0 92px;" class="text-muted">' + esc(ch.title) + '</span>' +
+        '<div class="ems-chbar-track"><div class="ems-chbar-fill" style="width:' + chPct + '%;background:' + ch.color + ';"></div></div>' +
+        '<span style="flex:0 0 36px;text-align:right;">' + chPct + '%</span></div>';
+    }).join('');
+  }
+
   if (practiceState.wrong.length) {
-    html += '<div class="fw-bold mb-2">錯題回顧</div>';
+    html += '<div class="ems-section-label mb-2 mt-3">錯題回顧（已自動加入錯題本）</div>';
     html += practiceState.wrong.map(function (qz) {
-      return '<div class="mb-2" style="background:#fff5f5;border-radius:8px;padding:10px;">' +
-        '<div class="small text-muted">第' + qz.chapterId + '章・' + esc(qz.chapterTitle) + '</div>' +
-        '<div class="fw-semibold mb-1">' + esc(qz.q) + '</div>' +
+      return '<div class="ems-caserow">' +
+        '<div class="cr-meta">第' + qz.chapterId + '章・' + esc(qz.chapterTitle) + '</div>' +
+        '<div class="fw-semibold">' + esc(qz.q) + '</div>' +
         '<div class="small">正解：' + esc(qz.opts[qz.a]) + '</div>' +
         '<div class="small text-muted">' + esc(qz.ex) + '</div>' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary mt-1" style="align-self:flex-start;" onclick="exitPractice();showNode(' + qz.chapterId + ')">回到該章節複習</button>' +
       '</div>';
     }).join('');
   }
+
   html += '<div class="d-flex gap-2 mt-3">' +
-    '<button type="button" class="btn btn-primary btn-sm" onclick="startPractice()">重新測驗</button>' +
-    '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="exitPractice()">返回首頁</button>' +
+    '<button type="button" class="btn btn-primary btn-sm" onclick="' + "startExam('" + practiceState.categoryKey + "')" + '">重新測驗</button>' +
+    '<button type="button" class="btn btn-outline-secondary btn-sm" onclick="showTestStation()">返回題庫選擇</button>' +
   '</div>';
   box.innerHTML = html;
   notifyResize();
+
+  if (parent.emsAcademyApi) {
+    var wrongItems = practiceState.wrong.map(function (qz) { return { chapterId: qz.chapterId, qi: qz.qi, wrongOpt: qz._wrongOpt }; });
+    var correctedItems = practiceState.answered.filter(function (a) { return a.correct; }).map(function (a) { return { chapterId: a.chapterId, qi: a.qi }; });
+    parent.emsAcademyApi.saveExamResult(practiceState.categoryKey, score, total, wrongItems, correctedItems).then(function (r) {
+      emsState.wrongQuestions = r.wrongQuestions || emsState.wrongQuestions;
+      emsState.examHistory = r.examHistory || emsState.examHistory;
+    }).catch(function () {});
+  }
 }
 
 function boot() {
@@ -17081,7 +17263,7 @@ window.emsAcademyApi = {
       } catch (e) { /* 離線或讀取失敗時，視為新進度 */ }
     }
     const lvInfo = emsComputeLevel(data.xp || 0);
-    return { xp: data.xp || 0, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes: data.completedNodes || [], name: name };
+    return { xp: data.xp || 0, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes: data.completedNodes || [], completedScenarios: data.completedScenarios || [], wrongQuestions: data.wrongQuestions || [], examHistory: data.examHistory || {}, name: name };
   },
   async saveProgress(nodeId, xpGain) {
     const name = _emsCurrentMemberName();
@@ -17099,6 +17281,45 @@ window.emsAcademyApi = {
     const lvInfo = emsComputeLevel(xp);
     await ref.set({ memberName: name, xp, level: lvInfo.level, completedNodes, updatedAt: new Date().toISOString() }, { merge: true });
     return { xp, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes };
+  },
+  async saveScenarioXp(scenarioId, xpGain) {
+    const name = _emsCurrentMemberName();
+    if (!name) return window.emsAcademyApi.getProgress();
+    await ensureFirebase();
+    const ref = _fbDB.collection(COL_EMS_PROGRESS).doc(name);
+    const snap = await ref.get();
+    const data = snap.exists ? snap.data() : {};
+    const completedScenarios = Array.isArray(data.completedScenarios) ? data.completedScenarios.slice() : [];
+    let xp = data.xp || 0;
+    if (completedScenarios.indexOf(scenarioId) === -1) {
+      completedScenarios.push(scenarioId);
+      xp += xpGain;
+    }
+    const lvInfo = emsComputeLevel(xp);
+    await ref.set({ memberName: name, xp, level: lvInfo.level, completedScenarios, updatedAt: new Date().toISOString() }, { merge: true });
+    return { xp, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedScenarios };
+  },
+  async saveExamResult(categoryKey, score, total, wrongItems, correctedItems) {
+    const name = _emsCurrentMemberName();
+    if (!name) return { wrongQuestions: [], examHistory: {} };
+    await ensureFirebase();
+    const ref = _fbDB.collection(COL_EMS_PROGRESS).doc(name);
+    const snap = await ref.get();
+    const data = snap.exists ? snap.data() : {};
+    let wrongQuestions = Array.isArray(data.wrongQuestions) ? data.wrongQuestions.slice() : [];
+    const now = new Date().toISOString();
+    (wrongItems || []).forEach((it) => {
+      const idx = wrongQuestions.findIndex((w) => w.chapterId === it.chapterId && w.qi === it.qi);
+      if (idx === -1) wrongQuestions.push({ chapterId: it.chapterId, qi: it.qi, wrongCount: 1, wrongOpt: it.wrongOpt, lastWrongAt: now });
+      else { wrongQuestions[idx].wrongCount = (wrongQuestions[idx].wrongCount || 0) + 1; wrongQuestions[idx].wrongOpt = it.wrongOpt; wrongQuestions[idx].lastWrongAt = now; }
+    });
+    (correctedItems || []).forEach((it) => {
+      wrongQuestions = wrongQuestions.filter((w) => !(w.chapterId === it.chapterId && w.qi === it.qi));
+    });
+    const examHistory = Object.assign({}, data.examHistory || {});
+    examHistory[categoryKey] = { score, total, pct: total ? Math.round((score / total) * 100) : 0, at: now };
+    await ref.set({ memberName: name, wrongQuestions, examHistory, updatedAt: now }, { merge: true });
+    return { wrongQuestions, examHistory };
   }
 };
 
