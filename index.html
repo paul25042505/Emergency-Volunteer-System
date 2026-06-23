@@ -6018,23 +6018,42 @@ function initQuickLogin() {
   if (!container) return;
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]'); } catch(e) {}
-  if (stored.length === 0) return;
+  const other = document.getElementById('quickLoginOther');
+  const gs    = document.getElementById('googleLoginSection');
+  const alt   = document.getElementById('loginAltSection');
+  if (stored.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    if (other) other.style.display = 'none';
+    if (gs) gs.style.display = '';
+    if (alt) alt.style.display = '';
+    return;
+  }
   const colors = ['linear-gradient(135deg,#E03131,#C62828)', 'linear-gradient(135deg,#1D4ED8,#1E40AF)', 'linear-gradient(135deg,#16A34A,#15803D)'];
   container.innerHTML = stored.map((u, i) => {
     const initials = (u.name || u.email || '?').charAt(0).toUpperCase();
     const color = colors[i % colors.length];
     return `<div data-idx="${i}" onclick="quickLoginAs(${i})" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;transition:background 0.15s;" onmouseenter="this.style.background='var(--warm)'" onmouseleave="this.style.background='transparent'">
-      <div style="width:56px;height:56px;border-radius:50%;background:${color};color:white;font-size:1.4rem;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;box-shadow:0 3px 12px rgba(0,0,0,0.15);">${initials}</div>
+      <div style="position:relative;">
+        <div style="width:56px;height:56px;border-radius:50%;background:${color};color:white;font-size:1.4rem;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;box-shadow:0 3px 12px rgba(0,0,0,0.15);">${initials}</div>
+        <button onclick="event.stopPropagation();_removeQuickLogin(${i})" title="移除" style="position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.6);color:white;font-size:0.68rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">✕</button>
+      </div>
       <div style="font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.85);text-align:center;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.name || u.email}</div>
     </div>`;
   }).join('');
   container.style.display = 'flex';
-  const other = document.getElementById('quickLoginOther');
   if (other) other.style.display = '';
-  const gs = document.getElementById('googleLoginSection');
   if (gs) gs.style.display = 'none';
-  const alt = document.getElementById('loginAltSection');
   if (alt) alt.style.display = 'none';
+}
+
+// 移除單一快速登入頭像（僅清除本機 localStorage 紀錄，不影響該成員的實際帳號）
+function _removeQuickLogin(i) {
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem('evs_recent_users') || '[]'); } catch(e) {}
+  stored.splice(i, 1);
+  localStorage.setItem('evs_recent_users', JSON.stringify(stored));
+  initQuickLogin();
 }
 
 function triggerGoogleSignIn() {
