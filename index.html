@@ -3962,6 +3962,14 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
+      <button onclick="navTo('emtStudyPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;border-top:1px solid #f5f5f5;cursor:pointer;text-align:left;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#fdecea;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c1121f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">EMT學習系統</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">救護義消EMT-1/EMT-2學習章節（試做版）</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
     </div>
 
     <!-- 系統列表 -->
@@ -4348,6 +4356,14 @@ function _dlCSV(content, filename) {
 
     <div id="lawRefList" style="display:flex;flex-direction:column;gap:14px;"></div>
 
+  </div>
+</div>
+
+
+<!-- ══════ PAGE：EMT學習系統 ══════ -->
+<div class="page" id="emtStudyPage">
+  <div class="form-wrap" style="padding-bottom:40px;">
+    <iframe id="emtStudyIframe" style="width:100%;border:none;display:block;min-height:300px;" scrolling="no"></iframe>
   </div>
 </div>
 
@@ -6599,6 +6615,7 @@ async function refreshCurrentPage() {
     case 'emsQueryPage':    initEmsQueryPage(); break;
     case 'sysTipsPage':     initSysTipsPage(); break;
     case 'lawRefPage':      initLawRefPage(); break;
+    case 'emtStudyPage':    initEmtStudyPage(); break;
     case 'adminPage':       await initAdminPage(); break;
     case 'systemInfoPage':  await initSystemInfoPage(); break;
     default: break;
@@ -6675,6 +6692,7 @@ const _tabForPage = {
   emsQueryPage:       'more',
   sysTipsPage:        'more',
   lawRefPage:         'more',
+  emtStudyPage:       'more',
 };
 const _tabPageMap = {
   home:     'dashboardPage',
@@ -6810,7 +6828,7 @@ function navTo(pageId, fromHistory, forceDir) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識', lawRefPage:'法規查詢' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識', lawRefPage:'法規查詢', emtStudyPage:'EMT學習系統' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -6891,6 +6909,7 @@ function navTo(pageId, fromHistory, forceDir) {
   else if (pageId === 'emsQueryPage')   _nav(initEmsQueryPage);
   else if (pageId === 'sysTipsPage')    _nav(initSysTipsPage);
   else if (pageId === 'lawRefPage')     _nav(initLawRefPage);
+  else if (pageId === 'emtStudyPage')   _nav(initEmtStudyPage);
   else if (pageId === 'settingsPage')   _nav(initSettingsPage);
 
   if (pageId !== 'adminPage') {
@@ -15810,6 +15829,394 @@ function _lawRefToggle(btn) {
   body.style.display = open ? 'none' : 'block';
   if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
 }
+
+// ════════════════════════════════════════
+// 救護義消EMT學習系統（iframe 隔離 Bootstrap/Mermaid，避免與全站 .card 樣式衝突）
+// ════════════════════════════════════════
+const EMT_STUDY_HTML = `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;background:#f8f9fa;padding:14px 14px 30px;margin:0;}
+  .chapter-card{cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  .chapter-card:active{transform:scale(0.99);}
+  .mnemonic-box{background:#fff7e6;border:1px dashed #f0ad4e;border-radius:10px;padding:14px;}
+  .quiz-ans{display:none;background:#eef6ff;border-radius:8px;padding:10px;margin-top:6px;font-size:0.88rem;}
+  .quiz-q{margin-bottom:12px;}
+  #detailView{display:none;}
+  .mermaid{overflow-x:auto;}
+</style>
+</head>
+<body>
+  <div class="alert alert-warning small py-2 px-3 mb-3">
+    ⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。
+  </div>
+
+  <div id="listView">
+    <h5 class="fw-bold mb-1">救護義消EMT學習系統</h5>
+    <p class="text-muted small">依台灣EMT-1/EMT-2與消防署緊急救護教材編寫之學習參考章節（試做版）</p>
+    <div class="row g-2" id="chapterList"></div>
+  </div>
+
+  <div id="detailView">
+    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="showList()">← 返回章節列表</button>
+    <div id="detailContent"></div>
+  </div>
+
+<script>
+var CHAPTERS = [
+  {
+    id: 1, color: '#dc3545', icon: '❤️',
+    title: 'BLS / CPR 與 AED 使用',
+    subtitle: '基本生命支持與自動體外心臟去顫器操作',
+    goals: [
+      '能正確評估無反應且無呼吸（或僅喘息）的病人並啟動緊急救護系統',
+      '能執行高品質胸外按壓（深度、頻率、回彈）',
+      '能正確操作AED完成電擊分析與除顫',
+      '能執行雙人/單人CPR並適時換手',
+      '了解CPR中止之條件與team dynamics'
+    ],
+    theory: [
+      '生存之鏈（Chain of Survival）：早期辨識與求救 → 早期CPR → 早期電擊 → 到院前高級救護 → 到院後整合照護。',
+      '高品質CPR五要素：按壓速率100-120次/分、深度至少5cm（不超過6cm）、完全回彈、減少中斷（小於10秒）、避免過度通氣。',
+      '按壓:通氣比為30:2（單人或雙人，未插管病人）。',
+      'AED原理：自動分析心律，針對可電擊心律（心室顫動VF/無脈性心室頻脈VT）給予電擊。'
+    ],
+    flow: 'flowchart TD\n  A["發現疑似OHCA病人"] --> B{"檢查反應與呼吸"}\n  B -->|"無反應且無呼吸/僅喘息"| C["呼叫求救/啟動EMS, 取AED"]\n  B -->|"有反應或正常呼吸"| Z["持續觀察, 必要時其他處置"]\n  C --> D["立即開始胸外按壓 30:2"]\n  D --> E["AED到達, 開機並貼上電極片"]\n  E --> F{"AED分析心律"}\n  F -->|"建議電擊"| G["確保無人接觸, 給予電擊"]\n  F -->|"不建議電擊"| H["立即繼續CPR"]\n  G --> H\n  H --> I["每2分鐘重新分析心律"]\n  I --> J{"病人恢復反應/正常呼吸?"}\n  J -->|"否"| F\n  J -->|"是"| K["恢復姿勢, 持續監測, 交接高級救護"]',
+    mindmap: 'mindmap\n  root((BLS CPR AED))\n    評估\n      檢查反應\n      檢查呼吸\n      啟動EMS\n    胸外按壓\n      速率100-120\n      深度5-6cm\n      完全回彈\n      減少中斷\n    人工呼吸\n      30比2比例\n      避免過度通氣\n    AED\n      開機貼片\n      心律分析\n      電擊安全\n    團隊\n      角色分配\n      換手時機',
+    cases: [
+      '50歲男性於賣場突然倒地，旁人發現其無反應、胸口無起伏。民眾立即呼叫119並開始CPR，2分鐘後義消到場接手按壓並使用AED，分析後建議電擊一次，電擊後持續CPR至救護車到達，病人於到院前恢復自發循環（ROSC）。'
+    ],
+    mistakes: [
+      '按壓深度不足或速率過快/過慢',
+      '按壓中斷時間過長（例如換手猶豫、過度檢查脈搏）',
+      'AED電極片貼附位置錯誤或皮膚潮濕未擦乾',
+      '電擊前未確認周圍人員已離開病人',
+      '過度通氣（吹氣過快過大造成胃脹氣與胸內壓上升）'
+    ],
+    quiz: [
+      { q: '成人胸外按壓建議深度為？', opts: ['至少3cm', '至少5cm，不超過6cm', '至少8cm', '依體重調整'], a: 1, ex: '成人按壓深度建議至少5cm但不超過6cm，過深過淺都會降低有效性或增加損傷。' },
+      { q: '單人CPR未插管時按壓:通氣比為？', opts: ['15:2', '30:2', '5:1', '連續按壓不給通氣'], a: 1, ex: '未插管成人CPR標準比例為30次按壓配2次人工呼吸。' },
+      { q: 'AED分析心律時，下列何者正確？', opts: ['可繼續按壓', '應確保無人接觸病人', '可同時通氣', '可直接拔除電極片'], a: 1, ex: '分析心律與電擊時必須確保無人接觸病人，以避免分析誤判或人員受傷。' },
+      { q: '高品質CPR應如何處理按壓中斷時間？', opts: ['盡量縮短，小於10秒', '中斷無妨', '每次中斷需30秒檢查脈搏', '按壓滿2分鐘才可中斷'], a: 0, ex: '按壓中斷應盡量減少，建議控制在10秒以內，以維持冠狀動脈灌流壓。' },
+      { q: '下列何者是生存之鏈的第一環？', opts: ['高級救護', '早期辨識與求救', '到院後照護', '電擊'], a: 1, ex: '生存之鏈第一環為早期辨識心跳停止並求救，啟動後續所有環節。' }
+    ],
+    summary: [
+      '評估反應/呼吸 → 求救+取AED → 立即CPR 30:2 → AED電擊（如建議）→ 每2分鐘重新分析',
+      '高品質按壓 = 速率100-120 + 深度5-6cm + 完全回彈 + 中斷小於10秒',
+      'AED電擊前務必確認旁人安全'
+    ],
+    mnemonic: { title: '叫叫CABD', body: '叫（呼喊評估反應）、叫（求救119/取AED）、C（Circulation胸外按壓）、A（Airway）、B（Breathing）、D（Defibrillation電擊）。簡記三字訣：壓、吹、電。' }
+  },
+  {
+    id: 2, color: '#0d6efd', icon: '🌬️',
+    title: '呼吸道評估與處置',
+    subtitle: '呼吸道開放手法、輔助器具與異物哽塞處理',
+    goals: [
+      '能辨識呼吸道阻塞徵象（完全/部分阻塞）',
+      '能執行手動呼吸道打開手法（壓額抬下巴法、推下巴上提法）',
+      '能正確使用基本呼吸道輔助器具（OPA口咽呼吸道、NPA鼻咽呼吸道）的適應症與禁忌',
+      '能對清醒異物哽塞病人施行腹部衝擊法/背部叩擊',
+      '了解何時需要進階呼吸道處置並及時求援'
+    ],
+    theory: [
+      '呼吸道評估口訣：Look Listen Feel（看、聽、感）。',
+      '部分阻塞（可咳嗽說話）與完全阻塞（無法發聲）臨床表現不同，處置策略也不同。',
+      '創傷病人優先使用推下巴上提法（避免頸椎移動），非創傷病人可用壓額抬下巴法。',
+      'OPA適用於無意識且無嘔吐反射病人；NPA適用於有部分意識仍需呼吸道輔助者，但顏面外傷疑似顱底骨折時為禁忌。'
+    ],
+    flow: 'flowchart TD\n  A["病人呼吸道評估"] --> B{"病人清醒可咳嗽說話?"}\n  B -->|"是, 部分阻塞"| C["鼓勵咳嗽, 持續觀察, 準備求援"]\n  B -->|"否, 完全阻塞/無法發聲"| D{"病人有無意識?"}\n  D -->|"清醒"| E["施行腹部衝擊法/背部叩擊"]\n  D -->|"無意識"| F["平躺, 開始CPR, 每次打開呼吸道檢查異物"]\n  E --> G{"異物排出?"}\n  G -->|"否"| E\n  G -->|"是"| H["評估呼吸狀況, 持續監測"]\n  F --> I["持續CPR並聯絡進階救護"]',
+    mindmap: 'mindmap\n  root((呼吸道評估與處置))\n    評估\n      Look Listen Feel\n      部分阻塞\n      完全阻塞\n    開放手法\n      壓額抬下巴法\n      推下巴上提法\n    輔助器具\n      OPA口咽呼吸道\n      NPA鼻咽呼吸道\n    異物哽塞處理\n      背部叩擊\n      腹部衝擊法\n      無意識後CPR\n    禁忌與注意\n      顱底骨折禁NPA\n      嘔吐反射禁OPA',
+    cases: [
+      '65歲女性用餐時突然無法言語、雙手抓喉，臉色發紅後逐漸發紫。義消立即辨識為完全異物哽塞，自其背後施行腹部衝擊法數次後異物咳出，病人恢復呼吸與意識。'
+    ],
+    mistakes: [
+      '對創傷病人使用壓額抬下巴法而非推下巴法，可能加重頸椎損傷',
+      '對有意識病人盲目用手指掏挖口腔，反而將異物推得更深',
+      'OPA置入無意識病人時尺寸選擇錯誤或置入角度錯誤引發嘔吐',
+      '忽略持續監測，異物排出後未評估是否仍有呼吸窘迫'
+    ],
+    quiz: [
+      { q: '對疑似頸椎損傷之創傷病人，應優先使用何種呼吸道打開手法？', opts: ['壓額抬下巴法', '推下巴上提法', '過度後仰頭部', '直接置入OPA'], a: 1, ex: '推下巴上提法不需移動頸部，適合用於疑似頸椎損傷的創傷病人。' },
+      { q: 'OPA口咽呼吸道適用於？', opts: ['意識清醒病人', '有嘔吐反射病人', '無意識且無嘔吐反射病人', '顏面骨折病人'], a: 2, ex: 'OPA僅適用於無意識且嘔吐反射消失的病人，否則會誘發嘔吐造成吸入性風險。' },
+      { q: '清醒成人完全異物哽塞之優先處置為？', opts: ['立即CPR', '腹部衝擊法', '手指掏挖', '等待自然咳出'], a: 1, ex: '清醒病人完全哽塞應立即施行腹部衝擊法（哈姆立克法）。' },
+      { q: '異物哽塞病人若突然失去意識，應立即？', opts: ['繼續腹部衝擊', '平躺開始CPR', '等待救護車', '給予拍背'], a: 1, ex: '病人失去意識後應立即平躺並開始CPR，按壓有助於排出異物並維持循環。' },
+      { q: 'NPA鼻咽呼吸道之主要禁忌為？', opts: ['意識清醒', '顏面外傷疑似顱底骨折', '年齡過輕', '血壓過高'], a: 1, ex: '顏面外傷疑似顱底骨折時插入NPA可能誤入顱腔，為絕對禁忌。' }
+    ],
+    summary: [
+      '先評估部分/完全阻塞，部分鼓勵咳嗽，完全立即處置',
+      '創傷病人用推下巴法，非創傷用壓額抬下巴法',
+      '清醒異物哽塞用腹部衝擊法，無意識立即CPR',
+      'OPA禁用於有嘔吐反射者，NPA禁用於疑似顱底骨折'
+    ],
+    mnemonic: { title: '看聽感、額下推', body: '看聽感（評估呼吸道）；額（壓額抬下巴）、下（推下巴法用於創傷）。異物哽塞記「咳、拍、壓」：先鼓勵咳嗽、再背部叩擊、後腹部衝擊。' }
+  },
+  {
+    id: 3, color: '#d63384', icon: '🩸',
+    title: '出血控制與休克處理',
+    subtitle: '止血階梯、休克分類與初步處置',
+    goals: [
+      '能分級辨識外出血嚴重程度並執行止血處置（直接加壓、止血帶）',
+      '能辨識休克之早期與晚期徵象',
+      '能說明休克的分類與致病機轉概念',
+      '能執行休克病人之初步處置（姿勢、保暖、轉送）',
+      '了解止血帶使用時機、方法與記錄要求'
+    ],
+    theory: [
+      '止血優先順序：直接加壓止血 → 加壓敷料 → 止血帶（大量出血或加壓無效時）。',
+      '休克定義：組織灌流不足造成細胞缺氧之危急狀態。',
+      '休克分類：低血容性（出血/脫水）、心源性、阻塞性（張力性氣胸/心包填塞）、分布性（敗血/過敏/神經性）。',
+      '休克代償期徵象：心跳加快、皮膚冷濕蒼白、焦躁不安；失代償期：血壓下降、意識改變。',
+      '止血帶使用須記錄上止血帶時間，避免長時間阻斷血流造成肢體缺血。'
+    ],
+    flow: 'flowchart TD\n  A["發現外出血病人"] --> B{"出血量大且持續?"}\n  B -->|"輕微"| C["直接加壓止血, 觀察"]\n  B -->|"大量/動脈性出血"| D["立即直接加壓並加壓敷料"]\n  D --> E{"加壓無法止血或肢體損傷嚴重?"}\n  E -->|"是"| F["使用止血帶, 記錄上止血帶時間"]\n  E -->|"否"| C\n  F --> G["評估休克徵象: 心跳, 皮膚, 意識"]\n  C --> G\n  G --> H{"出現休克徵象?"}\n  H -->|"是"| I["平躺抬腿, 保暖, 給氧, 盡速轉送"]\n  H -->|"否"| J["持續監測生命徵象"]',
+    mindmap: 'mindmap\n  root((出血控制與休克))\n    止血處置\n      直接加壓\n      加壓敷料\n      止血帶\n    休克分類\n      低血容性\n      心源性\n      阻塞性\n      分布性\n    休克徵象\n      代償期 心跳快 皮膚濕冷\n      失代償期 血壓降 意識改變\n    處置原則\n      平躺抬腿\n      保暖\n      給氧\n      盡速轉送\n    止血帶注意\n      記錄時間\n      持續加壓無效才用',
+    cases: [
+      '30歲男性工地意外造成右大腿撕裂傷大量出血，直接加壓無法有效止血，傷者面色蒼白、心跳加速且焦躁不安。義消立即於傷口上方使用止血帶並記錄上止血帶時間，同時讓病人平躺抬腿保暖，盡速通知救護車轉送。'
+    ],
+    mistakes: [
+      '止血帶綁太鬆或位置不對（應綁在傷口上方近端，而非直接綁在傷口上）',
+      '忘記記錄上止血帶的時間',
+      '過早放鬆已止血之止血帶觀察出血狀況，反而造成再次大量出血',
+      '忽略休克早期徵象（心跳快、焦躁），等血壓下降才處置',
+      '對疑似脊椎損傷病人未先評估整體創傷狀況即盲目抬腿'
+    ],
+    quiz: [
+      { q: '止血優先順序何者正確？', opts: ['止血帶→加壓敷料→直接加壓', '直接加壓→加壓敷料→止血帶', '先放置止血帶最快', '先冰敷再止血'], a: 1, ex: '止血階梯應由最不具侵入性的方式開始，先直接加壓，無效再升級使用止血帶。' },
+      { q: '休克代償期常見徵象為？', opts: ['血壓明顯下降', '心跳加快、皮膚冷濕', '意識完全喪失', '呼吸變慢'], a: 1, ex: '代償期身體會透過心跳加快、周邊血管收縮維持血壓，故皮膚冷濕、心跳加快為早期徵象。' },
+      { q: '張力性氣胸屬於哪一類休克？', opts: ['低血容性', '心源性', '阻塞性', '分布性'], a: 2, ex: '張力性氣胸壓迫心臟大血管導致回心血流受阻，屬於阻塞性休克。' },
+      { q: '使用止血帶時務必？', opts: ['綁在傷口正上方皮膚薄處', '記錄上止血帶的時間', '每5分鐘放鬆檢查', '直接綁在關節處'], a: 1, ex: '止血帶上止時間需確實記錄並交接給後續醫療人員，作為後續處置依據。' },
+      { q: '休克病人初步處置原則不包含？', opts: ['平躺抬腿', '保暖', '給氧', '大量給予口服水分'], a: 3, ex: '休克病人意識可能改變且需禁食以防嗆咳或手術需求，不應給予口服水分。' }
+    ],
+    summary: [
+      '止血三階：加壓→加壓敷料→紮止血帶（大量出血優先使用）',
+      '休克分四類：低血容、心源、阻塞、分布性',
+      '代償期徵象先於失代償期出現，應提早辨識',
+      '止血帶要記錄時間，避免反覆放鬆檢查'
+    ],
+    mnemonic: { title: '壓、敷、紮', body: '止血三步：壓（直接加壓）、敷（加壓敷料）、紮（止血帶並記時間）。休克徵象口訣「快、冷、躁、降」：心跳快、皮膚冷濕、焦躁不安、血壓後期才降。' }
+  },
+  {
+    id: 4, color: '#fd7e14', icon: '🚑',
+    title: '創傷病人評估（ABCDE）',
+    subtitle: '結構化初級評估與二級評估流程',
+    goals: [
+      '能依ABCDE原則系統性評估創傷病人',
+      '能辨識立即威脅生命之創傷情況並優先處置',
+      '能說明初級評估與二級評估之差異',
+      '能執行脊椎保護之基本原則',
+      '能依評估結果決定轉送優先順序'
+    ],
+    theory: [
+      'ABCDE：Airway（呼吸道+頸椎保護）、Breathing（呼吸）、Circulation（循環+止血）、Disability（意識/神經評估）、Exposure（暴露/環境控制）。',
+      '初級評估目的：快速辨識並處置立即威脅生命之傷害（黃金時刻原則）。',
+      '二級評估：頭到腳詳細檢查、病史詢問（SAMPLE）。',
+      '創傷病人意識評估常用AVPU或GCS。',
+      '脊椎保護：高處墜落、車禍、潛在頭頸部創傷者應採取脊椎中立姿勢固定。'
+    ],
+    flow: 'flowchart TD\n  A["到達創傷現場"] --> B["現場安全評估"]\n  B --> C["A: 呼吸道評估+頸椎保護"]\n  C --> D["B: 呼吸評估, 給氧"]\n  D --> E["C: 循環評估, 止血"]\n  E --> F["D: 意識神經評估 AVPU"]\n  F --> G["E: 暴露檢查, 保暖避免失溫"]\n  G --> H{"發現立即威脅生命狀況?"}\n  H -->|"是"| I["立即處置, 不延誤轉送"]\n  H -->|"否"| J["執行二級評估頭到腳檢查+SAMPLE病史"]\n  I --> K["盡速轉送醫療機構"]\n  J --> K',
+    mindmap: 'mindmap\n  root((創傷ABCDE評估))\n    A 呼吸道\n      頸椎保護\n      暢通評估\n    B 呼吸\n      速率胸壁起伏\n      給氧\n    C 循環\n      脈搏止血\n      休克徵象\n    D 意識神經\n      AVPU GCS\n      瞳孔\n    E 暴露\n      檢查傷口\n      保暖防失溫\n    後續\n      二級評估\n      SAMPLE病史\n      轉送決策',
+    cases: [
+      '機車事故傷者意識清醒但主訴頸部疼痛，現場義消先評估現場安全後，採頸椎保護下檢查呼吸道暢通，呼吸正常、橈動脈可觸及，AVPU評估為清醒，暴露檢查發現左小腿開放性外傷出血。依ABCDE處置：維持頸椎中立、給氧觀察、直接加壓止血小腿傷口，並安排脊椎固定後盡速轉送。'
+    ],
+    mistakes: [
+      '跳過初級評估直接進行詳細頭到腳檢查，延誤威脅生命傷害的處置',
+      '評估呼吸道時忽略頸椎保護，造成不必要的頸部移動',
+      '過度專注在明顯外傷（如骨折變形）而忽略隱藏性內出血休克徵象',
+      '暴露檢查後忘記保暖，導致病人體溫流失加重凝血功能異常',
+      '未依結構化順序評估，遺漏關鍵步驟'
+    ],
+    quiz: [
+      { q: 'ABCDE評估中的D代表？', opts: ['Drugs用藥', 'Disability意識神經評估', 'Direction方向', 'Dressing包紮'], a: 1, ex: 'D代表Disability，評估病人意識狀態與神經功能，常用AVPU或GCS。' },
+      { q: '創傷病人初級評估之主要目的為？', opts: ['詳細記錄病史', '快速辨識並處置立即威脅生命的傷害', '確認保險資料', '等待家屬到場'], a: 1, ex: '初級評估目的在最短時間內找出並處置會立即威脅生命的傷害，符合黃金時刻原則。' },
+      { q: '對疑似頭頸部創傷之病人，A步驟評估呼吸道時應同時？', opts: ['過度後仰頭部', '採取脊椎保護', '立即移除衣物', '忽略頸部'], a: 1, ex: '評估呼吸道同時必須維持頸椎中立保護，避免加重潛在頸椎損傷。' },
+      { q: 'SAMPLE病史詢問屬於？', opts: ['初級評估', '二級評估', '現場安全評估', '止血處置'], a: 1, ex: 'SAMPLE病史詢問屬於二級評估的一部分，於初級評估排除立即威脅生命傷害後執行。' },
+      { q: '暴露（Exposure）步驟除檢查傷口外，還須注意？', opts: ['保暖避免失溫', '立即送醫不必檢查', '只檢查正面', '忽略隱藏傷口'], a: 0, ex: '暴露檢查後應立即為病人保暖，避免低體溫加重凝血功能異常與預後不良。' }
+    ],
+    summary: [
+      'ABCDE：呼吸道+頸椎、呼吸、循環+止血、意識神經、暴露+保暖',
+      '初級評估先處置威脅生命傷害，二級評估再做詳細頭到腳檢查',
+      '創傷評估務必結構化、按順序進行，避免遺漏',
+      '脊椎保護應貫穿整個評估過程'
+    ],
+    mnemonic: { title: 'ABCDE 循序不可廢', body: 'A呼吸道（頸椎護）、B呼吸、C循環（止血）、D意識（瞳孔反應）、E暴露（保暖莫忘）。' }
+  },
+  {
+    id: 5, color: '#6f42c1', icon: '💔',
+    title: '心臟血管急症（胸痛評估與處置）',
+    subtitle: '急性冠心症辨識與到院前處置原則',
+    goals: [
+      '能辨識急性冠心症之典型與非典型胸痛表現',
+      '能執行OPQRST胸痛病史詢問技巧',
+      '能說明到院前處置原則（給氧、休息、監測、盡速轉送）',
+      '能辨識高風險徵象並優先轉送',
+      '了解義消在到院前可協助之範圍與限制'
+    ],
+    theory: [
+      '急性冠心症常見表現：胸悶壓迫感，可能放射至左肩/左臂/下顎，伴隨冒冷汗、噁心、呼吸困難。',
+      '非典型表現常見於女性、老年人、糖尿病患者（可能僅表現為呼吸困難或上腹不適）。',
+      'OPQRST：Onset發作方式、Provocation誘發/緩解因子、Quality性質、Radiation放射部位、Severity嚴重度、Time持續時間。',
+      '到院前處置原則：讓病人採舒適姿勢休息、避免體力消耗、給氧（如有低血氧）、持續監測生命徵象、盡速轉送具心臟急症處置能力之醫院。',
+      '義消非醫療人員，不可自行給予藥物，但可協助病人服用其自備醫師處方藥物（如硝化甘油）並回報專業救護人員。'
+    ],
+    flow: 'flowchart TD\n  A["病人主訴胸痛/胸悶"] --> B["評估生命徵象, 給氧監測"]\n  B --> C["執行OPQRST病史詢問"]\n  C --> D{"符合ACS高風險表現?"}\n  D -->|"是, 含冒冷汗/放射痛/呼吸困難"| E["立即讓病人休息, 避免活動"]\n  D -->|"否, 症狀輕微"| F["持續觀察, 記錄生命徵象變化"]\n  E --> G["聯絡救護車盡速轉送具心臟急症處置能力醫院"]\n  F --> H{"症狀惡化?"}\n  H -->|"是"| E\n  H -->|"否"| I["持續監測直到專業救護到達"]\n  G --> I',
+    mindmap: 'mindmap\n  root((心臟血管急症))\n    辨識\n      典型胸痛壓迫感\n      放射肩臂下顎\n      非典型表現\n    病史詢問\n      OPQRST\n    高風險徵象\n      冒冷汗\n      呼吸困難\n      意識改變\n    到院前處置\n      休息減少活動\n      給氧監測\n      盡速轉送\n    義消角色限制\n      不可自行給藥\n      協助服用自備藥物\n      及時回報專業人員',
+    cases: [
+      '58歲男性自述胸口悶痛已持續20分鐘，伴隨冒冷汗與左臂痠麻感，自評疼痛程度8/10。義消到場後立即讓病人停止活動採舒適坐姿休息，執行OPQRST詢問確認症狀符合高風險表現，給氧並持續監測生命徵象，同時聯絡救護車盡速轉送至具備心導管處置能力之醫院，轉送途中症狀無明顯緩解。'
+    ],
+    mistakes: [
+      '將胸痛誤判為單純肌肉痛或腸胃不適而延誤轉送',
+      '忽略非典型表現（如僅表現呼吸困難、上腹不適）尤其於女性與糖尿病患者',
+      '讓胸痛病人自行走動或搬運重物，增加心臟負荷',
+      '義消逾越權限自行提供藥物給病人（非病人自備藥物）',
+      '未持續監測生命徵象變化，未能及時發現病情惡化'
+    ],
+    quiz: [
+      { q: 'OPQRST中的R代表？', opts: ['Rest休息', 'Radiation放射部位', 'Risk風險', 'Rhythm心律'], a: 1, ex: 'R代表Radiation，詢問疼痛是否有放射至其他部位，如左肩、左臂或下顎。' },
+      { q: '急性冠心症之非典型表現常見於？', opts: ['年輕健康男性', '女性、老年人、糖尿病患者', '運動員', '兒童'], a: 1, ex: '女性、老年人與糖尿病患者常表現非典型症狀，容易被忽略而延誤就醫。' },
+      { q: '義消在到院前對疑似ACS病人可協助之處置為？', opts: ['自行給予止痛藥', '協助病人服用其自備醫師處方藥物並回報', '建議病人自行開車就醫', '讓病人持續活動緩解症狀'], a: 1, ex: '義消僅可協助病人服用其本人自備之醫師處方藥物，並即時回報專業救護人員，不可自行給藥。' },
+      { q: '胸痛病人到院前處置原則不包含？', opts: ['讓病人休息減少活動', '給氧監測', '盡速轉送', '鼓勵病人走動加速血液循環'], a: 3, ex: '胸痛病人應減少活動以降低心臟負荷，鼓勵走動是錯誤處置。' },
+      { q: '下列何者屬於ACS高風險徵象？', opts: ['症狀完全緩解', '冒冷汗合併呼吸困難', '疼痛持續不到1分鐘且自行消失', '僅輕微不適無其他症狀'], a: 1, ex: '冒冷汗合併呼吸困難為高風險徵象，提示可能為嚴重心臟血管急症。' }
+    ],
+    summary: [
+      '胸痛評估善用OPQRST結構化詢問',
+      '注意非典型表現族群（女性、老年、糖尿病患者）',
+      '到院前處置：休息、給氧監測、盡速轉送，避免延誤',
+      '義消僅可協助病人服用其「自備」藥物，不可自行給藥'
+    ],
+    mnemonic: { title: '胸痛四不要', body: '不要忽視非典型症狀、不要讓病人走動、不要自行給藥、不要延誤轉送。OPQRST口訣：發、誘、性、放、重、時。' }
+  }
+];
+
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function notifyResize() {
+  setTimeout(function () {
+    parent.postMessage({ type: 'emtResize', height: document.documentElement.scrollHeight }, '*');
+  }, 60);
+}
+
+function renderList() {
+  var box = document.getElementById('chapterList');
+  box.innerHTML = CHAPTERS.map(function (c) {
+    return '<div class="col-12">' +
+      '<div class="card chapter-card shadow-sm" style="border-left:5px solid ' + c.color + ';" onclick="showDetail(' + c.id + ')">' +
+        '<div class="card-body d-flex align-items-center gap-3">' +
+          '<div style="font-size:1.6rem;">' + c.icon + '</div>' +
+          '<div class="flex-grow-1">' +
+            '<div class="fw-bold">第' + c.id + '章・' + esc(c.title) + '</div>' +
+            '<div class="text-muted small mt-1">' + esc(c.subtitle) + '</div>' +
+          '</div>' +
+          '<div class="text-muted">›</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function sectionCard(headerColor, icon, label, bodyHtml) {
+  return '<div class="card mb-3 shadow-sm">' +
+    '<div class="card-header fw-bold" style="background:' + headerColor + ';color:white;">' + icon + ' ' + label + '</div>' +
+    '<div class="card-body">' + bodyHtml + '</div>' +
+  '</div>';
+}
+
+function showDetail(id) {
+  var c = CHAPTERS.filter(function (x) { return x.id === id; })[0];
+  if (!c) return;
+  document.getElementById('listView').style.display = 'none';
+  var dv = document.getElementById('detailView');
+  dv.style.display = 'block';
+
+  var html = '';
+  html += '<div class="mb-3"><span class="badge" style="background:' + c.color + ';">第' + c.id + '章</span> <span class="fw-bold fs-5 ms-1">' + esc(c.title) + '</span>' +
+          '<div class="text-muted small mt-1">' + esc(c.subtitle) + '</div></div>';
+
+  html += sectionCard(c.color, '🎯', '學習目標',
+    '<ul class="mb-0">' + c.goals.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>');
+
+  html += sectionCard(c.color, '📖', '學理基礎',
+    c.theory.map(function (t) { return '<p class="mb-2">' + esc(t) + '</p>'; }).join(''));
+
+  html += sectionCard(c.color, '🔀', '流程圖',
+    '<div class="mermaid">' + c.flow + '</div>');
+
+  html += sectionCard(c.color, '🧠', '心智圖',
+    '<div class="mermaid">' + c.mindmap + '</div>');
+
+  html += sectionCard(c.color, '🏥', '臨床案例',
+    c.cases.map(function (cs) { return '<p class="mb-2" style="background:#f8f9fa;border-radius:8px;padding:10px;">' + esc(cs) + '</p>'; }).join(''));
+
+  html += sectionCard(c.color, '⚠️', '常見錯誤',
+    '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
+
+  html += sectionCard(c.color, '📝', '測驗題',
+    c.quiz.map(function (qz, qi) {
+      var qid = 'q_' + c.id + '_' + qi;
+      var opts = qz.opts.map(function (o, oi) {
+        return '<div>' + String.fromCharCode(65 + oi) + '. ' + esc(o) + (oi === qz.a ? ' <span class="text-success small">✓正解</span>' : '') + '</div>';
+      }).join('');
+      return '<div class="quiz-q">' +
+        '<div class="fw-semibold mb-1">Q' + (qi + 1) + '. ' + esc(qz.q) + '</div>' +
+        '<div class="small text-muted mb-1">' + opts + '</div>' +
+        '<button class="btn btn-sm btn-outline-primary" onclick="toggleAns(\'' + qid + '\')">顯示解析</button>' +
+        '<div id="' + qid + '" class="quiz-ans">' + esc(qz.ex) + '</div>' +
+      '</div>';
+    }).join('<hr>'));
+
+  html += sectionCard(c.color, '✅', '重點整理',
+    '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
+
+  html += sectionCard(c.color, '💡', '記憶口訣',
+    '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
+
+  document.getElementById('detailContent').innerHTML = html;
+  mermaid.run({ querySelector: '#detailContent .mermaid' }).catch(function () {});
+  window.scrollTo(0, 0);
+  notifyResize();
+  setTimeout(notifyResize, 500);
+}
+
+function showList() {
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('listView').style.display = 'block';
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+function toggleAns(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+  notifyResize();
+}
+
+mermaid.initialize({ startOnLoad: false, theme: 'default' });
+renderList();
+notifyResize();
+window.addEventListener('load', notifyResize);
+<\/script>
+</body>
+</html>
+`;
+
+function initEmtStudyPage() {
+  const ifr = document.getElementById('emtStudyIframe');
+  if (!ifr || ifr.dataset.loaded) return;
+  ifr.dataset.loaded = '1';
+  ifr.srcdoc = EMT_STUDY_HTML;
+}
+
+window.addEventListener('message', (ev) => {
+  if (ev && ev.data && ev.data.type === 'emtResize') {
+    const ifr = document.getElementById('emtStudyIframe');
+    if (ifr) ifr.style.height = Math.max(300, ev.data.height + 24) + 'px';
+  }
+});
 
 async function initSystemInfoPage() {
   _C.invalidate('changelogs'); // 每次開啟都拿最新版本資料
