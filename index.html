@@ -3955,6 +3955,14 @@ function _dlCSV(content, filename) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
+      <button onclick="navTo('lawRefPage')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:none;border-top:1px solid #f5f5f5;cursor:pointer;text-align:left;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#eef0ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4338ca" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l-3 6a4 4 0 0 0 6 0zM19 8l-3 6a4 4 0 0 0 6 0zM5 8h14M9 3h6"/></svg>
+        </div>
+        <div style="flex:1;"><div style="font-size:0.9rem;font-weight:600;color:var(--text);">法規查詢</div><div style="font-size:0.7rem;color:var(--text-light);margin-top:1px;">義消協勤相關規定彙整</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
     </div>
 
     <!-- 系統列表 -->
@@ -4288,6 +4296,29 @@ function _dlCSV(content, filename) {
     </div>
 
     <div id="sysTipsList" style="display:flex;flex-direction:column;gap:14px;"></div>
+
+  </div>
+</div>
+
+
+<!-- ══════ PAGE：法規查詢 ══════ -->
+<div class="page" id="lawRefPage">
+  <div class="form-wrap" style="padding-bottom:40px;">
+
+    <!-- 標題 -->
+    <div style="background:linear-gradient(135deg,#4338ca 0%,#312e81 100%);border-radius:16px;padding:20px;margin-bottom:16px;color:white;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l-3 6a4 4 0 0 0 6 0zM19 8l-3 6a4 4 0 0 0 6 0zM5 8h14M9 3h6"/></svg>
+        </div>
+        <div>
+          <div style="font-size:1rem;font-weight:700;">法規查詢</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.7);margin-top:2px;">義消協勤相關規定彙整</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="lawRefList" style="display:flex;flex-direction:column;gap:14px;"></div>
 
   </div>
 </div>
@@ -6519,6 +6550,7 @@ async function refreshCurrentPage() {
     case 'profilePage':     await loadProfilePage(); break;
     case 'emsQueryPage':    initEmsQueryPage(); break;
     case 'sysTipsPage':     initSysTipsPage(); break;
+    case 'lawRefPage':      initLawRefPage(); break;
     case 'adminPage':       await initAdminPage(); break;
     case 'systemInfoPage':  await initSystemInfoPage(); break;
     default: break;
@@ -6594,6 +6626,7 @@ const _tabForPage = {
   settingsPage:       'more',   referencePage:      'more',
   emsQueryPage:       'more',
   sysTipsPage:        'more',
+  lawRefPage:         'more',
 };
 const _tabPageMap = {
   home:     'dashboardPage',
@@ -6729,7 +6762,7 @@ function navTo(pageId, fromHistory, forceDir) {
   const _showSubNav = !isHome && !isDuty && !isOps && !isManage && !isMore;
   if (_subNav) _subNav.style.display = _showSubNav ? '' : 'none';
   if (_subNavTitle && _showSubNav) {
-    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識' };
+    const titles2 = { profilePage:'個人資料', feedbackPage:'意見回饋', myCorrectionsPage:'我的申請紀錄', membersPage:'成員管理', itemsPage:'物品領用', adminPage:'管理員後台', meetingPage:'定訓與公告', gongchaPage:'公差統計', statsPage:'協勤統計', reportPage:'報表匯出', attQueryPage:'簽到紀錄', queryPage:'案件查詢', formPage:'案件登錄', attendancePage:'簽到簽退', systemInfoPage:'系統資訊', referencePage:'救護參考手冊', emsQueryPage:'受訓紀錄查詢', sysTipsPage:'系統小知識', lawRefPage:'法規查詢' };
     _subNavTitle.textContent = titles2[pageId] || '';
   }
   const backBtn = document.getElementById('headerBackBtn');
@@ -6809,6 +6842,7 @@ function navTo(pageId, fromHistory, forceDir) {
   else if (pageId === 'systemInfoPage') _nav(initSystemInfoPage);
   else if (pageId === 'emsQueryPage')   _nav(initEmsQueryPage);
   else if (pageId === 'sysTipsPage')    _nav(initSysTipsPage);
+  else if (pageId === 'lawRefPage')     _nav(initLawRefPage);
   else if (pageId === 'settingsPage')   _nav(initSettingsPage);
 
   if (pageId !== 'adminPage') {
@@ -15551,6 +15585,93 @@ function initSysTipsPage() {
           </div>
         </div>`).join('')}
     </div>`).join('');
+}
+
+// ════════════════════════════════════════
+// 法規查詢
+// ════════════════════════════════════════
+const LAW_REFS = [
+  {
+    title: '臺中市政府消防局義消協勤時數次數及費用請領規定',
+    date: '113年12月30日公發布',
+    docNo: '中市消救字第1130083847號函',
+    sections: [
+      { no:'一', title:'訂定目的', text:
+`消防局為標準化本市義消人員請領消防局救災協勤工作費作業流程，完善支領制度，特訂定本規定。` },
+      { no:'二', title:'勤務時間及次數計算', text:
+`（一）協助災害搶救：
+1、一小時以上計為一次，未滿一小時不計入協勤費核算時間，每人每一天以一次為限。
+2、核算時間依出勤起訖時間計算。
+3、協助災害搶救，義消之身分須為救災義消或機能型義消。
+
+（二）協助緊急救護勤務：
+1、一小時以上計為一次，未滿一小時不計入協勤費核算時間，每人每一天以一次為限。
+2、核算時間依出勤起訖時間計算。
+3、協助緊急救護勤務，義消須具備緊急救護技術員合格證照。
+
+（三）其他經簽奉核准之專案勤務：
+1、一小時以上計為一次，未滿一小時不計入協勤費核算時間，每人每一天以一次為限。
+2、核算時間依出勤起訖時間計算。` },
+      { no:'三', title:'出勤起訖時間計算', text:
+`（一）出勤起始時間：
+1、義消人員非從分隊出勤者，以到達現場簽到為起始，並應於受理災害登記簿確實填報出勤人員資料，如無填報則應檢附完整出入資料或佐證資料。
+2、義消於分隊待命出勤者，以分隊救護車或救災車輛出勤時間為準。
+
+（二）勤務結束時間：
+1、以災害現場結束，轄區分隊救災車輛返隊時間為止。
+2、支援單位以該支援單位車輛返隊時間為止。
+3、視災害狀況需要，經轄區分隊長以上幹部認定須支援留在災害現場者，得延長勤務時間，惟應檢附佐證資料。` },
+      { no:'四', title:'協勤費計算方式', text:
+`（一）協助災害搶救：每一次新臺幣二百元，每人每天一次為限。
+（二）協助緊急救護勤務：每一次新臺幣二百元，每人每天一次為限。
+（三）救護空跑、救災出勤中途返隊之次數及費用不予計算。` },
+      { no:'五', title:'救災協勤項目', text:
+`火災搶救、救溺、風災、水災、地震、爆炸、避難疏散等災害搶救出勤以及山域搜救等。` },
+      { no:'六', title:'檢附資料及資料審核', text:
+`（一）各義消單位請領救災協勤工作費時，應填寫「救災協勤工作費請領清冊(義消人員)」(如附表)，並檢附「義消人員協勤出入登記簿影本(或出席簽到表)」及「臺中市政府消防局工作紀錄簿影本」(或義消大隊、義消救護大隊工作績效報告等其他足資證明協助消防局執行勤務相關資料)以資佐證。
+
+（二）上揭檢附資料經消防局業務對應單位審核無誤後，消防局各分隊於次月五日前陳報轄區大隊彚整，各大隊及緊急救護科業務承辦人員應於每月十日前送消防局災害搶救科辦理。
+
+（三）消防局業務對應單位：義消分隊為消防局消防分隊，義消大隊者為消防局大隊或緊急救護科(義消救護大隊)，義消總隊者為消防局災害搶救科。` },
+      { no:'七', title:'其他相關規定', text:
+`（一）同一協勤事由，除單次救災跨二個以上誤餐時段外，不得重複申領協勤費與誤餐費。
+
+（二）為利消防局審核申領相關事宜，請各義消單位於陳報救災協勤工作費資料時，應一併檢核當月分隊值勤誤餐費相關報支情形。
+
+（三）消防局工作紀錄簿(或其他足資證明協助消防局執行勤務相關資料)應註明協勤起訖時間(含總時數)、協勤地點、協勤人數及協勤人員姓名。` },
+    ]
+  }
+];
+
+function initLawRefPage() {
+  const wrap = document.getElementById('lawRefList');
+  if (!wrap || wrap.children.length) return; // 內容固定，只需渲染一次
+  wrap.innerHTML = LAW_REFS.map((law, li) => `
+    <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid #f0f0f0;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);line-height:1.5;">${law.title}</div>
+        <div style="font-size:0.7rem;color:var(--text-light);margin-top:6px;">${law.date}・${law.docNo}</div>
+      </div>
+      ${law.sections.map((sec, si) => `
+        <div class="lawref-card" style="border-top:1px solid #f5f5f5;">
+          <button onclick="_lawRefToggle(this)" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left;">
+            <div style="width:28px;height:28px;border-radius:8px;background:#eef0ff;color:#4338ca;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.78rem;font-weight:700;">${sec.no}</div>
+            <div style="flex:1;font-size:0.84rem;font-weight:700;color:var(--text);">${sec.title}</div>
+            <svg class="lawref-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lawref-body" style="display:none;padding:0 16px 16px 54px;font-size:0.78rem;color:var(--text-mid);line-height:1.7;white-space:pre-line;">${sec.text}</div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function _lawRefToggle(btn) {
+  const card = btn.closest('.lawref-card');
+  const body = card.querySelector('.lawref-body');
+  const arrow = card.querySelector('.lawref-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 async function initSystemInfoPage() {
