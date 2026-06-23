@@ -15993,6 +15993,14 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .ems-answer-card .ex-tag{font-family:var(--ems-font-mono);font-weight:700;color:var(--ems-red);font-size:.68rem;margin-right:4px;}
   .ems-wrong-card{background:var(--ems-red-faint);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-bottom:8px;}
 
+  /* ── L. 個人成就頁 Achievement Page ── */
+  .ems-badge{aspect-ratio:1;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border:2px solid var(--ems-border);background:var(--ems-surface-2);}
+  .ems-badge.unlocked{border-color:var(--ems-hiviz);background:#fff;}
+  .ems-badge.locked{filter:grayscale(1);opacity:.4;}
+  .ems-logbox{display:flex;flex-direction:column;gap:6px;}
+  .ems-log-row{display:flex;align-items:center;gap:8px;background:var(--ems-surface);border:1px solid var(--ems-border);border-left:3px solid var(--ems-red);border-radius:var(--ems-radius-sm);padding:8px 10px;font-size:.82rem;}
+  .ems-log-tag{font-family:var(--ems-font-mono);font-weight:700;font-size:.7rem;color:var(--ems-text-light);flex-shrink:0;}
+
   /* ── Bootstrap 5.3 元件覆寫 ── */
   .btn-primary{background:var(--ems-red);border-color:var(--ems-red);}
   .btn-primary:hover{background:var(--ems-red-dark);border-color:var(--ems-red-dark);}
@@ -16013,7 +16021,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .reflect-box{background:var(--ems-blue-faint);border:1.5px dashed var(--ems-blue);border-radius:var(--ems-radius);padding:12px;margin-top:8px;}
   .reveal-box{display:none;background:var(--ems-blue-faint);border-radius:var(--ems-radius);padding:10px;margin-top:6px;font-size:0.88rem;}
   .quiz-opt:disabled{opacity:0.85;}
-  #dashboardView,#zoneView,#nodeView,#practiceView{display:none;}
+  #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView{display:none;}
   .mermaid{overflow-x:auto;}
 </style>
 </head>
@@ -16055,6 +16063,14 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   <div id="practiceView">
     <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="exitPractice()">← 返回首頁</button>
     <div id="practiceContent"></div>
+  </div>
+
+  <div class="ems-view-wrap">
+    <div class="ems-map-watermark"></div>
+    <div id="achievementView">
+      <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="showDashboard()">← 返回首頁</button>
+      <div id="achievementContent"></div>
+    </div>
   </div>
   </div>
 
@@ -16344,7 +16360,7 @@ var ZONES = [
 
 var emsState = {
   xp: 0, level: 1, xpIntoLevel: 0, xpForNextLevel: 100,
-  completedNodes: [],
+  completedNodes: [], memberName: '',
   curZoneIdx: null, curChapter: null, slides: [], slideIdx: 0,
   nodeAnswered: {}, _completeCalled: false
 };
@@ -16493,6 +16509,7 @@ function loadProgress() {
       emsState.xpIntoLevel = p.xpIntoLevel || 0;
       emsState.xpForNextLevel = p.xpForNextLevel || 100;
       emsState.completedNodes = p.completedNodes || [];
+      emsState.memberName = p.name || '';
     }
     updateEmsCmdBar();
     renderDashboard();
@@ -16557,7 +16574,10 @@ function renderDashboard() {
   var html = '';
   html += '<div class="d-flex align-items-center justify-content-between mb-2">' +
             '<div class="ems-section-label">OPERATOR STATUS</div>' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="startPractice()">📝 題庫練習</button>' +
+            '<div class="d-flex gap-2">' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showAchievements()">🏆 我的成就</button>' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="startPractice()">📝 題庫練習</button>' +
+            '</div>' +
           '</div>';
   html += '<div class="ems-status-panel mb-3">' +
             '<div class="d-flex align-items-center gap-2 mb-2">' +
@@ -16598,6 +16618,7 @@ function showDashboard() {
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
   updateEmsCmdBar();
   renderDashboard();
@@ -16612,11 +16633,76 @@ function showZone(zi) {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
   updateEmsCmdBar(z.title);
   renderZoneContent();
   window.scrollTo(0, 0);
   notifyResize();
+}
+
+function showAchievements() {
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'block';
+  updateEmsCmdBar('我的成就');
+  renderAchievements();
+  window.scrollTo(0, 0);
+  notifyResize();
+}
+
+var ACHIEVEMENT_BADGES = [
+  { icon: '🥇', label: '首次完訓', test: function () { return emsState.completedNodes.length >= 1; } },
+  { icon: '❤️', label: 'BLS 達人', test: function () { return isNodeCompleted(1); } },
+  { icon: '🩺', label: '評估專家', test: function () {
+      var nodes = flatNodesForZone(ZONES[1]);
+      return nodes.length > 0 && nodes.every(function (c) { return isNodeCompleted(c.id); });
+    } }
+];
+
+function renderAchievements() {
+  var box = document.getElementById('achievementContent');
+  var pct = emsState.xpForNextLevel ? Math.round((emsState.xpIntoLevel / emsState.xpForNextLevel) * 100) : 0;
+  var doneTotal = emsState.completedNodes.length;
+  var unlockedZones = activeZoneIdxs().filter(function (zi) { return isZoneUnlocked(zi); }).length;
+  var html = '';
+  html += '<div class="ems-status-panel mb-3">' +
+            '<div class="d-flex align-items-center gap-2 mb-2">' +
+              '<div class="ems-rank-badge">' + emsState.level + '</div>' +
+              '<div class="flex-grow-1">' +
+                '<div class="fw-bold">' + (emsState.memberName ? esc(emsState.memberName) + ' · ' : '') + 'LV.' + emsState.level + ' · ' + emsLevelTitle(emsState.level) + '</div>' +
+                '<div class="text-muted small">累積 ' + emsState.xp + ' XP</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="ems-gauge"><div class="ems-gauge-fill" style="width:' + pct + '%;"></div></div>' +
+            '<div class="small text-muted mt-1">' + emsState.xpIntoLevel + ' / ' + emsState.xpForNextLevel + ' XP 進階下一等級</div>' +
+          '</div>';
+  html += '<div class="ems-section-label mb-2">成就徽章牆</div>';
+  html += '<div class="row g-2 mb-3">' + ACHIEVEMENT_BADGES.map(function (b) {
+    var unlocked = b.test();
+    return '<div class="col-3 text-center">' +
+        '<div class="ems-badge' + (unlocked ? ' unlocked' : ' locked') + ' mx-auto">' + b.icon + '</div>' +
+        '<div class="mt-1" style="font-size:0.68rem;">' + esc(b.label) + '</div>' +
+      '</div>';
+  }).join('') + '</div>';
+  html += '<div class="ems-vitals mb-3">' +
+            '<div class="ems-vital"><span class="v-label">完訓章節</span><span class="v-num">' + doneTotal + '</span></div>' +
+            '<div class="ems-vital"><span class="v-label">解鎖分區</span><span class="v-num">' + unlockedZones + '</span></div>' +
+            '<div class="ems-vital"><span class="v-label">累積XP</span><span class="v-num">' + emsState.xp + '</span></div>' +
+          '</div>';
+  html += '<div class="ems-section-label mb-2">完訓紀錄</div>';
+  if (doneTotal === 0) {
+    html += '<div class="text-muted small">尚無完訓紀錄，完成第一個章節即可解鎖首批徽章。</div>';
+  } else {
+    html += '<div class="ems-logbox">' + emsState.completedNodes.slice().reverse().map(function (id, ri) {
+      var c = CHAPTERS.filter(function (x) { return x.id === id; })[0];
+      if (!c) return '';
+      return '<div class="ems-log-row"><span class="ems-log-tag">LOG #' + (doneTotal - ri) + '</span><span class="flex-grow-1">完成「' + esc(c.title) + '」</span><span class="text-muted small">+60 XP</span></div>';
+    }).join('') + '</div>';
+  }
+  box.innerHTML = html;
 }
 
 function renderZoneContent() {
@@ -16675,6 +16761,7 @@ function showNode(chapterId) {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'block';
   updateEmsCmdBar(c.title);
   renderSlide();
@@ -16850,6 +16937,7 @@ function startPractice() {
   document.getElementById('dashboardView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
   updateEmsCmdBar('模擬考場');
   renderPracticeQuestion();
@@ -16993,7 +17081,7 @@ window.emsAcademyApi = {
       } catch (e) { /* 離線或讀取失敗時，視為新進度 */ }
     }
     const lvInfo = emsComputeLevel(data.xp || 0);
-    return { xp: data.xp || 0, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes: data.completedNodes || [] };
+    return { xp: data.xp || 0, level: lvInfo.level, xpIntoLevel: lvInfo.xpIntoLevel, xpForNextLevel: lvInfo.xpForNextLevel, completedNodes: data.completedNodes || [], name: name };
   },
   async saveProgress(nodeId, xpGain) {
     const name = _emsCurrentMemberName();
