@@ -7626,6 +7626,35 @@ function _memberTitle(d) {
   return squad + title;
 }
 
+function _memberTitleColor(t) {
+  if (!t) return { bg:'#f4f6fa', fg:'#888', av:'#aab4c0' };
+  if (t==='分隊長')   return { bg:'#fff0f0', fg:'#c0392b', av:'var(--red)' };
+  if (t==='副分隊長') return { bg:'#fff5ee', fg:'#d35400', av:'#e67e22' };
+  if (t==='幹事'||t==='助理幹事') return { bg:'#f0f8ff', fg:'#2471a3', av:'#2980b9' };
+  if (t.includes('小隊長')) return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
+  if (t==='分隊承辦人') return { bg:'#f9f0ff', fg:'#7d3c98', av:'#8e44ad' };
+  return { bg:'#f4f6fa', fg:'#5d6d7e', av:'#7f8c8d' };
+}
+
+function _avatarHtml(m, size, av) {
+  return m.photoUrl
+    ? '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#f4f4f4;"><img src="' + m.photoUrl + '" data-av="' + av + '" data-initial="' + (m.name||'?').slice(0,1) + '" data-size="' + size + '" style="width:100%;height:100%;object-fit:cover;" onerror="_avatarFallback(this)"></div>'
+    : '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:' + (size*0.26) + 'px;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>';
+}
+
+function _avatarFallback(img) {
+  const wrap = img.parentElement;
+  const size = parseFloat(img.dataset.size) || 40;
+  wrap.style.background = img.dataset.av || '#aab4c0';
+  wrap.style.color = 'white';
+  wrap.style.display = 'flex';
+  wrap.style.alignItems = 'center';
+  wrap.style.justifyContent = 'center';
+  wrap.style.fontSize = (size * 0.26) + 'px';
+  wrap.style.fontWeight = '800';
+  wrap.textContent = img.dataset.initial || '?';
+}
+
 async function loadMembers(force) {
   if (members.length && !force) return members; // 已載入，直接回傳（force 時強制重抓，反映編輯後的最新小隊/職稱）
   try {
@@ -14724,29 +14753,12 @@ function filterMemberList() {
 
   const countStr = '共 ' + regular.length + ' 人' + (officers.length ? '　另有承辦人 ' + officers.length + ' 位' : '');
 
-  const titleColor = t => {
-    if (!t) return { bg:'#f4f6fa', fg:'#888', av:'#aab4c0' };
-    if (t==='分隊長')   return { bg:'#fff0f0', fg:'#c0392b', av:'var(--red)' };
-    if (t==='副分隊長') return { bg:'#fff5ee', fg:'#d35400', av:'#e67e22' };
-    if (t==='幹事'||t==='助理幹事') return { bg:'#f0f8ff', fg:'#2471a3', av:'#2980b9' };
-    if (t.includes('小隊長')) return { bg:'#f0fff4', fg:'#1a7a45', av:'#27ae60' };
-    if (t==='分隊承辦人') return { bg:'#f9f0ff', fg:'#7d3c98', av:'#8e44ad' };
-    return { bg:'#f4f6fa', fg:'#5d6d7e', av:'#7f8c8d' };
-  };
-
-  const usrMl = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const canEditMl = !!(usrMl.isAdmin || usrMl.isOfficer);
-
-  const avatarHtml = (m, size, av) => m.photoUrl
-    ? '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#f4f4f4;"><img src="' + m.photoUrl + '" data-av="' + av + '" data-initial="' + (m.name||'?').slice(0,1) + '" data-size="' + size + '" style="width:100%;height:100%;object-fit:cover;" onerror="_avatarFallback(this)"></div>'
-    : '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + av + ';color:white;display:flex;align-items:center;justify-content:center;font-size:' + (size*0.26) + 'px;font-weight:800;flex-shrink:0;">' + (m.name||'?').slice(0,1) + '</div>';
-
   const makeCard = m => {
     const t = _memberTitle(m) || '';        // 顯示完整職稱（含小隊前綴）
-    const c = titleColor(t);
-    return '<div onclick="' + (canEditMl ? 'openMemberEditFromList(' + _jsStr(m.id) + ')' : '') + '" style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;' + (canEditMl ? 'cursor:pointer;' : '') + '">'
-      + '<div style="background:' + c.bg + ';padding:12px 8px 8px;text-align:center;">'
-      + '<div style="margin:0 auto 6px;">' + avatarHtml(m, 40, c.av) + '</div>'
+    const c = _memberTitleColor(t);
+    return '<div onclick="openMemberProfile(' + _jsStr(m.id) + ')" style="background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;cursor:pointer;">'
+      + '<div style="background:' + c.bg + ';padding:14px 8px 8px;text-align:center;">'
+      + '<div style="display:flex;justify-content:center;margin-bottom:6px;">' + _avatarHtml(m, 52, c.av) + '</div>'
       + '<div style="font-size:0.82rem;font-weight:800;color:var(--text);">' + (m.name||'') + '</div>'
       + '</div>'
       + '<div style="padding:6px 6px 8px;">'
@@ -14766,9 +14778,9 @@ function filterMemberList() {
     html += '<div style="font-size:0.72rem;font-weight:700;color:var(--text-mid);letter-spacing:0.06em;margin:16px 0 8px;padding-bottom:4px;border-bottom:1.5px solid var(--border);">分隊承辦人</div>';
     html += '<div style="display:flex;flex-direction:column;gap:8px;">';
     officers.forEach(m => {
-      const c = titleColor(m.title);
-      html += '<div onclick="' + (canEditMl ? 'openMemberEditFromList(' + _jsStr(m.id) + ')' : '') + '" style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;' + (canEditMl ? 'cursor:pointer;' : '') + '">'
-        + avatarHtml(m, 40, c.av)
+      const c = _memberTitleColor(m.title);
+      html += '<div onclick="openMemberProfile(' + _jsStr(m.id) + ')" style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;">'
+        + _avatarHtml(m, 44, c.av)
         + '<div style="flex:1;"><div style="font-size:0.92rem;font-weight:700;">' + (m.name||'') + '</div>'
         + '<div style="font-size:0.72rem;color:' + c.fg + ';margin-top:2px;">分隊承辦人</div></div>'
         + (m.cert ? '<span style="font-size:0.68rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:2px 9px;">' + m.cert + '</span>' : '')
@@ -14780,25 +14792,49 @@ function filterMemberList() {
   container.innerHTML = html;
 }
 
-function _avatarFallback(img) {
-  const wrap = img.parentElement;
-  const size = parseFloat(img.dataset.size) || 40;
-  wrap.style.background = img.dataset.av || '#aab4c0';
-  wrap.style.color = 'white';
-  wrap.style.display = 'flex';
-  wrap.style.alignItems = 'center';
-  wrap.style.justifyContent = 'center';
-  wrap.style.fontSize = (size * 0.26) + 'px';
-  wrap.style.fontWeight = '800';
-  wrap.textContent = img.dataset.initial || '?';
-}
-
-async function openMemberEditFromList(id) {
+// 成員個人資料檢視（點擊成員卡片開啟，目的是讓大家認識這個人；管理員/承辦人另有編輯按鈕）
+async function openMemberProfile(id) {
   try {
     const d = await fbGet(COL_WHITELIST, id);
     if (!d) { alert('找不到此成員資料'); return; }
-    adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'');
+    const m = { name: d.memberName||'', title: d.title||'', squad: d.squad||'', unit: d.unit||'', cert: d.cert||'', photoUrl: d.photoUrl||'' };
+    const t = _memberTitle(m) || '';
+    const c = _memberTitleColor(t);
+    const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    const canEdit = !!(usr.isAdmin || usr.isOfficer);
+
+    document.getElementById('mpHeader').style.background = 'linear-gradient(180deg,' + c.bg + ' 0%, white 100%)';
+    document.getElementById('mpAvatar').innerHTML = _avatarHtml(m, 96, c.av);
+    document.getElementById('mpName').textContent = m.name || '';
+    document.getElementById('mpBadges').innerHTML =
+      (t ? '<span style="font-size:0.76rem;background:' + c.bg + ';color:' + c.fg + ';border-radius:20px;padding:4px 13px;font-weight:700;">' + t + '</span>' : '')
+      + (m.unit ? '<span style="font-size:0.76rem;background:#f4f6fa;color:#5d6d7e;border-radius:20px;padding:4px 13px;font-weight:600;">' + m.unit + '</span>' : '')
+      + (m.cert ? '<span style="font-size:0.76rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:4px 13px;font-weight:600;">' + m.cert + '</span>' : '');
+    const introEl = document.getElementById('mpIntro');
+    introEl.textContent = d.intro || '尚未填寫個人介紹';
+    introEl.style.color = d.intro ? 'var(--text-mid)' : 'var(--text-light)';
+    introEl.style.fontStyle = d.intro ? 'normal' : 'italic';
+
+    const editWrap = document.getElementById('mpEditBtnWrap');
+    if (canEdit) {
+      editWrap.style.display = 'block';
+      editWrap.querySelector('button').onclick = function() {
+        closeMemberProfile();
+        adminEditWl(d.id, d.email||'', d.memberName||'', !!d.isAdmin, d.unit||'', d.role||'member', d.title||'', d.cert||'', d.certExp||'', d.phone||'', !!d.isSquadLeader, d.squad||'', d.svcCardExp||'', d.photoUrl||'', d.intro||'');
+      };
+    } else {
+      editWrap.style.display = 'none';
+    }
+
+    const modal = document.getElementById('memberProfileModal');
+    modal.style.display = 'block';
+    modal.scrollTop = 0;
   } catch(e) { alert('載入失敗：' + e.message); }
+}
+
+function closeMemberProfile() {
+  const modal = document.getElementById('memberProfileModal');
+  if (modal) modal.style.display = 'none';
 }
 
 // ════════════════════════════════════════
@@ -21540,6 +21576,27 @@ function showTempPassErr(msg) {
     <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
       <button id="adminEditSaveBtn" onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
       <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 成員個人資料檢視 Modal -->
+<div id="memberProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));" onclick="if(event.target===this) closeMemberProfile()">
+  <div style="background:white;border-radius:18px;width:100%;max-width:400px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+    <div id="mpHeader" style="position:relative;padding:36px 20px 22px;text-align:center;">
+      <button onclick="closeMemberProfile()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.7);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.05rem;color:var(--text-mid);">✕</button>
+      <div id="mpAvatar" style="display:flex;justify-content:center;"></div>
+      <div id="mpName" style="font-family:'Noto Serif TC',serif;font-size:1.35rem;font-weight:800;color:var(--text);margin-top:16px;"></div>
+      <div id="mpBadges" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;"></div>
+    </div>
+    <div style="padding:4px 20px 22px;">
+      <div style="background:#f9fafb;border-radius:12px;padding:16px;">
+        <div style="font-size:0.74rem;font-weight:700;color:var(--text-light);letter-spacing:0.06em;margin-bottom:8px;">個人介紹</div>
+        <div id="mpIntro" style="font-size:0.92rem;line-height:1.7;white-space:pre-wrap;"></div>
+      </div>
+      <div id="mpEditBtnWrap" style="margin-top:14px;display:none;">
+        <button class="btn-reset" style="width:100%;min-height:unset;padding:12px;">編輯資料</button>
+      </div>
     </div>
   </div>
 </div>
