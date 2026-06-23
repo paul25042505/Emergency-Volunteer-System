@@ -15975,6 +15975,24 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .ems-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ems-text);color:var(--ems-surface);padding:8px 16px;border-radius:var(--ems-radius);font-size:.78rem;box-shadow:var(--ems-shadow);z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center;}
   .ems-toast.show{opacity:1;}
 
+  /* ── J. 節點播放器 Slide Chrome ── */
+  .ems-slide-tag{display:inline-block;font-family:var(--ems-font-mono);font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:2px 8px;border:1px solid currentColor;border-radius:var(--ems-radius-sm);}
+  .ems-stagebar{display:flex;gap:3px;margin-bottom:14px;}
+  .ems-stage-tick{flex:1;height:6px;border-radius:2px;background:var(--ems-border);}
+  .ems-stage-tick.done{background:var(--ems-red);}
+  .ems-stage-tick.current{background:var(--ems-hiviz);}
+
+  /* ── K. 監視器式測驗選項 Quiz Options ── */
+  .ems-quiz-opt{display:flex;align-items:center;gap:10px;width:100%;border:1.5px solid var(--ems-border);border-radius:var(--ems-radius);padding:10px 12px;margin-bottom:8px;background:var(--ems-surface);color:var(--ems-text);text-align:left;transition:border-color .12s;}
+  .ems-quiz-opt .opt-tag{font-family:var(--ems-font-mono);font-weight:700;font-size:.78rem;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ems-border);border-radius:var(--ems-radius-sm);flex-shrink:0;}
+  .ems-quiz-opt.correct{border-color:var(--ems-ok);background:rgba(31,138,76,.06);}
+  .ems-quiz-opt.correct .opt-tag{background:var(--ems-ok);color:#fff;border-color:var(--ems-ok);}
+  .ems-quiz-opt.wrong{border-color:var(--ems-red);background:var(--ems-red-faint);}
+  .ems-quiz-opt.wrong .opt-tag{background:var(--ems-red);color:#fff;border-color:var(--ems-red);}
+  .ems-answer-card{display:none;border-left:4px solid var(--ems-red);background:var(--ems-surface-2);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-top:4px;font-size:.88rem;}
+  .ems-answer-card .ex-tag{font-family:var(--ems-font-mono);font-weight:700;color:var(--ems-red);font-size:.68rem;margin-right:4px;}
+  .ems-wrong-card{background:var(--ems-red-faint);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-bottom:8px;}
+
   /* ── Bootstrap 5.3 元件覆寫 ── */
   .btn-primary{background:var(--ems-red);border-color:var(--ems-red);}
   .btn-primary:hover{background:var(--ems-red-dark);border-color:var(--ems-red-dark);}
@@ -16346,6 +16364,27 @@ function notifyResize() {
   }, 60);
 }
 
+var SLIDE_TAGS = {
+  theory: { label: 'THEORY 理論', color: 'var(--ems-blue)' },
+  chain: { label: 'CHAIN 流程', color: 'var(--ems-blue)' },
+  quiz: { label: 'QUIZ 測驗', color: 'var(--ems-red)' }
+};
+function slideTagHTML(type) {
+  var t = SLIDE_TAGS[type];
+  if (!t) return '';
+  return '<span class="ems-slide-tag" style="color:' + t.color + ';">' + t.label + '</span>';
+}
+
+function renderStageBar(slides, idx) {
+  var n = slides.length - 1;
+  var ticks = '';
+  for (var i = 0; i < n; i++) {
+    var cls = i < idx ? 'done' : (i === idx ? 'current' : '');
+    ticks += '<div class="ems-stage-tick ' + cls + '"></div>';
+  }
+  return '<div class="ems-stagebar">' + ticks + '</div>';
+}
+
 function sectionCard(headerColor, icon, label, bodyHtml) {
   return '<div class="card mb-3 shadow-sm">' +
     '<div class="card-header fw-bold" style="background:' + headerColor + ';color:white;">' + icon + ' ' + label + '</div>' +
@@ -16662,8 +16701,7 @@ function renderSlide() {
     return;
   }
 
-  var pct = Math.round(((idx + 1) / slides.length) * 100);
-  barBox.innerHTML = '<div class="progress mb-3" style="height:6px;"><div class="progress-bar" style="width:' + pct + '%;background:' + c.color + ';"></div></div>';
+  barBox.innerHTML = renderStageBar(slides, idx);
 
   var html = '';
   if (slide.type === 'intro') {
@@ -16673,16 +16711,16 @@ function renderSlide() {
     if (c.highlights) html += highlightStrip(c.highlights, c.color);
     html += sectionCard(c.color, '🎯', '學習目標', '<ul class="mb-0">' + c.goals.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>');
   } else if (slide.type === 'chain') {
-    html += chainOfSurvival(c.color);
+    html += '<div class="mb-2">' + slideTagHTML('chain') + '</div>' + chainOfSurvival(c.color);
   } else if (slide.type === 'theory') {
-    html += '<div class="text-center text-muted small mb-2">📖 學理基礎 ' + (slide.i + 1) + ' / ' + slide.n + '</div>' +
+    html += '<div class="text-center mb-2">' + slideTagHTML('theory') + ' <span class="text-muted small">' + (slide.i + 1) + ' / ' + slide.n + '</span></div>' +
       '<div class="flashcard" style="border-left:6px solid ' + c.color + ';">' + esc(slide.text) + '</div>';
   } else if (slide.type === 'flow') {
     html += sectionCard(c.color, '🔀', '流程圖', '<div class="mermaid">' + c.flow + '</div>');
   } else if (slide.type === 'case') {
     var gid = 'nodecase_' + idx;
-    html += sectionCard(c.color, '🏥', '臨床案例',
-      '<div class="mb-2" style="background:#f8f9fa;border-radius:8px;padding:10px;">' + esc(slide.cs.scenario) + '</div>' +
+    html += sectionCard('var(--ems-caution)', '🏥', '臨床案例',
+      '<div class="mb-2" style="background:var(--ems-surface-2);border-radius:8px;padding:10px;">' + esc(slide.cs.scenario) + '</div>' +
       '<div class="reflect-box">' +
         '<div class="fw-semibold mb-1">🤔 思考與反思</div>' +
         '<div class="mb-2">' + esc(slide.cs.reflect) + '</div>' +
@@ -16691,18 +16729,18 @@ function renderSlide() {
       '</div>');
   } else if (slide.type === 'quiz') {
     var qz = slide.qz;
-    html += '<div class="text-center text-muted small mb-2">📝 隨堂測驗 ' + (slide.i + 1) + ' / ' + slide.n + '</div>' +
+    html += '<div class="text-center mb-2">' + slideTagHTML('quiz') + ' <span class="text-muted small">' + (slide.i + 1) + ' / ' + slide.n + '</span></div>' +
       '<div class="card shadow-sm"><div class="card-body">' +
         '<div class="fw-semibold mb-2">' + esc(qz.q) + '</div>' +
         qz.opts.map(function (o, oi) {
-          return '<button type="button" class="btn btn-outline-secondary btn-sm d-block w-100 text-start mb-1 quiz-opt" data-oi="' + oi + '" data-correct="' + qz.a + '" onclick="selectNodeQuizOption(this)">' + String.fromCharCode(65 + oi) + '. ' + esc(o) + '</button>';
+          return '<button type="button" class="ems-quiz-opt" data-oi="' + oi + '" data-correct="' + qz.a + '" onclick="selectNodeQuizOption(this)"><span class="opt-tag">' + String.fromCharCode(65 + oi) + '</span><span>' + esc(o) + '</span></button>';
         }).join('') +
-        '<div class="reveal-box">' + esc(qz.ex) + '</div>' +
+        '<div class="ems-answer-card"><span class="ex-tag">EX.</span>' + esc(qz.ex) + '</div>' +
       '</div></div>';
   } else if (slide.type === 'mistakes') {
-    html += sectionCard(c.color, '⚠️', '常見錯誤', '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
+    html += sectionCard('var(--ems-red-dark)', '⚠️', '常見錯誤', '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
   } else if (slide.type === 'summary') {
-    html += sectionCard(c.color, '✅', '重點整理', '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
+    html += sectionCard('var(--ems-ok)', '✅', '重點整理', '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
   } else if (slide.type === 'mnemonic') {
     html += sectionCard(c.color, '💡', '記憶口訣', '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
   }
@@ -16748,15 +16786,15 @@ function selectNodeQuizOption(btn) {
   wrap.dataset.answered = '1';
   var correct = parseInt(btn.getAttribute('data-correct'), 10);
   var oi = parseInt(btn.getAttribute('data-oi'), 10);
-  var btns = wrap.querySelectorAll('.quiz-opt');
+  var btns = wrap.querySelectorAll('.ems-quiz-opt');
   for (var i = 0; i < btns.length; i++) {
     var b = btns[i];
     b.disabled = true;
     var boi = parseInt(b.getAttribute('data-oi'), 10);
-    if (boi === correct) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-success'); }
-    else if (boi === oi) { b.classList.remove('btn-outline-secondary'); b.classList.add('btn-danger'); }
+    if (boi === correct) b.classList.add('correct');
+    else if (boi === oi) b.classList.add('wrong');
   }
-  var ansBox = wrap.querySelector('.reveal-box');
+  var ansBox = wrap.querySelector('.ems-answer-card');
   if (ansBox) ansBox.style.display = 'block';
   emsState.nodeAnswered[emsState.slideIdx] = true;
   var nextBtn = document.getElementById('nodeNextBtn');
