@@ -20943,7 +20943,7 @@ async function loadGongchaStats() {
     const curY = new Date().getFullYear();
     for (let y = curY; y >= curY - 3; y--) {
       const o = document.createElement('option');
-      o.value = y; o.textContent = y + ' 年';
+      o.value = y; o.textContent = (y - 1911) + ' 年';
       if (y === curY) o.selected = true;
       yrSel.appendChild(o);
     }
