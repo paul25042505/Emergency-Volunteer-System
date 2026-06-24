@@ -15927,11 +15927,6 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   @media (prefers-reduced-motion:reduce){ .ems-live-dot{animation:none;} }
 
   /* ── B. 警示燈分隔線 Strobe Divider ── */
-  .ems-strobe{height:5px;width:100%;background:repeating-linear-gradient(90deg,var(--ems-red) 0 16px,var(--ems-red-dark) 16px 18px,var(--ems-blue) 18px 34px,var(--ems-blue-dark) 34px 36px);}
-  .ems-strobe.loading{background-size:200% 100%;animation:ems-strobe-scan 2.4s linear infinite;}
-  @keyframes ems-strobe-scan{from{background-position:0 0;}to{background-position:-72px 0;}}
-  @media (prefers-reduced-motion:reduce){ .ems-strobe.loading{animation:none;} }
-  [data-theme="dark"] .ems-strobe{filter:brightness(.85);}
 
   /* ── C. 地圖浮水印 Map Watermark ── */
   .ems-view-wrap{position:relative;}
@@ -15939,7 +15934,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView{position:relative;z-index:1;}
 
   /* ── D. 反光黃狀態系統 Hi-Vis Status ── */
-  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ems-radius-sm);}
+  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ems-radius-sm);white-space:nowrap;flex-shrink:0;}
   .ems-hiviz-ring{box-shadow:0 0 0 2px var(--ems-hiviz);}
   @keyframes ems-shine-once{0%{box-shadow:0 0 0 0 var(--ems-hiviz-dim);}60%{box-shadow:0 0 0 8px var(--ems-hiviz-dim);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
   .ems-shine-once{animation:ems-shine-once .9s var(--ems-ease) 1;}
@@ -16069,8 +16064,6 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
       <span class="ems-cmdbar-xp" id="emsCmdXp">LV.1 · 0 XP</span>
     </div>
   </div>
-  <div class="ems-strobe" id="emsStrobe"></div>
-
   <div class="ems-body-pad">
   <div class="alert alert-warning small py-2 px-3 mb-3">
     ⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。
@@ -16901,11 +16894,10 @@ function renderSlide() {
 
   var isQuizUnanswered = slide.type === 'quiz' && !emsState.nodeAnswered[idx];
   navBox.innerHTML = '<div class="d-flex gap-2 mt-3">' +
-    '<button type="button" id="nodePrevBtn" class="btn btn-outline-secondary btn-sm" ' + (idx === 0 ? 'disabled' : '') + ' onclick="nodePrev()">‹ 上一步</button>' +
-    '<button type="button" id="nodeNextBtn" class="btn btn-primary btn-sm flex-grow-1" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 🎉' : '繼續 →')) + '</button>' +
+    '<button type="button" id="nodePrevBtn" class="btn btn-outline-secondary" style="padding:12px 18px;" ' + (idx === 0 ? 'disabled' : '') + ' onclick="nodePrev()">‹ 上一步</button>' +
+    '<button type="button" id="nodeNextBtn" class="btn btn-primary flex-grow-1" style="padding:12px 18px;" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 🎉' : '繼續 →')) + '</button>' +
   '</div>';
 
-  window.scrollTo(0, 0);
   notifyResize();
 }
 
