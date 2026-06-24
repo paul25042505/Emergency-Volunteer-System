@@ -16642,7 +16642,7 @@ function showDashboard() {
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
   renderDashboard();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -16657,7 +16657,7 @@ function showZone(zi) {
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
   renderZoneContent();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -16669,7 +16669,7 @@ function showAchievements() {
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'block';
   renderAchievements();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -16982,7 +16982,7 @@ function showTestStation() {
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
   renderTestStation();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17023,7 +17023,7 @@ function startExam(categoryKey) {
   clearInterval(practiceState.timer);
   practiceState.timer = setInterval(tickExamTimer, 1000);
   renderPracticeQuestion();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17107,7 +17107,7 @@ function answerPractice(btn) {
 function nextPractice() {
   practiceState.idx++;
   renderPracticeQuestion();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function renderPracticeResult() {
@@ -17238,7 +17238,7 @@ function showScenarioCenter() {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'block';
   renderScenarioCenter();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17270,13 +17270,13 @@ function startScenario(id) {
   scenarioState.nodeKey = sc.start;
   scenarioState.history = [];
   renderScenarioNode();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function exitScenario() {
   scenarioState.scenario = null;
   renderScenarioCenter();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function renderScenarioNode() {
@@ -17319,7 +17319,7 @@ function chooseScenario(ci) {
 
 function scenarioNext() {
   renderScenarioNode();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function renderScenarioDebrief(node) {
