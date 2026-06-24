@@ -17833,15 +17833,14 @@ function renderScenarioNode() {
     var v = node.vitals[k];
     return '<div class="m-item"><div class="m-label">' + k + '</div><div class="m-val ' + v.s + '">' + esc(v.v) + '</div></div>';
   }).join('');
-  var html = '<button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick="exitScenario()">← 返回派遣清單</button>' +
-    '<div class="ems-section-label mb-2">' + esc(sc.title) + '</div>' +
+  var html = '<div class="ems-section-label mb-2">' + esc(sc.title) + '</div>' +
     '<div class="mb-3">' + esc(node.narrative) + '</div>' +
     '<div class="ems-monitor mb-3">' + vitalsHtml + '</div>' +
     '<div id="scenarioChoices">' + node.choices.map(function (c, ci) {
       return '<button type="button" class="ems-quiz-opt" onclick="' + ('chooseScenario(' + ci + ')') + '"><span class="opt-tag">' + String.fromCharCode(65 + ci) + '</span><span>' + esc(c.label) + '</span></button>';
     }).join('') + '</div>' +
     '<div id="scenarioFeedback" class="ems-answer-card" style="display:none;"><span class="ex-tag">回饋</span><span id="scenarioFeedbackText"></span></div>' +
-    '<button type="button" id="scenarioNextBtn" class="btn btn-primary mt-3" style="display:none;" onclick="scenarioNext()">繼續</button>';
+    '<div class="text-end mt-3"><button type="button" id="scenarioNextBtn" class="btn btn-primary" style="display:none;" onclick="scenarioNext()">繼續</button></div>';
   document.getElementById('scenarioContent').innerHTML = html;
   notifyResize();
 }
