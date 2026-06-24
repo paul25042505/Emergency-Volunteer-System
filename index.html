@@ -16818,7 +16818,6 @@ function showNode(chapterId) {
   document.getElementById('nodeView').style.display = 'block';
   updateEmsCmdBar(c.title);
   renderSlide();
-  window.scrollTo(0, 0);
 }
 
 function exitNode() {
@@ -16899,6 +16898,7 @@ function renderSlide() {
   '</div>';
 
   notifyResize();
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function nodePrev() {
@@ -17497,6 +17497,9 @@ window.addEventListener('message', (ev) => {
   if (ev && ev.data && ev.data.type === 'emtResize') {
     const ifr = document.getElementById('emtStudyIframe');
     if (ifr) ifr.style.height = Math.max(300, ev.data.height + 24) + 'px';
+  }
+  if (ev && ev.data && ev.data.type === 'emtScrollTop') {
+    document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
   }
 });
 
