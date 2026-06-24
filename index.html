@@ -15916,30 +15916,13 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   body{font-family:var(--ems-font);background:var(--ems-bg);color:var(--ems-text);padding:0 0 30px;margin:0;}
   .ems-body-pad{padding:14px 14px 0;}
 
-  /* ── A. 指揮列 Command Header ── */
-  .ems-cmdbar{background:var(--ems-red-deep);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:.72rem;letter-spacing:.04em;}
-  .ems-cmdbar-crumb{opacity:.85;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .ems-cmdbar-crumb span{opacity:.5;margin:0 4px;}
-  .ems-cmdbar-status{display:flex;align-items:center;flex-shrink:0;margin-left:10px;}
-  .ems-cmdbar-xp{font-family:var(--ems-font-mono);font-weight:700;white-space:nowrap;}
-  .ems-live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ems-hiviz);margin-right:6px;box-shadow:0 0 0 0 rgba(223,255,0,.6);animation:ems-pulse 1.8s infinite;}
-  @keyframes ems-pulse{0%{box-shadow:0 0 0 0 rgba(223,255,0,.5);}70%{box-shadow:0 0 0 5px rgba(223,255,0,0);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
-  @media (prefers-reduced-motion:reduce){ .ems-live-dot{animation:none;} }
-
-  /* ── B. 警示燈分隔線 Strobe Divider ── */
-  .ems-strobe{height:5px;width:100%;background:repeating-linear-gradient(90deg,var(--ems-red) 0 16px,var(--ems-red-dark) 16px 18px,var(--ems-blue) 18px 34px,var(--ems-blue-dark) 34px 36px);}
-  .ems-strobe.loading{background-size:200% 100%;animation:ems-strobe-scan 2.4s linear infinite;}
-  @keyframes ems-strobe-scan{from{background-position:0 0;}to{background-position:-72px 0;}}
-  @media (prefers-reduced-motion:reduce){ .ems-strobe.loading{animation:none;} }
-  [data-theme="dark"] .ems-strobe{filter:brightness(.85);}
-
   /* ── C. 地圖浮水印 Map Watermark ── */
   .ems-view-wrap{position:relative;}
   .ems-map-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--ems-map-opacity);background-image:var(--ems-map-svg);background-size:120px;background-repeat:repeat;mix-blend-mode:multiply;}
-  .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView{position:relative;z-index:1;}
+  .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView,.ems-view-wrap>#achievementView,.ems-view-wrap>#scenarioView{position:relative;z-index:1;}
 
   /* ── D. 反光黃狀態系統 Hi-Vis Status ── */
-  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ems-radius-sm);}
+  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ems-radius-sm);white-space:nowrap;flex-shrink:0;}
   .ems-hiviz-ring{box-shadow:0 0 0 2px var(--ems-hiviz);}
   @keyframes ems-shine-once{0%{box-shadow:0 0 0 0 var(--ems-hiviz-dim);}60%{box-shadow:0 0 0 8px var(--ems-hiviz-dim);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
   .ems-shine-once{animation:ems-shine-once .9s var(--ems-ease) 1;}
@@ -16062,19 +16045,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-  <div class="ems-cmdbar">
-    <div class="ems-cmdbar-crumb" id="emsCmdCrumb">EMS ACADEMY</div>
-    <div class="ems-cmdbar-status">
-      <span class="ems-live-dot"></span>
-      <span class="ems-cmdbar-xp" id="emsCmdXp">LV.1 · 0 XP</span>
-    </div>
-  </div>
-  <div class="ems-strobe" id="emsStrobe"></div>
-
   <div class="ems-body-pad">
-  <div class="alert alert-warning small py-2 px-3 mb-3">
-    ⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。
-  </div>
 
   <div class="ems-view-wrap">
     <div class="ems-map-watermark"></div>
@@ -16729,13 +16700,6 @@ var emsState = {
 
 function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-function updateEmsCmdBar(crumb) {
-  var crumbEl = document.getElementById('emsCmdCrumb');
-  var xpEl = document.getElementById('emsCmdXp');
-  if (crumbEl) crumbEl.innerHTML = crumb ? ('EMS ACADEMY<span>›</span>' + esc(crumb)) : 'EMS ACADEMY';
-  if (xpEl) xpEl.textContent = 'LV.' + emsState.level + ' · ' + emsState.xp + ' XP';
-}
-
 function notifyResize() {
   setTimeout(function () {
     parent.postMessage({ type: 'emtResize', height: document.documentElement.scrollHeight }, '*');
@@ -16877,7 +16841,6 @@ function loadProgress() {
       emsState.examHistory = p.examHistory || {};
       emsState.memberName = p.name || '';
     }
-    updateEmsCmdBar();
     renderDashboard();
     notifyResize();
   };
@@ -16985,6 +16948,7 @@ function renderDashboard() {
             '<div class="ems-vital"><span class="v-label">解鎖分區</span><span class="v-num">' + unlockedZones + '</span></div>' +
             '<div class="ems-vital"><span class="v-label">累積XP</span><span class="v-num">' + emsState.xp + '</span></div>' +
           '</div>';
+  html += '<div class="alert alert-warning small py-2 px-3 mb-0">⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。</div>';
   box.innerHTML = html;
 }
 
@@ -16995,9 +16959,8 @@ function showDashboard() {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
-  updateEmsCmdBar();
   renderDashboard();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17011,9 +16974,8 @@ function showZone(zi) {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
-  updateEmsCmdBar(z.title);
   renderZoneContent();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17024,9 +16986,8 @@ function showAchievements() {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'block';
-  updateEmsCmdBar('我的成就');
   renderAchievements();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17141,9 +17102,7 @@ function showNode(chapterId) {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'block';
-  updateEmsCmdBar(c.title);
   renderSlide();
-  window.scrollTo(0, 0);
 }
 
 function exitNode() {
@@ -17219,12 +17178,12 @@ function renderSlide() {
 
   var isQuizUnanswered = slide.type === 'quiz' && !emsState.nodeAnswered[idx];
   navBox.innerHTML = '<div class="d-flex gap-2 mt-3">' +
-    '<button type="button" id="nodePrevBtn" class="btn btn-outline-secondary btn-sm" ' + (idx === 0 ? 'disabled' : '') + ' onclick="nodePrev()">‹ 上一步</button>' +
-    '<button type="button" id="nodeNextBtn" class="btn btn-primary btn-sm flex-grow-1" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 🎉' : '繼續 →')) + '</button>' +
+    '<button type="button" id="nodePrevBtn" class="btn btn-outline-secondary" style="padding:12px 18px;" ' + (idx === 0 ? 'disabled' : '') + ' onclick="nodePrev()">‹ 上一步</button>' +
+    '<button type="button" id="nodeNextBtn" class="btn btn-primary flex-grow-1" style="padding:12px 18px;" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 🎉' : '繼續 →')) + '</button>' +
   '</div>';
 
-  window.scrollTo(0, 0);
   notifyResize();
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function nodePrev() {
@@ -17340,9 +17299,8 @@ function showTestStation() {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
-  updateEmsCmdBar('模擬考場');
   renderTestStation();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17383,7 +17341,7 @@ function startExam(categoryKey) {
   clearInterval(practiceState.timer);
   practiceState.timer = setInterval(tickExamTimer, 1000);
   renderPracticeQuestion();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17467,7 +17425,7 @@ function answerPractice(btn) {
 function nextPractice() {
   practiceState.idx++;
   renderPracticeQuestion();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function renderPracticeResult() {
@@ -17597,9 +17555,8 @@ function showScenarioCenter() {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'block';
-  updateEmsCmdBar('情境模擬中心');
   renderScenarioCenter();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
   notifyResize();
 }
 
@@ -17631,13 +17588,13 @@ function startScenario(id) {
   scenarioState.nodeKey = sc.start;
   scenarioState.history = [];
   renderScenarioNode();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function exitScenario() {
   scenarioState.scenario = null;
   renderScenarioCenter();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function renderScenarioNode() {
@@ -17680,7 +17637,7 @@ function chooseScenario(ci) {
 
 function scenarioNext() {
   renderScenarioNode();
-  window.scrollTo(0, 0);
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
 }
 
 function renderScenarioDebrief(node) {
@@ -17707,7 +17664,6 @@ function renderScenarioDebrief(node) {
   if (firstTime && parent.emsAcademyApi) {
     parent.emsAcademyApi.saveScenarioXp(sc.id, xpGain).then(function (p) {
       emsState.xp = p.xp; emsState.level = p.level; emsState.xpIntoLevel = p.xpIntoLevel; emsState.xpForNextLevel = p.xpForNextLevel; emsState.completedScenarios = p.completedScenarios;
-      updateEmsCmdBar('情境模擬中心');
     }).catch(function () {});
   }
   notifyResize();
@@ -17823,6 +17779,9 @@ window.addEventListener('message', (ev) => {
   if (ev && ev.data && ev.data.type === 'emtResize') {
     const ifr = document.getElementById('emtStudyIframe');
     if (ifr) ifr.style.height = Math.max(300, ev.data.height + 24) + 'px';
+  }
+  if (ev && ev.data && ev.data.type === 'emtScrollTop') {
+    document.getElementById('appScroll')?.scrollTo({top: 0, behavior: 'smooth'});
   }
 });
 
