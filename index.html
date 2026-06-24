@@ -6739,7 +6739,7 @@ function goBack() {
       return;
     }
   }
-  // 若目前在 EMS Academy 且 iframe 內部正顯示關卡內容/章節列表/練習模式，先退回上一層而非直接離開頁面
+  // 若目前在 EMS Academy 且 iframe 內部正顯示關卡內容/章節列表/練習模式/成就頁/情境模擬，先退回上一層而非直接離開頁面
   if (window._currentPageId === 'emtStudyPage') {
     const ifr = document.getElementById('emtStudyIframe');
     try {
@@ -6747,9 +6747,17 @@ function goBack() {
       const nodeView = idoc && idoc.getElementById('nodeView');
       const zoneView = idoc && idoc.getElementById('zoneView');
       const practiceView = idoc && idoc.getElementById('practiceView');
+      const achievementView = idoc && idoc.getElementById('achievementView');
+      const scenarioView = idoc && idoc.getElementById('scenarioView');
       if (nodeView && nodeView.style.display === 'block') { ifr.contentWindow.exitNode(); return; }
       if (zoneView && zoneView.style.display === 'block') { ifr.contentWindow.showDashboard(); return; }
       if (practiceView && practiceView.style.display === 'block') { ifr.contentWindow.exitPractice(); return; }
+      if (achievementView && achievementView.style.display === 'block') { ifr.contentWindow.showDashboard(); return; }
+      if (scenarioView && scenarioView.style.display === 'block') {
+        const sState = ifr.contentWindow.scenarioState;
+        if (sState && sState.scenario) { ifr.contentWindow.exitScenario(); return; }
+        ifr.contentWindow.showDashboard(); return;
+      }
     } catch (e) { /* 跨來源或尚未載入時忽略，走預設返回邏輯 */ }
   }
   const prev = window._prevPageId;
@@ -17868,9 +17876,14 @@ window.addEventListener('load', notifyResize);
 
 function initEmtStudyPage() {
   const ifr = document.getElementById('emtStudyIframe');
-  if (!ifr || ifr.dataset.loaded) return;
-  ifr.dataset.loaded = '1';
-  ifr.srcdoc = EMS_ACADEMY_HTML;
+  if (!ifr) return;
+  if (!ifr.dataset.loaded) {
+    ifr.dataset.loaded = '1';
+    ifr.srcdoc = EMS_ACADEMY_HTML;
+    return;
+  }
+  // 每次重新進入學習中心一律回到首頁，不停留在上次離開時的子頁面
+  try { ifr.contentWindow.showDashboard(); } catch (e) { /* 尚未載入完成時忽略 */ }
 }
 
 function emsXpForLevel(lv) { return Math.round(100 * lv * (1 + lv * 0.05)); }
