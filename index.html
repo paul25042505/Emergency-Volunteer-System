@@ -17296,7 +17296,7 @@ function renderDashboard() {
             '<div class="ems-vital"><span class="v-label">解鎖分區</span><span class="v-num">' + unlockedZones + '</span></div>' +
             '<div class="ems-vital"><span class="v-label">累積XP</span><span class="v-num">' + emsState.xp + '</span></div>' +
           '</div>';
-  html += '<div class="alert alert-warning small py-2 px-3 mb-0">⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。</div>';
+  html += '<div class="text-center mt-3" style="font-size:0.7rem;line-height:1.5;color:var(--ems-text-light);">本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。</div>';
   box.innerHTML = html;
 }
 
@@ -17420,7 +17420,8 @@ function buildSlides(c) {
   c.theory.forEach(function (t, i) { slides.push({ type: 'theory', text: t, i: i, n: c.theory.length }); });
   slides.push({ type: 'flow' });
   c.cases.forEach(function (cs, i) { slides.push({ type: 'case', cs: cs, i: i }); });
-  c.quiz.forEach(function (qz, i) { slides.push({ type: 'quiz', qz: qz, i: i, n: c.quiz.length }); });
+  var quizPick = c.quiz.length > 5 ? shuffleArr(c.quiz.slice()).slice(0, 5) : c.quiz;
+  quizPick.forEach(function (qz, i) { slides.push({ type: 'quiz', qz: qz, i: i, n: quizPick.length }); });
   slides.push({ type: 'mistakes' });
   slides.push({ type: 'summary' });
   slides.push({ type: 'mnemonic' });
@@ -17746,7 +17747,7 @@ function renderPracticeQuestion() {
     return '<button type="button" class="ems-kahoot-opt" data-oi="' + oi + '" data-color="' + oi + '" onclick="answerPractice(this)"><span class="opt-shape">' + kahootShapes[oi] + '</span><span>' + esc(o) + '</span></button>';
   }).join('') + '</div>';
   html += '<div id="practiceAns" class="ems-answer-card"><span class="ex-tag">EX.</span><span id="practiceAnsText"></span></div>' +
-    '<button type="button" id="practiceNextBtn" class="btn btn-primary btn-sm mt-2" style="display:none;" onclick="nextPractice()">' + (idx + 1 < total ? '下一題' : '查看結果') + '</button>';
+    '<div class="text-end mt-2"><button type="button" id="practiceNextBtn" class="btn btn-primary btn-sm" style="display:none;" onclick="nextPractice()">' + (idx + 1 < total ? '下一題' : '查看結果') + '</button></div>';
   box.innerHTML = html;
   notifyResize();
 }
@@ -17963,15 +17964,14 @@ function renderScenarioNode() {
     var v = node.vitals[k];
     return '<div class="m-item"><div class="m-label">' + k + '</div><div class="m-val ' + v.s + '">' + esc(v.v) + '</div></div>';
   }).join('');
-  var html = '<button type="button" class="btn btn-sm btn-outline-secondary mb-2" onclick="exitScenario()">← 返回派遣清單</button>' +
-    '<div class="ems-section-label mb-2">' + esc(sc.title) + '</div>' +
+  var html = '<div class="ems-section-label mb-2">' + esc(sc.title) + '</div>' +
     '<div class="mb-3">' + esc(node.narrative) + '</div>' +
     '<div class="ems-monitor mb-3">' + vitalsHtml + '</div>' +
     '<div id="scenarioChoices">' + node.choices.map(function (c, ci) {
       return '<button type="button" class="ems-quiz-opt" onclick="' + ('chooseScenario(' + ci + ')') + '"><span class="opt-tag">' + String.fromCharCode(65 + ci) + '</span><span>' + esc(c.label) + '</span></button>';
     }).join('') + '</div>' +
     '<div id="scenarioFeedback" class="ems-answer-card" style="display:none;"><span class="ex-tag">回饋</span><span id="scenarioFeedbackText"></span></div>' +
-    '<button type="button" id="scenarioNextBtn" class="btn btn-primary mt-3" style="display:none;" onclick="scenarioNext()">繼續</button>';
+    '<div class="text-end mt-3"><button type="button" id="scenarioNextBtn" class="btn btn-primary" style="display:none;" onclick="scenarioNext()">繼續</button></div>';
   document.getElementById('scenarioContent').innerHTML = html;
   notifyResize();
 }
