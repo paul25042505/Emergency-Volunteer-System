@@ -17403,7 +17403,7 @@ function boot() {
     loadProgress();
   } catch (e) {
     var box = document.getElementById('dashboardView');
-    if (box) box.innerHTML = '<div class="text-danger small">載入失敗：' + esc(String(e && e.message || e)) + '</div>';
+    if (box) box.innerHTML = '<div style="border:1px solid var(--ems-red);border-radius:var(--ems-radius);padding:10px;font-family:var(--ems-font-mono);font-size:.78rem;color:var(--ems-red);">ERR: 載入失敗，請稍後再試（' + esc(String(e && e.message || e)) + '）</div>';
   }
 }
 boot();
