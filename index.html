@@ -17252,7 +17252,8 @@ function buildSlides(c) {
   c.theory.forEach(function (t, i) { slides.push({ type: 'theory', text: t, i: i, n: c.theory.length }); });
   slides.push({ type: 'flow' });
   c.cases.forEach(function (cs, i) { slides.push({ type: 'case', cs: cs, i: i }); });
-  c.quiz.forEach(function (qz, i) { slides.push({ type: 'quiz', qz: qz, i: i, n: c.quiz.length }); });
+  var quizPick = c.quiz.length > 5 ? shuffleArr(c.quiz.slice()).slice(0, 5) : c.quiz;
+  quizPick.forEach(function (qz, i) { slides.push({ type: 'quiz', qz: qz, i: i, n: quizPick.length }); });
   slides.push({ type: 'mistakes' });
   slides.push({ type: 'summary' });
   slides.push({ type: 'mnemonic' });
@@ -17570,7 +17571,7 @@ function renderPracticeQuestion() {
     return '<button type="button" class="ems-kahoot-opt" data-oi="' + oi + '" data-color="' + oi + '" onclick="answerPractice(this)"><span class="opt-shape">' + kahootShapes[oi] + '</span><span>' + esc(o) + '</span></button>';
   }).join('') + '</div>';
   html += '<div id="practiceAns" class="ems-answer-card"><span class="ex-tag">EX.</span><span id="practiceAnsText"></span></div>' +
-    '<button type="button" id="practiceNextBtn" class="btn btn-primary btn-sm mt-2" style="display:none;" onclick="nextPractice()">' + (idx + 1 < total ? '下一題' : '查看結果') + '</button>';
+    '<div class="text-end mt-2"><button type="button" id="practiceNextBtn" class="btn btn-primary btn-sm" style="display:none;" onclick="nextPractice()">' + (idx + 1 < total ? '下一題' : '查看結果') + '</button></div>';
   box.innerHTML = html;
   notifyResize();
 }
