@@ -15916,18 +15916,6 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   body{font-family:var(--ems-font);background:var(--ems-bg);color:var(--ems-text);padding:0 0 30px;margin:0;}
   .ems-body-pad{padding:14px 14px 0;}
 
-  /* ── A. 指揮列 Command Header ── */
-  .ems-cmdbar{background:var(--ems-red-deep);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;font-size:.72rem;letter-spacing:.04em;}
-  .ems-cmdbar-crumb{opacity:.85;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .ems-cmdbar-crumb span{opacity:.5;margin:0 4px;}
-  .ems-cmdbar-status{display:flex;align-items:center;flex-shrink:0;margin-left:10px;}
-  .ems-cmdbar-xp{font-family:var(--ems-font-mono);font-weight:700;white-space:nowrap;}
-  .ems-live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ems-hiviz);margin-right:6px;box-shadow:0 0 0 0 rgba(223,255,0,.6);animation:ems-pulse 1.8s infinite;}
-  @keyframes ems-pulse{0%{box-shadow:0 0 0 0 rgba(223,255,0,.5);}70%{box-shadow:0 0 0 5px rgba(223,255,0,0);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
-  @media (prefers-reduced-motion:reduce){ .ems-live-dot{animation:none;} }
-
-  /* ── B. 警示燈分隔線 Strobe Divider ── */
-
   /* ── C. 地圖浮水印 Map Watermark ── */
   .ems-view-wrap{position:relative;}
   .ems-map-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--ems-map-opacity);background-image:var(--ems-map-svg);background-size:120px;background-repeat:repeat;mix-blend-mode:multiply;}
@@ -16057,17 +16045,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-  <div class="ems-cmdbar">
-    <div class="ems-cmdbar-crumb" id="emsCmdCrumb">EMS ACADEMY</div>
-    <div class="ems-cmdbar-status">
-      <span class="ems-live-dot"></span>
-      <span class="ems-cmdbar-xp" id="emsCmdXp">LV.1 · 0 XP</span>
-    </div>
-  </div>
   <div class="ems-body-pad">
-  <div class="alert alert-warning small py-2 px-3 mb-3">
-    ⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。
-  </div>
 
   <div class="ems-view-wrap">
     <div class="ems-map-watermark"></div>
@@ -16404,13 +16382,6 @@ var emsState = {
 
 function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-function updateEmsCmdBar(crumb) {
-  var crumbEl = document.getElementById('emsCmdCrumb');
-  var xpEl = document.getElementById('emsCmdXp');
-  if (crumbEl) crumbEl.innerHTML = crumb ? ('EMS ACADEMY<span>›</span>' + esc(crumb)) : 'EMS ACADEMY';
-  if (xpEl) xpEl.textContent = 'LV.' + emsState.level + ' · ' + emsState.xp + ' XP';
-}
-
 function notifyResize() {
   setTimeout(function () {
     parent.postMessage({ type: 'emtResize', height: document.documentElement.scrollHeight }, '*');
@@ -16552,7 +16523,6 @@ function loadProgress() {
       emsState.examHistory = p.examHistory || {};
       emsState.memberName = p.name || '';
     }
-    updateEmsCmdBar();
     renderDashboard();
     notifyResize();
   };
@@ -16660,6 +16630,7 @@ function renderDashboard() {
             '<div class="ems-vital"><span class="v-label">解鎖分區</span><span class="v-num">' + unlockedZones + '</span></div>' +
             '<div class="ems-vital"><span class="v-label">累積XP</span><span class="v-num">' + emsState.xp + '</span></div>' +
           '</div>';
+  html += '<div class="alert alert-warning small py-2 px-3 mb-0">⚠️ 本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。</div>';
   box.innerHTML = html;
 }
 
@@ -16670,7 +16641,6 @@ function showDashboard() {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
-  updateEmsCmdBar();
   renderDashboard();
   window.scrollTo(0, 0);
   notifyResize();
@@ -16686,7 +16656,6 @@ function showZone(zi) {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
-  updateEmsCmdBar(z.title);
   renderZoneContent();
   window.scrollTo(0, 0);
   notifyResize();
@@ -16699,7 +16668,6 @@ function showAchievements() {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'block';
-  updateEmsCmdBar('我的成就');
   renderAchievements();
   window.scrollTo(0, 0);
   notifyResize();
@@ -16816,7 +16784,6 @@ function showNode(chapterId) {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'block';
-  updateEmsCmdBar(c.title);
   renderSlide();
 }
 
@@ -17014,7 +16981,6 @@ function showTestStation() {
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
-  updateEmsCmdBar('模擬考場');
   renderTestStation();
   window.scrollTo(0, 0);
   notifyResize();
@@ -17271,7 +17237,6 @@ function showScenarioCenter() {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'block';
-  updateEmsCmdBar('情境模擬中心');
   renderScenarioCenter();
   window.scrollTo(0, 0);
   notifyResize();
@@ -17381,7 +17346,6 @@ function renderScenarioDebrief(node) {
   if (firstTime && parent.emsAcademyApi) {
     parent.emsAcademyApi.saveScenarioXp(sc.id, xpGain).then(function (p) {
       emsState.xp = p.xp; emsState.level = p.level; emsState.xpIntoLevel = p.xpIntoLevel; emsState.xpForNextLevel = p.xpForNextLevel; emsState.completedScenarios = p.completedScenarios;
-      updateEmsCmdBar('情境模擬中心');
     }).catch(function () {});
   }
   notifyResize();
