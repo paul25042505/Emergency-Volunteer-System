@@ -10281,7 +10281,7 @@ function aqSetDateChip(type, btn) {
   if (cr) cr.style.display = type === 'custom' ? 'flex' : 'none';
   if (type === 'custom') return;
   const today = new Date();
-  const fmt   = d => d.toISOString().slice(0,10);
+  const fmt   = d => d.toLocaleDateString('sv');
   let from = fmt(today), to = fmt(today);
   if (type === 'week') {
     const d = new Date(today); d.setDate(d.getDate() - d.getDay());
@@ -10317,7 +10317,7 @@ function qSetDateChip(type, btn) {
   if (cr) cr.style.display = type === 'custom' ? 'flex' : 'none';
   if (type === 'custom') return;
   const today = new Date();
-  const fmt   = d => d.toISOString().slice(0,10);
+  const fmt   = d => d.toLocaleDateString('sv');
   let from = fmt(today), to = fmt(today);
   if (type === 'week') {
     const d = new Date(today); d.setDate(d.getDate() - d.getDay());
@@ -12721,7 +12721,7 @@ async function adminDel(col,id,label,reloadFn) {
 async function adminRetireMember(id, name) {
   if (!confirm('確定要將「'+name+'」標記為退隊？\n\n• 將從成員列表、打卡、案件登錄等選單中隱藏\n• 歷史出勤/協勤紀錄將保留封存，不會被刪除\n• 該帳號將無法再登入系統\n\n之後可勾選「顯示已退隊成員」復原。')) return;
   try {
-    await fbSet(COL_WHITELIST, id, { status: 'retired', retiredAt: new Date().toISOString().slice(0,10) });
+    await fbSet(COL_WHITELIST, id, { status: 'retired', retiredAt: new Date().toLocaleDateString('sv') });
     await loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'');
     await loadMembers(true);
   } catch(e) { alert('操作失敗：'+e.message); }
