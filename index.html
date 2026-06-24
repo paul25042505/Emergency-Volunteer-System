@@ -263,6 +263,15 @@ input[readonly], input.input-readonly {
 .btn-clear:hover { border-color: var(--red); color: var(--red); background: var(--red-faint); }
 .admin-fill-btn { background:none; border:1.5px solid #9ec5fe; border-radius:8px; padding:5px 10px; font-size:0.76rem; cursor:pointer; color:#1d4ed8; font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
 
+/* ── EMS學院 流程圖全螢幕縮放（渲染在外層，避免 iframe 內 position:fixed 失效） ── */
+#emsFlowZoomModal { position:fixed; inset:0; z-index:9500; background:rgba(10,10,12,0.94); display:none; touch-action:none; }
+#emsFlowZoomToolbar { position:absolute; top:max(env(safe-area-inset-top,0px),12px); right:12px; display:flex; gap:8px; z-index:1; }
+#emsFlowZoomToolbar button { width:40px; height:40px; border-radius:50%; border:none; background:rgba(255,255,255,0.15); color:#fff; font-size:1.15rem; line-height:1; cursor:pointer; }
+#emsFlowZoomToolbar button:active { background:rgba(255,255,255,0.28); }
+#emsFlowZoomViewport { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+#emsFlowZoomInner { max-width:92vw; max-height:80vh; will-change:transform; }
+#emsFlowZoomInner svg { display:block; width:100%; height:auto; }
+
 /* ── Submit ── */
 .btn-submit {
   width: 100%; background: var(--red); color: white; border: none; padding: 16px;
@@ -8306,6 +8315,118 @@ function _sigFormSetHasSig()     { hasSig = true; }
 function _sigCheckinSetHasSig()  { attCheckinHasSig = true; }
 function _sigCheckoutSetHasSig() { attCheckoutHasSig = true; }
 
+// ── EMS學院 流程圖全螢幕縮放 Modal ──
+// emtStudyIframe 是獨立 document，其內的 position:fixed 只會相對 iframe 自己的內容高度定位、
+// 不會貼齊使用者實際看到的畫面，故由 iframe 把渲染好的 SVG 傳回外層，在外層渲染全螢幕縮放畫面。
+(function () {
+  const state = { scale: 1, x: 0, y: 0 };
+  let pinchStartDist = 0, pinchStartScale = 1;
+  let panStart = null, panOrigin = null;
+  let lastTapTime = 0;
+  let mouseDragging = false, mouseStart = null, mouseOrigin = null;
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+  function apply() {
+    const inner = document.getElementById('emsFlowZoomInner');
+    if (inner) inner.style.transform = `translate(${state.x}px,${state.y}px) scale(${state.scale})`;
+  }
+  function clampPan() {
+    const limit = Math.max(0, state.scale - 1) * 220 + 30;
+    state.x = clamp(state.x, -limit, limit);
+    state.y = clamp(state.y, -limit, limit);
+  }
+  function reset() { state.scale = 1; state.x = 0; state.y = 0; apply(); }
+  function dist(t0, t1) { const dx = t0.clientX - t1.clientX, dy = t0.clientY - t1.clientY; return Math.sqrt(dx * dx + dy * dy); }
+
+  window.openFlowFullscreen = function (svgHtml) {
+    const modal = document.getElementById('emsFlowZoomModal');
+    const inner = document.getElementById('emsFlowZoomInner');
+    if (!modal || !inner || !svgHtml) return;
+    inner.innerHTML = svgHtml;
+    const svg = inner.querySelector('svg');
+    if (svg) { svg.removeAttribute('height'); svg.style.width = '100%'; svg.style.height = 'auto'; svg.style.display = 'block'; }
+    reset();
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeFlowFullscreen = function () {
+    const modal = document.getElementById('emsFlowZoomModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+  window.emsFlowZoomBy = function (f) { state.scale = clamp(state.scale * f, 1, 5); clampPan(); apply(); };
+  window.emsFlowZoomReset = function () { reset(); };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('emsFlowZoomModal');
+    const viewport = document.getElementById('emsFlowZoomViewport');
+    if (!modal || !viewport) return;
+
+    modal.addEventListener('touchstart', function (e) {
+      if (e.target.closest('#emsFlowZoomToolbar')) return;
+      e.preventDefault();
+      if (e.touches.length === 2) {
+        pinchStartDist = dist(e.touches[0], e.touches[1]);
+        pinchStartScale = state.scale;
+        panStart = null;
+      } else if (e.touches.length === 1) {
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          state.scale = state.scale > 1 ? 1 : 2.4; state.x = 0; state.y = 0; apply();
+          lastTapTime = 0; panStart = null; return;
+        }
+        lastTapTime = now;
+        panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        panOrigin = { x: state.x, y: state.y };
+      }
+    }, { passive: false });
+
+    modal.addEventListener('touchmove', function (e) {
+      if (e.target.closest('#emsFlowZoomToolbar')) return;
+      e.preventDefault();
+      if (e.touches.length === 2 && pinchStartDist > 0) {
+        const d = dist(e.touches[0], e.touches[1]);
+        state.scale = clamp(pinchStartScale * (d / pinchStartDist), 1, 5);
+        clampPan(); apply();
+      } else if (e.touches.length === 1 && panStart) {
+        state.x = panOrigin.x + (e.touches[0].clientX - panStart.x);
+        state.y = panOrigin.y + (e.touches[0].clientY - panStart.y);
+        clampPan(); apply();
+      }
+    }, { passive: false });
+
+    modal.addEventListener('touchend', function (e) {
+      pinchStartDist = 0;
+      if (e.touches.length === 1) { panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY }; panOrigin = { x: state.x, y: state.y }; }
+      else panStart = null;
+    });
+
+    modal.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      state.scale = clamp(state.scale * (e.deltaY < 0 ? 1.12 : 0.89), 1, 5);
+      clampPan(); apply();
+    }, { passive: false });
+
+    modal.addEventListener('mousedown', function (e) {
+      if (e.target.closest('#emsFlowZoomToolbar')) return;
+      mouseDragging = true;
+      mouseStart = { x: e.clientX, y: e.clientY };
+      mouseOrigin = { x: state.x, y: state.y };
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!mouseDragging) return;
+      state.x = mouseOrigin.x + (e.clientX - mouseStart.x);
+      state.y = mouseOrigin.y + (e.clientY - mouseStart.y);
+      clampPan(); apply();
+    });
+    window.addEventListener('mouseup', function () { mouseDragging = false; });
+
+    viewport.addEventListener('click', function (e) {
+      if (e.target === viewport) closeFlowFullscreen();
+    });
+  });
+})();
+
 // ── 全螢幕簽名 Modal ──
 let _sfTargetCanvasId = null;
 let _sfOnConfirm = null;
@@ -16086,6 +16207,8 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .quiz-opt:disabled{opacity:0.85;}
   #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView,#scenarioView{display:none;}
   .mermaid{overflow-x:auto;}
+  .ems-flow-wrap{position:relative;cursor:zoom-in;}
+  .ems-flow-zoom-hint{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:.68rem;padding:3px 8px;border-radius:12px;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -17365,7 +17488,7 @@ function renderSlide() {
     html += '<div class="text-center mb-2">' + slideTagHTML('theory') + ' <span class="text-muted small">' + (slide.i + 1) + ' / ' + slide.n + '</span></div>' +
       '<div class="flashcard" style="border-left:6px solid ' + c.color + ';">' + esc(slide.text) + '</div>';
   } else if (slide.type === 'flow') {
-    html += sectionCard(c.color, '🔀', '流程圖', '<div class="mermaid">' + c.flow + '</div>');
+    html += sectionCard(c.color, '🔀', '流程圖', '<div class="ems-flow-wrap" id="nodeFlowWrap" onclick="openNodeFlowZoom()"><div class="mermaid">' + c.flow + '</div><div class="ems-flow-zoom-hint">🔍 點擊放大</div></div>');
   } else if (slide.type === 'case') {
     var gid = 'nodecase_' + idx;
     html += sectionCard('var(--ems-caution)', '🏥', '臨床案例',
@@ -17400,6 +17523,14 @@ function renderSlide() {
       mermaid.run({ querySelector: '#nodeSlideContent .mermaid' }).catch(function () {});
     }
   } catch (e) { console.warn('mermaid render failed', e); }
+
+  if (slide.type === 'flow') {
+    window.openNodeFlowZoom = function () {
+      var wrap = document.getElementById('nodeFlowWrap');
+      var svg = wrap && wrap.querySelector('svg');
+      if (svg && parent.openFlowFullscreen) parent.openFlowFullscreen(svg.outerHTML);
+    };
+  }
 
   var isQuizUnanswered = slide.type === 'quiz' && !emsState.nodeAnswered[idx];
   navBox.innerHTML = '<div class="d-flex gap-2 mt-3">' +
@@ -24024,6 +24155,19 @@ function showTempPassErr(msg) {
 </div>
 
 <!-- ══════ ROOT-LEVEL MODALS (outside #appScroll to avoid iOS -webkit-overflow-scrolling stacking context) ══════ -->
+
+<!-- EMS學院 流程圖全螢幕縮放 Modal（由 emtStudyIframe 內部呼叫 parent.openFlowFullscreen() 開啟） -->
+<div id="emsFlowZoomModal">
+  <div id="emsFlowZoomToolbar">
+    <button type="button" onclick="emsFlowZoomBy(1.3)">＋</button>
+    <button type="button" onclick="emsFlowZoomBy(0.75)">－</button>
+    <button type="button" onclick="emsFlowZoomReset()">⟲</button>
+    <button type="button" onclick="closeFlowFullscreen()">✕</button>
+  </div>
+  <div id="emsFlowZoomViewport">
+    <div id="emsFlowZoomInner"></div>
+  </div>
+</div>
 
 <!-- 打卡查詢 編輯 Modal -->
 <div id="aqEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
