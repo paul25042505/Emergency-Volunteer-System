@@ -16033,147 +16033,150 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..600,0..1,-50..200" />
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script>
 <style>
   /* ══════ Taichung EMS Command Center — Design Tokens ══════ */
   :root{
-    --ems-red:#C1121F; --ems-red-dark:#8F0D16; --ems-red-deep:#4A0E12; --ems-red-faint:rgba(193,18,31,.08);
-    --ems-blue:#0B3D91; --ems-blue-dark:#062868; --ems-blue-faint:rgba(11,61,145,.08);
-    --ems-hiviz:#DFFF00; --ems-hiviz-dim:rgba(223,255,0,.18); --ems-hiviz-ink:#1A1D23;
-    --ems-text:#1A1D23; --ems-text-mid:#52596A; --ems-text-light:#8B92A3; --ems-border:#E9ECF1;
-    --ems-bg:#F2F4F7; --ems-surface:#FFFFFF; --ems-surface-2:#F8F9FB;
-    --ems-ok:#1F8A4C; --ems-caution:#B45309; --ems-crit:#C1121F;
+    --ems-navy:#0A1622; --ems-navy-2:#0E1F30; --ems-navy-3:#13293D;
+    --ems-panel:#11202F; --ems-panel-2:#0D1B27; --ems-panel-line:#27435C;
+    --ems-red:#C1121F; --ems-red-dark:#8F0D16; --ems-red-deep:#4A0E12; --ems-red-faint:rgba(193,18,31,.16);
+    --ems-steel:#5C8FB5; --ems-steel-faint:rgba(92,143,181,.16);
+    --ems-teal:#2FAE85; --ems-amber:#D98C2E;
+    --ems-hiviz:#D7FF1A; --ems-hiviz-dim:rgba(215,255,26,.18); --ems-hiviz-ink:#0A1622;
+    --ems-text:#E7ECF3; --ems-text-mid:#93A1B8; --ems-text-light:#5A6B85; --ems-border:var(--ems-panel-line);
+    --ems-bg:var(--ems-navy); --ems-surface:var(--ems-panel); --ems-surface-2:var(--ems-panel-2);
+    --ems-ok:#2E9E5B; --ems-caution:#D98C2E; --ems-crit:#C1121F;
     --ems-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC",sans-serif;
     --ems-font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
     --ems-sp-1:4px; --ems-sp-2:8px; --ems-sp-3:12px; --ems-sp-4:16px; --ems-sp-5:20px; --ems-sp-6:24px; --ems-sp-8:32px; --ems-sp-10:40px;
-    --ems-radius-sm:4px; --ems-radius:8px; --ems-radius-lg:12px;
-    --ems-shadow-sm:0 1px 2px rgba(0,0,0,.06); --ems-shadow:0 2px 6px rgba(0,0,0,.08);
+    --ems-radius-sm:2px; --ems-radius:2px; --ems-radius-lg:2px;
+    --ems-shadow-sm:none; --ems-shadow:none;
     --ems-ease:cubic-bezier(.2,.7,.3,1); --ems-dur-fast:120ms; --ems-dur:200ms;
-    --ems-map-opacity:.06;
-    --ems-map-svg:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g fill='none' stroke='%238F0D16' stroke-width='1'><path d='M0 20 Q30 0 60 20 T120 20'/><path d='M0 60 Q30 40 60 60 T120 60'/><path d='M0 100 Q30 80 60 100 T120 100'/><circle cx='20' cy='40' r='18'/><circle cx='90' cy='90' r='24'/></g></svg>");
+    --ems-map-opacity:.12;
+    --ems-map-svg:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='none' stroke='%23D7FF1A' stroke-width='.5'><path d='M0 30H240M0 60H240M0 90H240M0 120H240M0 150H240M0 180H240M0 210H240'/><path d='M30 0V240M60 0V240M90 0V240M120 0V240M150 0V240M180 0V240M210 0V240'/><circle cx='120' cy='120' r='40'/><circle cx='120' cy='120' r='80'/><circle cx='120' cy='120' r='118'/></g></svg>");
     --bs-primary:var(--ems-red); --bs-primary-rgb:193,18,31;
     --bs-border-radius:var(--ems-radius); --bs-border-color:var(--ems-border);
     --bs-body-color:var(--ems-text); --bs-body-bg:var(--ems-bg);
     --bs-card-border-color:var(--ems-border); --bs-card-border-radius:var(--ems-radius-lg);
-    --bs-link-color:var(--ems-red); --bs-link-hover-color:var(--ems-red-dark);
-  }
-  [data-theme="dark"]{
-    --ems-bg:#0E0F12; --ems-surface:#17191D; --ems-surface-2:#1D2025; --ems-border:#2A2D33;
-    --ems-text:#F2F3F5; --ems-text-mid:#B5BAC4; --ems-text-light:#7B8190;
-    --ems-red:#FF3B47; --ems-red-dark:#C1121F; --ems-red-deep:#2A0608;
-    --ems-blue:#4D8DFF; --ems-blue-dark:#0B3D91;
-    --ems-hiviz:#EBFF4D; --ems-hiviz-dim:rgba(235,255,77,.22);
-    --ems-map-opacity:.09;
+    --bs-link-color:var(--ems-hiviz); --bs-link-hover-color:#fff;
   }
 
   body{font-family:var(--ems-font);background:var(--ems-bg);color:var(--ems-text);padding:0 0 30px;margin:0;}
   .ems-body-pad{padding:14px 14px 0;}
 
-  /* ── C. 地圖浮水印 Map Watermark ── */
+  /* ── 指揮中心頂部狀態列 Command Bar ── */
+  .ems-cmdbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ems-navy-2);border-bottom:1px solid var(--ems-panel-line);padding:7px 14px;font-family:var(--ems-font-mono);font-size:.66rem;letter-spacing:.06em;color:var(--ems-text-mid);text-transform:uppercase;}
+  .ems-cmdbar .unit{color:var(--ems-text);font-weight:700;}
+  .ems-cmdbar .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ems-hiviz);box-shadow:0 0 4px var(--ems-hiviz);margin-right:5px;animation:ems-blink 2s steps(2,jump-none) infinite;}
+  @keyframes ems-blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  /* ── C. 戰術網格浮水印 Tactical Grid Watermark ── */
   .ems-view-wrap{position:relative;}
-  .ems-map-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--ems-map-opacity);background-image:var(--ems-map-svg);background-size:120px;background-repeat:repeat;mix-blend-mode:multiply;}
+  .ems-map-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--ems-map-opacity);background-image:var(--ems-map-svg);background-size:240px;background-repeat:repeat;background-position:center;}
   .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView,.ems-view-wrap>#achievementView,.ems-view-wrap>#scenarioView{position:relative;z-index:1;}
 
   /* ── D. 反光黃狀態系統 Hi-Vis Status ── */
-  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:var(--ems-radius-sm);white-space:nowrap;flex-shrink:0;}
+  .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-family:var(--ems-font-mono);font-size:.66rem;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:var(--ems-radius-sm);white-space:nowrap;flex-shrink:0;}
   .ems-hiviz-ring{box-shadow:0 0 0 2px var(--ems-hiviz);}
-  @keyframes ems-shine-once{0%{box-shadow:0 0 0 0 var(--ems-hiviz-dim);}60%{box-shadow:0 0 0 8px var(--ems-hiviz-dim);}100%{box-shadow:0 0 0 0 rgba(223,255,0,0);}}
+  @keyframes ems-shine-once{0%{box-shadow:0 0 0 0 var(--ems-hiviz-dim);}60%{box-shadow:0 0 0 8px var(--ems-hiviz-dim);}100%{box-shadow:0 0 0 0 rgba(215,255,26,0);}}
   .ems-shine-once{animation:ems-shine-once .9s var(--ems-ease) 1;}
   @media (prefers-reduced-motion:reduce){ .ems-shine-once{animation:none;} }
 
   /* ── E. Operator Status Panel ── */
-  .ems-section-label{font-family:var(--ems-font-mono);font-size:.65rem;letter-spacing:.08em;color:var(--ems-text-light);text-transform:uppercase;}
-  .ems-status-panel{background:var(--ems-surface);border:1px solid var(--ems-border);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius-lg);padding:14px 16px;box-shadow:var(--ems-shadow-sm);}
-  .ems-rank-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:38px;background:var(--ems-red);color:#fff;font-weight:800;font-size:.95rem;clip-path:polygon(50% 0%,100% 22%,100% 78%,50% 100%,0% 78%,0% 22%);flex-shrink:0;}
-  .ems-gauge{height:10px;border-radius:var(--ems-radius-sm);background:repeating-linear-gradient(90deg,transparent 0 18px,rgba(0,0,0,.06) 18px 19px),var(--ems-border);position:relative;overflow:hidden;}
-  .ems-gauge-fill{height:100%;background:var(--ems-red);transition:width var(--ems-dur) var(--ems-ease);}
+  .ems-section-label{font-family:var(--ems-font-mono);font-size:.66rem;letter-spacing:.1em;color:var(--ems-text-light);text-transform:uppercase;border-left:2px solid var(--ems-hiviz);padding-left:6px;}
+  .ems-status-panel{background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-top:2px solid var(--ems-red);border-radius:var(--ems-radius);padding:14px 16px;}
+  .ems-rank-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:38px;background:var(--ems-red);color:#fff;font-family:var(--ems-font-mono);font-weight:800;font-size:.95rem;clip-path:polygon(50% 0%,100% 22%,100% 78%,50% 100%,0% 78%,0% 22%);flex-shrink:0;}
+  .ems-gauge{height:8px;border-radius:0;background:repeating-linear-gradient(90deg,transparent 0 18px,rgba(255,255,255,.07) 18px 19px),var(--ems-navy-3);position:relative;overflow:hidden;border:1px solid var(--ems-panel-line);}
+  .ems-gauge-fill{height:100%;background:var(--ems-hiviz);transition:width var(--ems-dur) var(--ems-ease);}
 
   /* ── F. Mission Card / All Clear ── */
-  .ems-mission-card{background:var(--ems-surface);border:1px solid var(--ems-border);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius);padding:12px 14px;cursor:pointer;transition:box-shadow .15s,transform .15s;}
-  .ems-mission-card:active{transform:scale(0.99);}
-  .ems-mission-tag{font-family:var(--ems-font-mono);font-size:.62rem;letter-spacing:.08em;color:var(--ems-red);font-weight:700;}
-  .ems-allclear{background:var(--ems-surface);border:1px solid var(--ems-border);border-left:4px solid var(--ems-ok);border-radius:var(--ems-radius);padding:12px 14px;display:flex;align-items:center;gap:10px;}
-  .ems-allclear .tag{font-family:var(--ems-font-mono);font-weight:800;color:var(--ems-ok);font-size:.78rem;letter-spacing:.06em;flex-shrink:0;}
+  .ems-mission-card{background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-left:3px solid var(--ems-hiviz);border-radius:var(--ems-radius);padding:12px 14px;cursor:pointer;transition:border-color .15s,transform .15s;}
+  .ems-mission-card:active{transform:scale(0.99);border-left-color:#fff;}
+  .ems-mission-tag{font-family:var(--ems-font-mono);font-size:.62rem;letter-spacing:.1em;color:var(--ems-hiviz);font-weight:700;}
+  .ems-allclear{background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-left:3px solid var(--ems-ok);border-radius:var(--ems-radius);padding:12px 14px;display:flex;align-items:center;gap:10px;}
+  .ems-allclear .tag{font-family:var(--ems-font-mono);font-weight:800;color:var(--ems-ok);font-size:.78rem;letter-spacing:.08em;flex-shrink:0;}
 
-  /* ── G. Response Zone Tile ── */
-  .ems-zone-tile{background:var(--ems-surface);border:1px solid var(--ems-border);border-top:4px solid var(--zone-color,var(--ems-border));border-radius:var(--ems-radius);padding:14px 10px;text-align:center;position:relative;cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  /* ── G. Task Zone Tile ── */
+  .ems-zone-tile{background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-top:3px solid var(--zone-color,var(--ems-panel-line));border-radius:var(--ems-radius);padding:14px 10px;text-align:center;position:relative;cursor:pointer;transition:border-color .15s,transform .15s;}
   .ems-zone-tile:active{transform:scale(0.99);}
-  .ems-zone-tile.completed{box-shadow:0 0 0 2px var(--ems-hiviz) inset;}
-  .ems-zone-tile.locked,.ems-zone-tile.soon{filter:grayscale(.6);opacity:.65;}
+  .ems-zone-tile.completed{box-shadow:0 0 0 1px var(--ems-hiviz) inset;}
+  .ems-zone-tile.locked,.ems-zone-tile.soon{filter:grayscale(.4);opacity:.55;}
+  .ems-zone-tile .ems-icon{color:var(--zone-color,var(--ems-text-mid));}
 
   /* ── H. Vitals Strip ── */
-  .ems-vitals{display:flex;gap:1px;background:var(--ems-border);border-radius:var(--ems-radius);overflow:hidden;}
+  .ems-vitals{display:flex;gap:1px;background:var(--ems-panel-line);border-radius:var(--ems-radius);overflow:hidden;border:1px solid var(--ems-panel-line);}
   .ems-vital{flex:1;background:var(--ems-surface);padding:8px;text-align:center;}
-  .ems-vital .v-label{display:block;font-size:.6rem;color:var(--ems-text-light);text-transform:uppercase;letter-spacing:.04em;}
-  .ems-vital .v-num{font-family:var(--ems-font-mono);font-weight:700;font-size:1.05rem;color:var(--ems-text);}
+  .ems-vital .v-label{display:block;font-family:var(--ems-font-mono);font-size:.58rem;color:var(--ems-text-light);text-transform:uppercase;letter-spacing:.05em;}
+  .ems-vital .v-num{font-family:var(--ems-font-mono);font-weight:700;font-size:1.05rem;color:var(--ems-hiviz);}
 
   /* ── I. Toast ── */
-  .ems-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ems-text);color:var(--ems-surface);padding:8px 16px;border-radius:var(--ems-radius);font-size:.78rem;box-shadow:var(--ems-shadow);z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center;}
+  .ems-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ems-navy-2);border:1px solid var(--ems-hiviz);color:var(--ems-text);padding:8px 16px;border-radius:var(--ems-radius);font-size:.78rem;font-family:var(--ems-font-mono);z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center;}
   .ems-toast.show{opacity:1;}
 
   /* ── J. 節點播放器 Slide Chrome ── */
   .ems-slide-tag{display:inline-block;font-family:var(--ems-font-mono);font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:2px 8px;border:1px solid currentColor;border-radius:var(--ems-radius-sm);}
   .ems-stagebar{display:flex;gap:3px;margin-bottom:14px;}
-  .ems-stage-tick{flex:1;height:6px;border-radius:2px;background:var(--ems-border);}
+  .ems-stage-tick{flex:1;height:4px;border-radius:0;background:var(--ems-panel-line);}
   .ems-stage-tick.done{background:var(--ems-red);}
   .ems-stage-tick.current{background:var(--ems-hiviz);}
 
   /* ── K. 監視器式測驗選項 Quiz Options ── */
-  .ems-quiz-opt{display:flex;align-items:center;gap:10px;width:100%;border:1.5px solid var(--ems-border);border-radius:var(--ems-radius);padding:10px 12px;margin-bottom:8px;background:var(--ems-surface);color:var(--ems-text);text-align:left;transition:border-color .12s;}
-  .ems-quiz-opt .opt-tag{font-family:var(--ems-font-mono);font-weight:700;font-size:.78rem;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ems-border);border-radius:var(--ems-radius-sm);flex-shrink:0;}
-  .ems-quiz-opt.correct{border-color:var(--ems-ok);background:rgba(31,138,76,.06);}
+  .ems-quiz-opt{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--ems-panel-line);border-radius:var(--ems-radius);padding:10px 12px;margin-bottom:8px;background:var(--ems-surface);color:var(--ems-text);text-align:left;transition:border-color .12s;}
+  .ems-quiz-opt .opt-tag{font-family:var(--ems-font-mono);font-weight:700;font-size:.78rem;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1px solid var(--ems-panel-line);border-radius:var(--ems-radius-sm);flex-shrink:0;color:var(--ems-text-mid);}
+  .ems-quiz-opt.correct{border-color:var(--ems-ok);background:rgba(46,158,91,.14);}
   .ems-quiz-opt.correct .opt-tag{background:var(--ems-ok);color:#fff;border-color:var(--ems-ok);}
   .ems-quiz-opt.wrong{border-color:var(--ems-red);background:var(--ems-red-faint);}
   .ems-quiz-opt.wrong .opt-tag{background:var(--ems-red);color:#fff;border-color:var(--ems-red);}
-  .ems-answer-card{display:none;border-left:4px solid var(--ems-red);background:var(--ems-surface-2);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-top:4px;font-size:.88rem;}
-  .ems-answer-card .ex-tag{font-family:var(--ems-font-mono);font-weight:700;color:var(--ems-red);font-size:.68rem;margin-right:4px;}
-  .ems-wrong-card{background:var(--ems-red-faint);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-bottom:8px;}
+  .ems-answer-card{display:none;border-left:3px solid var(--ems-hiviz);background:var(--ems-surface-2);border-radius:0;padding:10px 12px;margin-top:4px;font-size:.88rem;}
+  .ems-answer-card .ex-tag{font-family:var(--ems-font-mono);font-weight:700;color:var(--ems-hiviz);font-size:.68rem;margin-right:4px;}
+  .ems-wrong-card{background:var(--ems-red-faint);border-left:3px solid var(--ems-red);border-radius:0;padding:10px 12px;margin-bottom:8px;}
 
-  /* ── L. 個人成就頁 Achievement Page ── */
-  .ems-badge{aspect-ratio:1;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border:2px solid var(--ems-border);background:var(--ems-surface-2);}
-  .ems-badge.unlocked{border-color:var(--ems-hiviz);background:var(--ems-surface);}
+  /* ── L. 技能認證頁 Certification Page ── */
+  .ems-badge{aspect-ratio:1;width:56px;height:56px;border-radius:0;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid var(--ems-panel-line);background:var(--ems-surface-2);color:var(--ems-text-light);}
+  .ems-badge.unlocked{border-color:var(--ems-hiviz);background:var(--ems-surface);color:var(--ems-hiviz);}
   .ems-badge.locked{filter:grayscale(1);opacity:.4;}
   .ems-logbox{display:flex;flex-direction:column;gap:6px;}
-  .ems-log-row{display:flex;align-items:center;gap:8px;background:var(--ems-surface);border:1px solid var(--ems-border);border-left:3px solid var(--ems-red);border-radius:var(--ems-radius-sm);padding:8px 10px;font-size:.82rem;}
+  .ems-log-row{display:flex;align-items:center;gap:8px;background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-left:2px solid var(--ems-red);border-radius:0;padding:8px 10px;font-size:.82rem;}
   .ems-log-tag{font-family:var(--ems-font-mono);font-weight:700;font-size:.7rem;color:var(--ems-text-light);flex-shrink:0;}
 
-  /* ── M. 模擬考場 Test Station ── */
-  .ems-station-card{background:var(--ems-surface);border:1px solid var(--ems-border);border-left:4px solid var(--ems-red);border-radius:var(--ems-radius);padding:12px 14px;cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  /* ── M. 訓練模擬站 Training Simulation Station ── */
+  .ems-station-card{background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-left:3px solid var(--ems-hiviz);border-radius:var(--ems-radius);padding:12px 14px;cursor:pointer;transition:border-color .15s,transform .15s;}
   .ems-station-card:active{transform:scale(.99);}
   .ems-station-card.disabled{opacity:.5;cursor:not-allowed;}
   .ems-station-card .st-title{font-weight:700;}
   .ems-station-card .st-meta{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-text-light);margin-top:4px;}
-  .ems-timer{display:inline-block;background:#0E0F12;color:var(--ems-red);font-family:var(--ems-font-mono);font-weight:700;font-size:1rem;padding:4px 10px;border-radius:var(--ems-radius-sm);letter-spacing:.05em;}
+  .ems-timer{display:inline-block;background:var(--ems-navy-3);color:var(--ems-hiviz);font-family:var(--ems-font-mono);font-weight:700;font-size:1rem;padding:4px 10px;border-radius:var(--ems-radius-sm);letter-spacing:.05em;border:1px solid var(--ems-panel-line);}
   .ems-kahoot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
-  .ems-kahoot-opt{display:flex;align-items:center;gap:8px;border:none;border-radius:var(--ems-radius);padding:14px 10px;min-height:64px;color:#fff;font-weight:700;font-size:.92rem;text-align:left;transition:transform .1s,opacity .15s;}
+  .ems-kahoot-opt{display:flex;align-items:center;gap:8px;border:1px solid rgba(0,0,0,.25);border-radius:var(--ems-radius);padding:14px 10px;min-height:64px;color:#fff;font-weight:700;font-size:.92rem;text-align:left;transition:transform .1s,opacity .15s;}
   .ems-kahoot-opt:active{transform:scale(.97);}
   .ems-kahoot-opt .opt-shape{font-size:1.1rem;flex-shrink:0;line-height:1;}
-  .ems-kahoot-opt[data-color="0"]{background:#C1121F;}
-  .ems-kahoot-opt[data-color="1"]{background:#1A73E8;}
-  .ems-kahoot-opt[data-color="2"]{background:#E8A400;}
-  .ems-kahoot-opt[data-color="3"]{background:#1F8A4C;}
-  .ems-kahoot-opt.correct{outline:3px solid #fff;box-shadow:0 0 0 5px var(--ems-ok);}
-  .ems-kahoot-opt.wrong{animation:ems-kahoot-shake .4s;outline:3px solid #fff;box-shadow:0 0 0 5px var(--ems-red);}
+  .ems-kahoot-opt[data-color="0"]{background:#8F0D16;}
+  .ems-kahoot-opt[data-color="1"]{background:#1E4E73;}
+  .ems-kahoot-opt[data-color="2"]{background:#8A6411;}
+  .ems-kahoot-opt[data-color="3"]{background:#1F6B52;}
+  .ems-kahoot-opt.correct{outline:2px solid var(--ems-hiviz);box-shadow:0 0 0 4px rgba(215,255,26,.25);}
+  .ems-kahoot-opt.wrong{animation:ems-kahoot-shake .4s;outline:2px solid #fff;box-shadow:0 0 0 4px rgba(193,18,31,.35);}
   .ems-kahoot-opt.dim{opacity:.35;}
   @keyframes ems-kahoot-shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-4px);}40%{transform:translateX(4px);}60%{transform:translateX(-3px);}80%{transform:translateX(3px);}}
   .ems-timer.low{animation:ems-timerblink 1.1s var(--ems-ease) infinite;}
   @keyframes ems-timerblink{0%,100%{opacity:1;}50%{opacity:.45;}}
-  .ems-passline-wrap{position:relative;height:14px;border-radius:var(--ems-radius-sm);background:var(--ems-border);overflow:visible;margin:10px 0 22px;}
-  .ems-passline-fill{height:100%;border-radius:var(--ems-radius-sm);background:var(--ems-ok);transition:width .3s var(--ems-ease);}
+  .ems-passline-wrap{position:relative;height:10px;border-radius:0;background:var(--ems-navy-3);border:1px solid var(--ems-panel-line);overflow:visible;margin:10px 0 22px;}
+  .ems-passline-fill{height:100%;border-radius:0;background:var(--ems-ok);transition:width .3s var(--ems-ease);}
   .ems-passline-fill.fail{background:var(--ems-red);}
-  .ems-passline-mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ems-text);}
+  .ems-passline-mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ems-hiviz);}
   .ems-passline-mark::after{content:'及格線';position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--ems-text-light);white-space:nowrap;}
   .ems-chbar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.78rem;}
-  .ems-chbar-track{flex:1;height:8px;border-radius:var(--ems-radius-sm);background:var(--ems-border);overflow:hidden;}
+  .ems-chbar-track{flex:1;height:6px;border-radius:0;background:var(--ems-navy-3);border:1px solid var(--ems-panel-line);overflow:hidden;}
   .ems-chbar-fill{height:100%;}
-  .ems-caserow{display:flex;flex-direction:column;gap:4px;border-left:4px solid var(--ems-red);background:var(--ems-surface);border:1px solid var(--ems-border);border-radius:var(--ems-radius-sm);padding:10px 12px;margin-bottom:8px;}
+  .ems-caserow{display:flex;flex-direction:column;gap:4px;border-left:2px solid var(--ems-red);background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-radius:0;padding:10px 12px;margin-bottom:8px;}
   .ems-caserow .cr-meta{font-family:var(--ems-font-mono);font-size:.68rem;color:var(--ems-text-light);}
 
-  /* ── N. 情境模擬中心 Scenario Simulation ── */
-  .ems-cad-card{background:#fff;border:2px solid var(--ems-red);border-radius:var(--ems-radius);padding:16px;color:var(--ems-text);}
-  .ems-cad-card .cad-id{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-red);letter-spacing:.05em;}
+  /* ── N. CAD 派遣模擬演練 Dispatch Simulation ── */
+  .ems-cad-card{background:var(--ems-surface);border:1px solid var(--ems-red);border-radius:var(--ems-radius);padding:16px;color:var(--ems-text);}
+  .ems-cad-card .cad-id{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-hiviz);letter-spacing:.05em;}
   .ems-cad-card .cad-time{font-family:var(--ems-font-mono);font-size:.7rem;color:var(--ems-text-light);}
-  .ems-monitor{background:#0E0F12;border-radius:var(--ems-radius);padding:10px 14px;display:flex;justify-content:space-between;font-family:var(--ems-font-mono);color:#fff;}
+  .ems-monitor{background:var(--ems-navy-3);border:1px solid var(--ems-panel-line);border-radius:var(--ems-radius);padding:10px 14px;display:flex;justify-content:space-between;font-family:var(--ems-font-mono);color:#fff;}
   .ems-monitor .m-item{text-align:center;flex:1;}
   .ems-monitor .m-label{font-size:.58rem;opacity:.6;text-transform:uppercase;}
   .ems-monitor .m-val{font-size:1.1rem;font-weight:700;}
@@ -16181,37 +16184,45 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .ems-monitor .m-val.caution{color:#FFD23F;}
   .ems-monitor .m-val.crit{color:#FF4D4D;}
   .ems-sim-outcome{border-radius:var(--ems-radius);padding:14px;display:flex;align-items:center;gap:10px;}
-  .ems-sim-outcome.ok{background:rgba(31,138,76,.08);border:1px solid var(--ems-ok);}
-  .ems-sim-outcome.caution{background:rgba(180,83,9,.08);border:1px solid var(--ems-caution);}
+  .ems-sim-outcome.ok{background:rgba(46,158,91,.14);border:1px solid var(--ems-ok);}
+  .ems-sim-outcome.caution{background:rgba(217,140,46,.14);border:1px solid var(--ems-caution);}
   .ems-sim-outcome .tag{font-family:var(--ems-font-mono);font-weight:800;font-size:.85rem;letter-spacing:.05em;}
+
+  /* ── Material Symbols 圖示 ── */
+  .ems-icon{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;font-size:1em;display:inline-block;line-height:1;vertical-align:-12%;-webkit-font-smoothing:antialiased;}
 
   /* ── Bootstrap 5.3 元件覆寫 ── */
   .btn-primary{background:var(--ems-red);border-color:var(--ems-red);}
   .btn-primary:hover{background:var(--ems-red-dark);border-color:var(--ems-red-dark);}
-  .btn-outline-secondary{color:var(--ems-text-mid);border-color:var(--ems-border);}
+  .btn-outline-secondary{color:var(--ems-text-mid);border-color:var(--ems-panel-line);}
+  .btn-outline-secondary:hover{color:var(--ems-text);border-color:var(--ems-hiviz);background:transparent;}
   .badge.bg-success{background:var(--ems-ok)!important;}
-  .badge.bg-secondary{background:var(--ems-text-light)!important;}
-  .alert-warning{background:#FFFBEA;border:none;border-left:4px solid var(--ems-caution);border-radius:var(--ems-radius-sm);color:#5C3D00;}
-  .progress{background:var(--ems-border);}
-  .progress-bar{background-image:repeating-linear-gradient(90deg,transparent 0 18px,rgba(0,0,0,.08) 18px 19px);}
-  .card{background:var(--ems-surface);color:var(--ems-text);}
+  .badge.bg-secondary{background:var(--ems-navy-3)!important;color:var(--ems-text-mid)!important;}
+  .alert-warning{background:var(--ems-surface);border:none;border-left:3px solid var(--ems-caution);border-radius:0;color:var(--ems-text);}
+  .progress{background:var(--ems-navy-3);}
+  .progress-bar{background-image:repeating-linear-gradient(90deg,transparent 0 18px,rgba(255,255,255,.1) 18px 19px);}
+  .card{background:var(--ems-surface);color:var(--ems-text);border-color:var(--ems-panel-line);}
   .text-muted{color:var(--ems-text-light)!important;}
 
-  .chapter-card{cursor:pointer;transition:box-shadow .15s,transform .15s;}
+  .chapter-card{cursor:pointer;transition:border-color .15s,transform .15s;}
   .chapter-card:active{transform:scale(0.99);}
   .chapter-card.locked{cursor:not-allowed;}
-  .flashcard{background:var(--ems-surface);border-radius:var(--ems-radius-lg);padding:32px 20px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:600;line-height:1.6;box-shadow:var(--ems-shadow);}
-  .mnemonic-box{background:#FDFFE8;border:1.5px dashed var(--ems-hiviz);border-radius:var(--ems-radius);padding:14px;}
-  .reflect-box{background:var(--ems-blue-faint);border:1.5px dashed var(--ems-blue);border-radius:var(--ems-radius);padding:12px;margin-top:8px;}
-  .reveal-box{display:none;background:var(--ems-blue-faint);border-radius:var(--ems-radius);padding:10px;margin-top:6px;font-size:0.88rem;}
+  .flashcard{background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-radius:var(--ems-radius);padding:32px 20px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:600;line-height:1.6;}
+  .mnemonic-box{background:var(--ems-surface-2);border:1px dashed var(--ems-hiviz);border-radius:var(--ems-radius);padding:14px;}
+  .reflect-box{background:var(--ems-steel-faint);border:1px dashed var(--ems-steel);border-radius:var(--ems-radius);padding:12px;margin-top:8px;}
+  .reveal-box{display:none;background:var(--ems-steel-faint);border-radius:var(--ems-radius);padding:10px;margin-top:6px;font-size:0.88rem;}
   .quiz-opt:disabled{opacity:0.85;}
   #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView,#scenarioView{display:none;}
   .mermaid{overflow-x:auto;}
   .ems-flow-wrap{position:relative;cursor:zoom-in;}
-  .ems-flow-zoom-hint{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:.68rem;padding:3px 8px;border-radius:12px;pointer-events:none;}
+  .ems-flow-zoom-hint{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:.68rem;padding:3px 8px;border-radius:0;pointer-events:none;display:flex;align-items:center;gap:3px;}
 </style>
 </head>
 <body>
+  <div class="ems-cmdbar">
+    <span><span class="dot"></span><span class="unit">TAICHUNG EMS</span> 義消教育訓練系統</span>
+    <span id="emsClock">--:--:--</span>
+  </div>
   <div class="ems-body-pad">
 
   <div class="ems-view-wrap">
@@ -16252,6 +16263,18 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   </div>
 
 <script>
+function emsIcon(name) { return '<span class="ems-icon" translate="no">' + name + '</span>'; }
+(function () {
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var el = document.getElementById('emsClock');
+    if (!el) return;
+    var d = new Date();
+    el.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
 window.onerror = function (msg, src, line, col, err) {
   var box = document.getElementById('dashboardView');
   if (box && !box.children.length) {
@@ -16260,14 +16283,14 @@ window.onerror = function (msg, src, line, col, err) {
 };
 var CHAPTERS = [
   {
-    id: 1, color: '#dc3545', icon: '❤️',
+    id: 1, color: '#C1121F', icon: '<span class="ems-icon" translate="no">favorite</span>',
     title: 'BLS / CPR 與 AED 使用',
     subtitle: '基本生命支持與自動體外心臟去顫器操作',
     highlights: [
-      { icon: '💓', big: '100-120/分', label: '按壓速率' },
-      { icon: '📏', big: '5-6cm', label: '按壓深度' },
-      { icon: '🔄', big: '30:2', label: '按壓:通氣比' },
-      { icon: '⏱️', big: '<10秒', label: '中斷時間' }
+      { icon: '<span class="ems-icon" translate="no">monitor_heart</span>', big: '100-120/分', label: '按壓速率' },
+      { icon: '<span class="ems-icon" translate="no">straighten</span>', big: '5-6cm', label: '按壓深度' },
+      { icon: '<span class="ems-icon" translate="no">sync</span>', big: '30:2', label: '按壓:通氣比' },
+      { icon: '<span class="ems-icon" translate="no">timer</span>', big: '<10秒', label: '中斷時間' }
     ],
     goals: [
       '能正確評估無反應且無呼吸（或僅喘息）的病人並啟動緊急救護系統',
@@ -16326,14 +16349,14 @@ var CHAPTERS = [
     mnemonic: { title: '叫叫CABD', body: '叫（呼喊評估反應）、叫（求救119/取AED）、C（Circulation胸外按壓）、A（Airway）、B（Breathing）、D（Defibrillation電擊）。簡記三字訣：壓、吹、電。' }
   },
   {
-    id: 2, color: '#0d6efd', icon: '🌬️',
+    id: 2, color: '#5C8FB5', icon: '<span class="ems-icon" translate="no">air</span>',
     title: '呼吸道評估與處置',
     subtitle: '呼吸道開放手法、輔助器具與異物哽塞處理',
     highlights: [
-      { icon: '👀', big: 'Look Listen Feel', label: '呼吸道評估口訣' },
-      { icon: '🗣️', big: '可咳嗽', label: '部分阻塞→鼓勵咳嗽' },
-      { icon: '🚫', big: '無法發聲', label: '完全阻塞→腹部衝擊' },
-      { icon: '😵', big: '無意識', label: '立即CPR' }
+      { icon: '<span class="ems-icon" translate="no">visibility</span>', big: 'Look Listen Feel', label: '呼吸道評估口訣' },
+      { icon: '<span class="ems-icon" translate="no">record_voice_over</span>', big: '可咳嗽', label: '部分阻塞→鼓勵咳嗽' },
+      { icon: '<span class="ems-icon" translate="no">block</span>', big: '無法發聲', label: '完全阻塞→腹部衝擊' },
+      { icon: '<span class="ems-icon" translate="no">sick</span>', big: '無意識', label: '立即CPR' }
     ],
     goals: [
       '能辨識呼吸道阻塞徵象（完全/部分阻塞）',
@@ -16392,14 +16415,14 @@ var CHAPTERS = [
     mnemonic: { title: '看聽感、額下推', body: '看聽感（評估呼吸道）；額（壓額抬下巴）、下（推下巴法用於創傷）。異物哽塞記「咳、拍、壓」：先鼓勵咳嗽、再背部叩擊、後腹部衝擊。' }
   },
   {
-    id: 3, color: '#d63384', icon: '🩸',
+    id: 3, color: '#C1121F', icon: '<span class="ems-icon" translate="no">bloodtype</span>',
     title: '出血控制與休克處理',
     subtitle: '止血階梯、休克分類與初步處置',
     highlights: [
-      { icon: '✋', big: '壓→敷→紮', label: '止血三階' },
-      { icon: '💨', big: '快、冷、躁', label: '休克代償期徵象' },
-      { icon: '📉', big: '血壓降', label: '休克失代償期' },
-      { icon: '⏱️', big: '記錄時間', label: '止血帶上止時刻' }
+      { icon: '<span class="ems-icon" translate="no">pan_tool</span>', big: '壓→敷→紮', label: '止血三階' },
+      { icon: '<span class="ems-icon" translate="no">speed</span>', big: '快、冷、躁', label: '休克代償期徵象' },
+      { icon: '<span class="ems-icon" translate="no">trending_down</span>', big: '血壓降', label: '休克失代償期' },
+      { icon: '<span class="ems-icon" translate="no">timer</span>', big: '記錄時間', label: '止血帶上止時刻' }
     ],
     goals: [
       '能分級辨識外出血嚴重程度並執行止血處置（直接加壓、止血帶）',
@@ -16460,15 +16483,15 @@ var CHAPTERS = [
     mnemonic: { title: '壓、敷、紮', body: '止血三步：壓（直接加壓）、敷（加壓敷料）、紮（止血帶並記時間）。休克徵象口訣「快、冷、躁、降」：心跳快、皮膚冷濕、焦躁不安、血壓後期才降。' }
   },
   {
-    id: 4, color: '#fd7e14', icon: '🚑',
+    id: 4, color: '#D98C2E', icon: '<span class="ems-icon" translate="no">emergency</span>',
     title: '創傷病人評估（ABCDE）',
     subtitle: '結構化初級評估與二級評估流程',
     highlights: [
-      { icon: '🫁', big: 'A', label: '呼吸道+頸椎' },
-      { icon: '💨', big: 'B', label: '呼吸' },
-      { icon: '🩸', big: 'C', label: '循環止血' },
-      { icon: '🧠', big: 'D', label: '意識神經' },
-      { icon: '🌡️', big: 'E', label: '暴露保暖' }
+      { icon: '<span class="ems-icon" translate="no">air</span>', big: 'A', label: '呼吸道+頸椎' },
+      { icon: '<span class="ems-icon" translate="no">speed</span>', big: 'B', label: '呼吸' },
+      { icon: '<span class="ems-icon" translate="no">bloodtype</span>', big: 'C', label: '循環止血' },
+      { icon: '<span class="ems-icon" translate="no">psychology</span>', big: 'D', label: '意識神經' },
+      { icon: '<span class="ems-icon" translate="no">device_thermostat</span>', big: 'E', label: '暴露保暖' }
     ],
     goals: [
       '能依ABCDE原則系統性評估創傷病人',
@@ -16529,14 +16552,14 @@ var CHAPTERS = [
     mnemonic: { title: 'ABCDE 循序不可廢', body: 'A呼吸道（頸椎護）、B呼吸、C循環（止血）、D意識（瞳孔反應）、E暴露（保暖莫忘）。' }
   },
   {
-    id: 5, color: '#6f42c1', icon: '💔',
+    id: 5, color: '#C1121F', icon: '<span class="ems-icon" translate="no">cardiology</span>',
     title: '心臟血管急症（胸痛評估與處置）',
     subtitle: '急性冠心症辨識與到院前處置原則',
     highlights: [
-      { icon: '📋', big: 'OPQRST', label: '胸痛病史詢問' },
-      { icon: '⚠️', big: '冒冷汗/放射痛', label: '高風險徵象' },
-      { icon: '🛌', big: '休息', label: '減少活動' },
-      { icon: '🚫', big: '不可給藥', label: '僅協助服自備藥' }
+      { icon: '<span class="ems-icon" translate="no">assignment</span>', big: 'OPQRST', label: '胸痛病史詢問' },
+      { icon: '<span class="ems-icon" translate="no">warning</span>', big: '冒冷汗/放射痛', label: '高風險徵象' },
+      { icon: '<span class="ems-icon" translate="no">bed</span>', big: '休息', label: '減少活動' },
+      { icon: '<span class="ems-icon" translate="no">block</span>', big: '不可給藥', label: '僅協助服自備藥' }
     ],
     goals: [
       '能辨識急性冠心症之典型與非典型胸痛表現',
@@ -16597,14 +16620,14 @@ var CHAPTERS = [
     mnemonic: { title: '胸痛四不要', body: '不要忽視非典型症狀、不要讓病人走動、不要自行給藥、不要延誤轉送。OPQRST口訣：發、誘、性、放、重、時。' }
   },
   {
-    id: 6, color: '#fd7e14', icon: '🦴',
+    id: 6, color: '#D98C2E', icon: '<span class="ems-icon" translate="no">orthopedics</span>',
     title: '骨折、脫位與脊椎損傷處置',
     subtitle: '肢體創傷固定原則與脊椎損傷保護',
     highlights: [
-      { icon: '👁️', big: '露', label: '暴露傷處先觀察' },
-      { icon: '🩹', big: '固', label: '上下關節一併固定' },
-      { icon: '🔁', big: 'PMS', label: '固定前後都要查' },
-      { icon: '🧍', big: '中軸線', label: '脊椎傷維持直線' }
+      { icon: '<span class="ems-icon" translate="no">visibility</span>', big: '露', label: '暴露傷處先觀察' },
+      { icon: '<span class="ems-icon" translate="no">healing</span>', big: '固', label: '上下關節一併固定' },
+      { icon: '<span class="ems-icon" translate="no">repeat</span>', big: 'PMS', label: '固定前後都要查' },
+      { icon: '<span class="ems-icon" translate="no">accessibility_new</span>', big: '中軸線', label: '脊椎傷維持直線' }
     ],
     goals: [
       '能分辨開放性與閉合性骨折之處置差異',
@@ -16665,14 +16688,14 @@ var CHAPTERS = [
     mnemonic: { title: '固定三要', body: '露：開放傷口先覆蓋不推回。固：上下關節一併固定不強行復位。查：固定前後都要查PMS並比較變化。' }
   },
   {
-    id: 7, color: '#c2410c', icon: '🔥',
+    id: 7, color: '#D98C2E', icon: '<span class="ems-icon" translate="no">local_fire_department</span>',
     title: '胸腹創傷與燒燙傷處置',
     subtitle: '穿刺傷、開放性氣胸與燒燙傷到院前原則',
     highlights: [
-      { icon: '🚫', big: '不拔', label: '穿刺異物不移除' },
-      { icon: '🩹', big: '三邊', label: '開放性氣胸貼法' },
-      { icon: '🚫', big: '不推', label: '腹部臟器外露不推回' },
-      { icon: '💧', big: '沖脫泡蓋送', label: '燒燙傷五步驟' }
+      { icon: '<span class="ems-icon" translate="no">block</span>', big: '不拔', label: '穿刺異物不移除' },
+      { icon: '<span class="ems-icon" translate="no">healing</span>', big: '三邊', label: '開放性氣胸貼法' },
+      { icon: '<span class="ems-icon" translate="no">block</span>', big: '不推', label: '腹部臟器外露不推回' },
+      { icon: '<span class="ems-icon" translate="no">water_drop</span>', big: '沖脫泡蓋送', label: '燒燙傷五步驟' }
     ],
     goals: [
       '能說明開放性氣胸三邊貼合密封式敷料之技術與原理',
@@ -16733,14 +16756,14 @@ var CHAPTERS = [
     mnemonic: { title: '胸腹燒傷三不要', body: '不拔：穿刺異物不可拔除。不推：外露臟器不可推回。不亂蓋：氣胸傷口不可四邊全密封，須留單向閥。燒燙傷記得沖脫泡蓋送。' }
   },
   {
-    id: 8, color: '#ec4899', icon: '👶',
+    id: 8, color: '#2FAE85', icon: '<span class="ems-icon" translate="no">child_care</span>',
     title: '小兒與孕產婦緊急處置',
     subtitle: '兒科評估三角與到院前緊急分娩處置',
     highlights: [
-      { icon: '🔺', big: 'PAT', label: '兒科評估三角' },
-      { icon: '↖️', big: '左側躺', label: '孕婦低血壓處置' },
-      { icon: '👶', big: '冠頭', label: '評估是否來不及轉送' },
-      { icon: '🧼', big: '擦乾保暖', label: '新生兒第一步處置' }
+      { icon: '<span class="ems-icon" translate="no">change_history</span>', big: 'PAT', label: '兒科評估三角' },
+      { icon: '<span class="ems-icon" translate="no">rotate_left</span>', big: '左側躺', label: '孕婦低血壓處置' },
+      { icon: '<span class="ems-icon" translate="no">child_care</span>', big: '冠頭', label: '評估是否來不及轉送' },
+      { icon: '<span class="ems-icon" translate="no">soap</span>', big: '擦乾保暖', label: '新生兒第一步處置' }
     ],
     goals: [
       '能應用兒科評估三角（外觀/呼吸功效/循環膚色）快速評估兒童病情',
@@ -16801,14 +16824,14 @@ var CHAPTERS = [
     mnemonic: { title: '小兒孕產三原則', body: 'PAT三角看外觀、呼吸功效、循環膚色；孕婦後期左側躺防低血壓；冠頭間隔短就地接生，新生兒先擦乾保暖再評估。' }
   },
   {
-    id: 9, color: '#7c3aed', icon: '👴',
+    id: 9, color: '#2FAE85', icon: '<span class="ems-icon" translate="no">elderly</span>',
     title: '長者評估與精神行為急症處置',
     subtitle: '高齡非典型表現辨識與精神行為急症安全原則',
     highlights: [
-      { icon: '❓', big: '為什麼跌倒', label: '找出跌倒真正原因' },
-      { icon: '💊', big: '抗凝血藥物', label: '頭部外傷風險倍增' },
-      { icon: '🧘', big: '低姿態', label: '精神急症溝通原則' },
-      { icon: '🛡️', big: '現場安全', label: '永遠優先評估' }
+      { icon: '<span class="ems-icon" translate="no">help</span>', big: '為什麼跌倒', label: '找出跌倒真正原因' },
+      { icon: '<span class="ems-icon" translate="no">medication</span>', big: '抗凝血藥物', label: '頭部外傷風險倍增' },
+      { icon: '<span class="ems-icon" translate="no">self_improvement</span>', big: '低姿態', label: '精神急症溝通原則' },
+      { icon: '<span class="ems-icon" translate="no">shield</span>', big: '現場安全', label: '永遠優先評估' }
     ],
     goals: [
       '能說明高齡病患症狀表現可能不典型之原因',
@@ -16869,19 +16892,19 @@ var CHAPTERS = [
     mnemonic: { title: '長者精神急症安全心法', body: '長者評估要多問一句「為什麼」；抗凝血藥物頭傷無傷口也要當高風險；精神急症先安全、後溝通，蹲低身姿放慢語氣不對抗。' }
   },
   {
-    id: 10, color: '#20c997', icon: '🏷️',
+    id: 10, color: '#5C8FB5', icon: '<span class="ems-icon" translate="no">sell</span>',
     title: 'START檢傷分類與大量傷病患處置',
-    subtitle: '快速檢傷流程與現場分區組織原則',
+    subtitle: '快速檢傷流程與現場任務區組織原則',
     highlights: [
-      { icon: '🚶', big: '走/吸/灌/識', label: 'START四步驟' },
-      { icon: '⏱️', big: '30秒', label: '每人檢傷目標時間' },
-      { icon: '🟥🟨🟩⬛', big: '四色分類', label: '紅黃綠黑檢傷標記' },
-      { icon: '🎯', big: '最大效益', label: '資源分配總原則' }
+      { icon: '<span class="ems-icon" translate="no">directions_walk</span>', big: '走/吸/灌/識', label: 'START四步驟' },
+      { icon: '<span class="ems-icon" translate="no">timer</span>', big: '30秒', label: '每人檢傷目標時間' },
+      { icon: '<span style="display:inline-flex;gap:2px;vertical-align:middle;"><span style="width:10px;height:10px;background:#C1121F;display:inline-block;"></span><span style="width:10px;height:10px;background:#D98C2E;display:inline-block;"></span><span style="width:10px;height:10px;background:#2FAE85;display:inline-block;"></span><span style="width:10px;height:10px;background:#1A1D23;border:1px solid #5A6B85;display:inline-block;"></span></span>', big: '四色分類', label: '紅黃綠黑檢傷標記' },
+      { icon: '<span class="ems-icon" translate="no">flag</span>', big: '最大效益', label: '資源分配總原則' }
     ],
     goals: [
       '能說明START檢傷分類法之四步驟流程',
       '能依據呼吸、循環、意識狀態將傷病患分為紅黃綠黑四類',
-      '能說明大量傷病患事件（MCI）現場分區組織原則',
+      '能說明大量傷病患事件（MCI）現場任務區組織原則',
       '能說明「最大效益原則」優先於單一病患個別處置',
       '能反思在資源有限情況下如何做出合理之檢傷決策'
     ],
@@ -16889,11 +16912,11 @@ var CHAPTERS = [
       'START檢傷分類法（Simple Triage And Rapid Treatment）四步驟：① 走（Walk，可自行走動者列為綠色輕傷）、② 吸（呼吸，無呼吸先嘗試打開呼吸道，若仍無呼吸列為黑色，呼吸過快或過慢列為紅色）、③ 灌（循環，檢查橈動脈搏或微血管充填，異常列為紅色）、④ 識（意識，無法依指令動作列為紅色，可依指令動作列為黃色）。',
       '每位傷病患檢傷目標時間約30秒，目的是在大量傷病患情境下快速分類，找出最需要立即處置的病患，而非對每位病患做詳細完整評估。',
       '四色檢傷分類：紅色（立即，危及生命需優先處置）、黃色（次緊急，可延後但仍需處置）、綠色（輕傷，可自行走動等候）、黑色（死亡或無生命徵象）。',
-      '大量傷病患事件（MCI）現場應劃分指揮、檢傷、治療、轉送等分區，由指揮官統籌調度資源，避免各自為政，確保傷病患依檢傷分類有序送往治療區與轉送區。',
+      '大量傷病患事件（MCI）現場應劃分指揮、檢傷、治療、轉送等任務區，由指揮官統籌調度資源，避免各自為政，確保傷病患依檢傷分類有序送往治療區與轉送區。',
       '大量傷病患情境下應遵循「最大效益原則」，即以有限資源救治最多數可救治之傷病患，而非將所有資源集中於單一極重傷病患身上，即使這在情感上可能令人不忍，但是合理且必要的資源分配方式。'
     ],
     flow: 'flowchart TD\\n  A["抵達大量傷病患現場"] --> B["走: 可自行走動者列為綠色"]\\n  B --> C["對剩餘傷病患逐一檢傷"]\\n  C --> D["吸: 評估呼吸"]\\n  D --> E{"有無呼吸?"}\\n  E -->|"無, 打開呼吸道仍無呼吸"| F["列為黑色"]\\n  E -->|"有, 但過快或過慢"| G["列為紅色"]\\n  E -->|"正常範圍"| H["灌: 評估橈動脈搏/微血管充填"]\\n  H --> I{"循環異常?"}\\n  I -->|"是"| G\\n  I -->|"否"| J["識: 評估意識能否依指令動作"]\\n  J --> K{"無法依指令動作?"}\\n  K -->|"是"| G\\n  K -->|"否"| L["列為黃色"]\\n  G --> M["送往治療區優先處置"]\\n  L --> M\\n  F --> N["標記後續處理"]',
-    mindmap: 'mindmap\\n  root((START檢傷與大量傷病患))\\n    START四步驟\\n      走\\n      吸\\n      灌\\n      識\\n    四色分類\\n      紅色立即\\n      黃色次緊急\\n      綠色輕傷\\n      黑色死亡\\n    現場分區\\n      指揮區\\n      檢傷區\\n      治療區\\n      轉送區\\n    最大效益原則\\n      救治最多數\\n      避免集中單一病患',
+    mindmap: 'mindmap\\n  root((START檢傷與大量傷病患))\\n    START四步驟\\n      走\\n      吸\\n      灌\\n      識\\n    四色分類\\n      紅色立即\\n      黃色次緊急\\n      綠色輕傷\\n      黑色死亡\\n    現場任務區\\n      指揮區\\n      檢傷區\\n      治療區\\n      轉送區\\n    最大效益原則\\n      救治最多數\\n      避免集中單一病患',
     cases: [
       { scenario: '一輛遊覽車於山路發生事故，車上15名乘客傷勢不一，義消是第一批抵達現場之人員。義消依START流程先請可自行走動者集中至安全處列為綠色，再對車內外其餘乘客逐一快速檢傷，依呼吸、循環、意識狀態分別標記紅黃黑三類，並協助劃分檢傷區與治療區，將紅色傷病患優先安置於治療區等候優先轉送，全程避免將所有注意力集中在單一名傷勢最重但搶救存活機會極低的乘客身上。',
         reflect: '如果現場有一名傷勢極重的乘客，急救存活機會很低，但有兩名中度傷勢乘客若立即處置存活機會很高，你會如何分配你和同伴有限的人力與時間？這樣的決定會不會讓你感到不忍或自責？',
@@ -16902,7 +16925,7 @@ var CHAPTERS = [
     mistakes: [
       '對每位傷病患做詳細完整評估，未把握30秒快速檢傷原則',
       '未先請可自行走動者集中列為綠色，浪費檢傷時間',
-      '現場未劃分指揮/檢傷/治療/轉送分區，各自為政',
+      '現場未劃分指揮/檢傷/治療/轉送任務區，各自為政',
       '將所有人力與資源集中於單一極重傷病患，忽略其他可救治傷病患',
       '檢傷分類標記後未持續關注病患狀態變化（黃色可能惡化為紅色）'
     ],
@@ -16911,7 +16934,7 @@ var CHAPTERS = [
       { q: 'START檢傷分類中，每位傷病患之檢傷目標時間約為？', opts: ['5分鐘', '30秒', '10分鐘', '1小時'], a: 1, ex: '每位傷病患檢傷目標約30秒，目的是快速分類找出最需要立即處置者。' },
       { q: '經評估打開呼吸道後仍無呼吸之傷病患應列為？', opts: ['紅色', '黃色', '綠色', '黑色'], a: 3, ex: '打開呼吸道後仍無呼吸列為黑色（死亡或無生命徵象）。' },
       { q: '大量傷病患事件中「最大效益原則」之意義為？', opts: ['將所有資源集中於傷勢最重的單一病患', '以有限資源救治最多數可救治之傷病患', '依抵達現場順序處理病患', '優先處理社會地位較高之病患'], a: 1, ex: '最大效益原則指以有限資源救治最多數可救治之傷病患，而非集中於單一病患。' },
-      { q: '大量傷病患事件（MCI）現場組織不應包含之分區為？', opts: ['指揮區', '檢傷區', '治療區', '不需分區，全員自由處置'], a: 3, ex: 'MCI現場應劃分指揮、檢傷、治療、轉送等分區，統籌調度資源，避免各自為政。' },
+      { q: '大量傷病患事件（MCI）現場組織不應包含之任務區為？', opts: ['指揮區', '檢傷區', '治療區', '不需任務區，全員自由處置'], a: 3, ex: 'MCI現場應劃分指揮、檢傷、治療、轉送等任務區，統籌調度資源，避免各自為政。' },
       { q: 'START檢傷分類中，呼吸速率超過每分鐘30次時，應列為？', opts: ['綠色', '黃色', '紅色', '黑色'], a: 2, ex: '呼吸速率過快或過慢，均提示生理狀況不穩定，應列為紅色（立即）。' },
       { q: '大量傷病患現場初抵達時，第一批人員之「現場勘查」應優先確認？', opts: ['立即開始搬運傷病患', '現場安全、大致傷病患人數與所需資源，並回報指揮中心', '直接開始急救不需先行評估', '等待所有救護車到齊才開始評估'], a: 1, ex: '抵達現場後應先進行現場勘查，評估安全、估算傷病患數量與所需資源並回報。' },
       { q: '經檢傷分類後之黃色（次緊急）傷病患，下列敘述正確的是？', opts: ['病情絕對不會惡化，不需再評估', '應持續觀察，因病情可能隨時間惡化轉為紅色，須適時再次檢傷', '可完全忽略不需後續關注', '黃色傷病患優先程度高於紅色'], a: 1, ex: '黃色傷病患病情可能隨時間惡化，應安排適時的再次檢傷，確保病情變化能及時被發現。' },
@@ -16919,7 +16942,7 @@ var CHAPTERS = [
       { q: '「走、吸、灌、識」四步驟中，「灌」主要評估之項目為？', opts: ['病人能否自行走動', '呼吸狀況', '橈動脈搏或微血管充填等循環狀況', '意識是否清楚'], a: 2, ex: '「灌」評估橈動脈搏或微血管充填等循環狀況，異常則列為紅色。' },
       { q: '大量傷病患現場負責看管「綠色」群組之人員，其角色任務為？', opts: ['不需任何人看管，綠色傷病患完全沒有風險', '應指派人員看管並觀察，因部分綠色傷病患病情仍可能惡化', '綠色傷病患應自行離開現場不需理會', '綠色傷病患應優先送醫於紅色之前'], a: 1, ex: '即使列為綠色，仍應有人員看管觀察，因部分傷病患病情可能隨時間出現變化而需要重新評估。' },
       { q: '檢傷分類完成後，傷病患轉送之優先順序通常為？', opts: ['依抵達現場先後順序轉送', '依檢傷顏色優先順序轉送，紅色通常優先於黃色與綠色', '綠色一律優先於紅色', '由傷病患自行決定順序'], a: 1, ex: '轉送應依檢傷顏色優先順序進行，紅色（立即）通常優先於黃色與綠色傷病患。' },
-      { q: '大量傷病患事件現場分區中「治療區」之主要功能為？', opts: ['統籌指揮調度', '對已完成檢傷之傷病患依分類給予進一步處置', '僅供記者採訪使用', '僅作為人員休息區'], a: 1, ex: '治療區主要功能是對已完成檢傷之傷病患依分類給予進一步處置。' },
+      { q: '大量傷病患事件現場任務區中「治療區」之主要功能為？', opts: ['統籌指揮調度', '對已完成檢傷之傷病患依分類給予進一步處置', '僅供記者採訪使用', '僅作為人員休息區'], a: 1, ex: '治療區主要功能是對已完成檢傷之傷病患依分類給予進一步處置。' },
       { q: '兒童於大量傷病患事件中之檢傷分類，下列敘述較合理的是？', opts: ['與成人使用完全相同之生理參數判斷標準，無需調整', '兒童生理參數與成人不同，部分專業檢傷工具有兒童專用版本，評估時應留意差異', '兒童不需要進行檢傷分類', '兒童一律列為最優先紅色不需評估'], a: 1, ex: '兒童正常生理參數與成人不同，部分機構發展兒童專用檢傷工具，評估時應留意年齡相關之生理差異。' },
       { q: '義消於大量傷病患勤務後出現情緒低落或反覆回想現場畫面，較適當的處置為？', opts: ['完全忽視，繼續正常工作不需理會', '可考慮參與勤務後簡報或尋求心理支持資源，正常面對情緒反應', '獨自承受不可讓任何人知道', '此為軟弱表現，不應尋求協助'], a: 1, ex: '大量傷病患事件對救援人員心理影響不小，參與勤務後簡報或尋求心理支持是正常且建議的調適方式。' },
       { q: '檢傷分類標記（檢傷卡/色卡）之主要功能為？', opts: ['僅作裝飾用途', '讓後續救護與轉送人員快速辨識傷病患優先度，避免重複評估浪費時間', '與後續處置完全無關', '僅供傷病患自己保留紀念'], a: 1, ex: '檢傷分類標記可讓後續救護與轉送人員快速辨識傷病患優先度，避免重複評估浪費時間。' },
@@ -16931,20 +16954,20 @@ var CHAPTERS = [
     summary: [
       'START依序為走、吸、灌、識，每人檢傷目標約30秒',
       '四色分類：紅色立即、黃色次緊急、綠色輕傷、黑色死亡',
-      'MCI現場應劃分指揮/檢傷/治療/轉送分區，統籌調度',
+      'MCI現場應劃分指揮/檢傷/治療/轉送任務區，統籌調度',
       '遵循最大效益原則，以有限資源救治最多數可救治之人'
     ],
     mnemonic: { title: 'START四步', body: '走：能走的先列綠色。吸：呼吸異常列紅、無呼吸列黑。灌：循環異常列紅。識：意識不清列紅、可依指令列黃。記住最大效益原則，而非集中救一人。' }
   },
   {
-    id: 11, color: '#0d9488', icon: '☣️',
+    id: 11, color: '#2FAE85', icon: '<span class="ems-icon" translate="no">science</span>',
     title: 'HAZMAT危害物質事件應變',
-    subtitle: '熱暖冷分區概念與到院前安全應變原則',
+    subtitle: '熱暖冷任務區概念與到院前安全應變原則',
     highlights: [
-      { icon: '🔥', big: '熱暖冷', label: '三區管制概念' },
-      { icon: '🚫', big: '未受訓不進熱區', label: '最重要安全鐵律' },
-      { icon: '🌬️', big: '上風上坡', label: '應變位置原則' },
-      { icon: '🚿', big: '除污後轉送', label: '冷區轉送前提' }
+      { icon: '<span class="ems-icon" translate="no">local_fire_department</span>', big: '熱暖冷', label: '三區管制概念' },
+      { icon: '<span class="ems-icon" translate="no">block</span>', big: '未受訓不進熱區', label: '最重要安全鐵律' },
+      { icon: '<span class="ems-icon" translate="no">air</span>', big: '上風上坡', label: '應變位置原則' },
+      { icon: '<span class="ems-icon" translate="no">shower</span>', big: '除污後轉送', label: '冷區轉送前提' }
     ],
     goals: [
       '能說明熱區、暖區、冷區三區管制之概念與目的',
@@ -16981,7 +17004,7 @@ var CHAPTERS = [
       { q: '熱區或暖區內可能遭受污染之傷病患，移至冷區前必須先？', opts: ['直接轉送醫院再處理', '經過除污程序', '更換義消自己的防護裝備即可', '不需特別處理，冷區會自動隔離污染'], a: 1, ex: '傷病患須先經除污程序才可移至冷區，避免污染物質擴散造成二次污染。' },
       { q: '義消未受過HAZMAT訓練、未具防護裝備時，面對熱區內受困者應如何處置？', opts: ['立即衝入熱區徒手救援', '不進入熱區，回報請求專業團隊到場', '等待受困者自行爬出', '請旁觀群眾代為進入救援'], a: 1, ex: '未受訓且無防護裝備貿然進入熱區可能使自己也成為受害者，應回報請求專業HAZMAT團隊處置。' },
       { q: '義消遠距離觀察疑似危害物質運輸車輛時，可透過下列何種方式初步辨識物質類別？', opts: ['直接靠近聞氣味判斷', '利用望遠鏡等工具於安全距離外觀察車輛標示牌', '觸碰外洩液體判斷觸感', '品嚐確認物質種類'], a: 1, ex: '應於安全距離外使用望遠鏡等工具觀察標示牌資訊，協助初步判斷物質類別，絕不可靠近聞、觸碰或品嚐不明物質。' },
-      { q: 'HAZMAT事件中「除污」站通常設置於？', opts: ['熱區內部', '暖區，作為熱區與冷區之間的緩衝與處理區域', '冷區內部最深處', '與分區無關，可隨意設置'], a: 1, ex: '除污站通常設置於暖區，作為熱區與冷區之間的緩衝與除污處理區域。' },
+      { q: 'HAZMAT事件中「除污」站通常設置於？', opts: ['熱區內部', '暖區，作為熱區與冷區之間的緩衝與處理區域', '冷區內部最深處', '與任務區無關，可隨意設置'], a: 1, ex: '除污站通常設置於暖區，作為熱區與冷區之間的緩衝與除污處理區域。' },
       { q: '危害物質事件中，下列何者屬於「時間、距離、屏蔽」原則之應用？', opts: ['盡量縮短暴露時間、保持安全距離、利用屏障物降低暴露風險', '完全不需考慮時間長短', '距離越近處置效率越高越好', '屏蔽與安全完全無關'], a: 0, ex: '「時間、距離、屏蔽」是降低危害物質暴露風險的基本原則：縮短暴露時間、增加與污染源距離、利用屏障物阻隔。' },
       { q: '義消於疑似危害物質事件現場發現不明可疑物品時，正確做法為？', opts: ['撿起檢查確認是否危險', '絕不觸碰或移動，保持距離並回報請求專業人員到場', '直接丟棄至遠處', '呼叫旁人一起圍觀查看'], a: 1, ex: '疑似爆裂物或可疑物品絕不可觸碰或移動，應保持安全距離並立即回報請求專業人員到場處理。' },
       { q: '大量傷病患合併不明物質暴露事件中，傷病患送醫前未經除污直接轉送，可能造成之風險為？', opts: ['完全沒有風險', '可能造成救護車內人員與後續接觸之醫療人員二次暴露污染', '可加快治療速度沒有缺點', '有助於物質鑑定'], a: 1, ex: '未經除污直接轉送可能造成救護車內人員與後續接觸之醫療人員二次暴露污染風險。' },
@@ -17008,14 +17031,14 @@ var CHAPTERS = [
 
 
 var ZONES = [
-  { icon: '🎓', title: '新手訓練營', desc: 'EMS體系・救護法規・PPE・出勤安全', color: '#198754', chapterIds: [1], status: 'active' },
-  { icon: '🩺', title: '病人評估中心', desc: '呼吸道評估・ABCDE創傷評估・出血控制與休克', color: '#0d6efd', chapterIds: [2, 4, 3], status: 'active' },
-  { icon: '💔', title: '內科急症中心', desc: '胸痛評估・ACS／STEMI辨識與處置', color: '#6f42c1', chapterIds: [5], status: 'active' },
-  { icon: '🚑', title: '創傷中心', desc: '頭胸腹創傷・骨折・脊椎損傷・燒燙傷', color: '#fd7e14', chapterIds: [6, 7], status: 'active' },
-  { icon: '👶', title: '特殊病患中心', desc: '小兒・孕婦・長者・精神行為急症', color: '#d63384', chapterIds: [8, 9], status: 'active' },
-  { icon: '🧯', title: '特殊事件中心', desc: 'START檢傷・大量傷病患・HAZMAT', color: '#20c997', chapterIds: [10, 11], status: 'active' },
-  { icon: '🎭', title: '情境模擬中心', desc: '分支劇情模擬・OHCA／創傷案例上線中', color: '#6610f2', status: 'active', route: 'scenario' },
-  { icon: '🏆', title: '模擬考場', desc: '綜合題庫・分區題庫・錯題本複習', color: '#dc3545', status: 'active', route: 'examhall' }
+  { icon: '<span class="ems-icon" translate="no">school</span>', title: '新手訓練營', desc: 'EMS體系・救護法規・PPE・出勤安全', color: '#2FAE85', chapterIds: [1], status: 'active' },
+  { icon: '<span class="ems-icon" translate="no">stethoscope</span>', title: '病人評估中心', desc: '呼吸道評估・ABCDE創傷評估・出血控制與休克', color: '#5C8FB5', chapterIds: [2, 4, 3], status: 'active' },
+  { icon: '<span class="ems-icon" translate="no">cardiology</span>', title: '內科急症中心', desc: '胸痛評估・ACS／STEMI辨識與處置', color: '#C1121F', chapterIds: [5], status: 'active' },
+  { icon: '<span class="ems-icon" translate="no">emergency</span>', title: '創傷中心', desc: '頭胸腹創傷・骨折・脊椎損傷・燒燙傷', color: '#D98C2E', chapterIds: [6, 7], status: 'active' },
+  { icon: '<span class="ems-icon" translate="no">child_care</span>', title: '特殊病患中心', desc: '小兒・孕婦・長者・精神行為急症', color: '#2FAE85', chapterIds: [8, 9], status: 'active' },
+  { icon: '<span class="ems-icon" translate="no">fire_extinguisher</span>', title: '特殊事件中心', desc: 'START檢傷・大量傷病患・HAZMAT', color: '#D7FF1A', chapterIds: [10, 11], status: 'active' },
+  { icon: '<span class="ems-icon" translate="no">call</span>', title: '派遣模擬演練', desc: '分支劇情模擬・OHCA／創傷案例上線中', color: '#5C8FB5', status: 'active', route: 'scenario' },
+  { icon: '<span class="ems-icon" translate="no">verified</span>', title: '訓練模擬站', desc: '綜合題庫・任務區題庫・錯題本複習', color: '#D98C2E', status: 'active', route: 'examhall' }
 ];
 
 var emsState = {
@@ -17055,8 +17078,8 @@ function notifyResize() {
 })();
 
 var SLIDE_TAGS = {
-  theory: { label: 'THEORY 理論', color: 'var(--ems-blue)' },
-  chain: { label: 'CHAIN 流程', color: 'var(--ems-blue)' },
+  theory: { label: 'THEORY 理論', color: 'var(--ems-steel)' },
+  chain: { label: 'CHAIN 流程', color: 'var(--ems-steel)' },
   quiz: { label: 'QUIZ 測驗', color: 'var(--ems-red)' }
 };
 function slideTagHTML(type) {
@@ -17076,7 +17099,7 @@ function renderStageBar(slides, idx) {
 }
 
 function sectionCard(headerColor, icon, label, bodyHtml) {
-  return '<div class="card mb-3 shadow-sm">' +
+  return '<div class="card mb-3">' +
     '<div class="card-header fw-bold" style="background:' + headerColor + ';color:white;">' + icon + ' ' + label + '</div>' +
     '<div class="card-body">' + bodyHtml + '</div>' +
   '</div>';
@@ -17085,7 +17108,7 @@ function sectionCard(headerColor, icon, label, bodyHtml) {
 function highlightStrip(items, color) {
   return '<div class="d-flex flex-wrap gap-2 mb-3">' +
     items.map(function (h) {
-      return '<div style="flex:1 1 110px;min-width:90px;background:#fff;border:1px solid #eee;border-left:4px solid ' + color + ';border-radius:8px;padding:8px 10px;text-align:center;">' +
+      return '<div style="flex:1 1 110px;min-width:90px;background:var(--ems-surface);border:1px solid var(--ems-panel-line);border-left:3px solid ' + color + ';border-radius:0;padding:8px 10px;text-align:center;">' +
         '<div style="font-size:1.3rem;">' + h.icon + '</div>' +
         '<div class="fw-bold" style="font-size:0.95rem;">' + esc(h.big) + '</div>' +
         '<div class="text-muted" style="font-size:0.7rem;">' + esc(h.label) + '</div>' +
@@ -17096,20 +17119,20 @@ function highlightStrip(items, color) {
 
 function chainOfSurvival(color) {
   var steps = [
-    { icon: '🔍📞', label: '辨識倒地<br>呼叫119' },
-    { icon: '👐', label: '立即CPR' },
-    { icon: '⚡', label: 'AED電擊' },
-    { icon: '🚑', label: '到院前<br>高級救護' },
-    { icon: '🏥', label: '到院後<br>整合照護' }
+    { icon: '<span class="ems-icon" translate="no">call</span>', label: '辨識倒地<br>呼叫119' },
+    { icon: '<span class="ems-icon" translate="no">volunteer_activism</span>', label: '立即CPR' },
+    { icon: '<span class="ems-icon" translate="no">bolt</span>', label: 'AED電擊' },
+    { icon: '<span class="ems-icon" translate="no">emergency</span>', label: '到院前<br>高級救護' },
+    { icon: '<span class="ems-icon" translate="no">local_hospital</span>', label: '到院後<br>整合照護' }
   ];
   return '<div class="mb-3">' +
-    '<div class="fw-semibold small text-muted mb-2">🔗 生存之鏈（Chain of Survival）</div>' +
+    '<div class="fw-semibold small text-muted mb-2"><span class="ems-icon" translate="no">link</span> 生存之鏈（Chain of Survival）</div>' +
     '<div class="d-flex align-items-start" style="overflow-x:auto;padding-bottom:4px;">' +
       steps.map(function (s, i) {
         return (i > 0 ? '<div style="flex:0 0 16px;height:3px;background:' + color + ';margin-top:26px;"></div>' : '') +
           '<div style="flex:0 0 auto;text-align:center;width:68px;">' +
-            '<div style="width:52px;height:52px;border-radius:50%;background:' + color + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.25rem;margin:0 auto 4px;">' + s.icon + '</div>' +
-            '<div style="font-size:0.66rem;color:#555;line-height:1.25;">' + s.label + '</div>' +
+            '<div style="width:52px;height:52px;border-radius:4px;background:' + color + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.25rem;margin:0 auto 4px;">' + s.icon + '</div>' +
+            '<div style="font-size:0.66rem;color:var(--ems-text-light);line-height:1.25;">' + s.label + '</div>' +
           '</div>';
       }).join('') +
     '</div>' +
@@ -17230,15 +17253,15 @@ function renderZoneCard(z, zi) {
   var nodes = flatNodesForZone(z);
   var doneCount = nodes.filter(function (c) { return isNodeCompleted(c.id); }).length;
   if (!isZoneUnlocked(zi)) {
-    return '<div class="col-6"><div class="ems-zone-tile locked h-100" style="--zone-color:' + z.color + ';" onclick="' + "emsToast('完成前一分區即可解鎖')" + '">' +
-      '<div style="font-size:1.6rem;">🔒</div>' +
+    return '<div class="col-6"><div class="ems-zone-tile locked h-100" style="--zone-color:' + z.color + ';" onclick="' + "emsToast('完成前一任務區即可解鎖')" + '">' +
+      '<div style="font-size:1.6rem;"><span class="ems-icon" translate="no">lock</span></div>' +
       '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
-      '<div class="text-muted" style="font-size:0.65rem;">完成前一關卡解鎖</div>' +
+      '<div class="text-muted" style="font-size:0.65rem;">完成前一任務解鎖</div>' +
     '</div></div>';
   }
   var completed = nodes.length > 0 && doneCount === nodes.length;
   var statusTag = completed
-    ? '<span class="ems-hiviz-badge mt-1">✅ 已完成</span>'
+    ? '<span class="ems-hiviz-badge mt-1"><span class="ems-icon" translate="no">check_circle</span> 已完成</span>'
     : '<div class="text-muted" style="font-size:0.65rem;">' + doneCount + ' / ' + nodes.length + ' 完成</div>';
   return '<div class="col-6"><div class="ems-zone-tile' + (completed ? ' completed' : '') + ' h-100" style="--zone-color:' + z.color + ';" onclick="showZone(' + zi + ')">' +
     '<div style="font-size:1.6rem;">' + z.icon + '</div>' +
@@ -17260,8 +17283,8 @@ function renderDashboard() {
   html += '<div class="d-flex align-items-center justify-content-between mb-2">' +
             '<div class="ems-section-label">OPERATOR STATUS</div>' +
             '<div class="d-flex gap-2">' +
-              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showAchievements()">🏆 我的成就</button>' +
-              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showTestStation()">📝 題庫練習</button>' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showAchievements()"><span class="ems-icon" translate="no">verified</span> 技能認證</button>' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="showTestStation()"><span class="ems-icon" translate="no">quiz</span> 題庫練習</button>' +
             '</div>' +
           '</div>';
   html += '<div class="ems-status-panel mb-3">' +
@@ -17281,19 +17304,19 @@ function renderDashboard() {
               '<div class="d-flex align-items-center gap-3">' +
                 '<div style="font-size:1.6rem;">' + nextNode.chapter.icon + '</div>' +
                 '<div class="flex-grow-1"><div class="fw-bold">' + esc(nextNode.chapter.title) + '</div></div>' +
-                '<button type="button" class="btn btn-sm btn-primary">▶ 接續訓練</button>' +
+                '<button type="button" class="btn btn-sm btn-primary"><span class="ems-icon" translate="no">play_arrow</span> 接續訓練</button>' +
               '</div>' +
             '</div>';
   } else {
-    html += '<div class="ems-allclear mb-3"><span class="tag">ALL CLEAR</span><span class="small text-muted">目前所有開放關卡都已完成，敬請期待更多分區上線</span></div>';
+    html += '<div class="ems-allclear mb-3"><span class="tag">ALL CLEAR</span><span class="small text-muted">目前所有開放任務都已完成，敬請期待更多任務區上線</span></div>';
   }
   html += '<div class="ems-section-label mb-2">ZONE STATUS</div>';
   html += '<div class="row g-2 mb-3">' + ZONES.map(function (z, zi) { return renderZoneCard(z, zi); }).join('') + '</div>';
   var doneTotal = emsState.completedNodes.length;
   var unlockedZones = activeZoneIdxs().filter(function (zi) { return isZoneUnlocked(zi); }).length;
   html += '<div class="ems-vitals mb-3">' +
-            '<div class="ems-vital"><span class="v-label">完訓章節</span><span class="v-num">' + doneTotal + '</span></div>' +
-            '<div class="ems-vital"><span class="v-label">解鎖分區</span><span class="v-num">' + unlockedZones + '</span></div>' +
+            '<div class="ems-vital"><span class="v-label">完訓任務</span><span class="v-num">' + doneTotal + '</span></div>' +
+            '<div class="ems-vital"><span class="v-label">解鎖任務區</span><span class="v-num">' + unlockedZones + '</span></div>' +
             '<div class="ems-vital"><span class="v-label">累積XP</span><span class="v-num">' + emsState.xp + '</span></div>' +
           '</div>';
   html += '<div class="text-center mt-3" style="font-size:0.7rem;line-height:1.5;color:var(--ems-text-light);">本教材為AI輔助整理之學習參考資料，內容依台灣EMT-1/EMT-2與消防署緊急救護教材編寫，正式教學與臨床操作仍應以講師指導及最新版教材、SOP為準。</div>';
@@ -17340,9 +17363,9 @@ function showAchievements() {
 }
 
 var ACHIEVEMENT_BADGES = [
-  { icon: '🥇', label: '首次完訓', test: function () { return emsState.completedNodes.length >= 1; } },
-  { icon: '❤️', label: 'BLS 達人', test: function () { return isNodeCompleted(1); } },
-  { icon: '🩺', label: '評估專家', test: function () {
+  { icon: '<span class="ems-icon" translate="no">workspace_premium</span>', label: '首次完訓', test: function () { return emsState.completedNodes.length >= 1; } },
+  { icon: '<span class="ems-icon" translate="no">favorite</span>', label: 'BLS 達人', test: function () { return isNodeCompleted(1); } },
+  { icon: '<span class="ems-icon" translate="no">stethoscope</span>', label: '評估專家', test: function () {
       var nodes = flatNodesForZone(ZONES[1]);
       return nodes.length > 0 && nodes.every(function (c) { return isNodeCompleted(c.id); });
     } }
@@ -17365,7 +17388,7 @@ function renderAchievements() {
             '<div class="ems-gauge"><div class="ems-gauge-fill" style="width:' + pct + '%;"></div></div>' +
             '<div class="small text-muted mt-1">' + emsState.xpIntoLevel + ' / ' + emsState.xpForNextLevel + ' XP 進階下一等級</div>' +
           '</div>';
-  html += '<div class="ems-section-label mb-2">成就徽章牆</div>';
+  html += '<div class="ems-section-label mb-2">技能認證牆</div>';
   html += '<div class="row g-2 mb-3">' + ACHIEVEMENT_BADGES.map(function (b) {
     var unlocked = b.test();
     return '<div class="col-3 text-center">' +
@@ -17374,13 +17397,13 @@ function renderAchievements() {
       '</div>';
   }).join('') + '</div>';
   html += '<div class="ems-vitals mb-3">' +
-            '<div class="ems-vital"><span class="v-label">完訓章節</span><span class="v-num">' + doneTotal + '</span></div>' +
-            '<div class="ems-vital"><span class="v-label">解鎖分區</span><span class="v-num">' + unlockedZones + '</span></div>' +
+            '<div class="ems-vital"><span class="v-label">完訓任務</span><span class="v-num">' + doneTotal + '</span></div>' +
+            '<div class="ems-vital"><span class="v-label">解鎖任務區</span><span class="v-num">' + unlockedZones + '</span></div>' +
             '<div class="ems-vital"><span class="v-label">累積XP</span><span class="v-num">' + emsState.xp + '</span></div>' +
           '</div>';
   html += '<div class="ems-section-label mb-2">完訓紀錄</div>';
   if (doneTotal === 0) {
-    html += '<div class="text-muted small">尚無完訓紀錄，完成第一個章節即可解鎖首批徽章。</div>';
+    html += '<div class="text-muted small">尚無完訓紀錄，完成第一個任務即可解鎖首批徽章。</div>';
   } else {
     html += '<div class="ems-logbox">' + emsState.completedNodes.slice().reverse().map(function (id, ri) {
       var c = CHAPTERS.filter(function (x) { return x.id === id; })[0];
@@ -17400,8 +17423,8 @@ function renderZoneContent() {
   html += '<div class="row g-2">' + nodes.map(function (c, i) {
     var completed = isNodeCompleted(c.id);
     var locked = i > 0 && !isNodeCompleted(nodes[i - 1].id);
-    var statusBadge = completed ? '<span class="ems-hiviz-badge">✅ 已完成</span>' : (locked ? '<span class="badge bg-secondary">🔒 鎖定</span>' : '<span class="badge" style="background:var(--ems-red);color:#fff;">可學習</span>');
-    return '<div class="col-12"><div class="card chapter-card shadow-sm' + (locked ? ' locked' : '') + '" style="border-left:5px solid ' + c.color + ';' + (locked ? 'opacity:0.55;' : '') + '" onclick="' + (locked ? "emsToast('完成前一章節即可解鎖')" : 'showNode(' + c.id + ')') + '">' +
+    var statusBadge = completed ? '<span class="ems-hiviz-badge"><span class="ems-icon" translate="no">check_circle</span> 已完成</span>' : (locked ? '<span class="badge bg-secondary"><span class="ems-icon" translate="no">lock</span> 鎖定</span>' : '<span class="badge" style="background:var(--ems-red);color:#fff;">可學習</span>');
+    return '<div class="col-12"><div class="card chapter-card' + (locked ? ' locked' : '') + '" style="border-left:3px solid ' + c.color + ';' + (locked ? 'opacity:0.55;' : '') + '" onclick="' + (locked ? "emsToast('完成前一任務即可解鎖')" : 'showNode(' + c.id + ')') + '">' +
       '<div class="card-body d-flex align-items-center gap-3">' +
         '<div style="font-size:1.6rem;">' + c.icon + '</div>' +
         '<div class="flex-grow-1"><div class="fw-bold">' + esc(c.title) + '</div><div class="text-muted small mt-1">' + esc(c.subtitle) + '</div></div>' +
@@ -17478,24 +17501,24 @@ function renderSlide() {
 
   var html = '';
   if (slide.type === 'intro') {
-    html += '<div class="mb-2"><span class="badge" style="background:' + c.color + ';">學習關卡</span></div>' +
+    html += '<div class="mb-2"><span class="badge" style="background:' + c.color + ';">學習任務</span></div>' +
       '<div class="fw-bold fs-5 mb-1">' + esc(c.title) + '</div>' +
       '<div class="text-muted small mb-3">' + esc(c.subtitle) + '</div>';
     if (c.highlights) html += highlightStrip(c.highlights, c.color);
-    html += sectionCard(c.color, '🎯', '學習目標', '<ul class="mb-0">' + c.goals.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>');
+    html += sectionCard(c.color, '<span class="ems-icon" translate="no">flag</span>', '學習目標', '<ul class="mb-0">' + c.goals.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>');
   } else if (slide.type === 'chain') {
     html += '<div class="mb-2">' + slideTagHTML('chain') + '</div>' + chainOfSurvival(c.color);
   } else if (slide.type === 'theory') {
     html += '<div class="text-center mb-2">' + slideTagHTML('theory') + ' <span class="text-muted small">' + (slide.i + 1) + ' / ' + slide.n + '</span></div>' +
-      '<div class="flashcard" style="border-left:6px solid ' + c.color + ';">' + esc(slide.text) + '</div>';
+      '<div class="flashcard" style="border-left:3px solid ' + c.color + ';">' + esc(slide.text) + '</div>';
   } else if (slide.type === 'flow') {
-    html += sectionCard(c.color, '🔀', '流程圖', '<div class="ems-flow-wrap" id="nodeFlowWrap" onclick="openNodeFlowZoom()"><div class="mermaid">' + c.flow + '</div><div class="ems-flow-zoom-hint">🔍 點擊放大</div></div>');
+    html += sectionCard(c.color, '<span class="ems-icon" translate="no">account_tree</span>', '流程圖', '<div class="ems-flow-wrap" id="nodeFlowWrap" onclick="openNodeFlowZoom()"><div class="mermaid">' + c.flow + '</div><div class="ems-flow-zoom-hint"><span class="ems-icon" translate="no">zoom_in</span> 點擊放大</div></div>');
   } else if (slide.type === 'case') {
     var gid = 'nodecase_' + idx;
-    html += sectionCard('var(--ems-caution)', '🏥', '臨床案例',
-      '<div class="mb-2" style="background:var(--ems-surface-2);border-radius:8px;padding:10px;">' + esc(slide.cs.scenario) + '</div>' +
+    html += sectionCard('var(--ems-caution)', '<span class="ems-icon" translate="no">local_hospital</span>', '臨床案例',
+      '<div class="mb-2" style="background:var(--ems-surface-2);border-radius:0;padding:10px;">' + esc(slide.cs.scenario) + '</div>' +
       '<div class="reflect-box">' +
-        '<div class="fw-semibold mb-1">🤔 思考與反思</div>' +
+        '<div class="fw-semibold mb-1"><span class="ems-icon" translate="no">psychology</span> 思考與反思</div>' +
         '<div class="mb-2">' + esc(slide.cs.reflect) + '</div>' +
         '<button type="button" class="btn btn-sm btn-outline-primary" data-target="' + gid + '" onclick="toggleBox(this)">查看參考方向</button>' +
         '<div id="' + gid + '" class="reveal-box">' + esc(slide.cs.guide) + '</div>' +
@@ -17503,7 +17526,7 @@ function renderSlide() {
   } else if (slide.type === 'quiz') {
     var qz = slide.qz;
     html += '<div class="text-center mb-2">' + slideTagHTML('quiz') + ' <span class="text-muted small">' + (slide.i + 1) + ' / ' + slide.n + '</span></div>' +
-      '<div class="card shadow-sm"><div class="card-body">' +
+      '<div class="card"><div class="card-body">' +
         '<div class="fw-semibold mb-2">' + esc(qz.q) + '</div>' +
         qz.opts.map(function (o, oi) {
           return '<button type="button" class="ems-quiz-opt" data-oi="' + oi + '" data-correct="' + qz.a + '" onclick="selectNodeQuizOption(this)"><span class="opt-tag">' + String.fromCharCode(65 + oi) + '</span><span>' + esc(o) + '</span></button>';
@@ -17511,11 +17534,11 @@ function renderSlide() {
         '<div class="ems-answer-card"><span class="ex-tag">EX.</span>' + esc(qz.ex) + '</div>' +
       '</div></div>';
   } else if (slide.type === 'mistakes') {
-    html += sectionCard('var(--ems-red-dark)', '⚠️', '常見錯誤', '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
+    html += sectionCard('var(--ems-red-dark)', '<span class="ems-icon" translate="no">warning</span>', '常見錯誤', '<ul class="mb-0 text-danger-emphasis">' + c.mistakes.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>');
   } else if (slide.type === 'summary') {
-    html += sectionCard('var(--ems-ok)', '✅', '重點整理', '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
+    html += sectionCard('var(--ems-ok)', '<span class="ems-icon" translate="no">check_circle</span>', '重點整理', '<ul class="mb-0">' + c.summary.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
   } else if (slide.type === 'mnemonic') {
-    html += sectionCard(c.color, '💡', '記憶口訣', '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
+    html += sectionCard(c.color, '<span class="ems-icon" translate="no">lightbulb</span>', '記憶口訣', '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>');
   }
   content.innerHTML = html;
 
@@ -17536,7 +17559,7 @@ function renderSlide() {
   var isQuizUnanswered = slide.type === 'quiz' && !emsState.nodeAnswered[idx];
   navBox.innerHTML = '<div class="d-flex gap-2 mt-3">' +
     '<button type="button" id="nodePrevBtn" class="btn btn-outline-secondary" style="padding:12px 18px;" ' + (idx === 0 ? 'disabled' : '') + ' onclick="nodePrev()">‹ 上一步</button>' +
-    '<button type="button" id="nodeNextBtn" class="btn btn-primary flex-grow-1" style="padding:12px 18px;" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 🎉' : '繼續 →')) + '</button>' +
+    '<button type="button" id="nodeNextBtn" class="btn btn-primary flex-grow-1" style="padding:12px 18px;" ' + (isQuizUnanswered ? 'disabled' : '') + ' onclick="nodeNext()">' + (isQuizUnanswered ? '請先作答' : (idx + 2 === slides.length ? '完成本節 <span class="ems-icon" translate="no">celebration</span>' : '繼續 →')) + '</button>' +
   '</div>';
 
   notifyResize();
@@ -17588,10 +17611,10 @@ function completeNode() {
   var firstTime = emsState.completedNodes.indexOf(c.id) === -1;
   var xpGain = firstTime ? 60 : 0;
   document.getElementById('nodeSlideContent').innerHTML = '<div class="text-center py-4">' +
-      '<div style="font-size:3rem;">🎉</div>' +
+      '<div style="font-size:3rem;"><span class="ems-icon" translate="no">celebration</span></div>' +
       '<div class="fs-5 fw-bold mt-2">' + (firstTime ? '完成本節！' : '複習完成！') + '</div>' +
       (firstTime ? '<div class="text-success fw-semibold mt-1">+ ' + xpGain + ' XP</div>' : '<div class="text-muted mt-1">已完成過，無額外經驗值</div>') +
-      '<button type="button" class="btn btn-primary mt-3" onclick="exitNode()">返回章節列表</button>' +
+      '<button type="button" class="btn btn-primary mt-3" onclick="exitNode()">返回任務列表</button>' +
     '</div>';
   document.getElementById('nodeSlideNav').innerHTML = '';
   document.getElementById('nodeSlideBar').innerHTML = '';
@@ -17637,7 +17660,7 @@ function shuffleArr(arr) {
 
 function testStationCategories() {
   var cats = [];
-  cats.push({ key: 'all', label: '綜合題庫', icon: '📚', count: buildQuestionBank().length });
+  cats.push({ key: 'all', label: '綜合題庫', icon: '<span class="ems-icon" translate="no">menu_book</span>', count: buildQuestionBank().length });
   activeZoneIdxs().forEach(function (zi) {
     var z = ZONES[zi];
     if (z.route) return;
@@ -17645,7 +17668,7 @@ function testStationCategories() {
     var count = nodes.reduce(function (n, c) { return n + c.quiz.length; }, 0);
     if (count > 0) cats.push({ key: 'zone-' + zi, label: z.title, icon: z.icon, count: count, chapterIds: z.chapterIds });
   });
-  cats.push({ key: 'wrong', label: '錯題本複習', icon: '📖', count: emsState.wrongQuestions.length });
+  cats.push({ key: 'wrong', label: '錯題本複習', icon: '<span class="ems-icon" translate="no">auto_stories</span>', count: emsState.wrongQuestions.length });
   return cats;
 }
 
@@ -17793,7 +17816,7 @@ function renderPracticeResult() {
   var score = practiceState.score;
   var pct = total ? Math.round((score / total) * 100) : 0;
   var passed = pct >= EMS_EXAM_PASS_PCT;
-  var levelMsg = passed ? '🏆 通過及格線！基礎相當扎實。' : '📚 尚未達及格線，建議重新複習相關章節後再次測驗。';
+  var levelMsg = passed ? '<span class="ems-icon" translate="no">verified</span> 通過及格線！基礎相當扎實。' : '<span class="ems-icon" translate="no">menu_book</span> 尚未達及格線，建議重新複習相關任務後再次測驗。';
   var box = document.getElementById('practiceContent');
   var html = '<div class="text-center mb-2">' +
       '<div style="font-size:2.2rem;font-weight:700;">' + score + ' / ' + total + '</div>' +
@@ -17812,7 +17835,7 @@ function renderPracticeResult() {
   });
   var chKeys = Object.keys(byChapter);
   if (chKeys.length) {
-    html += '<div class="ems-section-label mb-2">各章節正確率</div>';
+    html += '<div class="ems-section-label mb-2">各任務正確率</div>';
     html += chKeys.map(function (k) {
       var ch = byChapter[k];
       var chPct = Math.round((ch.correct / ch.total) * 100);
@@ -17830,7 +17853,7 @@ function renderPracticeResult() {
         '<div class="fw-semibold">' + esc(qz.q) + '</div>' +
         '<div class="small">正解：' + esc(qz.opts[qz.a]) + '</div>' +
         '<div class="small text-muted">' + esc(qz.ex) + '</div>' +
-        '<button type="button" class="btn btn-sm btn-outline-secondary mt-1" style="align-self:flex-start;" onclick="exitPractice();showNode(' + qz.chapterId + ')">回到該章節複習</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary mt-1" style="align-self:flex-start;" onclick="exitPractice();showNode(' + qz.chapterId + ')">回到該任務複習</button>' +
       '</div>';
     }).join('');
   }
@@ -17854,7 +17877,7 @@ function renderPracticeResult() {
 
 var SCENARIOS = [
   {
-    id: 'ohca1', caseNo: 'SIM-2026-0142', callTime: '14:32', icon: '❤️',
+    id: 'ohca1', caseNo: 'SIM-2026-0142', callTime: '14:32', icon: '<span class="ems-icon" translate="no">favorite</span>',
     title: 'OHCA：賣場內倒地', dispatch: '50歲男性，賣場內倒地，意識不清，路人已開始CPR。',
     xpGain: 80, start: 'n1',
     nodes: {
@@ -17879,7 +17902,7 @@ var SCENARIOS = [
     }
   },
   {
-    id: 'trauma1', caseNo: 'SIM-2026-0207', callTime: '21:05', icon: '🩸',
+    id: 'trauma1', caseNo: 'SIM-2026-0207', callTime: '21:05', icon: '<span class="ems-icon" translate="no">bloodtype</span>',
     title: '創傷：車禍大出血', dispatch: '28歲女性，機車自撞，大腿撕裂傷大量出血，意識略微模糊。',
     xpGain: 80, start: 'n1',
     nodes: {
@@ -17900,7 +17923,7 @@ var SCENARIOS = [
         ]
       },
       end_ok: { type: 'end', outcome: 'ok', summary: '出血控制得宜、休克處置正確，患者送醫後生命徵象穩定。' },
-      end_caution: { type: 'end', outcome: 'caution', summary: '止血處置正確，但休克後續處置有誤，建議複習出血控制與休克處理章節。' }
+      end_caution: { type: 'end', outcome: 'caution', summary: '止血處置正確，但休克後續處置有誤，建議複習出血控制與休克處理任務。' }
     }
   }
 ];
@@ -17933,7 +17956,7 @@ function renderScenarioCenter() {
           '<div style="font-size:1.4rem;">' + sc.icon + '</div>' +
           '<div><div class="fw-semibold">' + esc(sc.title) + '</div><div class="text-muted small">' + esc(sc.dispatch) + '</div></div>' +
         '</div>' +
-        '<button type="button" class="btn btn-danger btn-sm w-100">🚑 出車</button>' +
+        '<button type="button" class="btn btn-danger btn-sm w-100"><span class="ems-icon" translate="no">emergency</span> 出車</button>' +
       '</div></div>';
   }).join('') + '</div>';
   box.innerHTML = html;
