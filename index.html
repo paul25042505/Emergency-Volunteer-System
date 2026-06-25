@@ -16278,6 +16278,7 @@ function emsIcon(name) { return '<span class="ems-icon" translate="no">' + name 
 window.onerror = function (msg, src, line, col, err) {
   var box = document.getElementById('dashboardView');
   if (box && !box.children.length) {
+    box.style.display = 'block';
     box.innerHTML = '<div class="text-danger small" style="white-space:pre-wrap;">頁面發生錯誤：' + String(msg) + ' (line ' + line + ')</div>';
   }
 };
@@ -18664,7 +18665,10 @@ function boot() {
     loadProgress();
   } catch (e) {
     var box = document.getElementById('dashboardView');
-    if (box) box.innerHTML = '<div style="border:1px solid var(--ems-red);border-radius:var(--ems-radius);padding:10px;font-family:var(--ems-font-mono);font-size:.78rem;color:var(--ems-red);">ERR: 載入失敗，請稍後再試（' + esc(String(e && e.message || e)) + '）</div>';
+    if (box) {
+      box.style.display = 'block';
+      box.innerHTML = '<div style="border:1px solid var(--ems-red);border-radius:var(--ems-radius);padding:10px;font-family:var(--ems-font-mono);font-size:.78rem;color:var(--ems-red);">ERR: 載入失敗，請稍後再試（' + esc(String(e && e.message || e)) + '）</div>';
+    }
   }
 }
 boot();
@@ -18682,8 +18686,15 @@ function initEmtStudyPage() {
     ifr.srcdoc = EMS_ACADEMY_HTML;
     return;
   }
-  // 每次重新進入學習中心一律回到首頁，不停留在上次離開時的子頁面
-  try { ifr.contentWindow.showDashboard(); } catch (e) { /* 尚未載入完成時忽略 */ }
+  // 每次重新進入學習中心一律回到首頁，不停留在上次離開時的子頁面；
+  // 若上次載入時 iframe 內部發生錯誤導致 showDashboard 不存在或拋出例外，
+  // 視為內容已損毀，整個重新載入而非靜默放棄（否則使用者會卡在空白畫面，重新整理也救不回來）
+  try {
+    if (typeof ifr.contentWindow.showDashboard !== 'function') throw new Error('emt iframe not ready');
+    ifr.contentWindow.showDashboard();
+  } catch (e) {
+    ifr.srcdoc = EMS_ACADEMY_HTML;
+  }
 }
 
 function emsXpForLevel(lv) { return Math.round(100 * lv * (1 + lv * 0.05)); }
