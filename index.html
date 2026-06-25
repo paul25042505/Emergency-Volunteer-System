@@ -17690,28 +17690,38 @@ function renderTestStation() {
     var hist = emsState.examHistory[cat.key];
     var disabled = cat.count === 0;
     var meta = (hist ? ('上次成績 ' + hist.score + '/' + hist.total + '（' + hist.pct + '%）') : '尚無紀錄') + ' ・ 及格線 ' + EMS_EXAM_PASS_PCT + '%';
-    var onclick = disabled ? "emsToast('目前沒有可用題目')" : "startExam('" + cat.key + "')";
-    return '<div class="col-12"><div class="ems-station-card' + (disabled ? ' disabled' : '') + '" onclick="' + onclick + '">' +
+    var isAll = cat.key === 'all';
+    var sizeOptions = [25, 50, 75, 100].filter(function (n) { return n < cat.count; });
+    var onclick = disabled ? "emsToast('目前沒有可用題目')" : (isAll ? '' : "startExam('" + cat.key + "')");
+    return '<div class="col-12"><div class="ems-station-card' + (disabled ? ' disabled' : '') + '"' + (onclick ? ' onclick="' + onclick + '"' : ' style="cursor:default;"') + '>' +
         '<div class="d-flex align-items-center gap-2">' +
           '<div style="font-size:1.3rem;">' + cat.icon + '</div>' +
           '<div class="flex-grow-1"><div class="st-title">' + esc(cat.label) + '</div><div class="st-meta">' + cat.count + ' 題 ・ ' + esc(meta) + '</div></div>' +
         '</div>' +
+        (isAll && !disabled ? '<div class="d-flex gap-2 mt-2" style="flex-wrap:wrap;">' +
+            sizeOptions.map(function (n) {
+              return '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();startExam(\'all\',' + n + ')">' + n + ' 題</button>';
+            }).join('') +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();startExam(\'all\')">全部 ' + cat.count + ' 題</button>' +
+          '</div>' : '') +
       '</div></div>';
   }).join('') + '</div>';
   box.innerHTML = html;
   notifyResize();
 }
 
-function startExam(categoryKey) {
+function startExam(categoryKey, limit) {
   var cats = testStationCategories();
   var cat = cats.filter(function (c) { return c.key === categoryKey; })[0];
   if (!cat || cat.count === 0) { emsToast('目前沒有可用題目'); return; }
   var pool = categoryKey === 'all' ? buildQuestionBank()
     : categoryKey === 'wrong' ? buildWrongQuestionBank()
     : buildQuestionBank(cat.chapterIds);
+  pool = shuffleArr(pool);
+  if (limit) pool = pool.slice(0, limit);
   practiceState.categoryKey = categoryKey;
   practiceState.categoryLabel = cat.label;
-  practiceState.questions = shuffleArr(pool);
+  practiceState.questions = pool;
   practiceState.idx = 0;
   practiceState.score = 0;
   practiceState.wrong = [];
