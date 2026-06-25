@@ -17037,7 +17037,7 @@ var ZONES = [
   { icon: '<span class="ems-icon" translate="no">emergency</span>', title: '創傷中心', desc: '頭胸腹創傷・骨折・脊椎損傷・燒燙傷', color: '#D98C2E', chapterIds: [6, 7], status: 'active' },
   { icon: '<span class="ems-icon" translate="no">child_care</span>', title: '特殊病患中心', desc: '小兒・孕婦・長者・精神行為急症', color: '#2FAE85', chapterIds: [8, 9], status: 'active' },
   { icon: '<span class="ems-icon" translate="no">fire_extinguisher</span>', title: '特殊事件中心', desc: 'START檢傷・大量傷病患・HAZMAT', color: '#D7FF1A', chapterIds: [10, 11], status: 'active' },
-  { icon: '<span class="ems-icon" translate="no">call</span>', title: '派遣模擬演練', desc: '分支劇情模擬・OHCA／創傷案例上線中', color: '#5C8FB5', status: 'active', route: 'scenario' },
+  { icon: '<span class="ems-icon" translate="no">call</span>', title: '派遣模擬演練', desc: '分支劇情模擬・20件案例涵蓋全章節', color: '#5C8FB5', status: 'active', route: 'scenario' },
   { icon: '<span class="ems-icon" translate="no">verified</span>', title: '訓練模擬站', desc: '綜合題庫・任務區題庫・錯題本複習', color: '#D98C2E', status: 'active', route: 'examhall' }
 ];
 
@@ -17884,9 +17884,16 @@ function renderPracticeResult() {
   }
 }
 
+var SCENARIO_DIFF = {
+  easy: { label: '易', color: 'var(--ems-ok)' },
+  medium: { label: '中', color: 'var(--ems-caution)' },
+  hard: { label: '難', color: 'var(--ems-crit)' }
+};
+
 var SCENARIOS = [
   {
     id: 'ohca1', caseNo: 'SIM-2026-0142', callTime: '14:32', icon: '<span class="ems-icon" translate="no">favorite</span>',
+    chapterId: 1, difficulty: 'medium',
     title: 'OHCA：賣場內倒地', dispatch: '50歲男性，賣場內倒地，意識不清，路人已開始CPR。',
     xpGain: 80, start: 'n1',
     nodes: {
@@ -17896,7 +17903,9 @@ var SCENARIOS = [
         choices: [
           { label: '立即接手高品質CPR，並接上AED分析心律', correct: true, feedback: '正確：OHCA首要為高品質CPR與早期電擊。AED分析：心室顫動（VF），建議電擊。', next: 'n2' },
           { label: '先建立靜脈管路給予腎上腺素', correct: false, feedback: '錯誤：應優先進行CPR與早期電擊，給藥並非OHCA第一步處置。', next: 'n2' }
-        ]
+        ],
+        reflect: '如果到場時患者仍有自發呼吸但意識不清，你的處置流程會有什麼不同？',
+        guide: '若有自發呼吸與脈搏，則不符合OHCA定義，應改評估呼吸道、給氧並監測生命徵象，而非執行CPR；CPR僅用於無呼吸或僅喘息且無脈搏之病人。'
       },
       n2: {
         narrative: '電擊一次後繼續CPR兩分鐘，再次分析心律時監視器顯示恢復為規律心律，可觸及微弱頸動脈搏動。',
@@ -17904,7 +17913,9 @@ var SCENARIOS = [
         choices: [
           { label: '確認ROSC（恢復自發循環），準備呼吸道處置並儘速轉送', correct: true, feedback: '正確：觸及脈搏應立即停止按壓，轉為ROSC後處置並儘速轉送。', next: 'end_ok' },
           { label: '忽略可觸及的脈搏，持續胸外按壓', correct: false, feedback: '錯誤：觸及脈搏即應停止按壓，繼續按壓可能對已恢復循環的患者造成傷害。', next: 'end_caution' }
-        ]
+        ],
+        reflect: '為什麼觸及脈搏後仍要持續評估呼吸道與保暖，而不是直接送醫了事？',
+        guide: 'ROSC後病人仍可能再度惡化，需持續監測生命徵象、保護呼吸道、避免低血壓與低血氧，並儘速送醫做進一步處置與病因評估。'
       },
       end_ok: { type: 'end', outcome: 'ok', summary: 'ROSC（恢復自發循環）成功，患者送醫後生命徵象逐漸穩定。' },
       end_caution: { type: 'end', outcome: 'caution', summary: '雖恢復循環，但後續處置流程有誤，建議複習CPR/ROSC後處置準則。' }
@@ -17912,6 +17923,7 @@ var SCENARIOS = [
   },
   {
     id: 'trauma1', caseNo: 'SIM-2026-0207', callTime: '21:05', icon: '<span class="ems-icon" translate="no">bloodtype</span>',
+    chapterId: 3, difficulty: 'medium',
     title: '創傷：車禍大出血', dispatch: '28歲女性，機車自撞，大腿撕裂傷大量出血，意識略微模糊。',
     xpGain: 80, start: 'n1',
     nodes: {
@@ -17921,7 +17933,9 @@ var SCENARIOS = [
         choices: [
           { label: '立即直接加壓止血，必要時使用止血帶並記錄上止血帶時間', correct: true, feedback: '正確：危及生命的大出血應優先止血，使用止血帶須記錄上止血帶時間。', next: 'n2' },
           { label: '先進行完整身體評估再處理傷口', correct: false, feedback: '錯誤：大出血屬立即威脅生命的狀況，應優先止血，不可延後處理。', next: 'n2' }
-        ]
+        ],
+        reflect: '如果止血帶上止血後出血仍未停止，你下一步會怎麼做？',
+        guide: '應在第一條止血帶近端再加上第二條止血帶，並重新確認位置與壓力是否足夠，同時記錄處置時間。'
       },
       n2: {
         narrative: '出血已控制，患者主訴口渴、躁動不安，膚色仍蒼白濕冷。',
@@ -17929,15 +17943,557 @@ var SCENARIOS = [
         choices: [
           { label: '採休克姿勢、保暖，並快速轉送醫院', correct: true, feedback: '正確：休克處置三原則：止血、保暖、平躺抬腳（無禁忌時）並儘速轉送。', next: 'end_ok' },
           { label: '讓患者自行走動到救護車以節省時間', correct: false, feedback: '錯誤：休克病人不應自行走動，應以擔架搬運，避免循環狀況惡化。', next: 'end_caution' }
-        ]
+        ],
+        reflect: '休克病人意識清楚時，為什麼仍不建議讓他自行活動？',
+        guide: '休克時周邊血管收縮代償，自行活動會增加耗氧與心臟負荷，可能誘發代償失效與意識惡化，應以擔架搬運並持續監測。'
       },
       end_ok: { type: 'end', outcome: 'ok', summary: '出血控制得宜、休克處置正確，患者送醫後生命徵象穩定。' },
       end_caution: { type: 'end', outcome: 'caution', summary: '止血處置正確，但休克後續處置有誤，建議複習出血控制與休克處理任務。' }
     }
+  },
+  {
+    id: 'choking1', caseNo: 'SIM-2026-0301', callTime: '12:15', icon: '<span class="ems-icon" translate="no">air</span>',
+    chapterId: 2, difficulty: 'easy',
+    title: '呼吸道哽塞：聚餐嗆食', dispatch: '45歲男性於聚餐時進食哽到，無法說話，雙手抓住頸部，臉色發紫。',
+    xpGain: 70, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '到場見患者意識清醒但無法咳出聲音，呈現典型哽塞窒息手勢，嘴唇略發紫。',
+        vitals: { HR: { v: '118', s: 'caution' }, BP: { v: '132/84', s: 'ok' }, SpO2: { v: '85%', s: 'crit' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '立即站於患者後方執行腹部擊推（Heimlich法）直到異物排出或患者失去意識', correct: true, feedback: '正確：完全異物哽塞且意識清醒時，應立即執行腹部擊推法，這是清除上呼吸道異物最有效的方式。', next: 'n2' },
+          { label: '先讓患者自行用力咳嗽嘗試排出異物，暫不介入', correct: false, feedback: '錯誤：完全哽塞（無法發聲、無法咳出）代表咳嗽反射已失效，須立即由施救者執行腹部擊推，不可被動等待。', next: 'n2' }
+        ],
+        reflect: '如果患者是孕婦或過度肥胖無法環抱腹部，你會改用什麼方式？',
+        guide: '對孕婦或無法環抱腹部者，應改採胸部擊推法，按壓位置與胸外按壓相近，原理同樣是利用瞬間胸內壓上升將異物擠出。'
+      },
+      n2: {
+        narrative: '經兩次腹部擊推後，異物咳出，患者意識略微迷茫但呼吸道已暢通，仍有劇烈咳嗽。',
+        vitals: { HR: { v: '104', s: 'caution' }, BP: { v: '128/80', s: 'ok' }, SpO2: { v: '96%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '安撫患者並持續觀察呼吸與血氧，建議仍送醫評估有無吸入性損傷', correct: true, feedback: '正確：異物排出後仍應送醫檢查，避免遺漏部分異物殘留或擊推造成的內傷。', next: 'end_ok' },
+          { label: '異物已排出，告知患者沒事可自行返家', correct: false, feedback: '錯誤：即使異物排出，仍建議就醫評估，擊推過程可能造成肋骨或腹內損傷，不應直接放棄送醫。', next: 'end_caution' }
+        ],
+        reflect: '為什麼異物排出、症狀緩解後，仍建議他就醫而非直接結案？',
+        guide: '腹部擊推可能造成肋骨骨折或腹內臟器損傷，且不能排除仍有殘留異物的可能，應建議送醫做進一步檢查，不可僅因症狀緩解就結案。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '異物完全清除，呼吸道恢復通暢，後續送醫檢查未發現併發症。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '哽塞處置正確，但後續未安排就醫評估，可能遺漏潛在併發症，建議複習哽塞後續處置原則。' }
+    }
+  },
+  {
+    id: 'asthma1', caseNo: 'SIM-2026-0302', callTime: '03:40', icon: '<span class="ems-icon" translate="no">air</span>',
+    chapterId: 2, difficulty: 'medium',
+    title: '氣喘急性發作：夜間呼吸困難', dispatch: '16歲女性氣喘病史，夜間突發呼吸困難、喘鳴聲明顯，講話需停頓喘氣。',
+    xpGain: 75, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者端坐前傾呼吸，呼氣時可聽到明顯喘鳴聲，說話只能講三到四個字就需喘氣，隨身攜帶吸入劑但發作時找不到。',
+        vitals: { HR: { v: '128', s: 'caution' }, BP: { v: '126/78', s: 'ok' }, SpO2: { v: '90%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '協助採坐姿、給予氧氣，並協助使用其支氣管擴張吸入劑', correct: true, feedback: '正確：氣喘急性發作應採舒適坐姿、給氧並儘速協助使用支氣管擴張劑緩解氣道痙攣。', next: 'n2' },
+          { label: '讓患者平躺以降低心臟負擔', correct: false, feedback: '錯誤：平躺會使呼吸更加困難，氣喘發作患者應採坐姿或前傾坐姿以利呼吸輔助肌群運作。', next: 'n2' }
+        ],
+        reflect: '如果患者使用吸入劑後仍持續惡化、開始意識模糊，這代表什麼警訊？',
+        guide: '意識改變合併呼吸窘迫是呼吸衰竭前兆，代表病情危急惡化，需立即給予高濃度氧氣並儘速送醫，準備呼吸道進一步處置。'
+      },
+      n2: {
+        narrative: '使用吸入劑後喘鳴聲略減，呼吸速率仍快，患者表示稍微舒緩但仍喘。',
+        vitals: { HR: { v: '112', s: 'caution' }, BP: { v: '122/76', s: 'ok' }, SpO2: { v: '94%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '持續監測呼吸與血氧，採坐姿儘速送醫進一步治療', correct: true, feedback: '正確：症狀緩解但未完全解除時，仍應持續監測並儘速轉送，避免延誤後續治療。', next: 'end_ok' },
+          { label: '症狀已緩解，建議患者自行休息，無需送醫', correct: false, feedback: '錯誤：血氧與呼吸仍未恢復正常，氣喘發作可能再度惡化，不應放棄送醫。', next: 'end_caution' }
+        ],
+        reflect: '血氧只回升到94%、患者仍喘，為什麼還不算「處置完成」？',
+        guide: '94%仍低於正常血氧（一般大於95%），且呼吸速率未恢復正常，代表氣道痙攣未完全緩解，仍有再度惡化風險，須持續監測並送醫。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '氣道痙攣逐漸緩解，送醫後接受進一步支氣管擴張治療，狀況穩定。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '初步處置正確，但放棄送醫的判斷有誤，建議複習氣喘發作後續監測原則。' }
+    }
+  },
+  {
+    id: 'blunt_shock1', caseNo: 'SIM-2026-0303', callTime: '17:50', icon: '<span class="ems-icon" translate="no">bloodtype</span>',
+    chapterId: 3, difficulty: 'hard',
+    title: '鈍傷休克：高處跌落腹部撞擊', dispatch: '34歲男性工地高處跌落，腹部撞擊鋼架，外觀無明顯出血但主訴腹痛劇烈。',
+    xpGain: 90, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '腹部左上方明顯壓痛合併板狀僵硬，患者皮膚濕冷蒼白，主訴頭暈想吐，外觀無外傷出血。',
+        vitals: { HR: { v: '124', s: 'crit' }, BP: { v: '88/60', s: 'crit' }, SpO2: { v: '95%', s: 'caution' }, GCS: { v: '14', s: 'caution' } },
+        choices: [
+          { label: '懷疑內出血休克，採平躺保暖姿勢並儘速送醫，途中持續監測生命徵象', correct: true, feedback: '正確：腹部鈍傷合併休克徵象高度懷疑內出血，到院前無法止血，應儘速送醫由醫院處置。', next: 'n2' },
+          { label: '因為外觀沒有出血，先觀察暫不處理，等症狀加重再決定', correct: false, feedback: '錯誤：休克徵象已出現（心跳快、血壓低、皮膚濕冷），不可等待惡化，應立即視為緊急狀況處置並送醫。', next: 'n2' }
+        ],
+        reflect: '為什麼外表沒有看到血，卻可能已經大量內出血？',
+        guide: '腹腔、骨盆腔可容納大量血液而不顯露於體表，鈍傷造成內臟（如脾臟、肝臟）破裂出血時，外觀完全看不出來，須靠生命徵象與受傷機轉判斷。'
+      },
+      n2: {
+        narrative: '轉送途中患者意識逐漸模糊，血壓持續下降，主訴腹痛加劇。',
+        vitals: { HR: { v: '136', s: 'crit' }, BP: { v: '76/48', s: 'crit' }, SpO2: { v: '92%', s: 'crit' }, GCS: { v: '12', s: 'crit' } },
+        choices: [
+          { label: '持續給氧、保暖並加速送醫，沿途回報生命徵象變化給醫院', correct: true, feedback: '正確：到院前無法處理內出血，應加速轉送並提前回報，讓醫院做好輸血與手術準備。', next: 'end_ok' },
+          { label: '停車嘗試評估腹部傷口範圍，延後送醫時間', correct: false, feedback: '錯誤：到院前停留評估無法改變內出血處置方向，只會延誤送醫時間，應持續轉送不可停留。', next: 'end_caution' }
+        ],
+        reflect: '途中生命徵象持續惡化時，為什麼提前回報醫院比再次評估傷口更重要？',
+        guide: '到院前無法處理內出血根本病因，及早回報讓醫院啟動大量輸血與手術準備，比現場重複評估更能改善預後，時間就是生命。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別內出血休克並加速轉送，醫院提前準備後及時手術止血。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '判斷方向正確，但途中延誤轉送時間，建議複習內出血休克的送醫優先順序。' }
+    }
+  },
+  {
+    id: 'mvc_abcde1', caseNo: 'SIM-2026-0304', callTime: '08:20', icon: '<span class="ems-icon" translate="no">emergency</span>',
+    chapterId: 4, difficulty: 'medium',
+    title: '車禍多重外傷：機車自撞護欄', dispatch: '22歲男性機車自撞護欄，全身多處擦挫傷，主訴右胸疼痛呼吸喘。',
+    xpGain: 85, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '初級評估：意識清醒對話正常，右胸觸診有壓痛及皮下氣腫感，呼吸略喘但雙側胸廓對稱起伏。',
+        vitals: { HR: { v: '108', s: 'caution' }, BP: { v: '118/76', s: 'ok' }, SpO2: { v: '93%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '依ABCDE系統性評估，優先確認呼吸道與呼吸狀況是否有威脅生命的胸傷', correct: true, feedback: '正確：創傷病人應依ABCDE順序評估，呼吸（Breathing）有皮下氣腫與血氧下降，須優先排除氣胸等威脅生命傷害。', next: 'n2' },
+          { label: '先處理外觀明顯的擦挫傷傷口包紮', correct: false, feedback: '錯誤：擦挫傷非立即威脅生命的傷害，應先依ABCDE排序，優先排除可能危及生命的胸部或呼吸道問題。', next: 'n2' }
+        ],
+        reflect: '皮下氣腫合併血氧下降，讓你聯想到哪些胸部創傷？',
+        guide: '皮下氣腫合併呼吸窘迫、血氧下降，須高度懷疑氣胸（包括張力性氣胸），應持續監測呼吸狀況、給氧並儘速送醫，避免延誤。'
+      },
+      n2: {
+        narrative: '二級評估時發現右側呼吸音較左側減弱，血氧持續下降，患者呼吸窘迫加劇。',
+        vitals: { HR: { v: '122', s: 'crit' }, BP: { v: '104/68', s: 'caution' }, SpO2: { v: '89%', s: 'crit' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '給予高濃度氧氣，採半坐臥姿勢，儘速送醫並持續監測呼吸', correct: true, feedback: '正確：疑似氣胸惡化應給氧、採舒適姿勢協助呼吸並儘速轉送，到院前無法處理氣胸根本病因。', next: 'end_ok' },
+          { label: '讓患者平躺以方便固定頸圈與脊板', correct: false, feedback: '錯誤：呼吸窘迫患者平躺可能加重呼吸困難，應優先考量呼吸狀況，採半坐臥姿勢更有利通氣，除非有脊椎損傷限制。', next: 'end_caution' }
+        ],
+        reflect: '當呼吸與脊椎固定的需求互相衝突時，你會如何權衡優先順序？',
+        guide: '生命徵象的ABC永遠優先於固定處置，若姿勢調整不違反脊椎保護原則，應以維持呼吸道與呼吸通暢為優先考量，再視情況做適當固定。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別胸部外傷惡化徵象，給氧並儘速送醫，病情穩定下送達醫院。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '評估方向正確，但姿勢處置有誤，建議複習呼吸窘迫病人的姿勢擺位原則。' }
+    }
+  },
+  {
+    id: 'head_injury1', caseNo: 'SIM-2026-0305', callTime: '23:10', icon: '<span class="ems-icon" translate="no">emergency</span>',
+    chapterId: 4, difficulty: 'hard',
+    title: '頭部外傷：墜落意識改變', dispatch: '19歲男性自二樓鷹架墜落，頭部著地，現場意識時清時迷糊。',
+    xpGain: 95, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '到場時患者可睜眼但答非所問，頭頂有撕裂傷出血，瞳孔對光反應略遲緩。',
+        vitals: { HR: { v: '58', s: 'caution' }, BP: { v: '162/94', s: 'caution' }, SpO2: { v: '96%', s: 'ok' }, GCS: { v: '13', s: 'caution' } },
+        choices: [
+          { label: '懷疑顱內壓上升，固定頸椎、給氧並儘速送醫，持續監測意識變化', correct: true, feedback: '正確：心跳慢合併血壓上升（庫欣反應）提示顱內壓升高，應固定頸椎並儘速送醫做進一步影像評估與處置。', next: 'n2' },
+          { label: '因意識時清時迷糊判斷只是輕微腦震盪，安撫後等待自行恢復', correct: false, feedback: '錯誤：意識波動合併生命徵象異常（心跳慢、血壓高）是危險徵象，不可視為單純腦震盪而延誤處置與送醫。', next: 'n2' }
+        ],
+        reflect: '心跳慢、血壓卻偏高，這個組合徵象讓你聯想到什麼機轉？',
+        guide: '這是庫欣反應（Cushing reflex）：顱內壓上升時人體會反射性升高血壓以維持腦灌流，同時迷走神經反射造成心跳變慢，是顱內壓升高的危險警訊。'
+      },
+      n2: {
+        narrative: '轉送途中患者意識持續惡化，對疼痛刺激反應變差，一側瞳孔逐漸放大。',
+        vitals: { HR: { v: '52', s: 'crit' }, BP: { v: '172/100', s: 'crit' }, SpO2: { v: '94%', s: 'caution' }, GCS: { v: '8', s: 'crit' } },
+        choices: [
+          { label: '維持呼吸道暢通給予高濃度氧氣，加速送醫並持續回報意識變化', correct: true, feedback: '正確：意識持續惡化合併單側瞳孔放大為腦疝徵象，須加速送醫爭取時間進行緊急神經外科處置。', next: 'end_ok' },
+          { label: '嘗試讓患者多次用力呼喚以評估清醒程度，延後轉送時間', correct: false, feedback: '錯誤：反覆刺激評估無法改變病情，意識惡化徵象已相當明確，應立即加速送醫而非延誤在現場。', next: 'end_caution' }
+        ],
+        reflect: '單側瞳孔逐漸放大，代表腦部發生了什麼變化？為什麼分秒必爭？',
+        guide: '單側瞳孔放大可能代表腦疝（腦組織受壓移位壓迫動眼神經），是神經外科急症徵象，若不及時手術減壓可能造成不可逆腦損傷，須爭取每一分鐘儘速送醫。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別顱內壓升高徵象並加速送醫，爭取到神經外科緊急處置時間。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '判斷方向正確，但現場延誤了寶貴時間，建議複習意識惡化病人的送醫優先原則。' }
+    }
+  },
+  {
+    id: 'chestpain1', caseNo: 'SIM-2026-0306', callTime: '06:05', icon: '<span class="ems-icon" translate="no">cardiology</span>',
+    chapterId: 5, difficulty: 'medium',
+    title: '典型胸痛：清晨壓迫性胸痛', dispatch: '58歲男性清晨突發胸口壓迫感，冒冷汗，疼痛延伸至左肩。',
+    xpGain: 80, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者主訴胸口如重物壓迫已持續20分鐘未緩解，冒冷汗、臉色蒼白，有高血壓病史。',
+        vitals: { HR: { v: '96', s: 'caution' }, BP: { v: '148/92', s: 'caution' }, SpO2: { v: '95%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '讓患者採舒適姿勢休息、給氧並儘速送醫，途中持續監測生命徵象', correct: true, feedback: '正確：典型ACS表現應減少活動耗氧、給氧並儘速轉送，避免延誤心導管等到院後處置時間。', next: 'n2' },
+          { label: '請患者自行走到救護車以加快上車速度', correct: false, feedback: '錯誤：疑似急性冠心症應避免任何不必要活動，自行走動會增加心臟耗氧，應以擔架或輪椅搬運。', next: 'n2' }
+        ],
+        reflect: '為什麼懷疑心肌梗塞時，連「自己走兩步上車」這種小動作都要避免？',
+        guide: '心肌梗塞時心肌缺氧已經很脆弱，任何額外體力消耗都會增加心臟耗氧需求，可能誘發心律不整或加重梗塞範圍，應盡量減少病人自身體力消耗。'
+      },
+      n2: {
+        narrative: '轉送途中患者疼痛未緩解，開始出現心悸與輕微呼吸喘。',
+        vitals: { HR: { v: '110', s: 'caution' }, BP: { v: '130/84', s: 'caution' }, SpO2: { v: '93%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '持續監測心律與血氧變化，儘速送達具心導管能力的醫院並提前通報', correct: true, feedback: '正確：提前通報讓醫院啟動心導管團隊待命，可大幅縮短到院後的處置時間，改善預後。', next: 'end_ok' },
+          { label: '症狀差不多，照原計畫送往最近醫院即可，不需特別通報', correct: false, feedback: '錯誤：提前通報疑似ACS讓醫院做好準備是黃金時間的重要一環，不應省略這個步驟。', next: 'end_caution' }
+        ],
+        reflect: '提前通報醫院「疑似ACS即將送達」，實際上幫病人爭取到了什麼？',
+        guide: '提前通報可讓醫院心導管團隊提前準備、縮短到院後的Door-to-Balloon時間，對心肌梗塞病人而言，每縮短的處置時間都直接關係到存活的心肌組織量。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別ACS並提前通報，病人到院後迅速接受心導管治療。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '處置方向正確，但未提前通報延誤院內準備，建議複習ACS轉送通報原則。' }
+    }
+  },
+  {
+    id: 'chestpain_atypical1', caseNo: 'SIM-2026-0307', callTime: '15:30', icon: '<span class="ems-icon" translate="no">cardiology</span>',
+    chapterId: 5, difficulty: 'hard',
+    title: '非典型胸痛：長者糖尿病患合併虛弱', dispatch: '76歲女性糖尿病病史，主訴近兩天食慾不佳、全身虛弱、輕微噁心，無明顯胸痛。',
+    xpGain: 90, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者意識清楚但精神倦怠，否認胸痛，僅主訴上腹不適與噁心，家屬說她臉色比平常差。',
+        vitals: { HR: { v: '102', s: 'caution' }, BP: { v: '138/88', s: 'caution' }, SpO2: { v: '94%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '考量糖尿病患者可能有非典型心臟病症狀，詳細詢問並評估生命徵象後送醫評估', correct: true, feedback: '正確：糖尿病患者因自主神經病變，心肌梗塞可能不會以典型胸痛表現，反而是噁心、虛弱、上腹不適等非典型症狀，須提高警覺。', next: 'n2' },
+          { label: '因為沒有胸痛，判斷只是腸胃不適，建議家屬自行帶去診所即可', correct: false, feedback: '錯誤：沒有胸痛不能排除心臟疾病，尤其糖尿病患者常以非典型症狀表現急性冠心症，不應僅憑無胸痛就排除嚴重疾病。', next: 'n2' }
+        ],
+        reflect: '為什麼糖尿病患者發生心肌梗塞時，反而可能「不痛」？',
+        guide: '長期糖尿病會造成自主神經病變，使痛覺傳導受損，導致患者即使心肌缺氧也可能感受不到典型胸痛，轉而以噁心、倦怠、呼吸喘等非典型症狀表現，這類「無痛性心肌梗塞」容易被忽略。'
+      },
+      n2: {
+        narrative: '評估過程中患者表示開始覺得呼吸有點喘，血氧略降，家屬詢問是否真的需要送醫。',
+        vitals: { HR: { v: '108', s: 'caution' }, BP: { v: '132/84', s: 'caution' }, SpO2: { v: '91%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '向家屬說明非典型症狀仍可能是嚴重心臟疾病，建議由救護車送醫並持續監測', correct: true, feedback: '正確：應清楚向家屬說明風險，建議救護車轉送並持續監測生命徵象變化，避免延誤就醫造成病情惡化。', next: 'end_ok' },
+          { label: '尊重家屬意見，讓他們自行開車送醫以節省救護資源', correct: false, feedback: '錯誤：病情有惡化徵象（血氧下降、呼吸喘），不應改為自行開車，救護車轉送可持續監測與即時處置，較為安全。', next: 'end_caution' }
+        ],
+        reflect: '當家屬想自行開車送醫、但病人生命徵象正在惡化時，你會如何溝通？',
+        guide: '應誠實告知病人目前生命徵象已出現惡化徵兆，自行開車途中若突然惡化將難以即時處置，救護車轉送途中可持續監測與給氧，安全性較高，需取得家屬理解後堅持專業建議。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別非典型心臟急症並堅持專業建議，病人安全送醫獲得治療。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '判斷方向正確，但未能堅持專業建議，建議複習與家屬溝通及非典型症狀辨識。' }
+    }
+  },
+  {
+    id: 'spine1', caseNo: 'SIM-2026-0308', callTime: '10:45', icon: '<span class="ems-icon" translate="no">orthopedics</span>',
+    chapterId: 6, difficulty: 'medium',
+    title: '高處墜落：疑似脊椎損傷', dispatch: '40歲男性自三樓施工架墜落，平躺在地無法移動雙腳，主訴下背劇痛。',
+    xpGain: 80, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者意識清醒，主訴下背劇痛並雙下肢麻木無力，自述完全無法動雙腳，頸部無明顯壓痛。',
+        vitals: { HR: { v: '92', s: 'caution' }, BP: { v: '108/70', s: 'caution' }, SpO2: { v: '97%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '維持脊椎中立姿勢，避免不必要移動，使用脊板搬運固定全脊椎', correct: true, feedback: '正確：高處墜落合併下肢麻木無力高度懷疑脊椎損傷，應維持脊椎中立、減少搬動，使用脊板固定整條脊椎後送醫。', next: 'n2' },
+          { label: '因頸部沒有壓痛，先讓患者試著翻身坐起評估狀況', correct: false, feedback: '錯誤：頸部無壓痛不能排除胸腰椎損傷，下肢麻木無力已是脊髓損傷警訊，任意翻身坐起可能加重脊髓損傷。', next: 'n2' }
+        ],
+        reflect: '頸部不痛，為什麼還是要懷疑整條脊椎都可能受傷？',
+        guide: '墜落造成的脊椎損傷可能發生在頸椎以外的胸腰椎節段，下肢麻木無力是脊髓功能受損的徵象，受傷機轉本身（高處墜落）就已符合應採脊椎固定的判斷標準，不能只依單一部位有無壓痛來判斷。'
+      },
+      n2: {
+        narrative: '固定上脊板過程中，患者主訴下背痛加劇但下肢感覺略有恢復，家屬情緒緊張要求加快動作。',
+        vitals: { HR: { v: '98', s: 'caution' }, BP: { v: '112/72', s: 'ok' }, SpO2: { v: '97%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '安撫家屬情緒，依標準流程確實固定後再搬運送醫，不因催促而跳過步驟', correct: true, feedback: '正確：脊椎固定的標準流程是為避免二次損傷，即使家屬情緒緊張催促，仍應確實依步驟完成固定才能搬運。', next: 'end_ok' },
+          { label: '因家屬催促，提早解開部分固定帶加快搬運速度', correct: false, feedback: '錯誤：提早鬆開固定帶會喪失脊椎保護效果，可能在搬運過程造成二次脊髓損傷，不應因催促而省略步驟。', next: 'end_caution' }
+        ],
+        reflect: '面對家屬情緒性的催促，你會如何兼顧效率與病人安全？',
+        guide: '可以一邊安撫說明「固定確實才能保護脊髓，避免癱瘓風險」，一邊讓團隊分工加快非關鍵步驟（如準備擔架、清空動線），但脊椎固定的關鍵步驟不可省略或縮短。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '脊椎固定確實執行，搬運過程未造成二次損傷，病人安全送醫。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '因家屬催促而提早鬆開固定帶，增加二次損傷風險，建議複習脊椎固定原則。' }
+    }
+  },
+  {
+    id: 'fracture1', caseNo: 'SIM-2026-0309', callTime: '19:25', icon: '<span class="ems-icon" translate="no">orthopedics</span>',
+    chapterId: 6, difficulty: 'medium',
+    title: '開放性骨折：機車碰撞小腿變形出血', dispatch: '27歲男性機車碰撞，小腿明顯變形且有開放性傷口持續出血，劇痛難耐。',
+    xpGain: 75, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '右側小腿可見骨頭外露及持續出血，足部末端膚色略蒼白，患者劇痛大叫。',
+        vitals: { HR: { v: '118', s: 'caution' }, BP: { v: '112/74', s: 'caution' }, SpO2: { v: '96%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '先直接加壓止血控制出血，再以夾板固定患肢於發現姿勢，避免移動骨折處', correct: true, feedback: '正確：開放性骨折合併出血應先止血（威脅生命的問題優先），再以夾板固定患肢，固定時盡量維持發現時的姿勢，避免增加軟組織與血管神經損傷。', next: 'n2' },
+          { label: '先嘗試將外露的骨頭推回傷口內再包紮固定', correct: false, feedback: '錯誤：不可嘗試將外露骨頭推回傷口，這樣做可能增加感染與血管神經損傷風險，應原位固定後送醫由醫療端處置。', next: 'n2' }
+        ],
+        reflect: '為什麼救護人員不能、也不該嘗試把外露的骨頭「推回去」？',
+        guide: '骨折復位需要專業評估與在無菌環境下處理，到院前嘗試復位可能將汙染物帶入深層組織增加感染風險，也可能在復位過程中傷及周邊血管神經，應原位固定並儘速送醫。'
+      },
+      n2: {
+        narrative: '固定後檢查足部，發現足背動脈搏動微弱、膚色仍偏蒼白冰冷。',
+        vitals: { HR: { v: '112', s: 'caution' }, BP: { v: '116/76', s: 'ok' }, SpO2: { v: '95%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '記錄末端血液循環與感覺評估結果，儘速送醫並持續監測末端灌流變化', correct: true, feedback: '正確：骨折合併末端血循不良屬於肢體缺血風險，須儘速送醫進一步處理，並持續記錄監測末端灌流變化提供醫院參考。', next: 'end_ok' },
+          { label: '末端循環不良不影響生命安全，可以不急著送醫，先處理其他擦挫傷', correct: false, feedback: '錯誤：末端血循不良若持續過久可能造成肢體缺血壞死，屬於需儘速處理的緊急狀況，不可延誤送醫。', next: 'end_caution' }
+        ],
+        reflect: '骨折本身不會立刻致命，為什麼「足背動脈搏動微弱」卻是要儘速送醫的理由？',
+        guide: '骨折移位或腫脹可能壓迫鄰近血管，造成肢體末端缺血，若未在數小時內恢復灌流可能導致不可逆的組織壞死甚至需要截肢，因此末端血循評估異常須視為儘速處理的警訊。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '正確固定並及時送醫，末端血循在醫院處置後恢復正常。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '固定處置正確，但延誤送醫增加肢體缺血風險，建議複習末端血循評估原則。' }
+    }
+  },
+  {
+    id: 'burn1', caseNo: 'SIM-2026-0310', callTime: '13:00', icon: '<span class="ems-icon" translate="no">local_fire_department</span>',
+    chapterId: 7, difficulty: 'medium',
+    title: '燒燙傷：廚房瓦斯氣爆', dispatch: '38歲女性廚房瓦斯氣爆，臉部與雙手皮膚潮紅水泡，衣物部分燒融粘附皮膚。',
+    xpGain: 85, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者臉部、雙手可見二度燒傷水泡，部分衣物與皮膚粘黏，意識清楚但劇痛，現場仍有些微煙霧。',
+        vitals: { HR: { v: '120', s: 'caution' }, BP: { v: '128/82', s: 'caution' }, SpO2: { v: '94%', s: 'caution' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '先確保現場安全並脫離煙霧環境，再以乾淨且未粘黏的衣物剪除，避免硬撕沾黏部位', correct: true, feedback: '正確：燒燙傷處置須先確保現場安全，移除未粘黏的衣物以利散熱與評估傷勢，但已粘黏部位不可強行撕除，以免造成更深層損傷。', next: 'n2' },
+          { label: '立即用冰塊直接敷在燒傷部位以快速降溫', correct: false, feedback: '錯誤：冰塊溫度過低，直接敷於燒傷部位可能造成凍傷並加重組織損傷，應使用流動冷水適度降溫，而非冰塊直接接觸。', next: 'n2' }
+        ],
+        reflect: '患者臉部燒傷又身處瓦斯氣爆現場，你還會特別留意哪個可能被忽略的風險？',
+        guide: '密閉空間氣爆常合併吸入性損傷，臉部燒傷、口鼻周圍燒焦、聲音改變或喘鳴都是呼吸道燒傷的警訊，須特別評估呼吸道狀況並提高警覺，因為呼吸道腫脹可能在數小時內惡化阻塞。'
+      },
+      n2: {
+        narrative: '處置後患者聲音逐漸變得沙啞，主訴喉嚴緊感，鼻毛有些微燒焦痕跡。',
+        vitals: { HR: { v: '126', s: 'crit' }, BP: { v: '122/80', s: 'caution' }, SpO2: { v: '90%', s: 'crit' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '高度懷疑吸入性損傷導致呼吸道腫脹風險，給予高濃度氧氣並儘速送醫', correct: true, feedback: '正確：聲音改變、喉嚴緊感合併鼻毛燒焦是吸入性損傷的警訊，呼吸道可能在短時間內因腫脹而阻塞，須給氧並儘速送醫做進一步呼吸道處置。', next: 'end_ok' },
+          { label: '認為只是嗆到煙霧的正常反應，持續觀察即可不需特別處理', correct: false, feedback: '錯誤：聲音沙啞合併鼻毛燒焦是吸入性損傷的典型警訊，呼吸道腫脹可能進展迅速造成阻塞，不應視為正常反應而延誤送醫。', next: 'end_caution' }
+        ],
+        reflect: '吸入性損傷造成的呼吸道阻塞，為什麼往往是「先輕微、後急速惡化」？',
+        guide: '熱傷害造成呼吸道黏膜水腫，初期可能僅有聲音改變等輕微症狀，但水腫會隨時間持續進展，可能在數小時內造成呼吸道急速狹窄甚至完全阻塞，因此一旦懷疑吸入性損傷就須提早送醫處置，不能等到呼吸窘迫才反應。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別吸入性損傷警訊並儘速送醫，在呼吸道完全阻塞前獲得處置。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '燒傷初步處置正確，但忽略吸入性損傷警訊延誤送醫，建議複習相關警訊辨識。' }
+    }
+  },
+  {
+    id: 'pneumothorax1', caseNo: 'SIM-2026-0311', callTime: '22:40', icon: '<span class="ems-icon" translate="no">local_fire_department</span>',
+    chapterId: 7, difficulty: 'hard',
+    title: '開放性氣胸：工地鋼條穿刺', dispatch: '45歲男性工地意外被鋼條穿刺右胸，咳嗽時傷口處可聽到吸吮聲。',
+    xpGain: 95, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '右胸可見開放傷口，呼吸時傷口處發出「啵啵」吸吮聲，患者呼吸急促、表情痛苦。',
+        vitals: { HR: { v: '124', s: 'crit' }, BP: { v: '104/68', s: 'caution' }, SpO2: { v: '89%', s: 'crit' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '立即以三邊密封式敷料覆蓋傷口（留一邊開放排氣），並持續監測呼吸狀況', correct: true, feedback: '正確：開放性氣胸的傷口會讓空氣隨呼吸進出胸腔造成肺部塌陷，三邊密封覆蓋可防止吸入更多空氣，同時保留排氣通道避免形成張力性氣胸。', next: 'n2' },
+          { label: '將傷口完全密封四邊包紮以防止空氣進入', correct: false, feedback: '錯誤：完全四邊密封會讓氣體無法排出，可能使單純氣胸惡化為張力性氣胸，壓迫心臟與健側肺臟，須保留一邊作為排氣閥。', next: 'n2' }
+        ],
+        reflect: '為什麼包紮開放性胸傷時，「留一個邊不密封」反而是關鍵？',
+        guide: '留一邊不密封可形成單向排氣閥效果：吸氣時敷料貼緊傷口防止空氣進入，呼氣時胸內壓上升能將氣體排出，這樣才能避免演變成更致命的張力性氣胸。'
+      },
+      n2: {
+        narrative: '包紮後患者呼吸窘迫加劇，氣管逐漸偏向左側，頸部靜脈明顯怒張。',
+        vitals: { HR: { v: '136', s: 'crit' }, BP: { v: '82/54', s: 'crit' }, SpO2: { v: '85%', s: 'crit' }, GCS: { v: '14', s: 'crit' } },
+        choices: [
+          { label: '立即懷疑張力性氣胸，鬆開敷料一角釋放壓力並給予高濃度氧氣，儘速送醫', correct: true, feedback: '正確：氣管偏移、頸靜脈怒張、血壓下降是張力性氣胸的典型徵象，應立即鬆開密封敷料釋放胸內壓力，並給氧儘速送醫。', next: 'end_ok' },
+          { label: '認為包紮不夠緊，加強密封四邊以防止漏氣', correct: false, feedback: '錯誤：此時症狀正是因密封過緊導致胸內壓無法釋放所致，應立即鬆開而非加強密封，否則會持續壓迫心臟與健側肺臟。', next: 'end_caution' }
+        ],
+        reflect: '氣管偏移、頸靜脈怒張、血壓驟降，這三個徵象背後共同指向什麼致命機轉？',
+        guide: '這是張力性氣胸的典型三徵象：胸腔內壓力持續升高壓迫縱膈腔，使氣管偏移、阻礙靜脈回流（頸靜脈怒張）並壓迫心臟導致心輸出量驟降（血壓下降），是到院前少數可立即處置且能挽救生命的胸部創傷急症。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及時識別張力性氣胸並鬆開敷料釋壓，患者呼吸與血壓逐漸改善。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '誤判惡化原因並加強密封，延誤釋壓處置，建議複習張力性氣胸的辨識與處置。' }
+    }
+  },
+  {
+    id: 'pedseizure1', caseNo: 'SIM-2026-0312', callTime: '20:15', icon: '<span class="ems-icon" translate="no">child_care</span>',
+    chapterId: 8, difficulty: 'easy',
+    title: '兒童熱痙攣：高燒後全身抽動', dispatch: '2歲男童發燒39.5度後突然全身抽動，雙眼上吊，持續約2分鐘後自行停止。',
+    xpGain: 70, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '到場時抽動已停止，男童意識略矇矇但可被叫醒，皮膚溫熱，家長極度驚慌。',
+        vitals: { HR: { v: '138', s: 'caution' }, BP: { v: '92/58', s: 'ok' }, SpO2: { v: '97%', s: 'ok' }, GCS: { v: '14', s: 'caution' } },
+        choices: [
+          { label: '採側臥姿勢保持呼吸道暢通，記錄抽動時間與表現，安撫家長並評估後送醫', correct: true, feedback: '正確：熱痙攣發作後應採側臥防止嗆咳、保持呼吸道暢通，並記錄發作時間與表現提供醫院參考，同時安撫家長情緒。', next: 'n2' },
+          { label: '立即用退熱貼或冰水大量降溫以阻止再次抽動', correct: false, feedback: '錯誤：抽動已停止時不需採取激烈降溫手段，過度快速降溫可能造成患童不適或顫抖，應以一般退燒方式處理並儘速送醫評估。', next: 'n2' }
+        ],
+        reflect: '家長很可能會問「會不會是腦炎或更嚴重的病」，你會怎麼回應並安撫？',
+        guide: '可以說明單純熱痙攣多數預後良好，但這次仍需就醫排除其他更嚴重病因（如腦膜炎、腦炎），用平穩語氣說明處置流程與送醫的必要性，比起妄下診斷更重要的是儘速轉介專業評估。'
+      },
+      n2: {
+        narrative: '轉送途中男童再次出現短暫抽動，約30秒後停止，意識較先前更加昏沉。',
+        vitals: { HR: { v: '144', s: 'caution' }, BP: { v: '88/56', s: 'caution' }, SpO2: { v: '95%', s: 'caution' }, GCS: { v: '12', s: 'caution' } },
+        choices: [
+          { label: '持續維持呼吸道暢通與側臥姿勢，記錄第二次發作時間，加速送醫並預先通報', correct: true, feedback: '正確：短時間內反覆抽動需提高警覺，加速送醫並提前通報讓醫院做好兒科急症準備。', next: 'end_ok' },
+          { label: '因孩子之前自己停止過，這次先觀察不用特別通報醫院', correct: false, feedback: '錯誤：短時間內反覆抽動（複雜型熱痙攣可能性）屬於需提高警覺的徵象，應提前通報讓醫院做好準備，不應輕視。', next: 'end_caution' }
+        ],
+        reflect: '為什麼「在短時間內又抽了一次」，會讓警覺等級整個提高？',
+        guide: '單純熱痙攣通常為單次、短暫且發作後意識迅速恢復；若在短時間內反覆發作或意識恢復變慢，屬於複雜型熱痙攣或可能有其他病因，風險較高，須提前通報醫院加強準備。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及時識別反覆發作警訊並提前通報，男童送醫後獲得妥善評估。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '處置技巧正確，但低估反覆發作的警訊未提前通報，建議複習兒童熱痙攣警覺徵象。' }
+    }
+  },
+  {
+    id: 'childbirth1', caseNo: 'SIM-2026-0313', callTime: '04:50', icon: '<span class="ems-icon" translate="no">child_care</span>',
+    chapterId: 8, difficulty: 'hard',
+    title: '緊急分娩：救護車上臨盆', dispatch: '29歲孕婦足月，陣痛劇烈且間隔極短，自覺有便意感與胎頭下降感。',
+    xpGain: 90, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '孕婦表示陣痛間隔不到2分鐘，且有強烈想用力的感覺，檢查會陰部可見胎頭已露出。',
+        vitals: { HR: { v: '110', s: 'caution' }, BP: { v: '128/82', s: 'caution' }, SpO2: { v: '97%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '判斷分娩即將發生，就地準備接生用品，不嘗試延遲產程或強行送醫', correct: true, feedback: '正確：胎頭已露出代表產程已進入第二產程後期，應就地準備接生，強行移動或延遲只會增加母嬰風險。', next: 'n2' },
+          { label: '堅持先送上救護車盡速前往醫院再處理', correct: false, feedback: '錯誤：胎頭已露出時分娩通常會在數分鐘內發生，移動孕婦反而增加風險，應就地準備接生而非堅持先送醫。', next: 'n2' }
+        ],
+        reflect: '當「胎頭已經露出」時，為什麼不能像一般傷病患一樣優先「先上車送醫」？',
+        guide: '胎頭已露出代表分娩已進入無法逆轉、即將發生的階段，任何搬動都可能造成胎兒在不受控制的環境下產出（如車內、地上）增加母嬰受傷風險，到院前應就地準備接生用品，協助安全完成分娩。'
+      },
+      n2: {
+        narrative: '在義消協助下胎兒順利娩出，新生兒膚色略顯青紫且哭聲微弱。',
+        vitals: { HR: { v: '--', s: 'caution' }, BP: { v: '--', s: 'caution' }, SpO2: { v: '--', s: 'caution' }, GCS: { v: '--', s: 'caution' } },
+        choices: [
+          { label: '立即擦乾新生兒身體保暖、清理呼吸道並給予刺激促使哭聲與呼吸，同時夾住並準備剪斷臍帶', correct: true, feedback: '正確：新生兒出生後應立即擦乾保暖（避免失溫）、清理呼吸道、給予刺激誘發哭聲呼吸，這些步驟是新生兒復甦的第一線處置。', next: 'end_ok' },
+          { label: '先處理產婦的胎盤娩出，新生兒等媽媽穩定後再處理', correct: false, feedback: '錯誤：新生兒哭聲微弱、膚色發紫屬於需要立即處置的徵象，應優先擦乾保暖、清理呼吸道並刺激呼吸，不應延後處理新生兒。', next: 'end_caution' }
+        ],
+        reflect: '新生兒哭聲微弱、膚色發紫，為什麼「保暖」會是和「清理呼吸道」同等重要的第一步？',
+        guide: '新生兒體表面積相對體重比例大，散熱速度極快，低體溫會抑制新生兒的代謝與呼吸驅動力，使復甦更加困難，因此保暖與清理呼吸道、刺激呼吸同為新生兒到院前復甦的核心三步驟，缺一不可。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '新生兒經保暖、清理呼吸道與刺激後哭聲轉強，母嬰均安全送醫。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '優先順序判斷有誤，延後處理新生兒徵象，建議複習新生兒到院前復甦三步驟。' }
+    }
+  },
+  {
+    id: 'elderly_sepsis1', caseNo: 'SIM-2026-0314', callTime: '09:35', icon: '<span class="ems-icon" translate="no">elderly</span>',
+    chapterId: 9, difficulty: 'hard',
+    title: '長者非典型表現：意識改變合併輕微發燒', dispatch: '82歲女性獨居，家屬發現她今早叫不太醒、講話顛三倒四，量體溫略高。',
+    xpGain: 90, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者可被喚醒但答非所問，無明顯外傷，家屬說她平常意識清楚，今天明顯不一樣，體溫測得38.2度。',
+        vitals: { HR: { v: '108', s: 'caution' }, BP: { v: '98/62', s: 'caution' }, SpO2: { v: '93%', s: 'caution' }, GCS: { v: '13', s: 'caution' } },
+        choices: [
+          { label: '將「急性意識改變」視為緊急徵象，懷疑感染或敗血症可能，儘速評估並送醫', correct: true, feedback: '正確：長者急性意識改變合併血壓偏低、心跳偏快、體溫異常，須高度懷疑感染或敗血症，這類非典型表現容易被誤認為單純老化或失智惡化，應儘速送醫。', next: 'n2' },
+          { label: '認為長者本來就容易精神不好，先觀察一天再決定要不要送醫', correct: false, feedback: '錯誤：急性（短時間內發生）的意識改變不是正常老化現象，合併生命徵象異常更應視為緊急狀況，不可延遲處置。', next: 'n2' }
+        ],
+        reflect: '如果家屬說「奶奶年紀大了，本來就會比較迷糊」，你會怎麼回應這個說法？',
+        guide: '可以說明「急性」（短時間內發生、和平常不一樣）的意識改變和緩慢漸進的失智退化完全不同，急性發生的混亂合併生命徵象異常，是長者感染、敗血症、中風等急症的常見非典型表現，需要積極就醫排除，不能單純歸因於老化。'
+      },
+      n2: {
+        narrative: '評估過程中患者血壓持續下降，皮膚摸起來濕黏，呼吸略微加快。',
+        vitals: { HR: { v: '118', s: 'crit' }, BP: { v: '84/52', s: 'crit' }, SpO2: { v: '91%', s: 'crit' }, GCS: { v: '12', s: 'crit' } },
+        choices: [
+          { label: '懷疑敗血性休克，給予氧氣保暖並儘速送醫，途中持續監測生命徵象變化', correct: true, feedback: '正確：意識改變合併低血壓、心跳加快、皮膚濕冷是敗血性休克的警訊，到院前應給氧保暖並儘速送醫，把握黃金治療時間。', next: 'end_ok' },
+          { label: '先聯絡家庭醫師詢問病史，待醒過來後再決定是否送醫', correct: false, feedback: '錯誤：生命徵象已出現休克徵象，屬於分秒必爭的緊急狀況，不應等待聯絡家庭醫師而延誤送醫時機。', next: 'end_caution' }
+        ],
+        reflect: '敗血性休克和我們較熟悉的「失血性休克」在到院前處置原則上有什麼共通點與不同？',
+        guide: '共通點是兩者都會出現心跳加快、血壓下降等休克徵象，到院前處置都需給氧、保暖並儘速送醫；不同的是敗血性休克的根本病因是感染引發的全身發炎反應，到院前無法針對病因處理（如抗生素），更凸顯儘早送醫接受治療的重要性。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '及早識別敗血性休克警訊並儘速送醫，患者於醫院接受抗生素與支持治療。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '評估方向正確，但延誤送醫決策，建議複習長者急性意識改變的警覺徵象。' }
+    }
+  },
+  {
+    id: 'mentalcrisis1', caseNo: 'SIM-2026-0315', callTime: '01:20', icon: '<span class="ems-icon" translate="no">psychology</span>',
+    chapterId: 9, difficulty: 'hard',
+    title: '精神行為急症：頂樓邊緣徘徊', dispatch: '30歲男性站於公寓頂樓邊緣徘徊，情緒激動，家人在樓下哭泣呼救。',
+    xpGain: 85, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '患者站在頂樓邊緣，情緒激動大喊不想活了，看到義消靠近顯得更加緊張警戒。',
+        vitals: { HR: { v: '112', s: 'caution' }, BP: { v: '138/86', s: 'caution' }, SpO2: { v: '97%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '保持安全距離，以平穩語氣與患者對話建立信任，避免突然靠近或肢體接觸，同時通知警方支援', correct: true, feedback: '正確：面對情緒激動且有自傷風險的患者，應先以言語安撫建立信任，保持安全距離，避免刺激性動作引發更大風險，同時通知警方與相關專業人員到場協助。', next: 'n2' },
+          { label: '立即衝上前嘗試拉住患者以防止墜落', correct: false, feedback: '錯誤：突然衝上前可能驚嚇患者導致其情緒失控甚至立即墜落，應先以言語安撫穩定情緒，待安全距離縮短且患者情緒穩定後再採取行動，並會同警方等專業支援。', next: 'n2' }
+        ],
+        reflect: '面對情緒激動、站在邊緣的患者，為什麼「立刻衝上去拉住他」反而可能是最危險的做法？',
+        guide: '突然且具威脅性的肢體動作容易讓情緒不穩的患者感受到被攻擊或被迫，可能誘發更激烈的反應甚至立即墜落，到院前處置應優先以言語安撫、建立信任、保持安全距離，並會同警方與精神衛生專業人員共同處理，而非單靠肢體制止。'
+      },
+      n2: {
+        narrative: '經過對話安撫，患者情緒稍微緩和，願意往內側移動但仍不願讓人靠近，警方已抵達現場。',
+        vitals: { HR: { v: '104', s: 'caution' }, BP: { v: '130/82', s: 'caution' }, SpO2: { v: '97%', s: 'ok' }, GCS: { v: '15', s: 'ok' } },
+        choices: [
+          { label: '與警方協調分工，持續以同理態度對話，待患者主動配合或情勢穩定後再評估後續送醫', correct: true, feedback: '正確：精神行為急症處置需要多方協作（消防、警方、必要時精神科專業），持續同理對話有助穩定情緒，待情勢允許再進行後送評估與安全轉介。', next: 'end_ok' },
+          { label: '認為情緒已緩和，不需要進一步轉介精神科評估', correct: false, feedback: '錯誤：曾出現明確自傷意念與行為，即使當下情緒緩和，仍須轉介精神科專業評估與後續追蹤，不可視為事件已經結束。', next: 'end_caution' }
+        ],
+        reflect: '即使現場危機已經解除，為什麼仍要堅持安排後續的精神科評估，而不是「看他情緒穩定就放心離開」？',
+        guide: '明確的自傷意念與行為是重要的危機指標，即使當下情緒緩和，仍有復發風險，後送精神科專業評估與建立後續追蹤資源（如關懷訪視、心理諮商），才能真正降低再次發生危機的風險，這也是到院前處置「安全轉介」的重要一環。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '危機成功化解，患者同意配合並轉介精神科專業評估與後續追蹤。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '危機處置得當，但忽略後續轉介評估的重要性，建議複習精神行為急症的安全轉介原則。' }
+    }
+  },
+  {
+    id: 'mci1', caseNo: 'SIM-2026-0316', callTime: '18:05', icon: '<span class="ems-icon" translate="no">sell</span>',
+    chapterId: 10, difficulty: 'hard',
+    title: '多重傷患車禍：客運與貨車對撞', dispatch: '客運與貨車對撞，初步回報至少5名乘客受傷，呼救聲混亂，請求支援檢傷分類。',
+    xpGain: 100, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '抵達現場見多名傷患散落於車禍周邊，有人可自行走動呼救，有人倒地不動，現場呼救聲混亂，後續支援尚未到齊。',
+        vitals: { HR: { v: '--', s: 'caution' }, BP: { v: '--', s: 'caution' }, SpO2: { v: '--', s: 'caution' }, GCS: { v: '--', s: 'caution' } },
+        choices: [
+          { label: '立即啟動START快速檢傷分類，優先區分能自行走動者，再評估其餘傷患的呼吸、循環、意識狀態並分類標記', correct: true, feedback: '正確：大量傷患事件應立即啟動START檢傷分類，先請能自行走動者集中至安全區（綠標），再依呼吸、循環、意識狀態快速為其他傷患分類（紅/黃/黑標），把有限資源用在最需要的傷患身上。', next: 'n2' },
+          { label: '立即衝向看起來傷勢最嚴重、躺在地上不動的傷患全力搶救', correct: false, feedback: '錯誤：在尚未完成整體檢傷分類前，將全部資源投入單一傷患，可能讓其他同樣危急但尚未被發現的傷患錯失搶救時機，大量傷患事件應先快速分類再依序處置。', next: 'n2' }
+        ],
+        reflect: '面對多名傷患同時呼救，為什麼「先全面快速分類」比「立刻全力搶救看起來最嚴重的人」更能拯救更多生命？',
+        guide: '大量傷病患事件的核心原則是將有限的救護資源分配給最多能被救回的傷患，若把所有資源優先投入單一重傷患（可能已無法救回或需要長時間處置），會讓其他原本可被救回的中度傷患因延誤而惡化，START檢傷分類能在最短時間內掌握全場傷患的輕重緩急。'
+      },
+      n2: {
+        narrative: '完成初步分類後，回報共有2名紅標（呼吸循環異常）、1名黃標（可延後處置）、2名綠標（輕傷可自行走動），支援人車陸續抵達。',
+        vitals: { HR: { v: '--', s: 'caution' }, BP: { v: '--', s: 'caution' }, SpO2: { v: '--', s: 'caution' }, GCS: { v: '--', s: 'caution' } },
+        choices: [
+          { label: '依紅標優先送醫的順序分配後送資源，並向指揮中心清楚回報分類結果與人數', correct: true, feedback: '正確：應依檢傷分類結果優先處置與後送紅標傷患，並清楚回報指揮中心分類結果，讓後續資源調度與醫院端準備更有效率。', next: 'end_ok' },
+          { label: '因為現場人多混亂，依照傷患呼救聲音大小決定優先順序', correct: false, feedback: '錯誤：呼救聲音大小不能反映傷勢嚴重程度（重傷患甚至可能無法呼救），應依START檢傷分類結果（呼吸、循環、意識）決定處置與後送優先順序。', next: 'end_caution' }
+        ],
+        reflect: '為什麼「叫得最大聲的人」反而不一定是最需要優先處置的人？',
+        guide: '嚴重傷患可能因意識不清、呼吸困難而無法呼救甚至完全沉默，呼救聲音大小僅反映患者當下尚能發聲，並不等同傷勢嚴重程度，這正是START檢傷分類存在的原因：用客觀的呼吸、循環、意識指標取代主觀直覺判斷優先順序。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '檢傷分類執行確實，資源依輕重緩急有效分配，所有傷患均獲得適當後送。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '檢傷分類正確，但後送優先順序判斷有誤，建議複習START檢傷分類後的資源分配原則。' }
+    }
+  },
+  {
+    id: 'hazmat1', caseNo: 'SIM-2026-0317', callTime: '02:30', icon: '<span class="ems-icon" translate="no">science</span>',
+    chapterId: 11, difficulty: 'hard',
+    title: 'HAZMAT事件：工廠不明氣體洩漏', dispatch: '工廠夜間回報刺鼻氣體洩漏，已有2名員工感到頭暈噁心倒地，現場氣味嗆鼻。',
+    xpGain: 90, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '抵達工廠外圍即聞到刺鼻氣味，員工描述廠內有2人倒地，現場尚未確認洩漏物質種類與濃度。',
+        vitals: { HR: { v: '--', s: 'caution' }, BP: { v: '--', s: 'caution' }, SpO2: { v: '--', s: 'caution' }, GCS: { v: '--', s: 'caution' } },
+        choices: [
+          { label: '在尚未確認物質種類與安全防護前，先建立警戒區並在安全距離外待命，等待具防護裝備的人員或專業單位確認後再進入', correct: true, feedback: '正確：HAZMAT事件處置原則是「先確認、再行動」，未確認物質種類與濃度前不應貿然進入熱區，應先建立警戒區、保持上風處安全距離，等待確認安全或具適當防護裝備後才進入救援，避免增加傷患人數。', next: 'n2' },
+          { label: '立即衝入廠內搶救倒地員工，爭取時間搶救生命', correct: false, feedback: '錯誤：未確認洩漏物質與防護措施前貿然進入，可能讓自己也成為傷患，使現場傷患人數增加而非減少，HAZMAT事件應先確保救援人員自身安全。', next: 'n2' }
+        ],
+        reflect: '面對「裡面有人倒地」的急迫感，為什麼仍要先按下「等一等」的判斷？',
+        guide: '救援的第一原則是不能讓救援人員自己成為下一個傷患，未確認危害物質與適當防護前貿然進入熱區，可能因同樣的氣體或物質而失去行動能力，反而需要更多人力來救援原本的救援者，先建立警戒、確認風險再行動，才能真正提高整體救援成功率。'
+      },
+      n2: {
+        narrative: '經確認與專業單位協助判讀，洩漏氣體濃度已降低且風向有利，具防護裝備的人員進入後成功將2名員工帶離至安全區。',
+        vitals: { HR: { v: '108', s: 'caution' }, BP: { v: '118/78', s: 'ok' }, SpO2: { v: '93%', s: 'caution' }, GCS: { v: '14', s: 'caution' } },
+        choices: [
+          { label: '在安全區（冷區）對2名員工進行初步評估與給氧處置，並儘速送醫做進一步檢查', correct: true, feedback: '正確：傷患帶離熱區後應在安全區（冷區）進行評估與初步處置（如給氧），並儘速送醫做進一步檢查，避免遺漏遲發性的化學暴露症狀。', next: 'end_ok' },
+          { label: '員工意識清楚看起來沒事，確認沒有外傷就可以讓他們自行回家休息', correct: false, feedback: '錯誤：化學物質暴露可能有遲發性症狀（如呼吸道遲發性水腫），即使當下意識清楚也應送醫做進一步評估，不應僅因外觀無事就讓其自行離開。', next: 'end_caution' }
+        ],
+        reflect: '員工被救出時看起來「意識清楚、沒有外傷」，為什麼仍不能直接放他們回家？',
+        guide: '許多化學物質暴露的傷害是遲發性的（例如呼吸道黏膜水腫、肺部反應），初期可能完全沒有症狀，數小時後才逐漸顯現，到院前若僅依當下外觀判斷而放任傷患離開，可能錯失早期治療時機，應送醫做進一步觀察與檢查。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '現場安全應變確實，傷患妥善救出並送醫觀察，無人員傷亡擴大。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '現場應變正確，但低估化學暴露的遲發性風險，建議複習HAZMAT傷患後續送醫評估原則。' }
+    }
+  },
+  {
+    id: 'drowning1', caseNo: 'SIM-2026-0318', callTime: '16:40', icon: '<span class="ems-icon" translate="no">favorite</span>',
+    chapterId: 1, difficulty: 'medium',
+    title: '溺水獲救：泳池打撈後無呼吸', dispatch: '8歲男童於泳池溺水，路人打撈上岸後叫不醒，沒有呼吸動作。',
+    xpGain: 90, start: 'n1',
+    nodes: {
+      n1: {
+        narrative: '男童打撈上岸後意識不清、皮膚發紫，胸部無起伏，口鼻有少量泡沫狀液體流出。',
+        vitals: { HR: { v: '--', s: 'crit' }, BP: { v: '--', s: 'crit' }, SpO2: { v: '--', s: 'crit' }, GCS: { v: '3', s: 'crit' } },
+        choices: [
+          { label: '立即清除口鼻分泌物後給予人工呼吸，再開始胸外按壓，依溺水復甦流程優先處理呼吸', correct: true, feedback: '正確：溺水導致的心跳停止主要原因是缺氧，復甦流程應優先給予人工呼吸（先給2次有效通氣）再開始胸外按壓，與單純心因性OHCA「先按壓」的順序不同。', next: 'n2' },
+          { label: '依一般成人OHCA流程，先進行胸外按壓再考慮呼吸道處置', correct: false, feedback: '錯誤：溺水造成的心跳停止本質是缺氧導致，應優先處理呼吸道並給予人工呼吸，再開始胸外按壓，這點與單純心因性心跳停止的處置順序不同。', next: 'n2' }
+        ],
+        reflect: '溺水造成的心跳停止和賣場猝倒的OHCA，兩者復甦的「第一步」為什麼不一樣？',
+        guide: '單純心因性心跳停止通常是心臟本身電氣功能異常造成，血液含氧量初期仍足夠，故優先強調胸外按壓維持循環；溺水則是因缺氧（窒息）導致心跳停止，體內含氧量已經不足，故復甦時應優先給予人工呼吸補充氧氣，再開始胸外按壓，兩者病理機轉不同，處置順序也因此不同。'
+      },
+      n2: {
+        narrative: '給予2次人工呼吸並開始CPR約1分鐘後，男童開始出現自發咳嗽與微弱呼吸動作，膚色逐漸轉紅。',
+        vitals: { HR: { v: '96', s: 'caution' }, BP: { v: '88/56', s: 'caution' }, SpO2: { v: '88%', s: 'caution' }, GCS: { v: '9', s: 'caution' } },
+        choices: [
+          { label: '確認自發呼吸恢復後，採側臥姿勢保持呼吸道暢通，給氧並儘速送醫評估有無吸入性肺炎風險', correct: true, feedback: '正確：恢復自發呼吸後應採側臥防止嗆咳吸入，並給氧儘速送醫，溺水病人即使恢復意識仍有遲發性肺水腫或吸入性肺炎風險，須送醫觀察。', next: 'end_ok' },
+          { label: '因男童已恢復呼吸且咳嗽反應良好，判斷沒事可不用送醫', correct: false, feedback: '錯誤：溺水病人即使現場恢復意識與呼吸，仍可能在數小時後出現遲發性肺水腫等併發症，務必送醫觀察，不可因現場症狀緩解就放棄送醫。', next: 'end_caution' }
+        ],
+        reflect: '男童現場已經會咳嗽、呼吸也恢復了，為什麼還不能說「已經沒事了」？',
+        guide: '溺水病人吸入的水分可能持續刺激肺部造成遲發性肺水腫或化學性肺炎，這類併發症常在獲救後數小時才逐漸顯現，即使現場恢復意識與自發呼吸，仍應送醫進行至少數小時的觀察，不可因現場症狀緩解而提前結案。'
+      },
+      end_ok: { type: 'end', outcome: 'ok', summary: '復甦流程正確且及時送醫觀察，男童恢復良好未發生遲發性併發症。' },
+      end_caution: { type: 'end', outcome: 'caution', summary: '復甦處置正確，但放棄送醫觀察的判斷有誤，建議複習溺水後續送醫觀察原則。' }
+    }
   }
 ];
 
-var scenarioState = { scenario: null, nodeKey: null, history: [] };
+var scenarioState = { scenario: null, nodeKey: null, history: [], filterChapter: null };
 
 function showScenarioCenter() {
   document.getElementById('dashboardView').style.display = 'none';
@@ -17951,11 +18507,32 @@ function showScenarioCenter() {
   notifyResize();
 }
 
+function filterScenario(chapterId) {
+  scenarioState.filterChapter = chapterId;
+  renderScenarioCenter();
+}
+
 function renderScenarioCenter() {
   var box = document.getElementById('scenarioContent');
-  var html = '<div class="ems-section-label mb-2">CAD DISPATCH 派遣清單</div><div class="row g-2">';
-  html += SCENARIOS.map(function (sc) {
+  var doneCount = SCENARIOS.filter(function (sc) { return emsState.completedScenarios.indexOf(sc.id) !== -1; }).length;
+  var usedChapterIds = [];
+  SCENARIOS.forEach(function (sc) { if (usedChapterIds.indexOf(sc.chapterId) === -1) usedChapterIds.push(sc.chapterId); });
+  var filterChips = '<button type="button" class="btn btn-sm' + (scenarioState.filterChapter === null ? '' : ' btn-outline-secondary') + '" style="' + (scenarioState.filterChapter === null ? 'background:var(--ems-hiviz);color:var(--ems-hiviz-ink);border-color:var(--ems-hiviz);' : '') + '" onclick="filterScenario(null)">全部</button>' +
+    usedChapterIds.map(function (cid) {
+      var c = CHAPTERS.filter(function (x) { return x.id === cid; })[0];
+      if (!c) return '';
+      var active = scenarioState.filterChapter === cid;
+      return '<button type="button" class="btn btn-sm' + (active ? '' : ' btn-outline-secondary') + '" style="' + (active ? ('background:' + c.color + ';color:#fff;border-color:' + c.color + ';') : '') + '" onclick="filterScenario(' + cid + ')">' + esc(c.title) + '</button>';
+    }).join('');
+  var list = scenarioState.filterChapter === null ? SCENARIOS : SCENARIOS.filter(function (sc) { return sc.chapterId === scenarioState.filterChapter; });
+  var html = '<div class="ems-section-label mb-1">CAD DISPATCH 派遣清單</div>' +
+    '<div class="text-muted small mb-2">已完成 ' + doneCount + ' / ' + SCENARIOS.length + ' 件案例</div>' +
+    '<div class="d-flex gap-2 mb-3" style="flex-wrap:wrap;">' + filterChips + '</div>' +
+    '<div class="row g-2">';
+  html += list.map(function (sc) {
     var done = emsState.completedScenarios.indexOf(sc.id) !== -1;
+    var chapter = CHAPTERS.filter(function (x) { return x.id === sc.chapterId; })[0];
+    var diff = SCENARIO_DIFF[sc.difficulty] || SCENARIO_DIFF.medium;
     return '<div class="col-12"><div class="ems-cad-card" style="cursor:pointer;" onclick="' + "startScenario('" + sc.id + "')" + '">' +
         '<div class="d-flex justify-content-between align-items-start mb-1">' +
           '<span class="cad-id">案件 #' + esc(sc.caseNo) + '</span>' +
@@ -17964,6 +18541,10 @@ function renderScenarioCenter() {
         '<div class="d-flex align-items-center gap-2 mb-2">' +
           '<div style="font-size:1.4rem;">' + sc.icon + '</div>' +
           '<div><div class="fw-semibold">' + esc(sc.title) + '</div><div class="text-muted small">' + esc(sc.dispatch) + '</div></div>' +
+        '</div>' +
+        '<div class="d-flex gap-1 mb-2" style="flex-wrap:wrap;">' +
+          (chapter ? '<span class="badge" style="background:' + chapter.color + ';">' + esc(chapter.title) + '</span>' : '') +
+          '<span class="badge" style="background:' + diff.color + ';">難度 ' + diff.label + '</span>' +
         '</div>' +
         '<button type="button" class="btn btn-danger btn-sm w-100"><span class="ems-icon" translate="no">emergency</span> 出車</button>' +
       '</div></div>';
@@ -18003,6 +18584,12 @@ function renderScenarioNode() {
       return '<button type="button" class="ems-quiz-opt" onclick="' + ('chooseScenario(' + ci + ')') + '"><span class="opt-tag">' + String.fromCharCode(65 + ci) + '</span><span>' + esc(c.label) + '</span></button>';
     }).join('') + '</div>' +
     '<div id="scenarioFeedback" class="ems-answer-card" style="display:none;"><span class="ex-tag">回饋</span><span id="scenarioFeedbackText"></span></div>' +
+    '<div id="scenarioReflect" class="reflect-box" style="display:none;">' +
+      '<div class="fw-semibold mb-1"><span class="ems-icon" translate="no">psychology</span> 思考與反思</div>' +
+      '<div class="mb-2" id="scenarioReflectQ"></div>' +
+      '<button type="button" class="btn btn-sm btn-outline-primary" data-target="scenarioReflectGuide" onclick="toggleBox(this)">查看參考方向</button>' +
+      '<div id="scenarioReflectGuide" class="reveal-box"></div>' +
+    '</div>' +
     '<div class="text-end mt-3"><button type="button" id="scenarioNextBtn" class="btn btn-primary" style="display:none;" onclick="scenarioNext()">繼續</button></div>';
   document.getElementById('scenarioContent').innerHTML = html;
   notifyResize();
@@ -18020,6 +18607,16 @@ function chooseScenario(ci) {
   }
   document.getElementById('scenarioFeedback').style.display = 'block';
   document.getElementById('scenarioFeedbackText').textContent = choice.feedback;
+  var reflectBox = document.getElementById('scenarioReflect');
+  if (node.reflect) {
+    reflectBox.style.display = 'block';
+    document.getElementById('scenarioReflectQ').textContent = node.reflect;
+    var guideBox = document.getElementById('scenarioReflectGuide');
+    guideBox.style.display = 'none';
+    guideBox.textContent = node.guide || '';
+  } else {
+    reflectBox.style.display = 'none';
+  }
   document.getElementById('scenarioNextBtn').style.display = 'inline-block';
   scenarioState.nodeKey = choice.next;
   notifyResize();
