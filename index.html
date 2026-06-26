@@ -4022,6 +4022,48 @@ function _dlCSV(content, filename) {
       </div>
     </div>
 
+    <!-- 通知偏好（分類開關；寫入 pushSubscriptions.prefs，由 Cloud Functions 端依此過濾推播對象） -->
+    <div style="background:white;margin-bottom:12px;">
+      <div style="padding:10px 18px 4px;font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.08em;">通知偏好</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #f5f5f5;">
+        <div style="flex:1;font-size:0.85rem;color:var(--text);">📢 公告</div>
+        <div id="prefToggle-announcement" onclick="_togglePushPref('announcement')" data-on="1" style="width:40px;height:22px;border-radius:11px;background:#2563EB;position:relative;transition:background 0.2s;flex-shrink:0;cursor:pointer;">
+          <div id="prefThumb-announcement" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:20px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #f5f5f5;">
+        <div style="flex:1;font-size:0.85rem;color:var(--text);">🕐 值勤（排班／簽到提醒）</div>
+        <div id="prefToggle-duty" onclick="_togglePushPref('duty')" data-on="1" style="width:40px;height:22px;border-radius:11px;background:#2563EB;position:relative;transition:background 0.2s;flex-shrink:0;cursor:pointer;">
+          <div id="prefThumb-duty" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:20px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #f5f5f5;">
+        <div style="flex:1;font-size:0.85rem;color:var(--text);">🎓 定訓</div>
+        <div id="prefToggle-training" onclick="_togglePushPref('training')" data-on="1" style="width:40px;height:22px;border-radius:11px;background:#2563EB;position:relative;transition:background 0.2s;flex-shrink:0;cursor:pointer;">
+          <div id="prefThumb-training" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:20px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #f5f5f5;">
+        <div style="flex:1;font-size:0.85rem;color:var(--text);">📝 修正申請</div>
+        <div id="prefToggle-correction" onclick="_togglePushPref('correction')" data-on="1" style="width:40px;height:22px;border-radius:11px;background:#2563EB;position:relative;transition:background 0.2s;flex-shrink:0;cursor:pointer;">
+          <div id="prefThumb-correction" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:20px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #f5f5f5;">
+        <div style="flex:1;font-size:0.85rem;color:var(--text);">💬 意見回饋</div>
+        <div id="prefToggle-feedback" onclick="_togglePushPref('feedback')" data-on="1" style="width:40px;height:22px;border-radius:11px;background:#2563EB;position:relative;transition:background 0.2s;flex-shrink:0;cursor:pointer;">
+          <div id="prefThumb-feedback" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:20px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid #f5f5f5;">
+        <div style="flex:1;font-size:0.85rem;color:var(--text);">🔔 系統通知</div>
+        <div id="prefToggle-system" onclick="_togglePushPref('system')" data-on="1" style="width:40px;height:22px;border-radius:11px;background:#2563EB;position:relative;transition:background 0.2s;flex-shrink:0;cursor:pointer;">
+          <div id="prefThumb-system" style="width:18px;height:18px;border-radius:9px;background:white;position:absolute;top:2px;left:20px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="padding:8px 18px 12px;font-size:0.68rem;color:var(--text-light);">關閉分類後，該類型的推播通知將不再發送至本裝置（需先開啟上方「推播通知」總開關）。</div>
+    </div>
+
     <!-- 關於 -->
     <div style="background:white;margin-bottom:12px;">
       <div style="padding:10px 18px 4px;font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.08em;">關於</div>
@@ -6033,8 +6075,8 @@ function showApp(name, email, isAdmin, isOfficer, role, title) {
   navTo('dashboardPage', true);
   // 鈴鐺紅點：所有使用者登入後即啟動即時監聽
   setTimeout(_updateBellBadge, 500);
-  // 自動通知排程（管理員/幹部才執行）
-  if (isAdmin || isOfficer) setTimeout(_startAutoNotifScheduler, 4000);
+  // 未簽退/每月班表開放/每月確認任務提醒已全部由 Cloud Functions 排程器負責（functions/index.js），
+  // 不再於前端啟動重複的客戶端排程器，避免雙重推播。
   _renderRolePreviewBanner();
 }
 
@@ -12985,6 +13027,7 @@ function _startNotifListeners() {
 // 推播控制台（管理員）
 // ════════════════════════════════════════
 var _pushCtrlUnit = '';
+var _pushCtrlSearch = '';
 
 function _adminTestPush() {
   if (!('Notification' in window)) { alert('此裝置不支援通知。'); return; }
@@ -13005,9 +13048,10 @@ async function loadAdminPushCtrl() {
   el.innerHTML = '<div style="color:var(--text-light);padding:8px 0;">載入中...</div>';
   try {
     await loadMembers();
-    const [subs, wl] = await Promise.all([
+    const [subs, wl, pushLogs] = await Promise.all([
       firebase.firestore().collection(COL_PUSH_SUBS).get().then(s => s.docs.map(d => ({id:d.id,...d.data()}))),
       fbList(COL_WHITELIST),
+      fbList(COL_PUSH_LOG, 'sentAt', 'desc').catch(() => []),
     ]);
     const subMap = {};
     const devicesByName = {};
@@ -13055,7 +13099,7 @@ async function loadAdminPushCtrl() {
       const devices = devicesByName[m.name] || [];
       const on = devices.length > 0;
       if (!on) {
-        return `<div style="background:white;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+        return `<div data-name="${m.name.toLowerCase()}" style="background:white;border-radius:12px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
           <div style="width:8px;height:8px;border-radius:4px;background:#E5E7EB;flex-shrink:0;"></div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:0.88rem;font-weight:700;color:var(--text);">${m.name}</div>
@@ -13074,7 +13118,7 @@ async function loadAdminPushCtrl() {
             <div style="font-size:0.72rem;color:#EA580C;font-weight:700;">⚠️ ${devices.length} 個裝置</div>
             <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">點擊展開</div>
           </div>`;
-      return `<div style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);overflow:hidden;">
+      return `<div data-name="${m.name.toLowerCase()}" style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);overflow:hidden;">
         <div style="padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="_pushCtrlToggleRow('${rowId}')">
           <div style="width:8px;height:8px;border-radius:4px;background:#22C55E;flex-shrink:0;"></div>
           <div style="flex:1;min-width:0;">
@@ -13102,6 +13146,26 @@ async function loadAdminPushCtrl() {
         <button onclick="_pushCtrlDeleteDevice(${_jsStr(s.id)},${_jsStr(s.memberName)})" style="background:white;color:#DC2626;border:1px solid #FCA5A5;border-radius:8px;padding:6px 12px;font-size:0.74rem;font-weight:700;cursor:pointer;flex-shrink:0;">刪除</button>
       </div>`).join('')}` : '';
 
+    // 平台／瀏覽器占比（資料已存在每個訂閱文件，僅做前端聚合顯示）
+    const platformCounts = {};
+    const browserCounts  = {};
+    subs.forEach(s => {
+      if (s.platform) platformCounts[s.platform] = (platformCounts[s.platform] || 0) + 1;
+      if (s.browser)  browserCounts[s.browser]   = (browserCounts[s.browser]   || 0) + 1;
+    });
+    const pillRow = (counts, colors) => Object.keys(counts).sort((a,b) => counts[b]-counts[a])
+      .map(k => `<span style="font-size:0.72rem;background:${(colors[k]||'#F1F5F9')}1A;color:${colors[k]||'#64748B'};border-radius:20px;padding:3px 10px;font-weight:600;margin:0 4px 4px 0;display:inline-block;">${k}：${counts[k]}</span>`).join('');
+    const platformPills = pillRow(platformCounts, { iOS:'#0EA5E9', Android:'#22C55E', Desktop:'#7C3AED' });
+    const browserPills  = pillRow(browserCounts,  { Chrome:'#EA580C', Safari:'#0EA5E9', Firefox:'#F59E0B', Other:'#64748B' });
+
+    // 今日／本月推播統計（從 pushLogs 聚合；status 一律為 'ok'/'fail'，對齊 functions/index.js 的 _logPush）
+    const todayStr = new Date().toLocaleDateString('sv');
+    const monthStr = todayStr.slice(0, 7);
+    const todayLogs = pushLogs.filter(l => (l.sentAt||'').startsWith(todayStr));
+    const monthLogs = pushLogs.filter(l => (l.sentAt||'').startsWith(monthStr));
+    const monthOk   = monthLogs.filter(l => l.status === 'ok').length;
+    const successRate = monthLogs.length ? Math.round(monthOk / monthLogs.length * 100) : 0;
+
     el.innerHTML = `
       <!-- 統計卡 -->
       <div style="background:white;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
@@ -13128,6 +13192,28 @@ async function loadAdminPushCtrl() {
         </div>
       </div>
 
+      <!-- 平台／瀏覽器占比 + 推播統計 -->
+      <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div style="background:#F8FAFF;border-radius:10px;padding:9px 10px;text-align:center;">
+            <div style="font-size:1.2rem;font-weight:800;color:#1D4ED8;">${todayLogs.length}</div>
+            <div style="font-size:0.68rem;color:#6B7280;margin-top:2px;">今日推播</div>
+          </div>
+          <div style="background:#F8FAFF;border-radius:10px;padding:9px 10px;text-align:center;">
+            <div style="font-size:1.2rem;font-weight:800;color:#1D4ED8;">${monthLogs.length}</div>
+            <div style="font-size:0.68rem;color:#6B7280;margin-top:2px;">本月推播</div>
+          </div>
+          <div style="background:#F0FDF4;border-radius:10px;padding:9px 10px;text-align:center;">
+            <div style="font-size:1.2rem;font-weight:800;color:#16A34A;">${successRate}%</div>
+            <div style="font-size:0.68rem;color:#6B7280;margin-top:2px;">本月成功率</div>
+          </div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--text-light);margin-bottom:4px;">平台分布</div>
+        <div style="margin-bottom:10px;">${platformPills || '<span style="font-size:0.72rem;color:#9CA3AF;">尚無資料</span>'}</div>
+        <div style="font-size:0.7rem;color:var(--text-light);margin-bottom:4px;">瀏覽器分布</div>
+        <div>${browserPills || '<span style="font-size:0.72rem;color:#9CA3AF;">尚無資料</span>'}</div>
+      </div>
+
       <!-- FCM 狀態 + 測試推播 -->
       <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);display:flex;align-items:center;gap:10px;">
         <div style="flex:1;">
@@ -13138,15 +13224,19 @@ async function loadAdminPushCtrl() {
       </div>
 
       <!-- 篩選 -->
-      <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
-        <select onchange="_pushCtrlUnit=this.value;loadAdminPushCtrl()" style="width:100%;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:0.84rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;">${unitOpts}</select>
+      <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);display:flex;gap:8px;">
+        <select onchange="_pushCtrlUnit=this.value;loadAdminPushCtrl()" style="flex:1;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:0.84rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;">${unitOpts}</select>
+        <input type="text" placeholder="🔍 搜尋姓名" value="${_pushCtrlSearch}" oninput="_pushCtrlFilterRows(this.value)" style="flex:1;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:0.84rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;">
       </div>
 
       <!-- 名單 -->
       <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:8px;padding:0 2px;">共 ${filtered.length} 人</div>
+      <div id="pushCtrlRows">
       ${rows || '<div style="color:var(--text-light);padding:16px;text-align:center;">無資料</div>'}
+      </div>
       ${orphanHtml}
     `;
+    if (_pushCtrlSearch) _pushCtrlFilterRows(_pushCtrlSearch);
   } catch(e) { el.innerHTML = '載入失敗：' + e.message; }
 }
 
@@ -13176,6 +13266,17 @@ function _pushCtrlToggleRow(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// 推播主控台成員搜尋：純前端 filter，不重新查詢
+function _pushCtrlFilterRows(q) {
+  _pushCtrlSearch = q;
+  const kw = q.trim().toLowerCase();
+  const container = document.getElementById('pushCtrlRows');
+  if (!container) return;
+  container.querySelectorAll('[data-name]').forEach(row => {
+    row.style.display = !kw || row.dataset.name.includes(kw) ? '' : 'none';
+  });
 }
 
 async function _pushCtrlDeleteDevice(docId, name) {
@@ -14638,7 +14739,7 @@ async function sendManualPush() {
   const sentAt = new Date().toLocaleString('sv').replace('T',' ');
   const logData = {
     title, body: body || '', target: _pfTarget, targetNames,
-    sentAt, sentBy: usr.memberName || usr.name || '管理員',
+    sentAt, createdAt: new Date(), sentBy: usr.memberName || usr.name || '管理員',
     status: 'pending', successCount: 0, failCount: 0
   };
 
@@ -14718,7 +14819,7 @@ async function loadPushLog() {
       const targetNames = d.targetNames || d.targetMembers || [];
       const am = audMeta[d.target] || { clr:'#475569', bg:'#f1f5f9' };
       const targetLabel = d.target === 'all' ? '👥 全體成員' : d.target === 'admin' ? '🔑 管理員／承辦' : `👤 個人推播（${targetNames.length} 人）`;
-      const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務'};
+      const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務','auto-training-today':'🤖 今日定訓提醒','auto-training-tomorrow':'🤖 明日定訓提醒','auto-budget-alert':'🤖 預算警示','auto-correction':'🤖 修正申請通知','auto-feedback':'🤖 意見回饋通知'};
       const sourceLabel = d.source ? (sourceMap[d.source] || null) : null;
       const names = targetNames.join('、');
       return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${sm.clr};">
@@ -14878,121 +14979,6 @@ async function _loadUsageMonitor() {
     if (body)    body.style.display = 'block';
   } catch(e) {
     if (loading) { loading.textContent = '⚠️ 載入失敗，請重新整理'; }
-  }
-}
-
-
-// ════════════════════════════════════════
-const COL_AUTO_NOTIF_LOG = 'autoNotifLog';
-let _autoNotifTimerId = null;
-
-function _startAutoNotifScheduler() {
-  _runAutoNotifications();
-  clearInterval(_autoNotifTimerId);
-  _autoNotifTimerId = setInterval(_runAutoNotifications, 10 * 60 * 1000);
-}
-
-async function _runAutoNotifications() {
-  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  if (!usr.isAdmin && !usr.isOfficer) return;
-
-  const now    = new Date();
-  const today  = now.toLocaleDateString('sv');
-  const hour   = now.getHours();
-  const minute = now.getMinutes();
-  const day    = now.getDate();
-  const month  = today.slice(0, 7);
-
-  let sentKeys = new Set();
-  try {
-    const logs = await fbList(COL_AUTO_NOTIF_LOG, 'sentAt', 'desc');
-    logs.forEach(l => sentKeys.add(l.key));
-  } catch(e) {}
-
-  const sent     = (key) => sentKeys.has(key);
-  const markSent = (key) => fbAdd(COL_AUTO_NOTIF_LOG, { key, sentAt: now.toLocaleString('sv').replace('T',' ') }).catch(() => {});
-
-  // 明日排班提醒已改由伺服器端 scheduleDutyTomorrowReminder（functions/index.js）
-  // 逐一推播給當天有排班的人，不再發公告；此處不再重複實作。
-
-  // ── 2. 未簽退提醒（班次結束後 1 小時內，10 分鐘視窗）
-  {
-    const todayStr2 = now.toLocaleDateString('sv');
-    const nowMins   = hour * 60 + minute;
-    const dutyAll   = (_C.fresh(COL_DUTY) ? _C.peek(COL_DUTY) : null) || await fbList(COL_DUTY, 'date', 'asc').catch(() => []);
-    const todayDuty = dutyAll.filter(d => d.date === todayStr2 && d.end && d.memberName);
-    for (const duty of todayDuty) {
-      const [eh, em] = duty.end.split(':').map(Number);
-      const endMins  = eh * 60 + em;
-      if (nowMins >= endMins + 60 && nowMins < endMins + 70) {
-        const key = `duty-nosignout-${todayStr2}-${duty.memberName}-${duty.end}`;
-        if (!sent(key)) {
-          const attAll    = (_C.fresh(COL_ATTEND) ? _C.peek(COL_ATTEND) : null) || await fbList(COL_ATTEND, 'date', 'asc').catch(() => []);
-          const myToday   = attAll.filter(r => r.memberName === duty.memberName && r.date === todayStr2);
-          const hasCheckin  = myToday.some(r => r.checkinTime);
-          const hasCheckout = myToday.some(r => r.checkoutTime);
-          let ok = true;
-          if (hasCheckin && !hasCheckout) {
-            ok = await _autoSendPush({
-              title: '⏰ 請記得簽退',
-              body: `您今日 ${duty.end} 的班次已結束超過 1 小時，請確認是否已簽退。`,
-              target: 'members',
-              targetMembers: [duty.memberName],
-              key,
-              source: 'auto-duty-nosignout',
-            });
-          }
-          if (ok) await markSent(key); // 失敗時不標記已發送，留給下次（10分鐘後）重試
-        }
-      }
-    }
-  }
-
-  // ── 4. 每月20日：下個月班表開放
-  if (day === 20) {
-    const key = `monthly-open-${month}`;
-    if (!sent(key)) {
-      const nextDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const nextMonthStr = `${nextDate.getFullYear()}年${nextDate.getMonth() + 1}月`;
-      const ok = await _autoSendPush({ title: `📅 ${nextMonthStr}班表開放排班`, body: `${nextMonthStr}的班表已開放，請登入系統完成排班安排。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-open' });
-      if (ok) await markSent(key);
-    }
-  }
-
-  // ── 5. 每月1日：確認任務
-  if (day === 1) {
-    const key = `monthly-confirm-${month}`;
-    if (!sent(key)) {
-      const ok = await _autoSendPush({ title: `✅ 本月確認任務`, body: `${now.getMonth() + 1}月已開始，請確認本月的備勤與任務安排是否有問題。`, target: 'all', targetMembers: [], key, source: 'auto-monthly-confirm' });
-      if (ok) await markSent(key);
-    }
-  }
-}
-
-async function _autoSendPush({ title, body, target, targetMembers, key, source }) {
-  const today  = new Date().toLocaleDateString('sv');
-  const sentAt = new Date().toLocaleString('sv').replace('T', ' ');
-
-  const logId = await fbAdd(COL_PUSH_LOG, { title, body, target, targetMembers, sentAt, sentBy: '系統自動', status: 'pending', successCount: 0, failCount: 0, source }).catch(() => null);
-
-  const payload = { title, body: body || title, requestedBy: '系統自動', skipAnnouncement: true, pushTarget: target === 'members' ? 'member' : target };
-  if (target === 'members' && targetMembers.length === 1) payload.targetMember = targetMembers[0];
-  else if (target === 'members') payload.targetMembers = targetMembers;
-
-  try {
-    const res = await fetch('https://broadcastpush-whi67k6epa-de.a.run.app', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    let result = {}; try { result = await res.json(); } catch(e) {}
-    const ok = res.ok;
-    const errorMsg = ok ? null : (result.error || result.message || `HTTP ${res.status}`);
-    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount: result.successCount ?? (ok ? 1 : 0), failCount: result.failCount ?? (ok ? 0 : 1), ...(errorMsg ? { errorMsg } : {}) }).catch(() => {});
-    if (ok) {
-      // 上方 fetch 已實際推播過，標記 _pushed 避免 onNewAnnouncement 觸發器重複推播一次
-      await fbAdd(COL_ANNOUNCE, { title, body, text: body ? `${title}\n${body}` : title, type: 'broadcast', active: true, audience: target, targetMembers: target === 'members' ? targetMembers : [], startDate: today, endDate: today, createdAt: new Date(), sentBy: '系統自動', _pushed: true, ...(source ? { source } : {}) }).catch(() => {});
-    }
-    return ok;
-  } catch(e) {
-    if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: 1, errorMsg: e.message || String(e) }).catch(() => {});
-    return false;
   }
 }
 
@@ -15463,6 +15449,60 @@ function _pushSubDocId(usr) {
   return `${key}__${_pushDeviceId()}`;
 }
 
+// 推播分類（需與 functions/index.js 的 PUSH_TYPES 手動保持同步）
+const PUSH_TYPES = {
+  ANNOUNCEMENT: 'announcement', CORRECTION: 'correction', FEEDBACK: 'feedback',
+  SCHEDULE: 'schedule', REMINDER: 'reminder', TRAINING: 'training', SYSTEM: 'system',
+};
+// 使用者偏好分類（設定頁 6 個開關）→ 對應到一個或多個 PUSH_TYPES
+const PUSH_PREF_CATEGORIES = [
+  { key: 'announcement', label: '公告',     types: [PUSH_TYPES.ANNOUNCEMENT] },
+  { key: 'duty',         label: '值勤',     types: [PUSH_TYPES.SCHEDULE, PUSH_TYPES.REMINDER] },
+  { key: 'training',     label: '定訓',     types: [PUSH_TYPES.TRAINING] },
+  { key: 'correction',   label: '修正申請', types: [PUSH_TYPES.CORRECTION] },
+  { key: 'feedback',     label: '意見回饋', types: [PUSH_TYPES.FEEDBACK] },
+  { key: 'system',       label: '系統通知', types: [PUSH_TYPES.SYSTEM] },
+];
+
+// 讀取使用者推播偏好並同步設定頁開關 UI（預設全部開啟）
+let _pushPrefsCache = {};
+async function _loadPushPrefs() {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  if (!usr.memberName) return;
+  try {
+    const doc = await firebase.firestore().collection(COL_PUSH_SUBS).doc(_pushSubDocId(usr)).get();
+    _pushPrefsCache = (doc.exists && doc.data().prefs) || {};
+  } catch(e) { _pushPrefsCache = {}; }
+  PUSH_PREF_CATEGORIES.forEach(cat => {
+    const allowed = cat.types.every(t => _pushPrefsCache[t] !== false);
+    _setPrefToggleUI(cat.key, allowed);
+  });
+}
+function _setPrefToggleUI(key, on) {
+  const t  = document.getElementById('prefToggle-' + key);
+  const th = document.getElementById('prefThumb-' + key);
+  if (!t || !th) return;
+  t.style.background = on ? '#2563EB' : '#e5e7eb';
+  th.style.left = on ? '20px' : '2px';
+  t.dataset.on = on ? '1' : '0';
+}
+async function _togglePushPref(key) {
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  if (!usr.memberName) return;
+  const cat = PUSH_PREF_CATEGORIES.find(c => c.key === key);
+  if (!cat) return;
+  const t = document.getElementById('prefToggle-' + key);
+  const next = !(t && t.dataset.on === '1');
+  _setPrefToggleUI(key, next);
+  cat.types.forEach(t2 => { _pushPrefsCache[t2] = next; });
+  try {
+    await firebase.firestore().collection(COL_PUSH_SUBS).doc(_pushSubDocId(usr)).set({ prefs: _pushPrefsCache }, { merge: true });
+  } catch(e) {
+    _setPrefToggleUI(key, !next);
+    cat.types.forEach(t2 => { _pushPrefsCache[t2] = !next; });
+  }
+}
+
 // 取得 FCM token 並儲存到 Firestore
 async function _initFCM() {
   const _fcmDebug = async (msg) => {
@@ -15547,6 +15587,8 @@ function initSettingsPage() {
   const isAdmin = usr.isAdmin || usr.role === 'admin';
   const toolBox = document.getElementById('settingsAdminTools');
   if (toolBox) toolBox.style.display = isAdmin ? '' : 'none';
+
+  _loadPushPrefs();
 
   // 角色預覽：以真實帳號 email 判斷是否顯示（預覽中也要看真實帳號，不能看當前偽裝身分）
   const realRaw = sessionStorage.getItem('rescue_user_real_backup');

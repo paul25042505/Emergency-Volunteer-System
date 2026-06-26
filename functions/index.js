@@ -10,42 +10,246 @@ initializeApp();
 const REGION = 'asia-east1';
 const TZ     = 'Asia/Taipei';
 
+const SITE_URL = 'https://paul25042505.github.io/Emergency-Volunteer-System/';
+const ICON_URL = 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png';
+
+// ══════════════════════════════════════════════════════════════════════
+// ── 推播共用常數 / 工具函式 ──────────────────────────────────────────
+//    ⚠️ PUSH_TYPES 與 index.html 內同名常數需手動保持同步（前後端無共享模組機制）
+// ══════════════════════════════════════════════════════════════════════
+
+const PUSH_TYPES = {
+  ANNOUNCEMENT: 'announcement', // 公告
+  CORRECTION:   'correction',   // 修正申請
+  FEEDBACK:     'feedback',     // 意見回饋
+  SCHEDULE:     'schedule',     // 班表開放
+  REMINDER:     'reminder',     // 個人提醒（簽退、確認任務、明日排班）
+  TRAINING:     'training',     // 定訓
+  SYSTEM:       'system',       // 系統通知（預算警報等）
+};
+
+// 結構化 log：統一格式方便在 Cloud Logging 依 stage 篩選
+function _log(stage, meta) {
+  console.log(JSON.stringify({ stage, ...(meta || {}) }));
+}
+
+function _dateStr(d) {
+  return d.toLocaleDateString('sv-SE', { timeZone: TZ });
+}
+
+function _timeStr(d) {
+  return d.toLocaleTimeString('sv-SE', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+}
+
+// 原子性搶占：create() 在文件已存在時會失敗，藉此避免「先讀後寫」造成的競爭空隙
+// （兩個重複觸發的函式實例幾乎同時執行時，仍可能都通過 read-then-write 的檢查）
+async function _tryClaim(db, key) {
+  try {
+    await db.collection('autoNotifLog').doc(key).create({ sentAt: new Date() });
+    return true;
+  } catch (e) {
+    return false; // 已存在 → 已有其他實例搶先標記，視為重複
+  }
+}
+
+// 統一 Payload 結構：{title, body, type, icon, image, badge, tag, clickAction, url, data}
+// image / clickAction / data 目前多數呼叫點留空，保留欄位供未來擴充（Rich Notification、Deep Link、已讀追蹤等）
+function _buildPushPayload(type, title, body, opts) {
+  opts = opts || {};
+  return {
+    title, body, type,
+    icon:  opts.icon  || ICON_URL,
+    image: opts.image || null,
+    badge: opts.badge || ICON_URL,
+    tag:   opts.tag   || type || null,
+    clickAction: opts.clickAction || null,
+    url:   opts.url   || SITE_URL,
+    data:  opts.data  || {},
+  };
+}
+
+// FCM data payload 的值一律要求字串；過濾掉空值並轉成字串
+function _stringifyData(obj) {
+  const out = {};
+  Object.keys(obj).forEach(k => {
+    const v = obj[k];
+    if (v === null || v === undefined || v === '') return;
+    out[k] = typeof v === 'string' ? v : JSON.stringify(v);
+  });
+  return out;
+}
+
+// 使用者通知偏好：pushSubscriptions.prefs.<type>，未設定視為預設允許（true）
+function _prefAllows(sub, type) {
+  if (!type) return true;
+  if (!sub.prefs) return true;
+  return sub.prefs[type] !== false;
+}
+
+// 由訂閱文件陣列過濾出有效 token，並套用使用者通知偏好設定
+function _filterTokensByPref(subs, type) {
+  const tokens = [];
+  subs.forEach(d => {
+    if (!d.fcmToken) return;
+    if (!_prefAllows(d, type)) return;
+    tokens.push(d.fcmToken);
+  });
+  return [...new Set(tokens)];
+}
+
+async function _getMemberTokens(db, memberName, type) {
+  const snap = await db.collection('pushSubscriptions').where('memberName', '==', memberName).get();
+  return _filterTokensByPref(snap.docs.map(d => d.data()), type);
+}
+
+async function _getAllTokens(db, type) {
+  const snap = await db.collection('pushSubscriptions').get();
+  return _filterTokensByPref(snap.docs.map(d => d.data()), type);
+}
+
+async function _getAdminTokens(memberUnit, type) {
+  const db = getFirestore();
+  const snap = await db.collection('pushSubscriptions').get();
+  const subs = [];
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (!d.fcmToken) return;
+    if (d.isAdmin) { subs.push(d); return; }
+    if (d.isOfficer && (memberUnit === null || d.unit === memberUnit)) subs.push(d);
+  });
+  return _filterTokensByPref(subs, type);
+}
+
+// 發送 FCM webpush（自動依 500 上限分批）；清除失效 token；回傳逐筆結果與 messageId
+async function _sendMulticast(tokens, payload) {
+  if (!tokens.length) return { results: [], messageIds: [] };
+  const messaging = getMessaging();
+  const db = getFirestore();
+  const chunks = [];
+  for (let i = 0; i < tokens.length; i += 500) chunks.push(tokens.slice(i, i + 500));
+
+  const dataFields = _stringifyData({
+    type: payload.type,
+    url:  payload.url,
+    clickAction: payload.clickAction,
+    ...(payload.data || {}),
+  });
+
+  const results = [];
+  const messageIds = [];
+
+  for (const chunk of chunks) {
+    const res = await messaging.sendEachForMulticast({
+      tokens: chunk,
+      webpush: {
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          icon:  payload.icon  || ICON_URL,
+          badge: payload.badge || ICON_URL,
+          ...(payload.image ? { image: payload.image } : {}),
+          ...(payload.tag   ? { tag: payload.tag } : {}),
+          vibrate: [200, 100, 200],
+        },
+        data: dataFields,
+        fcmOptions: { link: payload.url || SITE_URL },
+      },
+    });
+
+    // 收集所有失效 token 的查詢結果後一次性 commit，避免「fire-and-forget」造成
+    // batch.commit() 在 query.then() 真正寫入前就已執行，使失效 token 從未被真正清除
+    const invalidTokens = [];
+    res.responses.forEach((r, idx) => {
+      if (r.success) { if (r.messageId) messageIds.push(r.messageId); return; }
+      if (r.error?.code === 'messaging/registration-token-not-registered' ||
+          r.error?.code === 'messaging/invalid-registration-token') {
+        invalidTokens.push(chunk[idx]);
+      }
+    });
+    if (invalidTokens.length) {
+      const snaps = await Promise.all(
+        invalidTokens.map(t => db.collection('pushSubscriptions').where('fcmToken', '==', t).get())
+      );
+      const batch = db.batch();
+      let hasOps = false;
+      snaps.forEach(s => s.forEach(d => {
+        batch.update(d.ref, { fcmToken: null, tokenInvalidatedAt: new Date() });
+        hasOps = true;
+      }));
+      if (hasOps) await batch.commit().catch(() => {});
+    }
+
+    res.responses.forEach((r, idx) => {
+      results.push({ token: chunk[idx].substring(0, 20), success: r.success, error: r.error?.code || null });
+    });
+  }
+  return { results, messageIds };
+}
+
+// 統一寫入 pushLogs。欄位形狀完全相容既有前端讀取邏輯
+// （title/body/status/target/targetMembers/successCount/failCount/sentAt/sentBy/source）。
+// status 一律用 'ok'/'fail'（對齊前端 statusMeta），sentAt 一律寫入字串（對齊 fbList 的 orderBy
+// 需求 —— 先前 _writeAutoNotif 只寫 createdAt 而漏寫 sentAt，導致 Firestore orderBy('sentAt')
+// 直接把這些文件排除在外，所有排程自動推播的紀錄因此從未顯示在管理後台）。
+async function _logPush(db, opts) {
+  const now = new Date();
+  const tokenCount   = opts.tokenCount   || 0;
+  const successCount = opts.successCount || 0;
+  const failCount    = opts.failCount    || 0;
+  const status = tokenCount > 0 && successCount === 0 ? 'fail' : 'ok';
+  const targetMembers = opts.targetMembers || [];
+  await db.collection('pushLogs').add({
+    type: opts.type,
+    title: opts.title,
+    body: opts.body,
+    target: opts.target || (targetMembers.length ? 'members' : 'all'),
+    targetMembers,
+    status,
+    source: opts.source || 'system',
+    sentBy: opts.sentBy || '系統自動',
+    tokenCount, successCount, failCount,
+    messageIds: opts.messageIds || [],
+    ...(opts.dedupKey ? { dedupKey: opts.dedupKey } : {}),
+    ...(opts.errorMsg ? { errorMsg: opts.errorMsg } : {}),
+    createdAt: now,
+    sentAt: now.toLocaleString('sv-SE', { timeZone: TZ }).replace('T', ' '),
+  }).catch(() => {});
+}
+
 // ── 推播：公告管理新增資料 → 自動推播對應對象 ────────────────────────
-// _pushed: true 代表此公告由其他函式已推播，跳過避免重複
+// _pushed: true 代表此公告已由其他路徑（broadcastPush / 前端手動推播）推播過，跳過避免重複
 exports.onNewAnnouncement = onDocumentCreated(
   'announcements/{docId}',
   async event => {
     const data = event.data?.data();
     if (!data) return;
-    if (data._pushed) return; // 已由其他路徑推播，略過
+    if (data._pushed) return;
 
     const { title, body, audience, targetMembers } = data;
     if (!title || !body) return;
 
     const db = getFirestore();
+    const type = PUSH_TYPES.ANNOUNCEMENT;
     let tokens;
     if (audience === 'admin') {
-      tokens = await _getAdminTokens(null);
+      tokens = await _getAdminTokens(null, type);
     } else if (targetMembers && targetMembers.length) {
       // 指定成員範圍（例如單位限定的廣播）：僅推給名單內成員
       const snap = await db.collection('pushSubscriptions').get();
-      const arr = [];
+      const subs = [];
       snap.forEach(doc => {
         const d = doc.data();
-        if (d.fcmToken && d.memberName && targetMembers.includes(d.memberName)) arr.push(d.fcmToken);
+        if (d.memberName && targetMembers.includes(d.memberName)) subs.push(d);
       });
-      tokens = [...new Set(arr)];
+      tokens = _filterTokensByPref(subs, type);
     } else {
       // audience === 'all'：推給所有訂閱者
-      const snap = await db.collection('pushSubscriptions').get();
-      const arr = [];
-      snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) arr.push(d.fcmToken); });
-      tokens = [...new Set(arr)];
+      tokens = await _getAllTokens(db, type);
     }
 
-    if (tokens.length) {
-      await _sendMulticast(tokens, { title, body });
-    }
+    if (!tokens.length) return;
+    const payload = _buildPushPayload(type, title, body, { tag: 'announcement' });
+    await _sendMulticast(tokens, payload);
   }
 );
 
@@ -55,11 +259,21 @@ exports.onNewCorrection = onDocumentCreated(
   async event => {
     const data = event.data?.data();
     if (!data) return;
-    const tokens = await _getAdminTokens(data.unit);
+    const type = PUSH_TYPES.CORRECTION;
+    const tokens = await _getAdminTokens(data.unit, type);
     const title  = '📝 新修正申請';
     const body   = `${data.memberName || '成員'} 提交了資料修正申請`;
     if (tokens.length) {
-      await _sendMulticast(tokens, { title, body });
+      const payload = _buildPushPayload(type, title, body, { tag: 'correction' });
+      const { results, messageIds } = await _sendMulticast(tokens, payload);
+      const db = getFirestore();
+      await _logPush(db, {
+        type, title, body, target: 'admin', source: 'auto-correction',
+        tokenCount: tokens.length,
+        successCount: results.filter(r => r.success).length,
+        failCount: results.filter(r => !r.success).length,
+        messageIds,
+      });
     }
     const db  = getFirestore();
     const now = new Date();
@@ -84,11 +298,21 @@ exports.onNewFeedback = onDocumentCreated(
   async event => {
     const data = event.data?.data();
     if (!data) return;
-    const tokens = await _getAdminTokens(data.unit);
+    const type = PUSH_TYPES.FEEDBACK;
+    const tokens = await _getAdminTokens(data.unit, type);
     const title  = '💬 新意見回饋';
     const body   = `${data.name || '成員'} 提交了意見回饋`;
     if (tokens.length) {
-      await _sendMulticast(tokens, { title, body });
+      const payload = _buildPushPayload(type, title, body, { tag: 'feedback' });
+      const { results, messageIds } = await _sendMulticast(tokens, payload);
+      const db = getFirestore();
+      await _logPush(db, {
+        type, title, body, target: 'admin', source: 'auto-feedback',
+        tokenCount: tokens.length,
+        successCount: results.filter(r => r.success).length,
+        failCount: results.filter(r => !r.success).length,
+        messageIds,
+      });
     }
     const db  = getFirestore();
     const now = new Date();
@@ -108,11 +332,16 @@ exports.onNewFeedback = onDocumentCreated(
 );
 
 // ── 推播：廣播（HTTP Request）→ 客戶端用 fetch 直接呼叫 ──────────────
+// pushTarget 支援：all / admin / member（向下相容既有欄位）/ unit（推給整個分隊）/ devices（指定 deviceId 陣列）
+// 注意：呼叫端（sendManualPush / saveAnnounceForm）已自行寫入並更新 pushLogs，這裡不重複寫入避免雙重紀錄
 exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
-  const { title, body, requestedBy, skipAnnouncement, pushTarget } = req.body;
+  const { title, body, requestedBy, skipAnnouncement, pushTarget, pushType, unit, deviceIds } = req.body;
   if (!title || !body) { res.status(400).json({ error: 'title and body are required' }); return; }
+
+  const type = Object.values(PUSH_TYPES).includes(pushType) ? pushType : PUSH_TYPES.ANNOUNCEMENT;
+  _log('Push Start', { fn: 'broadcastPush', pushTarget, type });
 
   try {
     const db  = getFirestore();
@@ -137,45 +366,58 @@ exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public
     // 2. 取得推播目標 token
     let uniqueTokens;
     if (pushTarget === 'admin') {
-      uniqueTokens = await _getAdminTokens(null);
+      uniqueTokens = await _getAdminTokens(null, type);
     } else if (pushTarget === 'member') {
-      const { targetMember } = req.body;
-      if (!targetMember) { res.status(400).json({ error: 'targetMember is required for member push' }); return; }
-      const snap = await db.collection('pushSubscriptions').where('memberName', '==', targetMember).get();
-      const tokens = [];
-      snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
-      uniqueTokens = [...new Set(tokens)];
-    } else {
+      const { targetMember, targetMembers } = req.body;
+      const names = targetMember ? [targetMember] : (targetMembers || []);
+      if (!names.length) { res.status(400).json({ error: 'targetMember is required for member push' }); return; }
       const snap = await db.collection('pushSubscriptions').get();
-      const tokens = [];
-      snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
-      uniqueTokens = [...new Set(tokens)];
+      const subs = [];
+      snap.forEach(doc => { const d = doc.data(); if (names.includes(d.memberName)) subs.push(d); });
+      uniqueTokens = _filterTokensByPref(subs, type);
+    } else if (pushTarget === 'unit') {
+      if (!unit) { res.status(400).json({ error: 'unit is required for unit push' }); return; }
+      const snap = await db.collection('pushSubscriptions').where('unit', '==', unit).get();
+      uniqueTokens = _filterTokensByPref(snap.docs.map(d => d.data()), type);
+    } else if (pushTarget === 'devices') {
+      if (!Array.isArray(deviceIds) || !deviceIds.length) { res.status(400).json({ error: 'deviceIds is required for devices push' }); return; }
+      const snap = await db.collection('pushSubscriptions').get();
+      const subs = [];
+      snap.forEach(doc => { const d = doc.data(); if (deviceIds.includes(d.deviceId)) subs.push(d); });
+      uniqueTokens = _filterTokensByPref(subs, type);
+    } else {
+      uniqueTokens = await _getAllTokens(db, type);
     }
     if (!uniqueTokens.length) {
+      _log('Push Finish', { fn: 'broadcastPush', tokenCount: 0 });
       res.json({ status: 'no_tokens', count: 0 });
       return;
     }
+    _log('Query Token', { fn: 'broadcastPush', tokenCount: uniqueTokens.length });
 
     // 3. 發推播
-    const fcmResult = await _sendMulticast(uniqueTokens, { title, body });
-    const successCount = fcmResult.filter(r => r.success).length;
-    const failCount    = fcmResult.filter(r => !r.success).length;
+    const payload = _buildPushPayload(type, title, body);
+    const { results, messageIds } = await _sendMulticast(uniqueTokens, payload);
+    const successCount = results.filter(r => r.success).length;
+    const failCount    = results.filter(r => !r.success).length;
     // 全部發送失敗時視為整體失敗，讓呼叫端（client）知道要重試，而不是誤判為已送達
     const allFailed = uniqueTokens.length > 0 && successCount === 0;
+
+    _log(allFailed ? 'Failure' : 'Success', { fn: 'broadcastPush', successCount, failCount });
 
     await db.collection('broadcastRequests').add({
       title, body, status: allFailed ? 'fail' : 'sent',
       createdBy: requestedBy || '管理員',
       createdAt: now, sentAt: now,
       recipientCount: uniqueTokens.length,
-      fcmResult,
+      fcmResult: results, messageIds,
     });
 
     if (allFailed) {
-      res.status(502).json({ error: fcmResult[0]?.error || 'all recipients failed', successCount, failCount });
+      res.status(502).json({ error: results[0]?.error || 'all recipients failed', successCount, failCount });
       return;
     }
-    res.json({ status: 'sent', count: uniqueTokens.length, successCount, failCount });
+    res.json({ status: 'sent', count: uniqueTokens.length, successCount, failCount, messageIds });
   } catch (err) {
     console.error('broadcastPush error:', err);
     res.status(500).json({ error: err.message || 'internal error' });
@@ -191,6 +433,7 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
   { schedule: '0 20 * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
+    const type = PUSH_TYPES.REMINDER;
 
     const now = new Date();
     const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
@@ -216,20 +459,29 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
     for (const memberName of members) {
       const shifts = memberMap[memberName].join('、');
       const body = `您明日（${tomorrow}）有排班：${shifts}，請準時出勤。`;
-      const tokens = await _getMemberTokens(db, memberName);
-      const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
-      await _writeAutoNotif(db, { title, body, targetMembers: [memberName], dedupKey: `${dedupKey}-${memberName}`, result });
+      const tokens = await _getMemberTokens(db, memberName, type);
+      const payload = _buildPushPayload(type, title, body, { tag: 'duty-tomorrow' });
+      const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+      await _logPush(db, {
+        type, title, body, target: 'members', targetMembers: [memberName],
+        source: 'auto-duty-tomorrow', dedupKey: `${dedupKey}-${memberName}`,
+        tokenCount: tokens.length,
+        successCount: results.filter(r => r.success).length,
+        failCount: results.filter(r => !r.success).length,
+        messageIds,
+      });
     }
 
-    console.log(`scheduleDutyTomorrowReminder: notified ${members.length} members for ${tomorrow}`);
+    _log('Finish', { fn: 'scheduleDutyTomorrowReminder', tomorrow, memberCount: members.length });
   }
 );
 
-// ── 3. 每 30 分鐘：班次結束後 1 小時未簽退者通知 ─────────────────────
+// ── 3. 每小時：班次結束後 1 小時未簽退者通知 ─────────────────────────
 exports.scheduleNoSignoutReminder = onSchedule(
   { schedule: '0 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
+    const type = PUSH_TYPES.REMINDER;
 
     const now = new Date();
     const today = _dateStr(now);
@@ -260,9 +512,17 @@ exports.scheduleNoSignoutReminder = onSchedule(
 
       const title = '🔔 請記得簽退';
       const body  = `您今日 ${d.end} 的班次已結束超過 1 小時，請確認是否已簽退。`;
-      const tokens = await _getMemberTokens(db, d.memberName);
-      const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
-      await _writeAutoNotif(db, { title, body, targetMembers: [d.memberName], dedupKey, result });
+      const tokens = await _getMemberTokens(db, d.memberName, type);
+      const payload = _buildPushPayload(type, title, body, { tag: 'duty-nosignout' });
+      const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+      await _logPush(db, {
+        type, title, body, target: 'members', targetMembers: [d.memberName],
+        source: 'auto-duty-nosignout', dedupKey,
+        tokenCount: tokens.length,
+        successCount: results.filter(r => r.success).length,
+        failCount: results.filter(r => !r.success).length,
+        messageIds,
+      });
     }
   }
 );
@@ -272,6 +532,7 @@ exports.scheduleMonthlyScheduleOpen = onSchedule(
   { schedule: '0 9 20 * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
+    const type = PUSH_TYPES.SCHEDULE;
 
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -282,10 +543,17 @@ exports.scheduleMonthlyScheduleOpen = onSchedule(
 
     const title = '📋 下月班表開放排班';
     const body  = `${ym} 班表已開放，請盡快完成排班登記。`;
-    const tokens = await _getAllTokens(db);
-    const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
-    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
-    console.log(`scheduleMonthlyScheduleOpen: notified for ${ym}`);
+    const tokens = await _getAllTokens(db, type);
+    const payload = _buildPushPayload(type, title, body, { tag: 'monthly-open' });
+    const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+    await _logPush(db, {
+      type, title, body, target: 'all', source: 'auto-monthly-open', dedupKey,
+      tokenCount: tokens.length,
+      successCount: results.filter(r => r.success).length,
+      failCount: results.filter(r => !r.success).length,
+      messageIds,
+    });
+    _log('Finish', { fn: 'scheduleMonthlyScheduleOpen', ym, tokenCount: tokens.length });
   }
 );
 
@@ -294,6 +562,7 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
   { schedule: '0 9 1 * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
+    const type = PUSH_TYPES.REMINDER;
 
     const now = new Date();
     const ym  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -303,10 +572,17 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
 
     const title = '✅ 請確認本月任務';
     const body  = `${ym} 已開始，請確認本月班表與任務是否有問題。`;
-    const tokens = await _getAllTokens(db);
-    const result = tokens.length ? await _sendMulticast(tokens, { title, body }) : [];
-    await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
-    console.log(`scheduleMonthlyConfirmTask: notified for ${ym}`);
+    const tokens = await _getAllTokens(db, type);
+    const payload = _buildPushPayload(type, title, body, { tag: 'monthly-confirm' });
+    const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+    await _logPush(db, {
+      type, title, body, target: 'all', source: 'auto-monthly-confirm', dedupKey,
+      tokenCount: tokens.length,
+      successCount: results.filter(r => r.success).length,
+      failCount: results.filter(r => !r.success).length,
+      messageIds,
+    });
+    _log('Finish', { fn: 'scheduleMonthlyConfirmTask', ym, tokenCount: tokens.length });
   }
 );
 
@@ -317,6 +593,7 @@ exports.scheduleTrainingReminder = onSchedule(
   { schedule: '0 8 * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
+    const type = PUSH_TYPES.TRAINING;
     const today    = _dateStr(new Date());
     const tomorrow = _dateStr(new Date(Date.now() + 86400000));
 
@@ -326,7 +603,7 @@ exports.scheduleTrainingReminder = onSchedule(
     ]);
     if (snapToday.empty && snapTomorrow.empty) return;
 
-    const tokens = await _getAllTokens(db);
+    const tokens = await _getAllTokens(db, type);
     if (!tokens.length) return;
 
     if (!snapToday.empty) {
@@ -335,8 +612,15 @@ exports.scheduleTrainingReminder = onSchedule(
         const titles = snapToday.docs.map(d => d.data().topic || '定訓').join('、');
         const title  = '🔔 今天有定訓！';
         const body   = `${today} ${titles}，請準時出席`;
-        const result = await _sendMulticast(tokens, { title, body });
-        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
+        const payload = _buildPushPayload(type, title, body, { tag: 'training-today' });
+        const { results, messageIds } = await _sendMulticast(tokens, payload);
+        await _logPush(db, {
+          type, title, body, target: 'all', source: 'auto-training-today', dedupKey,
+          tokenCount: tokens.length,
+          successCount: results.filter(r => r.success).length,
+          failCount: results.filter(r => !r.success).length,
+          messageIds,
+        });
       }
     }
 
@@ -346,8 +630,15 @@ exports.scheduleTrainingReminder = onSchedule(
         const titles = snapTomorrow.docs.map(d => d.data().topic || '定訓').join('、');
         const title  = '🔔 明天有定訓！';
         const body   = `${tomorrow} ${titles}，請準時出席`;
-        const result = await _sendMulticast(tokens, { title, body });
-        await _writeAutoNotif(db, { title, body, targetMembers: [], dedupKey, result });
+        const payload = _buildPushPayload(type, title, body, { tag: 'training-tomorrow' });
+        const { results, messageIds } = await _sendMulticast(tokens, payload);
+        await _logPush(db, {
+          type, title, body, target: 'all', source: 'auto-training-tomorrow', dedupKey,
+          tokenCount: tokens.length,
+          successCount: results.filter(r => r.success).length,
+          failCount: results.filter(r => !r.success).length,
+          messageIds,
+        });
       }
     }
   }
@@ -400,17 +691,28 @@ exports.onBudgetAlert = onRequest(
     if (locked) {
       const dedupKey = `budget-lock-${todayStr}-${Math.round(threshold * 100)}`;
       if (await _tryClaim(db, dedupKey)) {
+        const type = PUSH_TYPES.SYSTEM;
         const title = '⚠️ Firestore 費用預算警報';
         const body  = `費用已達預算 ${pct}%（${currency} ${costAmount.toFixed(2)} / ${budgetAmount.toFixed(2)}），部分功能已鎖定。`;
-        const tokens = await _getAdminTokens(null);
-        if (tokens.length) await _sendMulticast(tokens, { title, body });
+        const tokens = await _getAdminTokens(null, type);
+        if (tokens.length) {
+          const payload = _buildPushPayload(type, title, body, { tag: 'budget-alert' });
+          const { results, messageIds } = await _sendMulticast(tokens, payload);
+          await _logPush(db, {
+            type, title, body, target: 'admin', source: 'auto-budget-alert', dedupKey,
+            tokenCount: tokens.length,
+            successCount: results.filter(r => r.success).length,
+            failCount: results.filter(r => !r.success).length,
+            messageIds,
+          });
+        }
       }
     }
     res.status(200).send('ok');
   }
 );
 
-// ── 每日 03:00：清理 90 天以上的舊資料，控制儲存費用 ──────────────────
+// ── 每日 03:00：清理舊資料與孤兒訂閱，控制儲存費用 ────────────────────
 exports.scheduleDailyCleanup = onSchedule(
   { schedule: '0 3 * * *', timeZone: TZ, region: REGION },
   async () => {
@@ -439,121 +741,22 @@ exports.scheduleDailyCleanup = onSchedule(
       console.log(`cleanup ${col}: deleted ${snap.size}`);
     }
 
+    // 清除 30 天以上未重新訂閱的孤兒訂閱（fcmToken 已失效，長期沒有再次取得新 token）
+    {
+      const orphanCutoff = new Date(Date.now() - 30 * 86400000);
+      const snap = await db.collection('pushSubscriptions').where('fcmToken', '==', null).get();
+      const batch = db.batch();
+      let n = 0;
+      snap.forEach(doc => {
+        const d = doc.data();
+        const ts = (d.tokenInvalidatedAt && d.tokenInvalidatedAt.toDate && d.tokenInvalidatedAt.toDate())
+                || (d.grantedAt && d.grantedAt.toDate && d.grantedAt.toDate());
+        if (ts && ts < orphanCutoff) { batch.delete(doc.ref); n++; }
+      });
+      if (n) await batch.commit().catch(() => {});
+      if (n) console.log(`cleanup pushSubscriptions orphans: deleted ${n}`);
+    }
+
     console.log(`scheduleDailyCleanup: total deleted ${total}`);
   }
 );
-
-// ── 工具函式 ──────────────────────────────────────────────────────────
-
-function _dateStr(d) {
-  return d.toLocaleDateString('sv-SE', { timeZone: TZ });
-}
-
-function _timeStr(d) {
-  return d.toLocaleTimeString('sv-SE', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
-}
-
-// 原子性搶占：create() 在文件已存在時會失敗，藉此避免「先讀後寫」的競爭空隙
-// （兩個重複觸發的函式實例幾乎同時執行時，仍可能都通過 read-then-write 的檢查）
-async function _tryClaim(db, key) {
-  try {
-    await db.collection('autoNotifLog').doc(key).create({ sentAt: new Date() });
-    return true;
-  } catch (e) {
-    return false; // 已存在 → 已有其他實例搶先標記，視為重複
-  }
-}
-
-async function _getMemberTokens(db, memberName) {
-  const snap = await db.collection('pushSubscriptions').where('memberName', '==', memberName).get();
-  const tokens = [];
-  snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
-  return [...new Set(tokens)];
-}
-
-async function _getAllTokens(db) {
-  const snap = await db.collection('pushSubscriptions').get();
-  const tokens = [];
-  snap.forEach(doc => { const d = doc.data(); if (d.fcmToken) tokens.push(d.fcmToken); });
-  return [...new Set(tokens)];
-}
-
-async function _writeAutoNotif(db, { title, body, targetMembers, dedupKey, result }) {
-  const now = new Date();
-  const today = _dateStr(now);
-
-  const summary = result || [];
-  const successCount = summary.filter(r => r.success).length;
-  const failCount    = summary.filter(r => !r.success).length;
-  // 完全沒有人訂閱推播時不算失敗（沒有可發送對象），只有「嘗試發送但全部失敗」才算失敗
-  const status   = summary.length && successCount === 0 ? 'fail' : 'sent';
-  const errorMsg = status === 'fail' ? (summary[0]?.error || 'unknown error') : null;
-
-  await db.collection('pushLogs').add({
-    title, body, type: 'auto', status, successCount, failCount,
-    targetMembers: targetMembers || [],
-    createdAt: now, sentBy: 'system', dedupKey,
-    ...(errorMsg ? { errorMsg } : {}),
-  }).catch(() => {});
-  await db.collection('announcements').add({
-    title, body, text: `${title}\n${body}`,
-    type: 'broadcast',
-    audience: targetMembers && targetMembers.length ? 'members' : 'all',
-    targetMembers: targetMembers || [],
-    active: true, pinned: false, urgent: false,
-    startDate: today,
-    endDate: new Date(now.getTime() + 30 * 86400000).toLocaleDateString('sv-SE', { timeZone: TZ }),
-    createdAt: now, createdBy: 'system', _pushed: true,
-  }).catch(() => {});
-}
-
-async function _getAdminTokens(memberUnit) {
-  const db = getFirestore();
-  const snap = await db.collection('pushSubscriptions').get();
-  const tokens = [];
-  snap.forEach(doc => {
-    const d = doc.data();
-    if (!d.fcmToken) return;
-    if (d.isAdmin) { tokens.push(d.fcmToken); return; }
-    if (d.isOfficer && (memberUnit === null || d.unit === memberUnit)) tokens.push(d.fcmToken);
-  });
-  return [...new Set(tokens)];
-}
-
-async function _sendMulticast(tokens, notification) {
-  if (!tokens.length) return [];
-  const messaging = getMessaging();
-  const chunks = [];
-  for (let i = 0; i < tokens.length; i += 500) chunks.push(tokens.slice(i, i + 500));
-  const summary = [];
-  for (const chunk of chunks) {
-    const res = await messaging.sendEachForMulticast({
-      tokens: chunk,
-      webpush: {
-        notification: {
-          title: notification.title,
-          body: notification.body,
-          icon: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png',
-          badge: 'https://paul25042505.github.io/Emergency-Volunteer-System/icon-192.png',
-          vibrate: [200, 100, 200],
-        },
-        fcmOptions: { link: 'https://paul25042505.github.io/Emergency-Volunteer-System/' },
-      },
-    });
-    const db = getFirestore();
-    const batch = db.batch();
-    res.responses.forEach((r, idx) => {
-      if (!r.success && (r.error?.code === 'messaging/registration-token-not-registered' ||
-                         r.error?.code === 'messaging/invalid-registration-token')) {
-        const q = db.collection('pushSubscriptions').where('fcmToken', '==', chunk[idx]);
-        q.get().then(s => s.forEach(d => batch.update(d.ref, { fcmToken: null })));
-      }
-    });
-    await batch.commit().catch(() => {});
-    res.responses.forEach((r, idx) => {
-      summary.push({ token: chunk[idx].substring(0, 20), success: r.success, error: r.error?.code || null });
-    });
-  }
-  return summary;
-}
-

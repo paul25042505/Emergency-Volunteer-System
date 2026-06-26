@@ -27,15 +27,16 @@ self.addEventListener('push', event => {
   );
 });
 
-// 點擊通知後開啟或聚焦頁面
+// 點擊通知後開啟或聚焦頁面（若 data.url 有指定深層連結則導向該處，否則維持開根目錄的舊行為）
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  const targetUrl = event.notification.data?.url || '/Emergency-Volunteer-System/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const c of list) {
         if ('focus' in c) return c.focus();
       }
-      return clients.openWindow('/Emergency-Volunteer-System/');
+      return clients.openWindow(targetUrl);
     })
   );
 });
