@@ -17701,9 +17701,9 @@ function renderTestStation() {
         '</div>' +
         (isAll && !disabled ? '<div class="d-flex gap-2 mt-2" style="flex-wrap:wrap;">' +
             sizeOptions.map(function (n) {
-              return '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();startExam(\'all\',' + n + ')">' + n + ' 題</button>';
+              return '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();startExam(\\'all\\',' + n + ')">' + n + ' 題</button>';
             }).join('') +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();startExam(\'all\')">全部 ' + cat.count + ' 題</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();startExam(\\'all\\')">全部 ' + cat.count + ' 題</button>' +
           '</div>' : '') +
       '</div></div>';
   }).join('') + '</div>';
