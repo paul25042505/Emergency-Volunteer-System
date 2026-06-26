@@ -25959,7 +25959,8 @@ async function loadAttendStats() {
   // 初始化分隊下拉
   const unitSel = document.getElementById('asUnit');
   if (unitSel && unitSel.options.length <= 1) {
-    (window._allUnits || []).forEach(u => {
+    const units = await loadUnits();
+    units.forEach(u => {
       const o = document.createElement('option'); o.value = u; o.textContent = u; o.style.color = '#333';
       unitSel.appendChild(o);
     });
