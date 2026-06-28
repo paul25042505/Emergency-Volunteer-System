@@ -13522,11 +13522,12 @@ async function _trimLoginLog(maxCount) {
 // ════════════════════════════════════════
 // 操作紀錄（Audit Log）— 後台管理動作稽核軌跡
 // ════════════════════════════════════════
+// 用字串常值而非 COL_* 變數作為 key：避免引用到本檔案後段才宣告的 const（TDZ ReferenceError）
 const AUDIT_MODULE_LABEL = {
-  [COL_WHITELIST]: '成員帳號', [COL_UNITS]: '分隊管理', [COL_CASETYPES]: '案由管理',
-  [COL_SCHEDULE]: '定訓行事曆', [COL_CORRECTION]: '修正申請', [COL_CHANGELOG]: '版本紀錄',
-  [COL_ANNOUNCE]: '公告', [COL_CONFIRM]: '確認任務', [COL_TEMP_PASS]: '臨時密碼',
-  [COL_PUSH_LOG]: '推播控制台', [COL_PUSH_SUBS]: '推播裝置',
+  whitelist: '成員帳號', units: '分隊管理', caseTypes: '案由管理',
+  trainingSchedule: '定訓行事曆', correctionRequests: '修正申請', changelogs: '版本紀錄',
+  announcements: '公告', confirmTasks: '確認任務', tempPasswords: '臨時密碼',
+  pushLogs: '推播控制台', pushSubscriptions: '推播裝置',
 };
 const AUDIT_ACTION_LABEL = {
   create:'新增', update:'編輯', delete:'刪除', retire:'退隊', restore:'恢復',
