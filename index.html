@@ -3765,6 +3765,27 @@ function _dlCSV(content, filename) {
       <div id="adminLoginLogList"><div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div></div>
     </div>
 
+    <div id="adminSec-auditlog" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#37474f 0%,#263238 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">操作紀錄</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">後台管理動作稽核軌跡</div></div>
+        <button onclick="loadAuditLog()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
+      </div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div class="filter-grid">
+          <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">日期（起）</label><input type="date" id="auditLogFrom" style="width:100%;"></div>
+          <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">日期（迄）</label><input type="date" id="auditLogTo" style="width:100%;"></div>
+          <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">模組</label><select id="auditLogModule" style="width:100%;"><option value="">— 全部模組 —</option></select></div>
+          <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">操作人員</label><input type="text" id="auditLogUser" placeholder="姓名關鍵字" style="width:100%;"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-search" onclick="loadAuditLog()" style="flex:1;">查　詢</button>
+          <button class="btn-reset" onclick="resetAuditLog()">清除</button>
+        </div>
+      </div>
+      <div id="adminAuditLogList"><div class="query-empty"><span class="empty-icon">📜</span>請點查詢載入紀錄</div></div>
+    </div>
+
     <div id="adminSec-import" style="display:none;padding:0 0 20px;">
       <div style="background:linear-gradient(135deg,#1565c0 0%,#0d47a1 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
@@ -5451,6 +5472,7 @@ var CASE_MILESTONES = [10, 25, 50, 100, 200, 300, 500];
 // 取得方式：Firebase Console → 專案設定 → Cloud Messaging → Web Push 憑證 → 產生金鑰組
 var FCM_VAPID_KEY = 'BLccMuZDy7yJD_Td7uwY5qlagkZg13i2q5B0XDdEpnC_FMj9oFvHDzElXeWbK4Ww8HBcmrMxUSiL9_gZafSyF28';
 var COL_CONFIRM    = 'confirmTasks';
+var COL_AUDITLOG   = 'auditLogs'; // 後台操作紀錄
 var COL_DUTY = 'dutySchedule'; // 班表（提前定義供 loadDashboard 使用）
 var COL_GONGCHA_MISSIONS = 'gongchaMissions';
 var COL_MEETING_EVENTS = 'meetingEvents';
@@ -5571,6 +5593,23 @@ async function fbQuery(col, conditions, orderByField, orderDir) {
 async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});_C.invalidate(col);return r.id;}
 async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});_C.invalidate(col);}
 async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);_C.invalidate(col);}
+
+// ── 操作紀錄（Audit Log）：所有後台管理動作統一寫入，失敗不影響原本操作 ──
+function _logAudit(action, module, opts) {
+  opts = opts || {};
+  try {
+    const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+    fbAdd(COL_AUDITLOG, {
+      action, module,
+      targetId: opts.targetId || '',
+      summary: opts.summary || '',
+      before: opts.before || null,
+      after: opts.after || null,
+      userName: u.name || '', userEmail: u.email || '', userRole: u.role || '',
+      loggedAt: new Date().toLocaleString('sv').replace('T', ' '),
+    }).catch(() => {});
+  } catch (e) {}
+}
 
 // ── 案件編號（流水號）：每筆新案件 transaction 取下一號，確保不重複 ──
 async function _nextCaseId() {
@@ -12420,7 +12459,8 @@ async function adminAddWhitelist() {
   try {
     const snap = await _fbDB.collection(COL_WHITELIST).where('email','==',email).get();
     if (!snap.empty) { alert('此 Email 已在白名單'); return; }
-    await fbAdd(COL_WHITELIST, { email, memberName:name, title, role, isAdmin, isOfficer, unit });
+    const newId = await fbAdd(COL_WHITELIST, { email, memberName:name, title, role, isAdmin, isOfficer, unit });
+    _logAudit('create', COL_WHITELIST, { targetId: newId, summary: '新增成員帳號「'+name+'」', after: { email, memberName:name, title, role, unit } });
     // 重置新增表單
     document.getElementById('adminWlEmail').value = '';
     document.getElementById('adminWlName').value  = '';
@@ -12806,7 +12846,11 @@ async function batchDelChecked(className, col, reloadFn) {
 
 async function adminDel(col,id,label,reloadFn) {
   if(!confirm('確定刪除「'+label+'」？此操作無法復原。'))return;
-  try { await fbDelete(col,id); if(typeof reloadFn==='function')await reloadFn(); }
+  try {
+    await fbDelete(col,id);
+    _logAudit('delete', col, { targetId: id, summary: '刪除「'+label+'」' });
+    if(typeof reloadFn==='function')await reloadFn();
+  }
   catch(e){alert('刪除失敗：'+e.message);}
 }
 
@@ -12814,6 +12858,7 @@ async function adminRetireMember(id, name) {
   if (!confirm('確定要將「'+name+'」標記為退隊？\n\n• 將從成員列表、打卡、案件登錄等選單中隱藏\n• 歷史出勤/協勤紀錄將保留封存，不會被刪除\n• 該帳號將無法再登入系統\n\n之後可勾選「顯示已退隊成員」復原。')) return;
   try {
     await fbSet(COL_WHITELIST, id, { status: 'retired', retiredAt: new Date().toLocaleDateString('sv') });
+    _logAudit('retire', COL_WHITELIST, { targetId: id, summary: '標記「'+name+'」退隊', after: { status: 'retired' } });
     await loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'');
     await loadMembers(true);
   } catch(e) { alert('操作失敗：'+e.message); }
@@ -12823,6 +12868,7 @@ async function adminRestoreMember(id, name) {
   if (!confirm('確定要恢復「'+name+'」的成員資格？')) return;
   try {
     await fbSet(COL_WHITELIST, id, { status: 'active', retiredAt: '' });
+    _logAudit('restore', COL_WHITELIST, { targetId: id, summary: '恢復「'+name+'」成員資格', after: { status: 'active' } });
     await loadAdminWhitelist(document.getElementById('adminWlFilterUnit')?.value||'');
     await loadMembers(true);
   } catch(e) { alert('操作失敗：'+e.message); }
@@ -12843,7 +12889,7 @@ const ADMIN_MENU_GROUPS = [
   { cat:'內容管理',   icon:'📁', ids:['adminSec-casetypes','adminSec-schedule','adminSec-correction','adminSec-import','adminSec-changelog'] },
   { cat:'通知中心',   icon:'🔔', ids:['adminSec-pushctrl','adminSec-announce'] },
   { cat:'系統維護',   icon:'🛠', ids:['adminSec-repair','adminSec-confirm'] },
-  { cat:'系統監控',   icon:'📈', ids:['adminSec-loginlog','adminSec-usagetest'] },
+  { cat:'系統監控',   icon:'📈', ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
   { cat:'使用者回饋', icon:'💬', ids:['adminSec-feedback'] },
 ];
 
@@ -12867,6 +12913,7 @@ function _buildAdminMenu() {
     { id:'adminSec-pushctrl',   icon:'🔔', label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
     { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
     { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
+    { id:'adminSec-auditlog',   icon:'📜', label:'操作紀錄',   sub:'後台管理動作稽核',   color:'#263238', adminOnly:true },
     { id:'adminSec-usagetest',  icon:'📡', label:'配額監控',   sub:'今日讀取狀態總覽',   color:'#1565c0', adminOnly:true },
   ];
   const itemMap = {};
@@ -12929,7 +12976,7 @@ function _setAdminBadge(sectionId, count) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest','adminSec-auditlog'];
   const menuGrid = document.getElementById('adminMenuGrid');
   const dashboardSec = document.getElementById('adminSec-dashboard');
   if (sectionId === 'dashboard') {
@@ -12972,6 +13019,18 @@ function adminShowSection(sectionId) {
       if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
     }
     setTimeout(loadLoginLog, 100);
+  }
+  if (sectionId === 'adminSec-auditlog') {
+    const df = document.getElementById('auditLogFrom');
+    const dt = document.getElementById('auditLogTo');
+    if (df && !df.value) {
+      const now = new Date();
+      const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0');
+      const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
+      df.value = `${y}-${m}-01`;
+      if (dt) dt.value = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+    }
+    setTimeout(loadAuditLog, 100);
   }
   if (sectionId === 'adminSec-repair') {
     const df = document.getElementById('repairDateFrom');
@@ -13368,6 +13427,7 @@ async function _pushCtrlDeleteDevice(docId, name) {
   if (!confirm(`確定要刪除「${name}」的這筆推播訂閱（裝置）嗎？\n刪除後該裝置將不再收到推播通知，需重新開啟通知權限才會再次訂閱。`)) return;
   try {
     await firebase.firestore().collection(COL_PUSH_SUBS).doc(docId).delete();
+    _logAudit('delete', COL_PUSH_SUBS, { targetId: docId, summary: '刪除「'+name+'」的推播裝置訂閱' });
     await loadAdminPushCtrl();
   } catch(e) { alert('刪除失敗：' + e.message); }
 }
@@ -13457,6 +13517,93 @@ async function _trimLoginLog(maxCount) {
     toDelete.forEach(d => batch.delete(d.ref));
     await batch.commit();
   } catch(e) {}
+}
+
+// ════════════════════════════════════════
+// 操作紀錄（Audit Log）— 後台管理動作稽核軌跡
+// ════════════════════════════════════════
+const AUDIT_MODULE_LABEL = {
+  [COL_WHITELIST]: '成員帳號', [COL_UNITS]: '分隊管理', [COL_CASETYPES]: '案由管理',
+  [COL_SCHEDULE]: '定訓行事曆', [COL_CORRECTION]: '修正申請', [COL_CHANGELOG]: '版本紀錄',
+  [COL_ANNOUNCE]: '公告', [COL_CONFIRM]: '確認任務', [COL_TEMP_PASS]: '臨時密碼',
+  [COL_PUSH_LOG]: '推播控制台', [COL_PUSH_SUBS]: '推播裝置',
+};
+const AUDIT_ACTION_LABEL = {
+  create:'新增', update:'編輯', delete:'刪除', retire:'退隊', restore:'恢復',
+  enable:'啟用', disable:'停用', close:'關閉', revoke:'撤銷',
+  approve:'核准', approve_delete:'核准刪除', reject:'駁回', push:'推播成功', push_fail:'推播失敗',
+};
+
+async function loadAuditLog() {
+  const el = document.getElementById('adminAuditLogList');
+  if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>載入中...</div>';
+  try {
+    const dateFrom = document.getElementById('auditLogFrom')?.value || '';
+    const dateTo   = document.getElementById('auditLogTo')?.value   || '';
+    const moduleF  = document.getElementById('auditLogModule')?.value || '';
+    const userF    = (document.getElementById('auditLogUser')?.value || '').trim();
+
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_AUDITLOG).orderBy('loggedAt','desc').limit(500).get({ source: 'server' });
+    let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+    // 動態填入模組篩選選單（依實際出現過的模組，避免 hardcode）
+    const selEl = document.getElementById('auditLogModule');
+    if (selEl && selEl.options.length <= 1) {
+      const mods = [...new Set(docs.map(d => d.module).filter(Boolean))];
+      selEl.innerHTML = '<option value="">— 全部模組 —</option>' +
+        mods.map(m => `<option value="${m}">${AUDIT_MODULE_LABEL[m] || m}</option>`).join('');
+      selEl.value = moduleF;
+    }
+
+    if (dateFrom) docs = docs.filter(d => (d.loggedAt||'').substring(0,10) >= dateFrom);
+    if (dateTo)   docs = docs.filter(d => (d.loggedAt||'').substring(0,10) <= dateTo);
+    if (moduleF)  docs = docs.filter(d => d.module === moduleF);
+    if (userF)    docs = docs.filter(d => (d.userName||'').includes(userF));
+
+    if (!docs.length) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>查無紀錄</div>'; return; }
+
+    el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;">共 ${docs.length} 筆操作紀錄</div>` +
+      docs.map(d => {
+        const moduleLabel = AUDIT_MODULE_LABEL[d.module] || d.module || '—';
+        const actionLabel = AUDIT_ACTION_LABEL[d.action] || d.action || '—';
+        const isDanger = ['delete','reject','revoke','approve_delete'].includes(d.action);
+        const row = document.createElement('div');
+        row.style.cssText = 'background:white;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07);padding:12px 14px;margin-bottom:8px;';
+        const top = document.createElement('div');
+        top.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;';
+        const actionTag = document.createElement('span');
+        actionTag.style.cssText = `font-size:0.68rem;border-radius:10px;padding:2px 8px;font-weight:600;white-space:nowrap;background:${isDanger?'#fde8e8':'#e8f4fd'};color:${isDanger?'#b94a3a':'#1a6b9a'};`;
+        actionTag.textContent = actionLabel;
+        const moduleTag = document.createElement('span');
+        moduleTag.style.cssText = 'font-size:0.68rem;background:#eef0f3;color:var(--text-mid);border-radius:10px;padding:2px 8px;white-space:nowrap;';
+        moduleTag.textContent = moduleLabel;
+        const userSpan = document.createElement('span');
+        userSpan.style.cssText = 'font-size:0.85rem;font-weight:700;color:var(--text);';
+        userSpan.textContent = d.userName || '系統';
+        top.appendChild(userSpan); top.appendChild(actionTag); top.appendChild(moduleTag);
+        const summary = document.createElement('div');
+        summary.style.cssText = 'font-size:0.8rem;color:var(--text-mid);margin-top:2px;';
+        summary.textContent = d.summary || '';
+        const time = document.createElement('div');
+        time.style.cssText = 'font-size:0.72rem;color:var(--text-light);margin-top:4px;';
+        time.textContent = '🕐 ' + (d.loggedAt || '');
+        row.appendChild(top); row.appendChild(summary); row.appendChild(time);
+        return row.outerHTML;
+      }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
+  }
+}
+
+function resetAuditLog() {
+  ['auditLogFrom','auditLogTo','auditLogUser'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const m = document.getElementById('auditLogModule'); if (m) m.value = '';
+  const el = document.getElementById('adminAuditLogList');
+  if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>請點查詢載入紀錄</div>';
 }
 
 // ── 天氣卡片動畫 ──
@@ -14075,7 +14222,8 @@ async function adminAddUnit() {
   try {
     const docs = await fbList(COL_UNITS);
     if (docs.find(d => d.name === name)) { alert('此分隊已存在'); return; }
-    await fbAdd(COL_UNITS, { name });
+    const newId = await fbAdd(COL_UNITS, { name });
+    _logAudit('create', COL_UNITS, { targetId: newId, summary: '新增分隊「'+name+'」', after: { name } });
     document.getElementById('adminUnitName').value = '';
     // 重新載入分隊快取並更新所有選單
     await loadUnits();
@@ -14089,7 +14237,7 @@ async function adminDelUnit(name) {
   try {
     const docs = await fbList(COL_UNITS);
     const doc = docs.find(d => d.name === name);
-    if (doc) await fbDelete(COL_UNITS, doc.id);
+    if (doc) { await fbDelete(COL_UNITS, doc.id); _logAudit('delete', COL_UNITS, { targetId: doc.id, summary: '刪除分隊「'+name+'」' }); }
     await loadUnits();
     populateUnitSelects();
     await loadAdminUnits();
@@ -14578,6 +14726,7 @@ async function toggleAnnounce(id, currentActive) {
   if (!_requireAdmin()) return;
   try {
     await fbUpdate(COL_ANNOUNCE, id, { active: !currentActive });
+    _logAudit(!currentActive ? 'enable' : 'disable', COL_ANNOUNCE, { targetId: id, summary: (!currentActive?'啟用':'停用')+'公告', after: { active: !currentActive } });
     await loadAdminAnnouncements();
     loadAnnouncement();
   } catch(e) { alert('操作失敗：'+e.message); }
@@ -14588,6 +14737,7 @@ async function deleteAnnounce(id, text) {
   if (!confirm(`確定刪除公告「${text.substring(0,20)}...」？`)) return;
   try {
     await fbDelete(COL_ANNOUNCE, id);
+    _logAudit('delete', COL_ANNOUNCE, { targetId: id, summary: '刪除公告「'+text.substring(0,20)+'」' });
     await loadAdminAnnouncements();
     loadAnnouncement();
   } catch(e) { alert('刪除失敗：'+e.message); }
@@ -14857,6 +15007,7 @@ async function sendManualPush() {
     const errorMsg     = ok ? null : (result.error || result.message || `HTTP ${res.status}`);
 
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: ok ? 'ok' : 'fail', successCount, failCount, ...(errorMsg ? { errorMsg } : {}) });
+    _logAudit(ok ? 'push' : 'push_fail', COL_PUSH_LOG, { targetId: logId||'', summary: '手動推播「'+title+'」(target:'+_pfTarget+')', after: { title, target: _pfTarget, successCount, failCount } });
 
     if (ok) {
       // 寫入 COL_ANNOUNCE 讓通知中心「推播訊息」tab 顯示（已經由上方 fetch 推播過，標記 _pushed 避免觸發器重複推播）
@@ -20820,8 +20971,8 @@ async function _saveChangelogInline(id, version, date, title, isLatest, btn, for
         .map(function(d){ return fbUpdate(COL_CHANGELOG, d.id, { isLatest:false }); }));
     }
     var data = { version:version, date:date, title:title, items:_clItems, isLatest:isLatest };
-    if (id) { await fbSet(COL_CHANGELOG, id, data); }
-    else    { var newId = await fbAdd(COL_CHANGELOG, data); }
+    if (id) { await fbSet(COL_CHANGELOG, id, data); _logAudit('update', COL_CHANGELOG, { targetId:id, summary:'編輯版本紀錄「'+version+'」', after:data }); }
+    else    { var newId = await fbAdd(COL_CHANGELOG, data); _logAudit('create', COL_CHANGELOG, { targetId:newId, summary:'新增版本紀錄「'+version+'」', after:data }); }
     _clItems = [];
     formEl.style.display = 'none';
     await loadAdminChangelog();
@@ -20946,11 +21097,12 @@ async function _confirmCreateTask(month, unit, note) {
   if (btn) { btn.disabled = true; btn.textContent = '建立中…'; }
   try {
     const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-    await fbAdd(COL_CONFIRM, {
+    const confirmId = await fbAdd(COL_CONFIRM, {
       month, unit, note, status: 'active',
       createdBy: usr.memberName || '',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    _logAudit('create', COL_CONFIRM, { targetId: confirmId, summary: '建立確認任務「'+month+' '+unit+'」', after: { month, unit, note } });
     const now2 = new Date();
     await fbAdd(COL_ANNOUNCE, {
       title, body, text: `${title}\n${body}`,
@@ -21179,6 +21331,7 @@ async function closeConfirmTask(taskId) {
   if (!confirm('確定關閉此任務？關閉後成員將不再看到確認提示。')) return;
   try {
     await fbUpdate(COL_CONFIRM, taskId, { status: 'closed' });
+    _logAudit('close', COL_CONFIRM, { targetId: taskId, summary: '關閉確認任務', after: { status: 'closed' } });
     await loadAdminConfirmTasks();
   } catch(e) { alert('操作失敗：' + e.message); }
 }
@@ -21187,6 +21340,7 @@ async function deleteConfirmTask(taskId, month) {
   if (!confirm('確定刪除 ' + month + ' 的確認任務？')) return;
   try {
     await fbDelete(COL_CONFIRM, taskId);
+    _logAudit('delete', COL_CONFIRM, { targetId: taskId, summary: '刪除確認任務「'+month+'」' });
     await loadAdminConfirmTasks();
   } catch(e) { alert('刪除失敗：' + e.message); }
 }
@@ -21527,13 +21681,14 @@ async function addTempPass() {
   const expiresAt = new Date(Date.now() + expiryHrs*3600*1000);
   const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   try {
-    await fbAdd(COL_TEMP_PASS, {
+    const newId = await fbAdd(COL_TEMP_PASS, {
       code, memberName, maxUses, note,
       expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
       usedCount: 0, active: true,
       createdBy: usr.memberName||'',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    _logAudit('create', COL_TEMP_PASS, { targetId: newId, summary: '新增臨時密碼（綁定「'+memberName+'」）', after: { memberName, maxUses, note } });
     document.getElementById('tpCode').value   = '';
     document.getElementById('tpNote').value   = '';
     document.getElementById('tpMember').value = '';
@@ -21592,6 +21747,7 @@ async function revokeTempPass(id) {
   if (!confirm('確定撤銷這組臨時密碼？')) return;
   try {
     await fbUpdate(COL_TEMP_PASS, id, { active: false });
+    _logAudit('revoke', COL_TEMP_PASS, { targetId: id, summary: '撤銷臨時密碼', after: { active: false } });
     await loadTempPassList();
   } catch(e) { alert('撤銷失敗：'+e.message); }
 }
@@ -22686,7 +22842,8 @@ async function addCaseType() {
   if (!name) { _confirmModal('請輸入案由名稱', ()=>{}, '確定', '#333'); return; }
   if (_caseTypesList.includes(name)) { _confirmModal('已有相同的案由', ()=>{}, '確定', '#333'); return; }
   try {
-    await fbAdd(COL_CASETYPES, { name, order: _caseTypesList.length });
+    const newId = await fbAdd(COL_CASETYPES, { name, order: _caseTypesList.length });
+    _logAudit('create', COL_CASETYPES, { targetId: newId, summary: '新增案由「'+name+'」', after: { name } });
     inp.value = '';
     await _reloadCaseTypes();
     await loadAdminCaseTypes();
@@ -22708,6 +22865,7 @@ async function deleteCaseType(name) {
         await Promise.all(toAdd.map((n, i) => fbAdd(COL_CASETYPES, { name: n, order: i })));
       } else {
         await fbDelete(COL_CASETYPES, doc.id);
+        _logAudit('delete', COL_CASETYPES, { targetId: doc.id, summary: '刪除案由「'+name+'」' });
       }
       await _reloadCaseTypes();
       await loadAdminCaseTypes();
@@ -23306,6 +23464,7 @@ async function saveScheduleEdit() {
 
   try {
     await fbUpdate(COL_SCHEDULE, id, { date, unit, topic });
+    _logAudit('update', COL_SCHEDULE, { targetId: id, summary: '編輯定訓排程「'+date+'」', after: { date, unit, topic } });
     closeScheduleEdit();
     await loadAdminSchedule();
   } catch(e) { alert('儲存失敗：' + e.message); }
@@ -23320,7 +23479,8 @@ async function addSchedule() {
   if (!unit) { alert('請選擇分隊'); return; }
 
   try {
-    await fbAdd(COL_SCHEDULE, { date, unit, topic });
+    const newId = await fbAdd(COL_SCHEDULE, { date, unit, topic });
+    _logAudit('create', COL_SCHEDULE, { targetId: newId, summary: '新增定訓排程「'+date+'」', after: { date, unit, topic } });
     document.getElementById('scheduleDate').value  = '';
     document.getElementById('scheduleTopic').value = '';
     await loadAdminSchedule();
@@ -23331,6 +23491,7 @@ async function deleteSchedule(id, date) {
   if (!confirm(`確定刪除 ${date} 的定訓排程？`)) return;
   try {
     await fbDelete(COL_SCHEDULE, id);
+    _logAudit('delete', COL_SCHEDULE, { targetId: id, summary: '刪除定訓排程「'+date+'」' });
     await loadAdminSchedule();
   } catch(e) { alert('刪除失敗：' + e.message); }
 }
@@ -23838,6 +23999,7 @@ async function rejectCorrection(corrId) {
       status: 'rejected',
       handledAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    _logAudit('reject', COL_CORRECTION, { targetId: corrId, summary: '駁回修正申請（'+(corrData.memberName||'')+'）', after: { status: 'rejected' } });
     await loadAdminCorrections();
     _loadAdminBadges();
   } catch(e) { alert('操作失敗：' + e.message); }
@@ -23860,6 +24022,7 @@ async function reviewCorrection(corrId, docId, type) {
         status: 'approved',
         handledAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
+      _logAudit('approve_delete', COL_CORRECTION, { targetId: corrId, summary: '核准並刪除'+(type==='outing'?'協勤':'簽到退')+'紀錄（'+(corrData.memberName||'')+'）', after: { status: 'approved', deletedDocId: docId, deletedCol: col } });
       await loadAdminCorrections();
       _loadAdminBadges();
       alert('✅ 已核准並刪除該筆紀錄。');
@@ -23925,6 +24088,7 @@ async function reviewCorrection(corrId, docId, type) {
               status: 'approved',
               handledAt: firebase.firestore.FieldValue.serverTimestamp(),
             });
+            _logAudit('approve', COL_CORRECTION, { targetId: corrId, summary: '核准修正申請（'+(corrData.memberName||'')+'）', before: fields, after: { status: 'approved' } });
           } catch(e) { alert('已儲存紀錄，但核准狀態更新失敗：' + e.message); }
           await loadAdminCorrections();
           _loadAdminBadges();
