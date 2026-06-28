@@ -3786,6 +3786,23 @@ function _dlCSV(content, filename) {
       <div id="adminAuditLogList"><div class="query-empty"><span class="empty-icon">📜</span>請點查詢載入紀錄</div></div>
     </div>
 
+    <div id="adminSec-roles" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#5e35b1 0%,#4527a0 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">角色與權限管理</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">角色檢視層，不影響既有登入權限判斷</div></div>
+        <button onclick="loadAdminRoles()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
+      </div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="font-size:0.78rem;color:var(--text-light);line-height:1.6;margin-bottom:10px;">⚠️ 本頁僅供後台檢視與紀錄角色／權限對照，<strong>不會</strong>變更實際登入帳號的權限判斷邏輯（仍由帳號的管理員／承辦人身分決定）。</div>
+        <button onclick="openRoleEditor(null)" style="background:#5e35b1;color:white;border:none;border-radius:8px;padding:10px 18px;font-size:0.86rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">＋ 新增角色</button>
+      </div>
+      <div id="adminRolesList"><div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div></div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-top:4px;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">📊 角色權限對照表</div>
+        <div id="adminRoleMatrix"><div class="query-empty"><span class="empty-icon">📊</span>載入中...</div></div>
+      </div>
+    </div>
+
     <div id="adminSec-import" style="display:none;padding:0 0 20px;">
       <div style="background:linear-gradient(135deg,#1565c0 0%,#0d47a1 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
@@ -5479,6 +5496,7 @@ var COL_MEETING_EVENTS = 'meetingEvents';
 var COL_MEETING_TYPES  = 'meetingTypes';
 var COL_MEETING_LOCS   = 'meetingLocations';
 var COL_CASETYPES = 'caseTypes';
+var COL_ROLES = 'rbacRoles'; // 角色與權限設定（新增管理/可視化層，不影響既有 usr.role/isAdmin 實際判斷邏輯）
 
 // Firebase 初始化（SDK 用 defer 載入，window.onload 後才 init）
 var _fbReady = false;
@@ -12890,6 +12908,7 @@ const ADMIN_MENU_GROUPS = [
   { cat:'通知中心',   icon:'🔔', ids:['adminSec-pushctrl','adminSec-announce'] },
   { cat:'系統維護',   icon:'🛠', ids:['adminSec-repair','adminSec-confirm'] },
   { cat:'系統監控',   icon:'📈', ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
+  { cat:'角色與權限管理', icon:'🔐', ids:['adminSec-roles'] },
   { cat:'使用者回饋', icon:'💬', ids:['adminSec-feedback'] },
 ];
 
@@ -12915,6 +12934,7 @@ function _buildAdminMenu() {
     { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
     { id:'adminSec-auditlog',   icon:'📜', label:'操作紀錄',   sub:'後台管理動作稽核',   color:'#263238', adminOnly:true },
     { id:'adminSec-usagetest',  icon:'📡', label:'配額監控',   sub:'今日讀取狀態總覽',   color:'#1565c0', adminOnly:true },
+    { id:'adminSec-roles',      icon:'🔐', label:'角色與權限', sub:'角色檢視與權限對照', color:'#5e35b1', adminOnly:true },
   ];
   const itemMap = {};
   items.forEach(i => { itemMap[i.id] = i; });
@@ -12976,7 +12996,7 @@ function _setAdminBadge(sectionId, count) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest','adminSec-auditlog'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest','adminSec-auditlog','adminSec-roles'];
   const menuGrid = document.getElementById('adminMenuGrid');
   const dashboardSec = document.getElementById('adminSec-dashboard');
   if (sectionId === 'dashboard') {
@@ -13008,6 +13028,7 @@ function adminShowSection(sectionId) {
   if (sectionId === 'adminSec-pushctrl') loadAdminPushCtrl();
   if (sectionId === 'adminSec-confirm') initConfirmSection();
   if (sectionId === 'adminSec-usagetest') _loadUsageMonitor();
+  if (sectionId === 'adminSec-roles') loadAdminRoles();
   if (sectionId === 'adminSec-loginlog') {
     const df = document.getElementById('loginLogFrom');
     const dt = document.getElementById('loginLogTo');
@@ -13527,7 +13548,7 @@ const AUDIT_MODULE_LABEL = {
   whitelist: '成員帳號', units: '分隊管理', caseTypes: '案由管理',
   trainingSchedule: '定訓行事曆', correctionRequests: '修正申請', changelogs: '版本紀錄',
   announcements: '公告', confirmTasks: '確認任務', tempPasswords: '臨時密碼',
-  pushLogs: '推播控制台', pushSubscriptions: '推播裝置',
+  pushLogs: '推播控制台', pushSubscriptions: '推播裝置', rbacRoles: '角色與權限',
 };
 const AUDIT_ACTION_LABEL = {
   create:'新增', update:'編輯', delete:'刪除', retire:'退隊', restore:'恢復',
@@ -13605,6 +13626,303 @@ function resetAuditLog() {
   const m = document.getElementById('auditLogModule'); if (m) m.value = '';
   const el = document.getElementById('adminAuditLogList');
   if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>請點查詢載入紀錄</div>';
+}
+
+// ════════════════════════════════════════
+// 角色與權限管理（RBAC）— 新增管理／可視化層
+// 注意：本模組僅供後台檢視與紀錄角色權限對照，
+// 不會、也不應更動既有 usr.role / usr.isAdmin 的實際權限判斷邏輯。
+// ════════════════════════════════════════
+const PERMISSION_MODULES = [
+  { key:'members',    label:'成員帳號' },
+  { key:'units',      label:'分隊管理' },
+  { key:'casetypes',  label:'案由管理' },
+  { key:'schedule',   label:'定訓行事曆' },
+  { key:'correction', label:'修正申請' },
+  { key:'announce',   label:'公告' },
+  { key:'push',       label:'推播' },
+  { key:'confirm',    label:'確認任務' },
+  { key:'auditlog',   label:'操作紀錄' },
+  { key:'usage',      label:'配額監控' },
+];
+const PERMISSION_ACTIONS = [
+  { key:'view',    label:'查看' },
+  { key:'create',  label:'新增' },
+  { key:'edit',    label:'編輯' },
+  { key:'delete',  label:'刪除' },
+  { key:'send',    label:'發送' },
+  { key:'approve', label:'核准' },
+];
+const DEFAULT_ROLES = [
+  { id:'admin', name:'管理員', desc:'系統最高權限，可管理所有模組',
+    perms:{ members:['view','create','edit','delete'], units:['view','create','edit','delete'], casetypes:['view','create','edit','delete'], schedule:['view','create','edit','delete'], correction:['view','approve','delete'], announce:['view','create','edit','delete','send'], push:['view','send'], confirm:['view','create','edit','delete'], auditlog:['view'], usage:['view'] } },
+  { id:'officer', name:'承辦人', desc:'協助處理日常行政與審核作業',
+    perms:{ members:['view','edit'], units:['view'], casetypes:['view','create','edit'], schedule:['view','create','edit'], correction:['view','approve'], announce:['view','create','edit','send'], push:['view','send'], confirm:['view','create','edit'], auditlog:['view'], usage:['view'] } },
+  { id:'cadre', name:'幹部', desc:'分隊幹部，查看為主、部分編輯權限',
+    perms:{ members:['view'], units:['view'], casetypes:['view'], schedule:['view'], correction:['view'], announce:['view'], push:[], confirm:['view'], auditlog:[], usage:[] } },
+  { id:'member', name:'一般成員', desc:'一般志工成員，僅可查看公開資訊',
+    perms:{ members:[], units:[], casetypes:[], schedule:['view'], correction:[], announce:['view'], push:[], confirm:[], auditlog:[], usage:[] } },
+];
+
+var _rolesCache = [];
+var _roleEditTarget = null; // 編輯中的角色 id；null = 新增模式
+
+async function _seedDefaultRolesIfEmpty() {
+  try {
+    const existing = await fbList(COL_ROLES);
+    if (existing.length) return existing;
+    for (const r of DEFAULT_ROLES) {
+      await fbAdd(COL_ROLES, {
+        name: r.name, desc: r.desc, perms: r.perms,
+        isDefault: true, baseRole: r.id, active: true,
+        createdAt: new Date().toLocaleString('sv').replace('T', ' '),
+      });
+    }
+    return await fbList(COL_ROLES);
+  } catch(e) { console.warn('_seedDefaultRolesIfEmpty:', e); return []; }
+}
+
+async function loadAdminRoles() {
+  const el = document.getElementById('adminRolesList');
+  if (!el) return;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
+  try {
+    let docs = await fbList(COL_ROLES);
+    if (!docs.length) docs = await _seedDefaultRolesIfEmpty();
+    docs.sort((a, b) => {
+      if (!!a.isDefault !== !!b.isDefault) return a.isDefault ? -1 : 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    _rolesCache = docs;
+    if (!docs.length) {
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>查無角色資料</div>';
+    } else {
+      el.innerHTML = '';
+      docs.forEach(r => el.appendChild(_roleCardEl(r)));
+    }
+    renderPermissionMatrix(docs);
+  } catch(e) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
+  }
+}
+
+function _roleCardEl(r) {
+  const card = document.createElement('div');
+  card.style.cssText = 'background:white;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.07);padding:14px 16px;margin-bottom:10px;';
+
+  const top = document.createElement('div');
+  top.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;';
+  const nameSpan = document.createElement('span');
+  nameSpan.style.cssText = 'font-size:0.92rem;font-weight:700;color:var(--text);';
+  nameSpan.textContent = r.name || '';
+  const activeTag = document.createElement('span');
+  const isActive = r.active !== false;
+  activeTag.style.cssText = `border-radius:8px;padding:2px 8px;font-size:0.68rem;font-weight:600;background:${isActive?'#e8f5e9':'#eee'};color:${isActive?'#2e7d32':'#888'};`;
+  activeTag.textContent = isActive ? '啟用中' : '已停用';
+  const defaultTag = document.createElement('span');
+  defaultTag.style.cssText = `border-radius:8px;padding:2px 8px;font-size:0.68rem;font-weight:600;background:${r.isDefault?'#e3f2fd':'#fff3e0'};color:${r.isDefault?'#1565c0':'#e65100'};`;
+  defaultTag.textContent = r.isDefault ? '預設角色' : '自訂角色';
+  top.appendChild(nameSpan); top.appendChild(activeTag); top.appendChild(defaultTag);
+
+  let permCount = 0;
+  Object.values(r.perms || {}).forEach(arr => { permCount += (arr || []).length; });
+  const desc = document.createElement('div');
+  desc.style.cssText = 'font-size:0.78rem;color:var(--text-mid);margin-bottom:8px;';
+  desc.textContent = (r.desc || '') + '（共 ' + permCount + ' 項權限）';
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+  const mkBtn = (label, color, bg, border, onclick) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = `background:${bg};border:${border};border-radius:6px;padding:6px 12px;font-size:0.76rem;cursor:pointer;color:${color};font-family:'Noto Sans TC',sans-serif;`;
+    b.onclick = onclick;
+    return b;
+  };
+  btnRow.appendChild(mkBtn('編輯', 'white', '#1a6b9a', 'none', () => openRoleEditor(r.id)));
+  btnRow.appendChild(mkBtn('複製', 'var(--text-mid)', 'none', '1px solid var(--border)', () => cloneRole(r.id)));
+  btnRow.appendChild(mkBtn(isActive ? '停用' : '啟用', 'var(--text-mid)', 'none', '1px solid var(--border)', () => toggleRoleActive(r.id, !isActive)));
+  if (!r.isDefault) btnRow.appendChild(mkBtn('刪除', '#b94a3a', 'none', '1px solid #f5c6c6', () => deleteRole(r.id)));
+
+  card.appendChild(top); card.appendChild(desc); card.appendChild(btnRow);
+  return card;
+}
+
+function renderPermissionMatrix(roles) {
+  const el = document.getElementById('adminRoleMatrix');
+  if (!el) return;
+  const activeRoles = (roles || []).filter(r => r.active !== false);
+  if (!activeRoles.length) {
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>尚無啟用中的角色</div>';
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'overflow-x:auto;';
+  const table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.74rem;';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  const corner = document.createElement('th');
+  corner.textContent = '模組 ＼ 角色';
+  corner.style.cssText = 'text-align:left;padding:6px 8px;border-bottom:2px solid var(--border);color:var(--text-mid);white-space:nowrap;';
+  headRow.appendChild(corner);
+  activeRoles.forEach(r => {
+    const th = document.createElement('th');
+    th.textContent = r.name || '';
+    th.style.cssText = 'text-align:center;padding:6px 8px;border-bottom:2px solid var(--border);color:var(--text);white-space:nowrap;';
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  const tbody = document.createElement('tbody');
+  PERMISSION_MODULES.forEach(m => {
+    const tr = document.createElement('tr');
+    const modTd = document.createElement('td');
+    modTd.textContent = m.label;
+    modTd.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-mid);white-space:nowrap;font-weight:600;';
+    tr.appendChild(modTd);
+    activeRoles.forEach(r => {
+      const td = document.createElement('td');
+      td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;color:var(--text-mid);';
+      const acts = (r.perms && r.perms[m.key]) || [];
+      if (!acts.length) {
+        td.textContent = '—';
+      } else {
+        td.textContent = acts.map(a => (PERMISSION_ACTIONS.find(p => p.key === a) || {}).label || a).join('・');
+        td.style.color = 'var(--red-dark)';
+        td.style.fontWeight = '600';
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(thead); table.appendChild(tbody);
+  wrap.appendChild(table);
+  el.innerHTML = '';
+  el.appendChild(wrap);
+}
+
+function openRoleEditor(id) {
+  const r = id ? _rolesCache.find(x => x.id === id) : null;
+  _roleEditTarget = r ? r.id : null;
+  document.getElementById('roleEditTitle').textContent = r ? ('編輯角色：' + (r.name || '')) : '新增角色';
+  document.getElementById('roleEditName').value = r ? (r.name || '') : '';
+  document.getElementById('roleEditDesc').value = r ? (r.desc || '') : '';
+  const note = document.getElementById('roleEditDefaultNote');
+  if (note) note.style.display = (r && r.isDefault) ? '' : 'none';
+
+  const body = document.getElementById('roleEditMatrixBody');
+  body.innerHTML = '';
+  const checkedPerms = (r && r.perms) || {};
+  PERMISSION_MODULES.forEach(m => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);';
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:0.84rem;font-weight:700;color:var(--text);margin-bottom:6px;';
+    label.textContent = m.label;
+    row.appendChild(label);
+    const actsWrap = document.createElement('div');
+    actsWrap.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;';
+    const checked = checkedPerms[m.key] || [];
+    PERMISSION_ACTIONS.forEach(a => {
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'roleEditPermCb';
+      cb.dataset.module = m.key;
+      cb.dataset.action = a.key;
+      cb.checked = checked.includes(a.key);
+      const span = document.createElement('span');
+      span.textContent = a.label;
+      lbl.appendChild(cb); lbl.appendChild(span);
+      actsWrap.appendChild(lbl);
+    });
+    row.appendChild(actsWrap);
+    body.appendChild(row);
+  });
+
+  const m = document.getElementById('roleEditModal');
+  m.style.display = 'block';
+  m.scrollTop = 0;
+}
+
+function closeRoleEditor() {
+  const m = document.getElementById('roleEditModal');
+  if (m) m.style.display = 'none';
+}
+
+async function saveRoleEditor() {
+  const name = (document.getElementById('roleEditName').value || '').trim();
+  const desc = (document.getElementById('roleEditDesc').value || '').trim();
+  if (!name) { _confirmModal('請輸入角色名稱', ()=>{}, '確定', '#333'); return; }
+  const perms = {};
+  document.querySelectorAll('.roleEditPermCb').forEach(cb => {
+    if (!cb.checked) return;
+    const mod = cb.dataset.module;
+    if (!perms[mod]) perms[mod] = [];
+    perms[mod].push(cb.dataset.action);
+  });
+  try {
+    if (_roleEditTarget) {
+      const before = _rolesCache.find(x => x.id === _roleEditTarget);
+      await fbUpdate(COL_ROLES, _roleEditTarget, { name, desc, perms });
+      _logAudit('update', COL_ROLES, {
+        targetId: _roleEditTarget, summary: '編輯角色「' + name + '」權限',
+        before: before ? { name: before.name, perms: before.perms } : null,
+        after: { name, perms },
+      });
+    } else {
+      const newId = await fbAdd(COL_ROLES, {
+        name, desc, perms, isDefault: false, active: true,
+        createdAt: new Date().toLocaleString('sv').replace('T', ' '),
+      });
+      _logAudit('create', COL_ROLES, { targetId: newId, summary: '新增角色「' + name + '」', after: { name, perms } });
+    }
+    closeRoleEditor();
+    loadAdminRoles();
+  } catch(e) {
+    _confirmModal('儲存失敗：' + e.message, ()=>{}, '確定', '#333');
+  }
+}
+
+async function toggleRoleActive(id, makeActive) {
+  const r = _rolesCache.find(x => x.id === id);
+  if (!r) return;
+  try {
+    await fbUpdate(COL_ROLES, id, { active: makeActive });
+    _logAudit(makeActive ? 'enable' : 'disable', COL_ROLES, {
+      targetId: id, summary: (makeActive ? '啟用' : '停用') + '角色「' + (r.name || '') + '」',
+    });
+    loadAdminRoles();
+  } catch(e) { _confirmModal('操作失敗：' + e.message, ()=>{}, '確定', '#333'); }
+}
+
+async function cloneRole(id) {
+  const r = _rolesCache.find(x => x.id === id);
+  if (!r) return;
+  try {
+    const newName = (r.name || '') + '（複製）';
+    const newId = await fbAdd(COL_ROLES, {
+      name: newName, desc: r.desc || '', perms: JSON.parse(JSON.stringify(r.perms || {})),
+      isDefault: false, active: true,
+      createdAt: new Date().toLocaleString('sv').replace('T', ' '),
+    });
+    _logAudit('create', COL_ROLES, { targetId: newId, summary: '複製角色「' + (r.name || '') + '」', after: { name: newName } });
+    loadAdminRoles();
+  } catch(e) { _confirmModal('複製失敗：' + e.message, ()=>{}, '確定', '#333'); }
+}
+
+function deleteRole(id) {
+  const r = _rolesCache.find(x => x.id === id);
+  if (!r) return;
+  if (r.isDefault) { _confirmModal('預設角色無法刪除，可使用「停用」即可', ()=>{}, '確定', '#333'); return; }
+  _confirmModal('確定要刪除角色「' + (r.name || '') + '」嗎？', async () => {
+    try {
+      await fbDelete(COL_ROLES, id);
+      _logAudit('delete', COL_ROLES, { targetId: id, summary: '刪除角色「' + (r.name || '') + '」' });
+      loadAdminRoles();
+    } catch(e) { _confirmModal('刪除失敗：' + e.message, ()=>{}, '確定', '#333'); }
+  }, '刪除', '#b94a3a');
 }
 
 // ── 天氣卡片動畫 ──
@@ -26789,6 +27107,24 @@ function showTempPassErr(msg) {
     <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
       <button id="adminEditSaveBtn" onclick="adminEditSave()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
       <button onclick="document.getElementById('adminEditModal').style.display='none';" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 角色與權限編輯 Modal -->
+<div id="roleEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px calc(83px + max(env(safe-area-inset-bottom,0px),8px));">
+  <div style="background:white;border-radius:10px;width:100%;max-width:480px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:16px 24px 12px;border-bottom:1px solid #f0f0f0;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;color:var(--text);" id="roleEditTitle">新增角色</div>
+    <div style="padding:16px 24px;max-height:65vh;overflow-y:auto;">
+      <div id="roleEditDefaultNote" style="display:none;background:#fff8e1;color:#8d6e00;font-size:0.76rem;border-radius:8px;padding:8px 10px;margin-bottom:12px;">這是系統預設角色，建議只調整權限內容，名稱保留原樣較不易混淆。</div>
+      <div style="margin-bottom:10px;"><label style="font-size:0.78rem;">角色名稱</label><input type="text" id="roleEditName" style="width:100%;"></div>
+      <div style="margin-bottom:14px;"><label style="font-size:0.78rem;">說明</label><input type="text" id="roleEditDesc" style="width:100%;"></div>
+      <div style="font-size:0.84rem;font-weight:700;color:var(--text);margin-bottom:4px;">權限矩陣</div>
+      <div id="roleEditMatrixBody"></div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid #f0f0f0;display:flex;gap:10px;">
+      <button onclick="saveRoleEditor()" class="btn-search" style="flex:1;min-height:unset;padding:12px;">儲　存</button>
+      <button onclick="closeRoleEditor()" class="btn-reset" style="min-height:unset;padding:12px;">取消</button>
     </div>
   </div>
 </div>
