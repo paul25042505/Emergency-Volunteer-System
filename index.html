@@ -15243,39 +15243,58 @@ async function loadAdminDashboard() {
 
   const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
 
-  try {
-    await ensureFirebase();
-    const [loginSnap, corrections, confirmTasks, pushLogs, announces, changelogs] = await Promise.all([
-      _fbDB.collection(COL_LOGINLOG).orderBy('loginAt', 'desc').limit(500).get({ source: 'server' }),
-      fbList(COL_CORRECTION),
-      fbList(COL_CONFIRM),
-      fbList('pushLogs'),
-      fbList(COL_ANNOUNCE),
-      fbList(COL_CHANGELOG),
-    ]);
+  await ensureFirebase();
+  const results = await Promise.allSettled([
+    _fbDB.collection(COL_LOGINLOG).orderBy('loginAt', 'desc').limit(500).get(),
+    fbList(COL_CORRECTION),
+    fbList(COL_CONFIRM),
+    fbList('pushLogs'),
+    fbList(COL_ANNOUNCE),
+    fbList(COL_CHANGELOG),
+    fbGet('settings', 'dailyUsage'),
+  ]);
+  const [loginRes, corrRes, confirmRes, pushRes, announceRes, changelogRes, usageRes] = results;
+  const anyFailed = results.some(r => r.status === 'rejected');
+  results.filter(r => r.status === 'rejected').forEach(r => console.warn('loadAdminDashboard:', r.reason));
 
-    const todayLogins   = loginSnap.docs.map(d => d.data()).filter(d => (d.loginAt || '').substring(0, 10) === todayStr);
+  try {
+    const loginSnap   = loginRes.status === 'fulfilled' ? loginRes.value : null;
+    const corrections = corrRes.status === 'fulfilled' ? corrRes.value : [];
+    const confirmTasks = confirmRes.status === 'fulfilled' ? confirmRes.value : [];
+    const pushLogs    = pushRes.status === 'fulfilled' ? pushRes.value : [];
+    const announces   = announceRes.status === 'fulfilled' ? announceRes.value : [];
+    const changelogs  = changelogRes.status === 'fulfilled' ? changelogRes.value : [];
+
+    const todayLogins   = loginSnap ? loginSnap.docs.map(d => d.data()).filter(d => (d.loginAt || '').substring(0, 10) === todayStr) : [];
     const activeUsers    = new Set(todayLogins.map(d => d.memberName).filter(Boolean));
     const todayPushCount = pushLogs.filter(l => (l.sentAt || '').startsWith(todayStr)).length;
     const pendingCorr    = corrections.filter(d => d.status === 'pending').length;
     const pendingConfirm = confirmTasks.filter(d => d.status === 'active').length;
 
-    cardsEl.innerHTML = _dashStatCard('今日登入次數', todayLogins.length, '#1565c0')
-      + _dashStatCard('今日活躍使用者', activeUsers.size, '#2e7d32')
-      + _dashStatCard('今日推播數', todayPushCount, '#c0392b')
-      + _dashStatCard('待審核項目數', pendingCorr + pendingConfirm, '#e65100');
+    cardsEl.innerHTML = _dashStatCard('今日登入次數', loginRes.status === 'fulfilled' ? todayLogins.length : '—', '#1565c0')
+      + _dashStatCard('今日活躍使用者', loginRes.status === 'fulfilled' ? activeUsers.size : '—', '#2e7d32')
+      + _dashStatCard('今日推播數', pushRes.status === 'fulfilled' ? todayPushCount : '—', '#c0392b')
+      + _dashStatCard('待審核項目數', (corrRes.status === 'fulfilled' && confirmRes.status === 'fulfilled') ? (pendingCorr + pendingConfirm) : '—', '#e65100');
 
-    if (healthBody) healthBody.innerHTML = `<span style="color:#2e7d32;font-weight:700;">● 系統運作正常</span>　Firestore 連線正常・資料讀取成功`;
-
-    if (usageBody) {
-      const doc      = await fbGet('settings', 'dailyUsage');
-      const isToday  = doc && doc.date === todayStr;
-      const pct      = isToday ? (doc.pct || 0) : 0;
-      const color    = pct >= 90 ? '#c0392b' : pct >= 70 ? '#e67e22' : '#2e7d32';
-      usageBody.innerHTML = `<span style="color:${color};font-weight:700;">${pct}%</span>　費用預算使用率${isToday ? '' : '（尚無今日資料）'}`;
+    if (healthBody) {
+      healthBody.innerHTML = anyFailed
+        ? `<span style="color:#c0392b;font-weight:700;">● 部分資料讀取失敗</span>　<a href="javascript:void(0)" onclick="loadAdminDashboard()" style="color:#1565c0;">點此重試</a>`
+        : `<span style="color:#2e7d32;font-weight:700;">● 系統運作正常</span>　Firestore 連線正常・資料讀取成功`;
     }
 
-    if (announceBody) {
+    if (usageBody) {
+      if (usageRes.status === 'fulfilled') {
+        const doc      = usageRes.value;
+        const isToday  = doc && doc.date === todayStr;
+        const pct      = isToday ? (doc.pct || 0) : 0;
+        const color    = pct >= 90 ? '#c0392b' : pct >= 70 ? '#e67e22' : '#2e7d32';
+        usageBody.innerHTML = `<span style="color:${color};font-weight:700;">${pct}%</span>　費用預算使用率${isToday ? '' : '（尚無今日資料）'}`;
+      } else {
+        usageBody.textContent = '讀取失敗';
+      }
+    }
+
+    if (announceBody && announceRes.status === 'fulfilled') {
       const active = announces.filter(a => (a.audience || 'all') !== 'members').sort((a, b) => {
         const p = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
         if (p !== 0) return p;
@@ -15291,9 +15310,11 @@ async function loadAdminDashboard() {
       } else {
         announceBody.textContent = '目前尚無公告';
       }
+    } else if (announceBody) {
+      announceBody.textContent = '讀取失敗';
     }
 
-    if (changelogBody) {
+    if (changelogBody && changelogRes.status === 'fulfilled') {
       const sorted = changelogs.slice().sort((a, b) => {
         if (a.isLatest && !b.isLatest) return -1;
         if (!a.isLatest && b.isLatest) return 1;
@@ -15313,9 +15334,11 @@ async function loadAdminDashboard() {
       } else {
         changelogBody.textContent = '尚無版本紀錄';
       }
+    } else if (changelogBody) {
+      changelogBody.textContent = '讀取失敗';
     }
   } catch (e) {
-    if (healthBody) healthBody.innerHTML = `<span style="color:#c0392b;font-weight:700;">● 資料讀取異常</span>　請重新整理頁面`;
+    if (healthBody) healthBody.innerHTML = `<span style="color:#c0392b;font-weight:700;">● 資料讀取異常</span>　<a href="javascript:void(0)" onclick="loadAdminDashboard()" style="color:#1565c0;">點此重試</a>`;
     console.warn('loadAdminDashboard:', e);
   }
 }
