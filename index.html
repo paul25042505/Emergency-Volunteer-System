@@ -4914,9 +4914,9 @@ function _dlCSV(content, filename) {
             <label>證照等級 <span class="req">*</span></label>
             <select id="profileCertSel" style="width:100%;">
               <option value="">— 請選擇 —</option>
-              <option value="EMT-1">EMT-1</option>
-              <option value="EMT-2">EMT-2</option>
-              <option value="EMT-P">EMT-P（中級）</option>
+              <option value="EMT-1">EMT-1（初級）</option>
+              <option value="EMT-2">EMT-2（中級）</option>
+              <option value="EMT-P">EMT-P（高級）</option>
             </select>
           </div>
           <div class="card-divider"></div>
@@ -12449,7 +12449,7 @@ async function adminEditWl(id,email,memberName,isAdmin,unit,role,title,cert,cert
   var SQUADS=['第一小隊','第二小隊','第三小隊'];
   var squadOpts='<option value=""'+(squad===''?' selected':'')+'>（無）</option>'+SQUADS.map(s=>'<option value="'+s+'"'+(s===squad?' selected':'')+'>'+s+'</option>').join('');
   var roleOpts='<option value="member"'+(role==='member'?' selected':'')+'>一般成員</option><option value="squadLeader"'+(role==='squadLeader'?' selected':'')+'>小隊長</option><option value="cadre"'+(role==='cadre'?' selected':'')+'>幹部</option><option value="officer"'+(role==='officer'?' selected':'')+'>分隊承辦人</option><option value="admin"'+(role==='admin'?' selected':'')+'>系統管理員</option>';
-  var certOpts='<option value=""'+(cert===''?' selected':'')+'>無</option><option value="EMT-1"'+(cert==='EMT-1'?' selected':'')+'>EMT-1</option><option value="EMT-2"'+(cert==='EMT-2'?' selected':'')+'>EMT-2</option><option value="EMT-P"'+(cert==='EMT-P'?' selected':'')+'>EMT-P（中級）</option>';
+  var certOpts='<option value=""'+(cert===''?' selected':'')+'>無</option><option value="EMT-1"'+(cert==='EMT-1'?' selected':'')+'>EMT-1（初級）</option><option value="EMT-2"'+(cert==='EMT-2'?' selected':'')+'>EMT-2（中級）</option><option value="EMT-P"'+(cert==='EMT-P'?' selected':'')+'>EMT-P（高級）</option>';
   function buildExtraHtml(arr){
     return arr.map((em,i)=>'<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="email" value="'+em+'" style="flex:1;background:white;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--text);box-sizing:border-box;" oninput="window.aeWlExtra['+i+']=this.value.trim().toLowerCase()"><button type="button" onclick="window.aeWlRemove('+i+')" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:6px 10px;font-size:0.82rem;color:#b94a3a;cursor:pointer;">✕</button></div>').join('')
     +'<button type="button" onclick="window.aeWlAdd()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:7px 14px;font-size:0.82rem;cursor:pointer;color:var(--text-mid);width:100%;margin-top:2px;">＋ 新增信箱</button>';
