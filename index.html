@@ -6824,10 +6824,12 @@ function goBack() {
       const practiceView = idoc && idoc.getElementById('practiceView');
       const achievementView = idoc && idoc.getElementById('achievementView');
       const scenarioView = idoc && idoc.getElementById('scenarioView');
+      const notebookView = idoc && idoc.getElementById('notebookView');
       if (nodeView && nodeView.style.display === 'block') { ifr.contentWindow.exitNode(); return; }
       if (zoneView && zoneView.style.display === 'block') { ifr.contentWindow.showDashboard(); return; }
       if (practiceView && practiceView.style.display === 'block') { ifr.contentWindow.exitPractice(); return; }
       if (achievementView && achievementView.style.display === 'block') { ifr.contentWindow.showDashboard(); return; }
+      if (notebookView && notebookView.style.display === 'block') { ifr.contentWindow.showDashboard(); return; }
       if (scenarioView && scenarioView.style.display === 'block') {
         const sState = ifr.contentWindow.scenarioState;
         if (sState && sState.scenario) { ifr.contentWindow.exitScenario(); return; }
@@ -16116,7 +16118,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   /* ── C. 戰術網格浮水印 Tactical Grid Watermark ── */
   .ems-view-wrap{position:relative;}
   .ems-map-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--ems-map-opacity);background-image:var(--ems-map-svg);background-size:240px;background-repeat:repeat;background-position:center;}
-  .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView,.ems-view-wrap>#achievementView,.ems-view-wrap>#scenarioView{position:relative;z-index:1;}
+  .ems-view-wrap>#dashboardView,.ems-view-wrap>#zoneView,.ems-view-wrap>#achievementView,.ems-view-wrap>#scenarioView,.ems-view-wrap>#notebookView{position:relative;z-index:1;}
 
   /* ── D. 反光黃狀態系統 Hi-Vis Status ── */
   .ems-hiviz-badge{display:inline-flex;align-items:center;gap:4px;background:var(--ems-hiviz);color:var(--ems-hiviz-ink);font-family:var(--ems-font-mono);font-size:.66rem;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:var(--ems-radius-sm);white-space:nowrap;flex-shrink:0;}
@@ -16254,7 +16256,7 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
   .reflect-box{background:var(--ems-steel-faint);border:1px dashed var(--ems-steel);border-radius:var(--ems-radius);padding:12px;margin-top:8px;}
   .reveal-box{display:none;background:var(--ems-steel-faint);border-radius:var(--ems-radius);padding:10px;margin-top:6px;font-size:0.88rem;}
   .quiz-opt:disabled{opacity:0.85;}
-  #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView,#scenarioView{display:none;}
+  #dashboardView,#zoneView,#nodeView,#practiceView,#achievementView,#scenarioView,#notebookView{display:none;}
   .mermaid{overflow-x:auto;}
   .ems-flow-wrap{position:relative;cursor:zoom-in;}
   .ems-flow-zoom-hint{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:.68rem;padding:3px 8px;border-radius:0;pointer-events:none;display:flex;align-items:center;gap:3px;}
@@ -16300,6 +16302,13 @@ const EMS_ACADEMY_HTML = `<!DOCTYPE html>
     <div class="ems-map-watermark"></div>
     <div id="scenarioView">
       <div id="scenarioContent"></div>
+    </div>
+  </div>
+
+  <div class="ems-view-wrap">
+    <div class="ems-map-watermark"></div>
+    <div id="notebookView">
+      <div id="notebookContent"></div>
     </div>
   </div>
   </div>
@@ -17092,7 +17101,8 @@ var ZONES = [
   { icon: '<span class="ems-icon" translate="no">child_care</span>', title: '特殊病患中心', desc: '小兒・孕婦・長者・精神行為急症', color: '#2FAE85', chapterIds: [8, 9], status: 'active' },
   { icon: '<span class="ems-icon" translate="no">fire_extinguisher</span>', title: '特殊事件中心', desc: 'START檢傷・大量傷病患・HAZMAT', color: '#D7FF1A', chapterIds: [10, 11], status: 'active' },
   { icon: '<span class="ems-icon" translate="no">call</span>', title: '派遣模擬演練', desc: '分支劇情模擬・20件案例涵蓋全章節', color: '#5C8FB5', status: 'active', route: 'scenario' },
-  { icon: '<span class="ems-icon" translate="no">verified</span>', title: '訓練模擬站', desc: '綜合題庫・任務區題庫・錯題本複習', color: '#D98C2E', status: 'active', route: 'examhall' }
+  { icon: '<span class="ems-icon" translate="no">verified</span>', title: '訓練模擬站', desc: '綜合題庫・任務區題庫・錯題本複習', color: '#D98C2E', status: 'active', route: 'examhall' },
+  { icon: '<span class="ems-icon" translate="no">menu_book</span>', title: '速查筆記', desc: '全章節記憶口訣＋關鍵指標總覽', color: '#5C8FB5', status: 'active', route: 'notebook' }
 ];
 
 var emsState = {
@@ -17297,7 +17307,7 @@ function renderZoneCard(z, zi) {
     '</div></div>';
   }
   if (z.route) {
-    var routeFn = z.route === 'scenario' ? 'showScenarioCenter()' : 'showTestStation()';
+    var routeFn = z.route === 'scenario' ? 'showScenarioCenter()' : (z.route === 'notebook' ? 'showNotebook()' : 'showTestStation()');
     return '<div class="col-6"><div class="ems-zone-tile h-100" style="--zone-color:' + z.color + ';" onclick="' + routeFn + '">' +
       '<div style="font-size:1.6rem;">' + z.icon + '</div>' +
       '<div class="fw-semibold small mt-1">' + esc(z.title) + '</div>' +
@@ -17382,6 +17392,7 @@ function showDashboard() {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'none';
   document.getElementById('dashboardView').style.display = 'block';
   renderDashboard();
   parent.postMessage({ type: 'emtScrollTop' }, '*');
@@ -17397,6 +17408,7 @@ function showZone(zi) {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'none';
   document.getElementById('zoneView').style.display = 'block';
   renderZoneContent();
   parent.postMessage({ type: 'emtScrollTop' }, '*');
@@ -17409,6 +17421,7 @@ function showAchievements() {
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'block';
   renderAchievements();
   parent.postMessage({ type: 'emtScrollTop' }, '*');
@@ -17465,6 +17478,35 @@ function renderAchievements() {
     }).join('') + '</div>';
   }
   box.innerHTML = html;
+}
+
+function showNotebook() {
+  document.getElementById('dashboardView').style.display = 'none';
+  document.getElementById('zoneView').style.display = 'none';
+  document.getElementById('nodeView').style.display = 'none';
+  document.getElementById('practiceView').style.display = 'none';
+  document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('scenarioView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'block';
+  renderNotebook();
+  parent.postMessage({ type: 'emtScrollTop' }, '*');
+  notifyResize();
+}
+
+function renderNotebook() {
+  var box = document.getElementById('notebookContent');
+  var html = '<div class="ems-section-label mb-2">速查筆記 全章節記憶口訣</div>';
+  html += '<div class="text-muted small mb-3">出勤前花1-2分鐘瀏覽，快速複習各章節關鍵指標與口訣。</div>';
+  html += CHAPTERS.map(function (c) {
+    var body = '';
+    if (c.highlights && c.highlights.length) {
+      body += highlightStrip(c.highlights, c.color);
+    }
+    body += '<div class="mnemonic-box"><div class="fw-bold mb-1">' + esc(c.mnemonic.title) + '</div><div>' + esc(c.mnemonic.body) + '</div></div>';
+    return sectionCard(c.color, c.icon, esc(c.title), body);
+  }).join('');
+  box.innerHTML = html;
+  notifyResize();
 }
 
 function renderZoneContent() {
@@ -17526,6 +17568,7 @@ function showNode(chapterId) {
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'none';
   document.getElementById('nodeView').style.display = 'block';
   renderSlide();
 }
@@ -17731,6 +17774,7 @@ function showTestStation() {
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'block';
   renderTestStation();
   parent.postMessage({ type: 'emtScrollTop' }, '*');
@@ -19975,6 +20019,7 @@ function showScenarioCenter() {
   document.getElementById('nodeView').style.display = 'none';
   document.getElementById('practiceView').style.display = 'none';
   document.getElementById('achievementView').style.display = 'none';
+  document.getElementById('notebookView').style.display = 'none';
   document.getElementById('scenarioView').style.display = 'block';
   renderScenarioCenter();
   parent.postMessage({ type: 'emtScrollTop' }, '*');
