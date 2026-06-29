@@ -7695,8 +7695,8 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         : `還有 ${diffDays} 天到期（${myMember.certExp}）`;
       items.push({ em: '🩺', bg: '#fee2e2', title: '急救憑證即將到期', sub, nav: 'profilePage', page: '個人資料' });
     }
-  } else if (myMember?.cert) {
-    items.push({ em: '🩺', bg: '#fee2e2', title: '尚未填寫急救憑證效期', sub: `請至個人資料補填 ${myMember.cert} 證照效期`, nav: 'profilePage', page: '個人資料' });
+  } else if (myMember) {
+    items.push({ em: '🩺', bg: '#fee2e2', title: '尚未填寫急救憑證效期', sub: myMember.cert ? `請至個人資料補填 ${myMember.cert} 證照效期` : '請至個人資料填寫急救憑證資訊', nav: 'profilePage', page: '個人資料' });
   }
 
   // ⑤ 義消服務證快到期（≤180 天）
@@ -15798,6 +15798,10 @@ function filterMemberList() {
   }
 
   container.innerHTML = html;
+
+  // 內容為非同步重新渲染，渲染後再次強制捲回頂部，避免內容高度變化時（圖片載入、捲動錨定等）畫面停留在底部
+  const _scr = document.getElementById('appScroll');
+  if (_scr) _scr.scrollTop = 0;
 }
 
 // 成員個人資料檢視（點擊成員卡片開啟，目的是讓大家認識這個人；管理員/承辦人另有編輯按鈕）
