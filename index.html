@@ -7452,15 +7452,15 @@ function _renderDashAlert(alerts) {
   }
 
   const _style = (p) => {
-    if (p.includes('颱風'))   return { bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)', icon:'cyclone' };
-    if (p.includes('超大豪雨'))return { bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)', icon:'cloudStorm' };
-    if (p.includes('大豪雨')) return { bg:'linear-gradient(135deg,#7c2d12,#c2410c)', icon:'cloudStorm' };
-    if (p.includes('豪雨'))   return { bg:'linear-gradient(135deg,#7c2d12,#c2410c)', icon:'cloudStorm' };
-    if (p.includes('大雨'))   return { bg:'linear-gradient(135deg,#92400e,#d97706)', icon:'cloudRain' };
-    if (p.includes('低溫'))   return { bg:'linear-gradient(135deg,#1e3a5f,#2563eb)', icon:'snowflake' };
-    if (p.includes('強風'))   return { bg:'linear-gradient(135deg,#3b1f6b,#7c3aed)', icon:'wind' };
-    if (p.includes('濃霧'))   return { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'cloudFog' };
-    return { bg:'linear-gradient(135deg,#78350f,#d97706)', icon:'warning' };
+    if (p.includes('颱風'))   return { bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)', icon:'🌀' };
+    if (p.includes('超大豪雨'))return { bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)', icon:'⛈' };
+    if (p.includes('大豪雨')) return { bg:'linear-gradient(135deg,#7c2d12,#c2410c)', icon:'⛈' };
+    if (p.includes('豪雨'))   return { bg:'linear-gradient(135deg,#7c2d12,#c2410c)', icon:'⛈' };
+    if (p.includes('大雨'))   return { bg:'linear-gradient(135deg,#92400e,#d97706)', icon:'🌧' };
+    if (p.includes('低溫'))   return { bg:'linear-gradient(135deg,#1e3a5f,#2563eb)', icon:'🥶' };
+    if (p.includes('強風'))   return { bg:'linear-gradient(135deg,#3b1f6b,#7c3aed)', icon:'💨' };
+    if (p.includes('濃霧'))   return { bg:'linear-gradient(135deg,#374151,#6b7280)', icon:'🌫' };
+    return { bg:'linear-gradient(135deg,#78350f,#d97706)', icon:'⚠️' };
   };
   const _fmt = (t) => {
     if (!t) return '';
@@ -7476,7 +7476,7 @@ function _renderDashAlert(alerts) {
     const endStr   = a.endTime   ? `解除：${_fmt(a.endTime)}`   : '';
     const timeStr  = [startStr, endStr].filter(Boolean).join('　');
     return `<div style="background:${bg};border-radius:14px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 18px rgba(0,0,0,0.22);">
-      <span style="flex-shrink:0;">${_ic(icon, 28)}</span>
+      <span style="font-size:1.7rem;flex-shrink:0;">${icon}</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.9rem;font-weight:700;color:white;letter-spacing:0.04em;">臺中市 ${label}</div>
         ${timeStr ? `<div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:3px;">${timeStr}</div>` : ''}
