@@ -1065,8 +1065,8 @@ function parseImportCSV(text) {
 }
 function importResultHtml(ok, fail, failList) {
   let html = '';
-  if (ok > 0) html += `<span style="color:#2e7d32;font-weight:600;">${_ic('checkCircle',13)} 成功匯入 ${ok} 筆</span>`;
-  if (fail > 0) html += `<span style="color:var(--red);margin-left:12px;">${_ic('warning',13)} 失敗 ${fail} 筆</span>`;
+  if (ok > 0) html += `<span style="color:#2e7d32;font-weight:600;">✅ 成功匯入 ${ok} 筆</span>`;
+  if (fail > 0) html += `<span style="color:var(--red);margin-left:12px;">⚠ 失敗 ${fail} 筆</span>`;
   if (failList.length) html += '<div style="margin-top:6px;color:var(--red);font-size:0.75rem;">' + failList.slice(0,5).map(f=>`第${f.row}列：${f.reason}`).join('<br>') + (failList.length>5?`<br>…等共${failList.length}筆`:'') + '</div>';
   return html;
 }
@@ -1093,7 +1093,7 @@ async function importAttCSV() {
     }
     resultEl.innerHTML = (ok===0&&fail===0) ? '<span style="color:var(--red);">CSV 無有效資料</span>' : importResultHtml(ok,fail,failList);
     if(ok>0) document.getElementById('importAttFile').value='';
-  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">' + _ic('xCircle',13) + ' 錯誤：'+(e.message||e)+'</span>'; }
+  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
 }
 async function importOutCSV() {
   if (!_requireAdmin()) return;
@@ -1118,7 +1118,7 @@ async function importOutCSV() {
     }
     resultEl.innerHTML = (ok===0&&fail===0) ? '<span style="color:var(--red);">CSV 無有效資料</span>' : importResultHtml(ok,fail,failList);
     if(ok>0) document.getElementById('importOutFile').value='';
-  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">' + _ic('xCircle',13) + ' 錯誤：'+(e.message||e)+'</span>'; }
+  } catch(e){ resultEl.innerHTML='<span style="color:var(--red);">❌ 錯誤：'+(e.message||e)+'</span>'; }
 }
 function downloadAttTemplate() {
   _dlCSV(['date,dutyType,memberName,title,checkinTime,checkoutTime,hours,count,service','2026-03-24,協勤,林伯霖,隊員,19:00,22:00,3,1,2','# title 可填：分隊長/副分隊長/幹事/助理幹事/小隊長/隊員/分隊承辦人（留空則自動從成員資料帶入）'].join('\n'), '簽到簽退匯入範本.csv');
@@ -3298,25 +3298,25 @@ function _dlCSV(content, filename) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;" id="dashStatCards"></div>
 
       <div id="dashHealthCard" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:14px 16px;margin-bottom:10px;">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);margin-bottom:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-3"/><circle cx="20" cy="10" r="2"/></svg> 系統健康狀態</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);margin-bottom:6px;">🩺 系統健康狀態</div>
         <div id="dashHealthBody" style="font-size:0.82rem;color:var(--text-light);">載入中…</div>
       </div>
 
       <div id="dashUsageCard" onclick="adminShowSection('adminSec-usagetest')" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:14px 16px;margin-bottom:10px;cursor:pointer;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 2v20"/><path d="M5 6a7 7 0 0 1 14 0"/><path d="M2 9a10 10 0 0 1 20 0"/><circle cx="12" cy="3" r="1"/></svg> Firebase 配額／使用狀態</div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);">📡 Firebase 配額／使用狀態</div>
           <span style="font-size:0.7rem;color:#1565c0;">詳情 →</span>
         </div>
         <div id="dashUsageBody" style="font-size:0.82rem;color:var(--text-light);">載入中…</div>
       </div>
 
       <div onclick="adminShowSection('adminSec-announce')" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:14px 16px;margin-bottom:10px;cursor:pointer;">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);margin-bottom:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg> 最新公告</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);margin-bottom:6px;">📢 最新公告</div>
         <div id="dashAnnounceBody" style="font-size:0.82rem;color:var(--text-light);">載入中…</div>
       </div>
 
       <div onclick="adminShowSection('adminSec-changelog')" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:14px 16px;cursor:pointer;">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);margin-bottom:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> 最新版本資訊</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text-mid);margin-bottom:6px;">📋 最新版本資訊</div>
         <div id="dashChangelogBody" style="font-size:0.82rem;color:var(--text-light);">載入中…</div>
       </div>
     </div>
@@ -3329,7 +3329,7 @@ function _dlCSV(content, filename) {
           <div style="font-size:1.1rem;font-weight:700;letter-spacing:0.04em;">功能模組</div>
           <div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:3px;">Admin Modules</div>
         </div>
-        <button onclick="adminShowSection('dashboard')" style="background:rgba(255,255,255,0.15);border:none;border-radius:10px;padding:9px 14px;color:white;cursor:pointer;font-size:0.8rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> 儀表板</button>
+        <button onclick="adminShowSection('dashboard')" style="background:rgba(255,255,255,0.15);border:none;border-radius:10px;padding:9px 14px;color:white;cursor:pointer;font-size:0.8rem;font-weight:600;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">🏠 儀表板</button>
       </div>
       <!-- 分類分組的卡片格 -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="adminMenuCards">
@@ -3414,7 +3414,7 @@ function _dlCSV(content, filename) {
 
       <!-- 查詢列表 -->
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;letter-spacing:0.05em;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 查詢成員</div>
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-mid);margin-bottom:10px;letter-spacing:0.05em;">🔍 查詢成員</div>
         <div style="margin-bottom:12px;">
           <label>選擇分隊</label>
           <select id="adminWlFilterUnit" onchange="filterAdminWlByUnit()" style="width:100%;">
@@ -3464,11 +3464,11 @@ function _dlCSV(content, filename) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:16px;">
         <button id="annTab-push" onclick="switchAnnTab('push')"
           style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:transparent;color:#64748b;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 推播訊息
+          📤 推播訊息
         </button>
         <button id="annTab-notice" onclick="switchAnnTab('notice')"
           style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:white;color:var(--red);box-shadow:0 1px 4px rgba(0,0,0,0.1);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg> 系統公告
+          📢 系統公告
         </button>
       </div>
 
@@ -3502,17 +3502,17 @@ function _dlCSV(content, filename) {
           </div>
           <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
             <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
-              <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21v-2a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="4.2" y1="9" x2="6" y2="9"/><line x1="18" y1="9" x2="19.8" y2="9"/></svg> 緊急（彈窗顯示）
+              <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> 🚨 緊急（彈窗顯示）
             </label>
             <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
-              <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg> 置頂
+              <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂
             </label>
           </div>
           <!-- 推播選項 -->
           <div style="background:#f0f4ff;border:1px solid #c7d7ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0;" id="anFormPushToggleLabel">
               <input type="checkbox" id="anFormPushToggle" style="accent-color:#1e3a8a;width:15px;height:15px;" onchange="toggleAnFormPush()">
-              <span style="font-size:0.82rem;font-weight:600;color:#1a237e;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 同時發送 FCM 推播通知</span>
+              <span style="font-size:0.82rem;font-weight:600;color:#1a237e;">📤 同時發送 FCM 推播通知</span>
             </label>
             <div id="anFormPushOpts" style="display:none;margin-top:10px;display:none;">
               <div style="font-size:0.72rem;color:#475569;margin-bottom:6px;">推播對象</div>
@@ -3536,7 +3536,7 @@ function _dlCSV(content, filename) {
         </div>
         <!-- 公告列表 -->
         <div id="adminAnnounceList">
-          <div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>載入中...</div>
+          <div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>
         </div>
       </div>
 
@@ -3545,7 +3545,7 @@ function _dlCSV(content, filename) {
         <div style="display:flex;gap:8px;margin-bottom:14px;">
           <button onclick="showPushForm()"
             style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#1e3a8a;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 發送新推播
+            📤 發送新推播
           </button>
           <button onclick="loadPushLog()" title="重新整理"
             style="flex:0 0 auto;width:46px;display:flex;align-items:center;justify-content:center;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#64748b;cursor:pointer;">
@@ -3617,7 +3617,7 @@ function _dlCSV(content, filename) {
             <!-- 傳送按鈕 -->
             <button onclick="sendManualPush()" id="pfSendBtn"
               style="width:100%;padding:13px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border:none;border-radius:12px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 發送推播
+              📤 發送推播
             </button>
             <div id="pfStatus" style="font-size:0.8rem;text-align:center;margin-top:10px;min-height:18px;"></div>
           </div>
@@ -3625,7 +3625,7 @@ function _dlCSV(content, filename) {
 
         <!-- 推播紀錄列表 -->
         <div id="adminPushLogList">
-          <div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>載入中...</div>
+          <div class="query-empty"><span class="empty-icon">📤</span>載入中...</div>
         </div>
       </div>
 
@@ -3692,7 +3692,7 @@ function _dlCSV(content, filename) {
         <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">臨時密碼管理</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">建立登入密碼</div></div>
       </div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 新增臨時密碼</div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 新增臨時密碼</div>
         <div style="margin-bottom:12px;"><label>分隊別 <span class="req">*</span></label><select id="tpUnit" style="width:100%;" onchange="filterTpMembers()"><option value="">請選擇分隊別</option></select></div>
         <div style="margin-bottom:12px;"><label>綁定成員 <span class="req">*</span></label><select id="tpMember" style="width:100%;"><option value="">— 請先選擇分隊別 —</option></select></div>
         <div style="margin-bottom:12px;"><label>臨時密碼 <span class="req">*</span></label>
@@ -3706,11 +3706,11 @@ function _dlCSV(content, filename) {
           <div><label>可使用次數</label><select id="tpUses" style="width:100%;"><option value="1">1 次</option><option value="3">3 次</option><option value="5">5 次</option><option value="0" selected>無限制</option></select></div>
         </div>
         <div style="margin-bottom:12px;"><label>備註（說明用途）</label><input type="text" id="tpNote" placeholder="例：協助王小明登入" style="width:100%;"></div>
-        <button onclick="addTempPass()" class="btn-search" style="width:100%;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> 建立臨時密碼</button>
+        <button onclick="addTempPass()" class="btn-search" style="width:100%;">🔑 建立臨時密碼</button>
       </div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> 現有臨時密碼</div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 現有臨時密碼</div>
           <div style="display:flex;gap:6px;">
             <button onclick="batchDelChecked('tpChk',COL_TEMP_PASS,loadTempPassList)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">批次刪除</button>
             <button onclick="loadTempPassList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
@@ -3762,7 +3762,7 @@ function _dlCSV(content, filename) {
           <button onclick="batchDelChecked('llChk',COL_LOGINLOG,loadLoginLog)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:6px 14px;font-size:0.82rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">批次刪除</button>
         </div>
       </div>
-      <div id="adminLoginLogList"><div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>請點查詢載入紀錄</div></div>
+      <div id="adminLoginLogList"><div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div></div>
     </div>
 
     <div id="adminSec-auditlog" style="display:none;padding:0 0 20px;">
@@ -3783,7 +3783,7 @@ function _dlCSV(content, filename) {
           <button class="btn-reset" onclick="resetAuditLog()">清除</button>
         </div>
       </div>
-      <div id="adminAuditLogList"><div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></span>請點查詢載入紀錄</div></div>
+      <div id="adminAuditLogList"><div class="query-empty"><span class="empty-icon">📜</span>請點查詢載入紀錄</div></div>
     </div>
 
     <div id="adminSec-roles" style="display:none;padding:0 0 20px;">
@@ -3793,13 +3793,13 @@ function _dlCSV(content, filename) {
         <button onclick="loadAdminRoles()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.78rem;color:var(--text-light);line-height:1.6;margin-bottom:10px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 本頁僅供後台檢視與紀錄角色／權限對照，<strong>不會</strong>變更實際登入帳號的權限判斷邏輯（仍由帳號的管理員／承辦人身分決定）。</div>
+        <div style="font-size:0.78rem;color:var(--text-light);line-height:1.6;margin-bottom:10px;">⚠️ 本頁僅供後台檢視與紀錄角色／權限對照，<strong>不會</strong>變更實際登入帳號的權限判斷邏輯（仍由帳號的管理員／承辦人身分決定）。</div>
         <button onclick="openRoleEditor(null)" style="background:#5e35b1;color:white;border:none;border-radius:8px;padding:10px 18px;font-size:0.86rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">＋ 新增角色</button>
       </div>
-      <div id="adminRolesList"><div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>載入中...</div></div>
+      <div id="adminRolesList"><div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div></div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-top:4px;">
-        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> 角色權限對照表</div>
-        <div id="adminRoleMatrix"><div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span>載入中...</div></div>
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:10px;">📊 角色權限對照表</div>
+        <div id="adminRoleMatrix"><div class="query-empty"><span class="empty-icon">📊</span>載入中...</div></div>
       </div>
     </div>
 
@@ -3811,21 +3811,21 @@ function _dlCSV(content, filename) {
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">上傳 CSV 檔案即可批次新增資料。簽名欄位可留空，之後再由當事人補簽。<br><span style="color:var(--red);font-weight:600;">注意：重複資料不會自動偵測，請先確認再匯入。</span></div>
         <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
-          <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg> 簽到簽退紀錄</div>
+          <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--text);">✍ 簽到簽退紀錄</div>
           <div style="font-size:0.72rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-family:monospace;line-height:1.7;">欄位：date, dutyType, memberName, checkinTime, checkoutTime, hours, count, service<br>範例：2026-03-24,協勤,林伯霖,19:00,22:00,3,1,2</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <input type="file" id="importAttFile" accept=".csv" style="flex:1;min-width:0;">
-            <button onclick="downloadAttTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 範本</button>
+            <button onclick="downloadAttTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 範本</button>
             <button onclick="importAttCSV()" class="btn-search" style="min-height:unset;padding:7px 16px;white-space:nowrap;">匯入</button>
           </div>
           <div id="importAttResult" style="margin-top:8px;font-size:0.82rem;"></div>
         </div>
         <div style="border:1px solid var(--border);border-radius:10px;padding:14px;">
-          <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--text);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="2" y="9" width="14" height="9" rx="1"/><path d="M16 13h4l2 3v2h-6"/><circle cx="6.5" cy="18.5" r="1.5"/><circle cx="17.5" cy="18.5" r="1.5"/><line x1="7" y1="11" x2="7" y2="14"/><line x1="5.5" y1="12.5" x2="8.5" y2="12.5"/></svg> 協勤案件紀錄</div>
+          <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--text);">🚑 協勤案件紀錄</div>
           <div style="font-size:0.72rem;color:var(--text-light);background:#f5f5f0;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-family:monospace;line-height:1.7;">欄位：date, caseType, timeOut, timeBack, district, address, services, note, memberName<br>範例：2026-03-24,救護,19:00,20:30,潭子區,中山路一段1號,協助傷患,,林伯霖</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <input type="file" id="importOutFile" accept=".csv" style="flex:1;min-width:0;">
-            <button onclick="downloadOutTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 範本</button>
+            <button onclick="downloadOutTemplate()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:0.78rem;cursor:pointer;color:var(--text-mid);white-space:nowrap;">⬇ 範本</button>
             <button onclick="importOutCSV()" class="btn-search" style="min-height:unset;padding:7px 16px;white-space:nowrap;">匯入</button>
           </div>
           <div id="importOutResult" style="margin-top:8px;font-size:0.82rem;"></div>
@@ -3848,8 +3848,8 @@ function _dlCSV(content, filename) {
           <span style="font-size:0.75rem;color:var(--text-light);">（留空 = 全部）</span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 預覽待修復項目</button>
-          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> 確認執行修復（0 筆）</button>
+          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔍 預覽待修復項目</button>
+          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;">🔄 確認執行修復（0 筆）</button>
         </div>
         <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
@@ -3858,7 +3858,7 @@ function _dlCSV(content, filename) {
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">修復簽名旗標（hasSig）</div>
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">掃描所有 <code>hasSig=false</code> 的打卡紀錄，若 attSigs 子集合有簽名資料，自動將 hasSig 更新為 true。<br><span style="color:var(--red);font-weight:600;">適用於：編輯紀錄後「查看簽名」按鈕消失的情況。</span></div>
-        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> 執行修復</button>
+        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔑 執行修復</button>
         <div id="repairHasSigLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
       </div>
 
@@ -3901,10 +3901,10 @@ function _dlCSV(content, filename) {
       <div id="_usageTestStatus" style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;display:none;">
         <div id="_usageTestLockState" style="padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:0.88rem;font-weight:600;"></div>
         <div id="_usageSectionLocked" style="display:none;">
-          <div style="font-size:0.82rem;font-weight:700;color:#c0392b;margin-bottom:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> 已鎖定功能</div>
+          <div style="font-size:0.82rem;font-weight:700;color:#c0392b;margin-bottom:8px;">🔒 已鎖定功能</div>
           <div id="_usageTestCols" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
         </div>
-        <div style="font-size:0.82rem;font-weight:700;color:#2e7d32;margin-bottom:8px;" id="_usageAvailTitle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 功能狀態</div>
+        <div style="font-size:0.82rem;font-weight:700;color:#2e7d32;margin-bottom:8px;" id="_usageAvailTitle">✅ 功能狀態</div>
         <div id="_usageTestAvail" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
     </div>
@@ -3916,16 +3916,16 @@ function _dlCSV(content, filename) {
         <button onclick="loadAdminConfirmTasks()" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">重新整理</button>
       </div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
-        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 發起新的確認任務</div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:12px;">➕ 發起新的確認任務</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div><label style="font-size:0.78rem;">確認月份 <span class="req">*</span></label><input type="month" id="confirmMonth" style="width:100%;min-height:42px;padding:10px 13px;border:1px solid var(--border);border-radius:4px;font-size:0.92rem;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:white;appearance:none;-webkit-appearance:none;"></div>
           <div><label style="font-size:0.78rem;">分隊別 <span class="req">*</span></label><select id="confirmUnit" style="width:100%;"><option value="">請選擇分隊</option></select></div>
         </div>
         <div style="margin-bottom:12px;"><label style="font-size:0.78rem;">通知說明（選填）</label><input type="text" id="confirmNote" placeholder="例：請於每月5日前完成確認" style="width:100%;"></div>
-        <button onclick="createConfirmTask()" class="btn-search" style="width:100%;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 發起確認任務並通知成員</button>
+        <button onclick="createConfirmTask()" class="btn-search" style="width:100%;">✅ 發起確認任務並通知成員</button>
         <div id="confirmCreateStatus" style="font-size:0.82rem;margin-top:8px;text-align:center;"></div>
       </div>
-      <div id="adminConfirmTaskList"><div class="query-empty"><span class="empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>載入中...</div></div>
+      <div id="adminConfirmTaskList"><div class="query-empty"><span class="empty-icon">✅</span>載入中...</div></div>
     </div>
 
     <div class="site-footer-placeholder"></div>
@@ -8901,7 +8901,7 @@ async function repairPreview(btn) {
     const diffs = await _repairBuildDiffList(df, dt);
     if (!diffs.length) {
       area.style.display = 'block';
-      area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">' + _ic('checkCircle',13) + ' 所有簽退服務人次均正確，無需修復。</div>';
+      area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">✅ 所有簽退服務人次均正確，無需修復。</div>';
       execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
     } else {
       const diffCell = (oldV, newV) => oldV !== newV
@@ -8915,13 +8915,13 @@ async function repairPreview(btn) {
           <td style="padding:7px 8px;font-size:0.8rem;">${r.memberName}</td>
           <td style="padding:7px 8px;font-size:0.8rem;text-align:center;">${diffCell(r.oldCount, r.newCount)}</td>
           <td style="padding:7px 8px;font-size:0.8rem;text-align:center;">${diffCell(r.oldService, r.newService)}</td>
-          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;"><button type="button" onclick="repairShowDetail('${mEsc}','${r.date}','${r.id}')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;">${_ic('clipboard',12)} 詳細</button></td>
+          <td style="padding:7px 8px;font-size:0.8rem;text-align:center;"><button type="button" onclick="repairShowDetail('${mEsc}','${r.date}','${r.id}')" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;font-family:'Noto Sans TC',sans-serif;">📋 詳細</button></td>
         </tr>`;
       }).join('');
       area.style.display = 'block';
       area.innerHTML = `
         <div style="font-size:0.78rem;color:#856404;background:#fff3cd;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
-          ${_ic('warning',13)} 發現 <strong>${diffs.length}</strong> 筆簽退紀錄需要修正，請勾選後點「確認執行修復」。
+          ⚠️ 發現 <strong>${diffs.length}</strong> 筆簽退紀錄需要修正，請勾選後點「確認執行修復」。
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <button type="button" onclick="repairToggleAll(true)"  style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);border-radius:4px;background:white;cursor:pointer;">全選</button>
@@ -8947,9 +8947,9 @@ async function repairPreview(btn) {
     }
   } catch(e) {
     area.style.display = 'block';
-    area.innerHTML = '<div style="color:#b94a3a;font-size:0.82rem;">' + _ic('xCircle',13) + ' 查詢失敗：' + e.message + '</div>';
+    area.innerHTML = '<div style="color:#b94a3a;font-size:0.82rem;">❌ 查詢失敗：' + e.message + '</div>';
   } finally {
-    btn.disabled = false; btn.innerHTML = _ic('search',13) + ' 預覽待修復項目';
+    btn.disabled = false; btn.textContent = '🔍 預覽待修復項目';
   }
 }
 
@@ -8965,7 +8965,7 @@ function repairUpdateExecBtn() {
   execBtn.disabled = n === 0;
   execBtn.style.background = n > 0 ? 'var(--red)' : '#ccc';
   execBtn.style.cursor = n > 0 ? 'pointer' : 'not-allowed';
-  execBtn.innerHTML = _ic('refresh',13) + ` 確認執行修復（${n} 筆）`;
+  execBtn.textContent = `🔄 確認執行修復（${n} 筆）`;
 }
 
 async function repairAllAttService(btn) {
@@ -8981,9 +8981,9 @@ async function repairAllAttService(btn) {
     await Promise.all(selected.map(i => fbUpdate(COL_ATTEND, diffs[i].id, { count: diffs[i].newCount, service: diffs[i].newService })));
     if (area) area.style.display = 'none';
     btn.disabled = true; btn.style.background = '#ccc'; btn.style.cursor = 'not-allowed';
-    if (log) log.innerHTML = `${_ic('checkCircle',13)} 完成！共更新 ${selected.length} 筆簽退紀錄的出勤次數與服務人次。`;
+    if (log) log.textContent = `✅ 完成！共更新 ${selected.length} 筆簽退紀錄的出勤次數與服務人次。`;
   } catch(e) {
-    if (log) log.innerHTML = _ic('xCircle',13) + ' 發生錯誤：' + e.message;
+    if (log) log.textContent = '❌ 發生錯誤：' + e.message;
     btn.disabled = false;
   }
 }
@@ -9028,7 +9028,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
     const outRowHtml = o => {
       const isSkip = o._cls === 'skip';
       const badge = isSkip
-        ? '<span style="background:#e9ecef;color:#6c757d;font-size:0.7rem;padding:1px 6px;border-radius:4px;white-space:nowrap;">'+_ic('ban',10)+' 空跑</span>'
+        ? '<span style="background:#e9ecef;color:#6c757d;font-size:0.7rem;padding:1px 6px;border-radius:4px;white-space:nowrap;">⛔ 空跑</span>'
         : o._cls === 'in'
           ? '<span style="background:#d4edda;color:#1a6b35;font-size:0.7rem;padding:1px 6px;border-radius:4px;">✓ 計入</span>'
           : '<span style="background:#f8d7da;color:#b94a3a;font-size:0.7rem;padding:1px 6px;border-radius:4px;white-space:nowrap;">✗ 時段外</span>';
@@ -9085,7 +9085,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
           保留「${earliest.checkinTime||'??:??'}」那筆・刪除「${latest.checkinTime||'??:??'}」那筆
         </div>
         <button onclick="rdMergeAtt('${mergeOtherEsc}')" style="width:100%;background:#1a5276;color:white;border:none;border-radius:8px;padding:11px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-          ${_ic('link',14)} 確認合併
+          🔗 確認合併
         </button>
       </div>`;
     } else {
@@ -9099,7 +9099,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
           <button onclick="rdEditAtt()" style="${eBtnS}"><svg style="width:13px;height:13px;vertical-align:middle;margin-right:3px;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/><path d="M10 4l2 2"/></svg>編輯</button>
-          ${missingSig ? `<button onclick="rdCopyCheckinSig()" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:&quot;Noto Sans TC&quot;,sans-serif;color:#1a5276;white-space:nowrap;">${_ic('clipboard',12)} 補充簽退簽名</button>` : ''}
+          ${missingSig ? `<button onclick="rdCopyCheckinSig()" style="background:none;border:1px solid #b0c4de;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.72rem;font-family:&quot;Noto Sans TC&quot;,sans-serif;color:#1a5276;white-space:nowrap;">📋 補充簽退簽名</button>` : ''}
         </div>
       </div>`;
     }
@@ -9125,7 +9125,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
 
     modal.querySelector('div').innerHTML = html;
   } catch(e) {
-    modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">${_ic('xCircle',13)} 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
+    modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">❌ 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
   }
 }
 
@@ -12507,7 +12507,7 @@ async function loadAdminWhitelist(filterUnit) {
       if (d.phone) {
         var phoneDiv = document.createElement('div');
         phoneDiv.style.cssText = 'font-size:0.73rem;color:var(--text-mid);margin-top:2px;';
-        phoneDiv.innerHTML = _ic('smartphone',11) + ' ' + d.phone;
+        phoneDiv.textContent = '📱 ' + d.phone;
         info.appendChild(phoneDiv);
       }
       topRow.appendChild(info);
@@ -12528,10 +12528,10 @@ async function loadAdminWhitelist(filterUnit) {
       var retireBtn = document.createElement('button');
       retireBtn.style.cssText = 'flex:1;background:white;border:1px solid #f0d9a8;border-radius:8px;padding:7px 0;font-size:0.78rem;cursor:pointer;color:#9a6a1a;font-family:\'Noto Sans TC\',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;';
       if (d.status === 'retired') {
-        retireBtn.innerHTML = _ic('undo',12) + ' 恢復';
+        retireBtn.textContent = '↩ 恢復';
         retireBtn.onclick = function(){ adminRestoreMember(d.id, d.memberName||''); };
       } else {
-        retireBtn.innerHTML = _ic('doorOpen',12) + ' 退隊';
+        retireBtn.textContent = '🚪 退隊';
         retireBtn.onclick = function(){ adminRetireMember(d.id, d.memberName||''); };
       }
       btnRow.appendChild(retireBtn);
@@ -12557,7 +12557,7 @@ async function loadAdminWhitelist(filterUnit) {
 
       var unitHeader = document.createElement('div');
       unitHeader.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(135deg,var(--red),#c0392b);border-radius:8px;margin-bottom:8px;';
-      unitHeader.innerHTML = '<span style="font-size:1rem;">'+_ic('building',16,'#fff')+'</span>'
+      unitHeader.innerHTML = '<span style="font-size:1rem;">🏢</span>'
         + '<span style="font-weight:700;color:white;font-size:0.9rem;letter-spacing:0.05em;">'+unit+'</span>'
         + '<span style="margin-left:auto;font-size:0.72rem;color:rgba(255,255,255,0.7);">'+mList.length+' 人</span>';
       unitWrap.appendChild(unitHeader);
@@ -13008,13 +13008,13 @@ function _requireAdmin() {
 // 模組分類（人員/內容/通知/維護/監控/回饋）— 之後新增模組只需在這裡掛上 id 即可，
 // 不用調整 adminShowSection／_buildAdminMenu 的渲染邏輯。
 const ADMIN_MENU_GROUPS = [
-  { cat:'人員管理',   icon:_ic('users',14), ids:['adminSec-wl','adminSec-units','adminSec-temppass'] },
-  { cat:'內容管理',   icon:_ic('folder',14), ids:['adminSec-casetypes','adminSec-schedule','adminSec-correction','adminSec-import','adminSec-changelog'] },
-  { cat:'通知中心',   icon:_ic('bell',14), ids:['adminSec-pushctrl','adminSec-announce'] },
-  { cat:'系統維護',   icon:_ic('wrench',14), ids:['adminSec-repair','adminSec-confirm'] },
-  { cat:'系統監控',   icon:_ic('trendingUp',14), ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
-  { cat:'角色與權限管理', icon:_ic('lock',14), ids:['adminSec-roles'] },
-  { cat:'使用者回饋', icon:_ic('message',14), ids:['adminSec-feedback'] },
+  { cat:'人員管理',   icon:'👥', ids:['adminSec-wl','adminSec-units','adminSec-temppass'] },
+  { cat:'內容管理',   icon:'📁', ids:['adminSec-casetypes','adminSec-schedule','adminSec-correction','adminSec-import','adminSec-changelog'] },
+  { cat:'通知中心',   icon:'🔔', ids:['adminSec-pushctrl','adminSec-announce'] },
+  { cat:'系統維護',   icon:'🛠', ids:['adminSec-repair','adminSec-confirm'] },
+  { cat:'系統監控',   icon:'📈', ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
+  { cat:'角色與權限管理', icon:'🔐', ids:['adminSec-roles'] },
+  { cat:'使用者回饋', icon:'💬', ids:['adminSec-feedback'] },
 ];
 
 function _buildAdminMenu() {
@@ -13023,23 +13023,23 @@ function _buildAdminMenu() {
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const isAdmin = usr.isAdmin;
   const items = [
-    { id:'adminSec-wl',         icon:_ic('user',18), label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
-    { id:'adminSec-casetypes',  icon:_ic('tag',18), label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
-    { id:'adminSec-announce',   icon:_ic('megaphone',18), label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b', adminOnly:true },
-    { id:'adminSec-feedback',   icon:_ic('message',18), label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
-    { id:'adminSec-correction', icon:_ic('note',18), label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
-    { id:'adminSec-schedule',   icon:_ic('calendar',18), label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
-    { id:'adminSec-temppass',   icon:_ic('key',18), label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
-    { id:'adminSec-changelog',  icon:_ic('clipboard',18), label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
-    { id:'adminSec-import',     icon:_ic('download',18), label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1', adminOnly:true },
-    { id:'adminSec-repair',     icon:_ic('wrench',18), label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c', adminOnly:true },
-    { id:'adminSec-confirm',    icon:_ic('checkCircle',18), label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
-    { id:'adminSec-pushctrl',   icon:_ic('bell',18), label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
-    { id:'adminSec-units',      icon:_ic('building',18), label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
-    { id:'adminSec-loginlog',   icon:_ic('lock',18), label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
-    { id:'adminSec-auditlog',   icon:_ic('scroll',18), label:'操作紀錄',   sub:'後台管理動作稽核',   color:'#263238', adminOnly:true },
-    { id:'adminSec-usagetest',  icon:_ic('antenna',18), label:'配額監控',   sub:'今日讀取狀態總覽',   color:'#1565c0', adminOnly:true },
-    { id:'adminSec-roles',      icon:_ic('lock',18), label:'角色與權限', sub:'角色檢視與權限對照', color:'#5e35b1', adminOnly:true },
+    { id:'adminSec-wl',         icon:'👤', label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
+    { id:'adminSec-casetypes',  icon:'🏷', label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
+    { id:'adminSec-announce',   icon:'📢', label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b', adminOnly:true },
+    { id:'adminSec-feedback',   icon:'💬', label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
+    { id:'adminSec-correction', icon:'📝', label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
+    { id:'adminSec-schedule',   icon:'📅', label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
+    { id:'adminSec-temppass',   icon:'🔑', label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
+    { id:'adminSec-changelog',  icon:'📋', label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
+    { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1', adminOnly:true },
+    { id:'adminSec-repair',     icon:'🔧', label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c', adminOnly:true },
+    { id:'adminSec-confirm',    icon:'✅', label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
+    { id:'adminSec-pushctrl',   icon:'🔔', label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
+    { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
+    { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
+    { id:'adminSec-auditlog',   icon:'📜', label:'操作紀錄',   sub:'後台管理動作稽核',   color:'#263238', adminOnly:true },
+    { id:'adminSec-usagetest',  icon:'📡', label:'配額監控',   sub:'今日讀取狀態總覽',   color:'#1565c0', adminOnly:true },
+    { id:'adminSec-roles',      icon:'🔐', label:'角色與權限', sub:'角色檢視與權限對照', color:'#5e35b1', adminOnly:true },
   ];
   const itemMap = {};
   items.forEach(i => { itemMap[i.id] = i; });
@@ -13240,7 +13240,7 @@ function _showNotifBanner() {
   banner.id = 'adminNotifBanner';
   banner.style.cssText = 'background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-family:"Noto Sans TC",sans-serif;';
   banner.innerHTML = `
-    <div style="font-size:1.3rem;">${_ic('bell',20)}</div>
+    <div style="font-size:1.3rem;">🔔</div>
     <div style="flex:1;">
       <div style="font-size:0.84rem;font-weight:700;color:#1D4ED8;margin-bottom:2px;">開啟推播通知</div>
       <div style="font-size:0.75rem;color:#3B82F6;line-height:1.4;">有新修正申請或意見回饋時即時通知您</div>
@@ -13385,7 +13385,7 @@ async function loadAdminPushCtrl() {
             <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">${_pushDeviceLabel(devices[0])}</div>
           </div>`
         : `<div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:0.72rem;color:#EA580C;font-weight:700;">${_ic('warning',12)} ${devices.length} 個裝置</div>
+            <div style="font-size:0.72rem;color:#EA580C;font-weight:700;">⚠️ ${devices.length} 個裝置</div>
             <div style="font-size:0.68rem;color:var(--text-light);margin-top:1px;">點擊展開</div>
           </div>`;
       return `<div data-name="${m.name.toLowerCase()}" style="background:white;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,0.06);overflow:hidden;">
@@ -13407,7 +13407,7 @@ async function loadAdminPushCtrl() {
     const wlNameSet = new Set(wl.map(m => m.memberName || m.name).filter(Boolean));
     const orphanSubs = subs.filter(s => s.memberName && !wlNameSet.has(s.memberName));
     const orphanHtml = orphanSubs.length ? `
-      <div style="font-size:0.78rem;color:#EA580C;font-weight:700;margin:18px 2px 8px;">${_ic('warning',12)} 未對應到白名單的訂閱記錄（${orphanSubs.length}）— 可能是改名或打字差異造成的重複裝置</div>
+      <div style="font-size:0.78rem;color:#EA580C;font-weight:700;margin:18px 2px 8px;">⚠️ 未對應到白名單的訂閱記錄（${orphanSubs.length}）— 可能是改名或打字差異造成的重複裝置</div>
       ${orphanSubs.map(s => `<div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:0.86rem;font-weight:700;color:var(--text);">${s.memberName}</div>
@@ -13488,9 +13488,9 @@ async function loadAdminPushCtrl() {
       <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);display:flex;align-items:center;gap:10px;">
         <div style="flex:1;">
           <div style="font-size:0.8rem;font-weight:600;color:var(--text);margin-bottom:2px;">背景推播（FCM）</div>
-          <div id="fcmStatusText" style="font-size:0.72rem;color:var(--text-light);">${FCM_VAPID_KEY === 'YOUR_VAPID_KEY_HERE' ? _ic('warning',12)+' VAPID 金鑰未設定' : _ic('checkCircle',12)+' FCM 已啟用'}</div>
+          <div id="fcmStatusText" style="font-size:0.72rem;color:var(--text-light);">${FCM_VAPID_KEY === 'YOUR_VAPID_KEY_HERE' ? '⚠️ VAPID 金鑰未設定' : '✅ FCM 已啟用'}</div>
         </div>
-        <button onclick="_adminTestPush()" style="background:#1e3a5f;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">${_ic('bell',13)} 測試推播</button>
+        <button onclick="_adminTestPush()" style="background:#1e3a5f;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;">🔔 測試推播</button>
       </div>
 
       <!-- 篩選 -->
@@ -13517,8 +13517,8 @@ function _pushDeviceLabel(s) {
     const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
     timeStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : `${diff} 天前`;
   }
-  const icon = s.platform === 'iOS' ? 'apple' : s.platform === 'Android' ? 'robot' : 'monitor';
-  return `${_ic(icon,11)} ${s.browser||''} · ${timeStr}`;
+  const icon = s.platform === 'iOS' ? '🍎' : s.platform === 'Android' ? '🤖' : '💻';
+  return `${icon} ${s.browser||''} · ${timeStr}`;
 }
 
 function _jsStr(str) {
@@ -13564,7 +13564,7 @@ async function _pushCtrlDeleteDevice(docId, name) {
 async function loadLoginLog() {
   const el = document.getElementById('adminLoginLogList');
   if (!el) return;
-  el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('lock',13)}</span>載入中...</div>`;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
   try {
     const dateFrom = document.getElementById('loginLogFrom')?.value || '';
     const dateTo   = document.getElementById('loginLogTo')?.value   || '';
@@ -13578,7 +13578,7 @@ async function loadLoginLog() {
     if (dateTo)   docs = docs.filter(d => (d.loginAt||'').substring(0,10) <= dateTo);
     if (unit)     docs = docs.filter(d => (d.unit||'') === unit);
 
-    if (!docs.length) { el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('lock',13)}</span>查無紀錄</div>`; return; }
+    if (!docs.length) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>查無紀錄</div>'; return; }
 
     const ROLE_LABEL = { admin:'系統管理員', officer:'分隊承辦人', member:'一般成員' };
     const ROLE_COLOR = { admin:'#856404', officer:'#084298', member:'#495057' };
@@ -13608,10 +13608,10 @@ async function loadLoginLog() {
               ${d.loginMethod && d.loginMethod !== 'google' ? `<span style="font-size:0.65rem;background:#e8f4fd;color:#1a6b9a;border-radius:10px;padding:2px 7px;">${METHOD_LABEL[d.loginMethod]||d.loginMethod}</span>` : ''}
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:0.75rem;color:var(--text-mid);">
-              ${displayUnit ? `<span>${_ic('building',11)} ${displayUnit}</span>` : '<span style="color:var(--text-light);">無分隊</span>'}
-              <span style="color:var(--text-light);">${_ic('mail',11)} ${d.email||'—'}</span>
+              ${displayUnit ? `<span>🏢 ${displayUnit}</span>` : '<span style="color:var(--text-light);">無分隊</span>'}
+              <span style="color:var(--text-light);">📧 ${d.email||'—'}</span>
             </div>
-            <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">${_ic('clock',11)} ${d.loginAt||''}</div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:3px;">🕐 ${d.loginAt||''}</div>
           </div>
           <button onclick="adminDel('${COL_LOGINLOG}','${d.id}','登入紀錄',loadLoginLog)"
             style="background:none;border:1px solid #fecaca;border-radius:6px;padding:4px 8px;color:#dc2626;cursor:pointer;flex-shrink:0;">
@@ -13620,7 +13620,7 @@ async function loadLoginLog() {
         </div>`;
       }).join('');
   } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('warning',13) + '</span>載入失敗：' + e.message + '</div>';
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
 }
 
@@ -13630,7 +13630,7 @@ function resetLoginLog() {
   });
   const u = document.getElementById('loginLogUnit'); if (u) u.value = '';
   const el = document.getElementById('adminLoginLogList');
-  if (el) el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('lock',13)}</span>請點查詢載入紀錄</div>`;
+  if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>請點查詢載入紀錄</div>';
 }
 
 async function _trimLoginLog(maxCount) {
@@ -13664,7 +13664,7 @@ const AUDIT_ACTION_LABEL = {
 async function loadAuditLog() {
   const el = document.getElementById('adminAuditLogList');
   if (!el) return;
-  el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('scroll',13)}</span>載入中...</div>`;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>載入中...</div>';
   try {
     const dateFrom = document.getElementById('auditLogFrom')?.value || '';
     const dateTo   = document.getElementById('auditLogTo')?.value   || '';
@@ -13689,7 +13689,7 @@ async function loadAuditLog() {
     if (moduleF)  docs = docs.filter(d => d.module === moduleF);
     if (userF)    docs = docs.filter(d => (d.userName||'').includes(userF));
 
-    if (!docs.length) { el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('scroll',13)}</span>查無紀錄</div>`; return; }
+    if (!docs.length) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>查無紀錄</div>'; return; }
 
     el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;">共 ${docs.length} 筆操作紀錄</div>` +
       docs.map(d => {
@@ -13715,12 +13715,12 @@ async function loadAuditLog() {
         summary.textContent = d.summary || '';
         const time = document.createElement('div');
         time.style.cssText = 'font-size:0.72rem;color:var(--text-light);margin-top:4px;';
-        time.innerHTML = _ic('clock',11) + ' ' + (d.loggedAt || '');
+        time.textContent = '🕐 ' + (d.loggedAt || '');
         row.appendChild(top); row.appendChild(summary); row.appendChild(time);
         return row.outerHTML;
       }).join('');
   } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('warning',13) + '</span>載入失敗：' + e.message + '</div>';
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
 }
 
@@ -13730,7 +13730,7 @@ function resetAuditLog() {
   });
   const m = document.getElementById('auditLogModule'); if (m) m.value = '';
   const el = document.getElementById('adminAuditLogList');
-  if (el) el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('scroll',13)}</span>請點查詢載入紀錄</div>`;
+  if (el) el.innerHTML = '<div class="query-empty"><span class="empty-icon">📜</span>請點查詢載入紀錄</div>';
 }
 
 // ════════════════════════════════════════
@@ -13807,7 +13807,7 @@ async function _fixDefaultRoleNames(docs) {
 async function loadAdminRoles() {
   const el = document.getElementById('adminRolesList');
   if (!el) return;
-  el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('lock',13)}</span>載入中...</div>`;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>載入中...</div>';
   try {
     let docs = await fbList(COL_ROLES);
     if (!docs.length) docs = await _seedDefaultRolesIfEmpty();
@@ -13818,14 +13818,14 @@ async function loadAdminRoles() {
     });
     _rolesCache = docs;
     if (!docs.length) {
-      el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('lock',13)}</span>查無角色資料</div>`;
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>查無角色資料</div>';
     } else {
       el.innerHTML = '';
       docs.forEach(r => el.appendChild(_roleCardEl(r)));
     }
     renderPermissionMatrix(docs);
   } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('warning',13) + '</span>載入失敗：' + e.message + '</div>';
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
 }
 
@@ -13876,7 +13876,7 @@ function renderPermissionMatrix(roles) {
   if (!el) return;
   const activeRoles = (roles || []).filter(r => r.active !== false);
   if (!activeRoles.length) {
-    el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('lock',13)}</span>尚無啟用中的角色</div>`;
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">🔐</span>尚無啟用中的角色</div>';
     return;
   }
   const wrap = document.createElement('div');
@@ -15195,7 +15195,7 @@ async function deleteAnnounce(id, text) {
 async function loadAdminAnnouncements() {
   const el = document.getElementById('adminAnnounceList');
   if (!el) return;
-  el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('megaphone',13)}</span>載入中...</div>`;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>';
   try {
     const today = new Date().toLocaleDateString('sv');
     // 公告＝發給全體／管理員的廣播；發給單一成員的個人推播只會出現在「推播」分頁
@@ -15208,14 +15208,14 @@ async function loadAdminAnnouncements() {
       const getT = d => { const t=d._t; if(!t)return 0; if(typeof t.toMillis==='function')return t.toMillis(); if(t.seconds)return t.seconds*1000; return 0; };
       return getT(b) - getT(a);
     });
-    if (!docs.length) { el.innerHTML='<div class="query-empty"><span class="empty-icon">' + _ic('megaphone',13) + '</span>尚無公告</div>'; return; }
+    if (!docs.length) { el.innerHTML='<div class="query-empty"><span class="empty-icon">📢</span>尚無公告</div>'; return; }
     el.innerHTML = '';
     docs.forEach(d => {
       const isActive  = d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today;
       const isExpired = (d.endDate||'9999') < today;
       const statusClr   = isActive ? '#16a34a' : isExpired ? '#94a3b8' : '#d97706';
       const statusBg    = isActive ? '#f0fdf4' : isExpired ? '#f1f5f9' : '#fffbeb';
-      const statusIcon  = isActive ? _ic('checkCircle',11) : isExpired ? _ic('square',11) : _ic('pause',11);
+      const statusIcon  = isActive ? '✅' : isExpired ? '⏹' : '⏸';
       const statusLabel = isActive ? '進行中' : isExpired ? '已過期' : '未啟用';
 
       const card = document.createElement('div');
@@ -15227,7 +15227,7 @@ async function loadAdminAnnouncements() {
 
       const statusPill = document.createElement('span');
       statusPill.style.cssText = `display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:${statusClr};background:${statusBg};border-radius:20px;padding:3px 10px;white-space:nowrap;`;
-      statusPill.innerHTML = `${statusIcon} ${statusLabel}`;
+      statusPill.textContent = `${statusIcon} ${statusLabel}`;
       head.appendChild(statusPill);
 
       const _ts = d.createdAt;
@@ -15243,7 +15243,7 @@ async function loadAdminAnnouncements() {
       if (sentStr) {
         const sentSpan = document.createElement('span');
         sentSpan.style.cssText = 'font-size:0.68rem;color:#94a3b8;white-space:nowrap;';
-        sentSpan.innerHTML = `${_ic('upload',11)} ${sentStr}`;
+        sentSpan.textContent = `📤 ${sentStr}`;
         head.appendChild(sentSpan);
       }
 
@@ -15264,27 +15264,27 @@ async function loadAdminAnnouncements() {
       // 標籤列：來源 + 對象（全體／管理員） + 緊急／置頂
       const tagRow = document.createElement('div');
       tagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;';
-      const srcMap = { broadcast:`${_ic('megaphone',11)} 廣播`, correction:`${_ic('note',11)} 修正申請`, feedback:`${_ic('message',11)} 意見回饋`, system:`${_ic('bell',11)} 系統公告`, confirm:`${_ic('clipboard',11)} 確認任務` };
+      const srcMap = { broadcast:'📢 廣播', correction:'📝 修正申請', feedback:'💬 意見回饋', system:'🔔 系統公告', confirm:'📋 確認任務' };
       const srcClr = { broadcast:'#c62828', correction:'#1565c0', feedback:'#6a1b9a', system:'#2e7d32', confirm:'#e65100' };
       const srcBg  = { broadcast:'#ffebee', correction:'#e3f2fd', feedback:'#f3e5f5', system:'#e8f5e9', confirm:'#fff3e0' };
       const srcType = d.type || 'system';
       const srcB = document.createElement('span');
       srcB.style.cssText = `font-size:0.68rem;background:${srcBg[srcType]||'#f5f5f5'};color:${srcClr[srcType]||'#555'};border-radius:20px;padding:2px 8px;font-weight:600;`;
-      srcB.innerHTML = srcMap[srcType] || `${_ic('bell',11)} 系統公告`;
+      srcB.textContent = srcMap[srcType] || '🔔 系統公告';
       tagRow.appendChild(srcB);
 
-      const audMap = { all:`${_ic('users',11)} 全體成員`, admin:`${_ic('key',11)} 管理員／承辦` };
+      const audMap = { all:'👥 全體成員', admin:'🔑 管理員／承辦' };
       const audClr = { all:'#1565c0', admin:'#4a148c' };
       const audBg  = { all:'#e3f2fd', admin:'#f3e5f5' };
       const aud = d.audience || 'all';
       if (audMap[aud]) {
         const audB = document.createElement('span');
         audB.style.cssText = `font-size:0.68rem;background:${audBg[aud]};color:${audClr[aud]};border-radius:20px;padding:2px 8px;font-weight:600;`;
-        audB.innerHTML = audMap[aud];
+        audB.textContent = audMap[aud];
         tagRow.appendChild(audB);
       }
-      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.innerHTML=`${_ic('siren',11)} 緊急`; tagRow.appendChild(b); }
-      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.innerHTML=`${_ic('pin',11)} 置頂`; tagRow.appendChild(b); }
+      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.textContent='🚨 緊急'; tagRow.appendChild(b); }
+      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.textContent='📌 置頂'; tagRow.appendChild(b); }
 
       const metaLine = document.createElement('div');
       metaLine.style.cssText = 'font-size:0.7rem;color:#94a3b8;margin-bottom:2px;';
@@ -15300,7 +15300,7 @@ async function loadAdminAnnouncements() {
       editBtn.addEventListener('click', () => showAnnounceForm(d));
 
       const toggleBtn = document.createElement('button');
-      toggleBtn.innerHTML = d.active !== false ? _ic('pause',12) + ' 停用' : _ic('play',12) + ' 啟用';
+      toggleBtn.textContent = d.active !== false ? '⏸ 停用' : '▶ 啟用';
       toggleBtn.style.cssText = `background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;min-height:unset;color:${d.active!==false?'#856404':'#1a6b35'};`;
       toggleBtn.addEventListener('click', () => toggleAnnounce(d.id, d.active !== false));
 
@@ -15313,7 +15313,7 @@ async function loadAdminAnnouncements() {
       card.appendChild(head); card.appendChild(body); card.appendChild(tagRow); card.appendChild(metaLine); card.appendChild(foot);
       el.appendChild(card);
     });
-  } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('warning',13) + '</span>載入失敗：'+e.message+'</div>'; }
+  } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：'+e.message+'</div>'; }
 }
 
 
@@ -15471,41 +15471,40 @@ async function sendManualPush() {
       }).catch(() => {});
       loadAnnouncement();
       statusEl.style.color = '#16a34a';
-      statusEl.innerHTML = `${_ic('checkCircle',13)} 推播成功傳送（${successCount} 筆）`;
+      statusEl.textContent = `✅ 推播成功傳送（${successCount} 筆）`;
       setTimeout(() => { hidePushForm(); loadPushLog(); }, 1500);
     } else {
       let errMsg = result.error || result.message || '';
       statusEl.style.color = 'var(--red)';
-      statusEl.innerHTML = `${_ic('xCircle',13)} 推播失敗（HTTP ${res.status}${errMsg ? '：' + errMsg : ''}）`;
+      statusEl.textContent = `❌ 推播失敗（HTTP ${res.status}${errMsg ? '：' + errMsg : ''}）`;
     }
   } catch(e) {
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: targetNames.length || 1, errorMsg: e.message || String(e) }).catch(()=>{});
     statusEl.style.color = 'var(--red)';
-    statusEl.innerHTML = `${_ic('xCircle',13)} 網路錯誤：` + e.message;
+    statusEl.textContent = '❌ 網路錯誤：' + e.message;
   } finally {
-    sendBtn.innerHTML = _ic('upload',13) + ' 發送推播'; sendBtn.disabled = false;
+    sendBtn.textContent = '📤 發送推播'; sendBtn.disabled = false;
   }
 }
 
 async function loadPushLog() {
   const el = document.getElementById('adminPushLogList');
   if (!el) return;
-  el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('upload',13) + '</span>載入中…</div>';
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>載入中…</div>';
   try {
     const docs = (await fbList(COL_PUSH_LOG, 'sentAt', 'desc')).filter(d => d.source !== 'announce');
     if (!docs.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('upload',13) + '</span>尚無推播紀錄</div>';
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">📤</span>尚無推播紀錄</div>';
       return;
     }
-    const statusMeta = { ok:{clr:'#16a34a',bg:'#f0fdf4',icon:_ic('checkCircle',12),label:'成功'}, fail:{clr:'#dc2626',bg:'#fef2f2',icon:_ic('xCircle',12),label:'失敗'}, pending:{clr:'#f59e0b',bg:'#fffbeb',icon:_ic('hourglass',12),label:'處理中'} };
+    const statusMeta = { ok:{clr:'#16a34a',bg:'#f0fdf4',icon:'✅',label:'成功'}, fail:{clr:'#dc2626',bg:'#fef2f2',icon:'❌',label:'失敗'}, pending:{clr:'#f59e0b',bg:'#fffbeb',icon:'⏳',label:'處理中'} };
     const audMeta = { all:{clr:'#1565c0',bg:'#e3f2fd'}, admin:{clr:'#4a148c',bg:'#f3e5f5'}, members:{clr:'#e65100',bg:'#fff3e0'} };
     el.innerHTML = docs.map(d => {
       const sm = statusMeta[d.status] || statusMeta.pending;
       const targetNames = d.targetNames || d.targetMembers || [];
       const am = audMeta[d.target] || { clr:'#475569', bg:'#f1f5f9' };
-      const targetLabel = d.target === 'all' ? `${_ic('users',12)} 全體成員` : d.target === 'admin' ? `${_ic('key',12)} 管理員／承辦` : `${_ic('user',12)} 個人推播（${targetNames.length} 人）`;
-      const robotTag = _ic('robot',12);
-      const sourceMap = {'auto-duty-tomorrow':`${robotTag} 明日排班提醒`,'auto-duty-before1h':`${robotTag} 排班前1小時`,'auto-duty-nosignout':`${robotTag} 未簽退提醒`,'auto-monthly-open':`${robotTag} 月班表開放`,'auto-monthly-confirm':`${robotTag} 月確認任務`,'auto-training-today':`${robotTag} 今日定訓提醒`,'auto-training-tomorrow':`${robotTag} 明日定訓提醒`,'auto-budget-alert':`${robotTag} 預算警示`,'auto-correction':`${robotTag} 修正申請通知`,'auto-feedback':`${robotTag} 意見回饋通知`};
+      const targetLabel = d.target === 'all' ? '👥 全體成員' : d.target === 'admin' ? '🔑 管理員／承辦' : `👤 個人推播（${targetNames.length} 人）`;
+      const sourceMap = {'auto-duty-tomorrow':'🤖 明日排班提醒','auto-duty-before1h':'🤖 排班前1小時','auto-duty-nosignout':'🤖 未簽退提醒','auto-monthly-open':'🤖 月班表開放','auto-monthly-confirm':'🤖 月確認任務','auto-training-today':'🤖 今日定訓提醒','auto-training-tomorrow':'🤖 明日定訓提醒','auto-budget-alert':'🤖 預算警示','auto-correction':'🤖 修正申請通知','auto-feedback':'🤖 意見回饋通知'};
       const sourceLabel = d.source ? (sourceMap[d.source] || null) : null;
       const names = targetNames.join('、');
       return `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.06);border-left:3px solid ${sm.clr};">
@@ -15522,7 +15521,7 @@ async function loadPushLog() {
           ${d.status==='fail'&&d.failCount ? `<span style="font-size:0.68rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;font-weight:600;">✘ ${d.failCount} 筆失敗</span>` : ''}
         </div>
         ${names ? `<div style="font-size:0.7rem;color:#94a3b8;margin-bottom:4px;">收件人：${names}</div>` : ''}
-        ${d.status==='fail'&&d.errorMsg ? `<div style="font-size:0.7rem;color:#dc2626;background:#fef2f2;border-radius:6px;padding:4px 8px;margin-bottom:6px;">${_ic('warning',11)} ${d.errorMsg}</div>` : ''}
+        ${d.status==='fail'&&d.errorMsg ? `<div style="font-size:0.7rem;color:#dc2626;background:#fef2f2;border-radius:6px;padding:4px 8px;margin-bottom:6px;">⚠️ ${d.errorMsg}</div>` : ''}
         <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #f1f5f9;margin-top:2px;">
           <div style="font-size:0.68rem;color:#94a3b8;">由 ${d.sentBy||'—'} 發送</div>
           <button onclick="deletePushLog('${d.id}')" style="background:none;border:none;color:#cbd5e1;font-size:0.7rem;cursor:pointer;padding:2px 4px;font-family:'Noto Sans TC',sans-serif;" title="刪除此筆紀錄">刪除</button>
@@ -15530,7 +15529,7 @@ async function loadPushLog() {
       </div>`;
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('warning',13) + '</span>載入失敗：' + e.message + '</div>';
+    el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>';
   }
 }
 
@@ -15633,13 +15632,13 @@ async function _loadUsageMonitor() {
     const statusEl = document.getElementById('_usageMeterStatus');
     if (pct >= 90) {
       statusEl.style.background = '#fdecea'; statusEl.style.color = '#c0392b';
-      statusEl.innerHTML = _ic('warning',13) + ' 費用預算已達 90% 以上，請注意費用';
+      statusEl.textContent = '⚠️ 費用預算已達 90% 以上，請注意費用';
     } else if (pct >= 70) {
       statusEl.style.background = '#fff3e0'; statusEl.style.color = '#e65100';
-      statusEl.innerHTML = _ic('warning',13) + ' 費用預算偏高（70–89%）— 請留意';
+      statusEl.textContent = '⚠️ 費用預算偏高（70–89%）— 請留意';
     } else {
       statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32';
-      statusEl.innerHTML = _ic('checkCircle',13) + ' 費用正常 — 所有功能正常使用中';
+      statusEl.textContent = '✅ 費用正常 — 所有功能正常使用中';
     }
 
     // 費用資訊卡
@@ -15649,7 +15648,7 @@ async function _loadUsageMonitor() {
         const remain = Math.max(0, Number(budgetAmount) - Number(costAmount));
         costEl.style.display = 'block';
         costEl.innerHTML =
-          `<div style="font-size:0.78rem;font-weight:700;color:#795548;margin-bottom:6px;">${_ic('banknote',13)} Cloud Billing 費用明細</div>`
+          `<div style="font-size:0.78rem;font-weight:700;color:#795548;margin-bottom:6px;">💰 Cloud Billing 費用明細</div>`
         + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:0.78rem;color:#5d4037;">`
         + `<span>本期費用</span><span style="font-weight:700;">${currency} ${Number(costAmount).toFixed(2)}</span>`
         + `<span>預算上限</span><span style="font-weight:700;">${currency} ${Number(budgetAmount).toFixed(2)}</span>`
@@ -15664,7 +15663,7 @@ async function _loadUsageMonitor() {
     if (loading) loading.style.display = 'none';
     if (body)    body.style.display = 'block';
   } catch(e) {
-    if (loading) { loading.innerHTML = _ic('warning',13) + ' 載入失敗，請重新整理'; }
+    if (loading) { loading.textContent = '⚠️ 載入失敗，請重新整理'; }
   }
 }
 
@@ -16494,7 +16493,7 @@ function _renderRolePreviewBanner() {
 
 async function repairHasSig(btn) {
   if (!_requireAdmin()) return;
-  btn.disabled = true; btn.innerHTML = _ic('refresh',12) + ' 掃描中...';
+  btn.disabled = true; btn.textContent = '🔄 掃描中...';
   const log = document.getElementById('repairHasSigLog');
   if (log) log.textContent = '';
   try {
@@ -16511,12 +16510,12 @@ async function repairHasSig(btn) {
       }
     }
     _C.invalidate(COL_ATTEND);
-    const msg = `${_ic('checkCircle',13)} 完成：掃描 ${checked} 筆，修復 ${fixed} 筆`;
-    if (log) log.innerHTML = msg;
-    btn.innerHTML = _ic('key',13) + ' 執行修復';
+    const msg = `✅ 完成：掃描 ${checked} 筆，修復 ${fixed} 筆`;
+    if (log) log.textContent = msg;
+    btn.textContent = '🔑 執行修復';
   } catch(e) {
-    const msg = `${_ic('xCircle',13)} 失敗：` + e.message;
-    if (log) log.innerHTML = msg;
+    const msg = '❌ 失敗：' + e.message;
+    if (log) log.textContent = msg;
   } finally {
     btn.disabled = false;
   }
@@ -16675,19 +16674,19 @@ async function submitFeedback() {
 // ════════════════════════════════════════
 async function loadAdminFeedback() {
   const el = document.getElementById('adminFeedbackList'); if (!el) return;
-  el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('message',13)}</span>載入中...</div>`;
+  el.innerHTML = '<div class="query-empty"><span class="empty-icon">💬</span>載入中...</div>';
   try {
     let docs = await fbList(COL_FEEDBACK);
     const u = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
     if (!u.isAdmin) docs = docs.filter(d => d.unit === u.unit);
-    if (!docs.length) { el.innerHTML = `<div class="query-empty"><span class="empty-icon">${_ic('message',13)}</span>尚無意見回饋</div>`; return; }
+    if (!docs.length) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">💬</span>尚無意見回饋</div>'; return; }
     docs.sort((a, b) => (b.time || '') > (a.time || '') ? 1 : -1);
 
     const CAT_STYLE = {
-      '問題回報': { bg:'#FEF3C7', color:'#92400E', icon:'bug' },
-      '功能建議': { bg:'#DCFCE7', color:'#166534', icon:'lightbulb' },
-      '操作問題': { bg:'#E0F2FE', color:'#075985', icon:'helpCircle' },
-      '其他':     { bg:'#F1F5F9', color:'#475569', icon:'message' },
+      '問題回報': { bg:'#FEF3C7', color:'#92400E', icon:'🐛' },
+      '功能建議': { bg:'#DCFCE7', color:'#166534', icon:'💡' },
+      '操作問題': { bg:'#E0F2FE', color:'#075985', icon:'❓' },
+      '其他':     { bg:'#F1F5F9', color:'#475569', icon:'💬' },
     };
 
     el.innerHTML = `<div style="font-size:0.78rem;color:var(--text-light);margin-bottom:10px;">共 ${docs.length} 則意見</div>` +
@@ -16702,8 +16701,8 @@ async function loadAdminFeedback() {
           <!-- 頂部：選取 + 分類 + 時間 -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
             <input type="checkbox" class="fbChk" data-id="${d.id}" style="flex-shrink:0;accent-color:#1565c0;">
-            <span style="font-size:0.72rem;font-weight:600;background:${cs.bg};color:${cs.color};border-radius:20px;padding:3px 10px;white-space:nowrap;">${_ic(cs.icon,11)} ${cat}</span>
-            ${d.unit ? `<span style="font-size:0.7rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:3px 8px;white-space:nowrap;">${_ic('building',11)} ${d.unit}</span>` : ''}
+            <span style="font-size:0.72rem;font-weight:600;background:${cs.bg};color:${cs.color};border-radius:20px;padding:3px 10px;white-space:nowrap;">${cs.icon} ${cat}</span>
+            ${d.unit ? `<span style="font-size:0.7rem;background:#e8f4fd;color:#1a6b9a;border-radius:20px;padding:3px 8px;white-space:nowrap;">🏢 ${d.unit}</span>` : ''}
             <span style="font-size:0.72rem;color:var(--text-light);margin-left:auto;white-space:nowrap;">${(d.time||'').substring(0,16)}</span>
           </div>
           <!-- 中間：頭像 + 姓名 + 內容 -->
@@ -16723,7 +16722,7 @@ async function loadAdminFeedback() {
           </div>
         </div>`;
       }).join('');
-  } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('warning',13) + '</span>載入失敗：' + e.message + '</div>'; }
+  } catch(e) { el.innerHTML = '<div class="query-empty"><span class="empty-icon">⚠️</span>載入失敗：' + e.message + '</div>'; }
 }
 
 
@@ -21529,7 +21528,7 @@ async function createConfirmTask() {
   overlay.innerHTML = `
     <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">${_ic('clipboard',14)} 確認任務預覽</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📋 確認任務預覽</div>
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);line-height:1;">✕</button>
       </div>
       <div style="background:#f2f2f7;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
@@ -21559,7 +21558,7 @@ async function createConfirmTask() {
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()"
           style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
         <button id="bpSendBtn" onclick="_confirmCreateTask('${month}','${unit}','${defNote.replace(/'/g,"\\'")}')"
-          style="flex:2;padding:12px;border:none;border-radius:10px;background:#2e7d32;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">${_ic('checkCircle',14)} 發起並通知成員</button>
+          style="flex:2;padding:12px;border:none;border-radius:10px;background:#2e7d32;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 發起並通知成員</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -21593,12 +21592,12 @@ async function _confirmCreateTask(month, unit, note) {
     });
     document.getElementById('broadcastPreviewOverlay')?.remove();
     const statusEl = document.getElementById('confirmCreateStatus');
-    if (statusEl) { statusEl.style.color = '#1a6b35'; statusEl.innerHTML = `${_ic('checkCircle',13)} 確認任務已建立，成員將收到通知`; }
+    if (statusEl) { statusEl.style.color = '#1a6b35'; statusEl.textContent = '✅ 確認任務已建立，成員將收到通知'; }
     const noteEl = document.getElementById('confirmNote');
     if (noteEl) noteEl.value = '';
     await loadAdminConfirmTasks();
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.innerHTML = `${_ic('checkCircle',14)} 發起並通知成員`; }
+    if (btn) { btn.disabled = false; btn.textContent = '✅ 發起並通知成員'; }
     alert('建立失敗：' + e.message);
   }
 }
@@ -21613,7 +21612,7 @@ async function _remindPendingConfirm(task, pendNames) {
   overlay.innerHTML = `
     <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">${_ic('phone',14)} 催促未回應成員</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📣 催促未回應成員</div>
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);">✕</button>
       </div>
       <div style="background:#fff8e1;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;color:#e65100;">
@@ -21644,7 +21643,7 @@ async function _remindPendingConfirm(task, pendNames) {
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()"
           style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
         <button id="bpSendBtn" onclick="_sendRemindPush(${JSON.stringify(pendNames).replace(/"/g,'&quot;')})"
-          style="flex:2;padding:12px;border:none;border-radius:10px;background:#e65100;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">${_ic('phone',14)} 發送催促推播</button>
+          style="flex:2;padding:12px;border:none;border-radius:10px;background:#e65100;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">📣 發送催促推播</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -21670,9 +21669,9 @@ async function _sendRemindPush(pendNames) {
       if (resp.ok) sentCount++;
     }
     document.getElementById('broadcastPreviewOverlay')?.remove();
-    _showToast(`${_ic('checkCircle',13)} 已對 ${sentCount} 位未回應成員發送催促推播`);
+    _showToast(`✅ 已對 ${sentCount} 位未回應成員發送催促推播`);
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.innerHTML = _ic('phone',14) + ' 發送催促推播'; }
+    if (btn) { btn.disabled = false; btn.textContent = '📣 發送催促推播'; }
     alert('發送失敗：' + e.message);
   }
 }
@@ -21688,7 +21687,7 @@ async function loadAdminConfirmTasks() {
     tasks.sort((a, b) => (b.month || '') > (a.month || '') ? 1 : -1);
 
     if (!tasks.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('checkCircle',13) + '</span>尚無確認任務</div>';
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">✅</span>尚無確認任務</div>';
       return;
     }
     el.innerHTML = '';
@@ -21715,7 +21714,7 @@ async function loadAdminConfirmTasks() {
       const head = document.createElement('div');
       head.style.cssText = 'background:' + (task.status === 'active' ? 'var(--red-faint)' : 'var(--warm)') + ';padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
       head.innerHTML =
-        '<span style="font-weight:700;font-size:0.95rem;color:var(--text);">'+_ic('calendar',14)+' ' + task.month + '</span>' +
+        '<span style="font-weight:700;font-size:0.95rem;color:var(--text);">📅 ' + task.month + '</span>' +
         '<span style="font-size:0.78rem;color:var(--text-light);">' + task.unit + '</span>' +
         (task.note ? '<span style="font-size:0.75rem;background:#fff3cd;color:#856404;border-radius:10px;padding:2px 8px;">' + task.note + '</span>' : '') +
         '<span style="margin-left:auto;font-size:0.72rem;padding:2px 10px;border-radius:10px;background:' + (task.status==='active'?'#eafaf1':'#f0f0f0') + ';color:' + (task.status==='active'?'#1a6b35':'#888') + ';font-weight:600;">' + (task.status==='active'?'進行中':'已關閉') + '</span>';
@@ -21727,12 +21726,12 @@ async function loadAdminConfirmTasks() {
       prog.innerHTML =
         '<div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-mid);margin-bottom:6px;">' +
           '<span>已回應 <b>' + doneCount + '</b>／' + total + ' 人</span>' +
-          '<span style="color:' + (pendCount>0?'#e67e22':'#27ae60') + ';">' + (pendCount>0?_ic('hourglass',12)+' 待回應 '+pendCount+' 人':_ic('checkCircle',12)+' 全部完成') + '</span>' +
+          '<span style="color:' + (pendCount>0?'#e67e22':'#27ae60') + ';">' + (pendCount>0?'⏳ 待回應 '+pendCount+' 人':'✅ 全部完成') + '</span>' +
         '</div>' +
         '<div style="background:var(--border);border-radius:4px;height:8px;"><div style="background:var(--red);border-radius:4px;height:8px;width:' + pct + '%;transition:width 0.4s;"></div></div>' +
         '<div style="display:flex;gap:16px;margin-top:8px;font-size:0.75rem;">' +
           '<span style="color:#27ae60;">✓ 確認無誤 ' + okCount + ' 人</span>' +
-          '<span style="color:#e67e22;">'+_ic('warning',11)+' 有問題 ' + issueCount + ' 人</span>' +
+          '<span style="color:#e67e22;">⚠ 有問題 ' + issueCount + ' 人</span>' +
           '<span style="color:var(--text-light);">未回應 ' + pendCount + ' 人</span>' +
         '</div>';
 
@@ -21748,7 +21747,7 @@ async function loadAdminConfirmTasks() {
           statusBadge = '<span style="font-size:0.7rem;background:#d4edda;color:#1a6b35;border-radius:10px;padding:2px 8px;">✓ 確認無誤</span>';
         } else {
           const iType = resp.issueType || '';
-          const issueLabel = iType === 'admin' ? _ic('warning',11)+' 需管理員協助' : _ic('warning',11)+' 有問題';
+          const issueLabel = iType === 'admin' ? '⚠ 需管理員協助' : '⚠ 有問題';
           const issueBg    = iType === 'admin' ? '#fde8e8' : '#fff3e0';
           const issueColor = iType === 'admin' ? '#b94a3a' : '#e67e22';
           statusBadge = '<span style="font-size:0.7rem;background:'+issueBg+';color:'+issueColor+';border-radius:10px;padding:2px 8px;font-weight:700;">'+issueLabel+'</span>';
@@ -21780,7 +21779,7 @@ async function loadAdminConfirmTasks() {
 
         if (pendCount > 0) {
           const remindBtn = document.createElement('button');
-          remindBtn.innerHTML = `${_ic('phone',12)} 催促未回應 (${pendCount} 人)`;
+          remindBtn.textContent = `📣 催促未回應 (${pendCount} 人)`;
           remindBtn.style.cssText = 'background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;color:#e65100;font-family:\'Noto Sans TC\',sans-serif;font-weight:600;';
           const pendNames = unitMembers.filter(m => !responses.find(r => r.memberName === m.name)).map(m => m.name);
           remindBtn.onclick = () => _remindPendingConfirm(task, pendNames);
@@ -22202,8 +22201,8 @@ async function loadTempPassList() {
         +'<button class="tpSingleDel" data-col="'+COL_TEMP_PASS+'" data-id="'+d.id+'" style="background:none;border:1px solid #f5c6c6;border-radius:3px;padding:2px 6px;font-size:0.72rem;color:#b94a3a;cursor:pointer;"><svg style="width:14px;height:14px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 14 4"/><path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M6 7v5M10 7v5"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></button>'
         +'</div></div>'
         +'<div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-light);flex-wrap:wrap;">'
-        +'<span>'+_ic('alarmClock',11)+' '+expStr+'</span>'
-        +'<span>'+_ic('barChart',11)+' '+d.usedCount+'/'+(d.maxUses===0?'∞':d.maxUses)+'</span>'
+        +'<span>⏰ '+expStr+'</span>'
+        +'<span>📊 '+d.usedCount+'/'+(d.maxUses===0?'∞':d.maxUses)+'</span>'
         +(d.note?'<span><svg style="width:13px;height:13px;vertical-align:middle;flex-shrink:0;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="13" rx="1"/><path d="M5 5h4M5 8h4M5 11h2"/></svg> '+d.note+'</span>':'')+'</div>'
         +(!inactive?'<div style="margin-top:6px;"><button onclick="revokeTempPass(&quot;'+d.id+'&quot;)" style="background:none;border:1px solid #f5c6c6;border-radius:4px;padding:3px 10px;font-size:0.72rem;color:#b94a3a;cursor:pointer;">撤銷</button></div>':'');
       el.appendChild(row);
