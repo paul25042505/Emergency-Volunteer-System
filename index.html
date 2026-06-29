@@ -7303,17 +7303,17 @@ function _renderDashWeather(data) {
     const c = data.current;
 
     const weatherMap = [
-      [0,  'sun',        '晴天'],      [1, 'cloudSun',   '大致晴朗'],
-      [2,  'cloudSun',   '部分多雲'],  [3, 'cloud',      '陰天'],
-      [45, 'cloudFog',   '霧'],        [48, 'cloudFog',  '濃霧'],
-      [51, 'cloudRain',  '毛毛雨'],    [53, 'cloudRain', '毛毛雨'],   [55, 'cloudRain', '毛毛雨'],
-      [61, 'cloudRain',  '小雨'],      [63, 'cloudRain', '中雨'],     [65, 'cloudRain', '大雨'],
-      [71, 'cloudSnow',  '小雪'],      [73, 'cloudSnow', '中雪'],     [75, 'cloudSnow', '大雪'],
-      [80, 'cloudRain',  '陣雨'],      [81, 'cloudRain', '陣雨'],     [82, 'cloudStorm', '強陣雨'],
-      [95, 'cloudStorm', '雷陣雨'],    [96, 'cloudStorm', '雷陣雨'],  [99, 'cloudStorm', '雷陣雨'],
+      [0,  '☀️', '晴天'],      [1, '🌤', '大致晴朗'],
+      [2,  '⛅', '部分多雲'],  [3, '☁️', '陰天'],
+      [45, '🌫', '霧'],        [48, '🌫', '濃霧'],
+      [51, '🌦', '毛毛雨'],    [53, '🌦', '毛毛雨'],   [55, '🌦', '毛毛雨'],
+      [61, '🌧', '小雨'],      [63, '🌧', '中雨'],     [65, '🌧', '大雨'],
+      [71, '🌨', '小雪'],      [73, '🌨', '中雪'],     [75, '🌨', '大雪'],
+      [80, '🌦', '陣雨'],      [81, '🌧', '陣雨'],     [82, '⛈', '強陣雨'],
+      [95, '⛈', '雷陣雨'],    [96, '⛈', '雷陣雨'],   [99, '⛈', '雷陣雨'],
     ];
     const code  = c.weathercode;
-    const match = weatherMap.slice().reverse().find(([v]) => code >= v) || [0, 'thermometer', '—'];
+    const match = weatherMap.slice().reverse().find(([v]) => code >= v) || [0, '🌡', '—'];
 
     // UV 等級
     const uv = c.uv_index ?? 0;
@@ -7323,8 +7323,7 @@ function _renderDashWeather(data) {
     const vis = c.visibility != null ? (c.visibility / 1000).toFixed(1) + ' km' : '—';
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    const wIconEl = document.getElementById('dashWeatherIcon');
-    if (wIconEl) wIconEl.innerHTML = _ic(match[1], 48);
+    set('dashWeatherIcon',     match[1]);
     set('dashWeatherTemp',     Math.round(c.temperature_2m) + '°C');
     set('dashWeatherDesc',     match[2]);
     set('dashWeatherHumidity', (c.relative_humidity_2m ?? '—') + '%');
@@ -7628,22 +7627,22 @@ function _renderDashForecast(periods) {
 
   const icon = c => {
     const n = parseInt(c);
-    if (n === 1) return 'sun';
-    if (n === 2) return 'cloudSun';
-    if (n <= 4)  return 'cloudSun';
-    if (n <= 7)  return 'cloud';
-    if (n <= 10) return 'cloud';
-    if (n <= 14) return 'cloudRain';
-    if (n <= 22) return 'cloudStorm';
-    return 'thermometer';
+    if (n === 1) return '☀️';
+    if (n === 2) return '🌤';
+    if (n <= 4)  return '⛅';
+    if (n <= 7)  return '🌥';
+    if (n <= 10) return '☁️';
+    if (n <= 14) return '🌧';
+    if (n <= 22) return '⛈';
+    return '🌡';
   };
 
   scroll.innerHTML = periods.map(p => `
     <div style="text-align:center;background:rgba(255,255,255,0.18);border-radius:10px;padding:8px 4px;">
       <div style="font-size:0.6rem;color:rgba(255,255,255,0.65);margin-bottom:4px;white-space:nowrap;">${p.label}</div>
-      <div style="line-height:1.2;margin-bottom:3px;">${_ic(icon(p.wxCode), 22)}</div>
+      <div style="font-size:1.35rem;line-height:1.2;margin-bottom:3px;">${icon(p.wxCode)}</div>
       <div style="font-size:0.7rem;color:white;font-weight:600;">${p.maxT}°/${p.minT}°</div>
-      <div style="font-size:0.6rem;color:rgba(255,255,255,0.65);margin-top:2px;">${_ic('umbrella', 11)} ${p.pop}%</div>
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.65);margin-top:2px;">☂ ${p.pop}%</div>
     </div>`).join('');
   section.style.display = 'block';
 }
