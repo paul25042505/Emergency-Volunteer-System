@@ -13653,12 +13653,14 @@ const PERMISSION_ACTIONS = [
   { key:'send',    label:'發送' },
   { key:'approve', label:'核准' },
 ];
+// 角色名稱對齊既有系統角色稱謂（與成員編輯頁「角色稱謂」下拉選單一致）。
+// 「小隊長」與「幹部」在既有系統中是同一層級的不同稱謂，本管理層僅保留「幹部」一項，總共 4 個角色。
 const DEFAULT_ROLES = [
-  { id:'admin', name:'管理員', desc:'系統最高權限，可管理所有模組',
+  { id:'admin', name:'系統管理員', desc:'系統最高權限，可管理所有模組',
     perms:{ members:['view','create','edit','delete'], units:['view','create','edit','delete'], casetypes:['view','create','edit','delete'], schedule:['view','create','edit','delete'], correction:['view','approve','delete'], announce:['view','create','edit','delete','send'], push:['view','send'], confirm:['view','create','edit','delete'], auditlog:['view'], usage:['view'] } },
-  { id:'officer', name:'承辦人', desc:'協助處理日常行政與審核作業',
+  { id:'officer', name:'分隊承辦人', desc:'協助處理日常行政與審核作業',
     perms:{ members:['view','edit'], units:['view'], casetypes:['view','create','edit'], schedule:['view','create','edit'], correction:['view','approve'], announce:['view','create','edit','send'], push:['view','send'], confirm:['view','create','edit'], auditlog:['view'], usage:['view'] } },
-  { id:'cadre', name:'幹部', desc:'分隊幹部，查看為主、部分編輯權限',
+  { id:'cadre', name:'幹部', desc:'分隊幹部（含小隊長），查看為主、部分編輯權限',
     perms:{ members:['view'], units:['view'], casetypes:['view'], schedule:['view'], correction:['view'], announce:['view'], push:[], confirm:['view'], auditlog:[], usage:[] } },
   { id:'member', name:'一般成員', desc:'一般志工成員，僅可查看公開資訊',
     perms:{ members:[], units:[], casetypes:[], schedule:['view'], correction:[], announce:['view'], push:[], confirm:[], auditlog:[], usage:[] } },
@@ -13682,6 +13684,21 @@ async function _seedDefaultRolesIfEmpty() {
   } catch(e) { console.warn('_seedDefaultRolesIfEmpty:', e); return []; }
 }
 
+// 修正先前版本誤建立的預設角色名稱，與既有系統角色稱謂對齊（僅修正名稱，不影響權限內容）
+async function _fixDefaultRoleNames(docs) {
+  try {
+    for (const doc of docs) {
+      if (!doc.isDefault || !doc.baseRole) continue;
+      const def = DEFAULT_ROLES.find(r => r.id === doc.baseRole);
+      if (def && doc.name !== def.name) {
+        await fbUpdate(COL_ROLES, doc.id, { name: def.name });
+        doc.name = def.name;
+      }
+    }
+  } catch(e) { console.warn('_fixDefaultRoleNames:', e); }
+  return docs;
+}
+
 async function loadAdminRoles() {
   const el = document.getElementById('adminRolesList');
   if (!el) return;
@@ -13689,6 +13706,7 @@ async function loadAdminRoles() {
   try {
     let docs = await fbList(COL_ROLES);
     if (!docs.length) docs = await _seedDefaultRolesIfEmpty();
+    docs = await _fixDefaultRoleNames(docs);
     docs.sort((a, b) => {
       if (!!a.isDefault !== !!b.isDefault) return a.isDefault ? -1 : 1;
       return (a.name || '').localeCompare(b.name || '');
