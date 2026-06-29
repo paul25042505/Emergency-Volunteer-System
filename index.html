@@ -13782,7 +13782,7 @@ function renderPermissionMatrix(roles) {
     tr.appendChild(modTd);
     activeRoles.forEach(r => {
       const td = document.createElement('td');
-      td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;color:var(--text-mid);';
+      td.style.cssText = 'padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;color:var(--text-mid);white-space:nowrap;';
       const acts = (r.perms && r.perms[m.key]) || [];
       if (!acts.length) {
         td.textContent = '—';
@@ -13821,20 +13821,27 @@ function openRoleEditor(id) {
     label.textContent = m.label;
     row.appendChild(label);
     const actsWrap = document.createElement('div');
-    actsWrap.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;';
+    actsWrap.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
     const checked = checkedPerms[m.key] || [];
     PERMISSION_ACTIONS.forEach(a => {
       const lbl = document.createElement('label');
-      lbl.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:0.78rem;color:var(--text-mid);cursor:pointer;';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.className = 'roleEditPermCb';
       cb.dataset.module = m.key;
       cb.dataset.action = a.key;
       cb.checked = checked.includes(a.key);
+      cb.style.cssText = 'width:15px;height:15px;accent-color:#5e35b1;cursor:pointer;flex-shrink:0;';
       const span = document.createElement('span');
       span.textContent = a.label;
       lbl.appendChild(cb); lbl.appendChild(span);
+      const applyChipStyle = () => {
+        lbl.style.cssText = cb.checked
+          ? 'display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;border:1.5px solid #5e35b1;background:#ede7f6;color:#4527a0;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all .15s;'
+          : 'display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:white;color:var(--text-mid);font-size:0.78rem;font-weight:500;cursor:pointer;transition:all .15s;';
+      };
+      cb.addEventListener('change', applyChipStyle);
+      applyChipStyle();
       actsWrap.appendChild(lbl);
     });
     row.appendChild(actsWrap);
