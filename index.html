@@ -3464,11 +3464,11 @@ function _dlCSV(content, filename) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f1f5f9;border-radius:12px;padding:3px;margin-bottom:16px;">
         <button id="annTab-push" onclick="switchAnnTab('push')"
           style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:transparent;color:#64748b;">
-          📤 推播訊息
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 推播訊息
         </button>
         <button id="annTab-notice" onclick="switchAnnTab('notice')"
           style="border:none;border-radius:10px;padding:9px 0;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;background:white;color:var(--red);box-shadow:0 1px 4px rgba(0,0,0,0.1);">
-          📢 系統公告
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg> 系統公告
         </button>
       </div>
 
@@ -3502,17 +3502,17 @@ function _dlCSV(content, filename) {
           </div>
           <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
             <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
-              <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> 🚨 緊急（彈窗顯示）
+              <input type="checkbox" id="anFormUrgent" style="accent-color:var(--red);"> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21v-2a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="4.2" y1="9" x2="6" y2="9"/><line x1="18" y1="9" x2="19.8" y2="9"/></svg> 緊急（彈窗顯示）
             </label>
             <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer;">
-              <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> 📌 置頂
+              <input type="checkbox" id="anFormPinned" style="accent-color:var(--red);"> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg> 置頂
             </label>
           </div>
           <!-- 推播選項 -->
           <div style="background:#f0f4ff;border:1px solid #c7d7ff;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0;" id="anFormPushToggleLabel">
               <input type="checkbox" id="anFormPushToggle" style="accent-color:#1e3a8a;width:15px;height:15px;" onchange="toggleAnFormPush()">
-              <span style="font-size:0.82rem;font-weight:600;color:#1a237e;">📤 同時發送 FCM 推播通知</span>
+              <span style="font-size:0.82rem;font-weight:600;color:#1a237e;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 同時發送 FCM 推播通知</span>
             </label>
             <div id="anFormPushOpts" style="display:none;margin-top:10px;display:none;">
               <div style="font-size:0.72rem;color:#475569;margin-bottom:6px;">推播對象</div>
@@ -3536,7 +3536,7 @@ function _dlCSV(content, filename) {
         </div>
         <!-- 公告列表 -->
         <div id="adminAnnounceList">
-          <div class="query-empty"><span class="empty-icon">📢</span>載入中...</div>
+          <div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>載入中...</div>
         </div>
       </div>
 
@@ -3545,7 +3545,7 @@ function _dlCSV(content, filename) {
         <div style="display:flex;gap:8px;margin-bottom:14px;">
           <button onclick="showPushForm()"
             style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#1e3a8a;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">
-            📤 發送新推播
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 發送新推播
           </button>
           <button onclick="loadPushLog()" title="重新整理"
             style="flex:0 0 auto;width:46px;display:flex;align-items:center;justify-content:center;border:2px dashed #e2e8f0;border-radius:12px;background:white;color:#64748b;cursor:pointer;">
@@ -3617,7 +3617,7 @@ function _dlCSV(content, filename) {
             <!-- 傳送按鈕 -->
             <button onclick="sendManualPush()" id="pfSendBtn"
               style="width:100%;padding:13px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:white;border:none;border-radius:12px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">
-              📤 發送推播
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 發送推播
             </button>
             <div id="pfStatus" style="font-size:0.8rem;text-align:center;margin-top:10px;min-height:18px;"></div>
           </div>
@@ -3625,7 +3625,7 @@ function _dlCSV(content, filename) {
 
         <!-- 推播紀錄列表 -->
         <div id="adminPushLogList">
-          <div class="query-empty"><span class="empty-icon">📤</span>載入中...</div>
+          <div class="query-empty"><span class="empty-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>載入中...</div>
         </div>
       </div>
 
@@ -3706,7 +3706,7 @@ function _dlCSV(content, filename) {
           <div><label>可使用次數</label><select id="tpUses" style="width:100%;"><option value="1">1 次</option><option value="3">3 次</option><option value="5">5 次</option><option value="0" selected>無限制</option></select></div>
         </div>
         <div style="margin-bottom:12px;"><label>備註（說明用途）</label><input type="text" id="tpNote" placeholder="例：協助王小明登入" style="width:100%;"></div>
-        <button onclick="addTempPass()" class="btn-search" style="width:100%;">🔑 建立臨時密碼</button>
+        <button onclick="addTempPass()" class="btn-search" style="width:100%;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> 建立臨時密碼</button>
       </div>
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -3848,8 +3848,8 @@ function _dlCSV(content, filename) {
           <span style="font-size:0.75rem;color:var(--text-light);">（留空 = 全部）</span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔍 預覽待修復項目</button>
-          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;">🔄 確認執行修復（0 筆）</button>
+          <button onclick="repairPreview(this)" style="background:#1a6b9a;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 預覽待修復項目</button>
+          <button id="repairExecBtn" onclick="repairAllAttService(this)" disabled style="background:#ccc;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:not-allowed;font-family:'Noto Sans TC',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> 確認執行修復（0 筆）</button>
         </div>
         <div id="repairPreviewArea" style="display:none;margin-top:14px;"></div>
         <div id="repairLog" style="margin-top:12px;font-size:0.78rem;color:var(--text-mid);white-space:pre-wrap;"></div>
@@ -3858,7 +3858,7 @@ function _dlCSV(content, filename) {
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:6px;">修復簽名旗標（hasSig）</div>
         <div style="font-size:0.78rem;color:var(--text-mid);margin-bottom:14px;line-height:1.7;">掃描所有 <code>hasSig=false</code> 的打卡紀錄，若 attSigs 子集合有簽名資料，自動將 hasSig 更新為 true。<br><span style="color:var(--red);font-weight:600;">適用於：編輯紀錄後「查看簽名」按鈕消失的情況。</span></div>
-        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔑 執行修復</button>
+        <button onclick="repairHasSig(this)" style="background:#ca8a04;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> 執行修復</button>
         <div id="repairHasSigLog" style="margin-top:10px;font-size:0.78rem;color:var(--text-mid);"></div>
       </div>
 
@@ -5556,7 +5556,21 @@ var ICONS = {
   xCircle:      '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
   banknote:     '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
   alarmClock:   '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="M22 6l-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/>',
-  idCard:       '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2"/><path d="M15 12h2"/><path d="M7 16h10"/>'
+  idCard:       '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2"/><path d="M15 12h2"/><path d="M7 16h10"/>',
+  tag:          '<path d="M12.59 2H6a2 2 0 0 0-2 2v6.59a2 2 0 0 0 .59 1.41l9 9a2 2 0 0 0 2.82 0l6.59-6.59a2 2 0 0 0 0-2.82l-9-9A2 2 0 0 0 12.59 2Z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+  download:     '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  antenna:      '<path d="M12 2v20"/><path d="M5 6a7 7 0 0 1 14 0"/><path d="M2 9a10 10 0 0 1 20 0"/><circle cx="12" cy="3" r="1"/>',
+  folder:       '<path d="M4 4h5l2 3h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/>',
+  trendingUp:   '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  pause:        '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+  square:       '<rect x="4" y="4" width="16" height="16" rx="2"/>',
+  graduationCap:'<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+  ban:          '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>',
+  bellOff:      '<path d="M8.7 3A6 6 0 0 1 18 8c0 2.5.5 4.4 1.1 5.8"/><path d="M17.6 17.6a6 6 0 0 1-11.6-2.4 14 14 0 0 0 .3-2.8"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/>',
+  gamepad:      '<line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><circle cx="15" cy="12" r="1"/><circle cx="18" cy="10" r="1"/><rect x="2" y="6" width="20" height="12" rx="6"/>',
+  phone:        '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  bookOpen:     '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  book:         '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
 };
 // 通用 SVG icon 產生器：name 為 ICONS 鍵值，size 預設 14px，color 預設沿用文字顏色(currentColor)
 function _ic(name, size, color) {
@@ -8871,7 +8885,7 @@ async function repairPreview(btn) {
     const diffs = await _repairBuildDiffList(df, dt);
     if (!diffs.length) {
       area.style.display = 'block';
-      area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">✅ 所有簽退服務人次均正確，無需修復。</div>';
+      area.innerHTML = '<div style="color:#1a6b35;font-size:0.82rem;padding:10px;background:#d4edda;border-radius:8px;">' + _ic('checkCircle',13) + ' 所有簽退服務人次均正確，無需修復。</div>';
       execBtn.disabled = true; execBtn.style.background = '#ccc'; execBtn.style.cursor = 'not-allowed';
     } else {
       const diffCell = (oldV, newV) => oldV !== newV
@@ -8917,9 +8931,9 @@ async function repairPreview(btn) {
     }
   } catch(e) {
     area.style.display = 'block';
-    area.innerHTML = '<div style="color:#b94a3a;font-size:0.82rem;">❌ 查詢失敗：' + e.message + '</div>';
+    area.innerHTML = '<div style="color:#b94a3a;font-size:0.82rem;">' + _ic('xCircle',13) + ' 查詢失敗：' + e.message + '</div>';
   } finally {
-    btn.disabled = false; btn.textContent = '🔍 預覽待修復項目';
+    btn.disabled = false; btn.innerHTML = _ic('search',13) + ' 預覽待修復項目';
   }
 }
 
@@ -8951,9 +8965,9 @@ async function repairAllAttService(btn) {
     await Promise.all(selected.map(i => fbUpdate(COL_ATTEND, diffs[i].id, { count: diffs[i].newCount, service: diffs[i].newService })));
     if (area) area.style.display = 'none';
     btn.disabled = true; btn.style.background = '#ccc'; btn.style.cursor = 'not-allowed';
-    if (log) log.textContent = `✅ 完成！共更新 ${selected.length} 筆簽退紀錄的出勤次數與服務人次。`;
+    if (log) log.innerHTML = `${_ic('checkCircle',13)} 完成！共更新 ${selected.length} 筆簽退紀錄的出勤次數與服務人次。`;
   } catch(e) {
-    if (log) log.textContent = '❌ 發生錯誤：' + e.message;
+    if (log) log.innerHTML = _ic('xCircle',13) + ' 發生錯誤：' + e.message;
     btn.disabled = false;
   }
 }
@@ -9095,7 +9109,7 @@ async function repairShowDetail(memberName, date, attDocId, opts = {}) {
 
     modal.querySelector('div').innerHTML = html;
   } catch(e) {
-    modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">❌ 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
+    modal.querySelector('div').innerHTML = `<div style="color:#b94a3a;padding:12px;">${_ic('xCircle',13)} 載入失敗：${e.message}</div><button onclick="document.getElementById('repairDetailModal').remove()" style="margin:12px;padding:6px 16px;cursor:pointer;border:1px solid var(--border);border-radius:6px;background:white;">關閉</button>`;
   }
 }
 
@@ -10780,7 +10794,7 @@ function aqCopyCheckinSig() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    document.getElementById('aqEditCopyCheckinBtn').textContent = '✅ 已複製';
+    document.getElementById('aqEditCopyCheckinBtn').innerHTML = _ic('checkCircle',13) + ' 已複製';
   };
   img.src = src;
 }
@@ -11106,7 +11120,7 @@ async function loadVerifyData() {
     renderVerifyList(_verifyData);
   } catch(e) {
     statusEl.style.color = 'var(--red)';
-    statusEl.textContent = '❌ 載入失敗：' + e.message;
+    statusEl.innerHTML = _ic('xCircle',13) + ' 載入失敗：' + e.message;
   }
 }
 
@@ -11633,7 +11647,7 @@ async function loadStats() {
     document.getElementById('statsTableCard').style.display = 'block';
     document.getElementById('statsEmptyMsg').style.display = 'none';
   } catch(e) {
-    document.getElementById('statsEmptyMsg').textContent = '❌ 載入失敗：' + e.message;
+    document.getElementById('statsEmptyMsg').innerHTML = _ic('xCircle',13) + ' 載入失敗：' + e.message;
   }
 }
 
@@ -12979,13 +12993,13 @@ function _requireAdmin() {
 // 模組分類（人員/內容/通知/維護/監控/回饋）— 之後新增模組只需在這裡掛上 id 即可，
 // 不用調整 adminShowSection／_buildAdminMenu 的渲染邏輯。
 const ADMIN_MENU_GROUPS = [
-  { cat:'人員管理',   icon:'👥', ids:['adminSec-wl','adminSec-units','adminSec-temppass'] },
-  { cat:'內容管理',   icon:'📁', ids:['adminSec-casetypes','adminSec-schedule','adminSec-correction','adminSec-import','adminSec-changelog'] },
-  { cat:'通知中心',   icon:'🔔', ids:['adminSec-pushctrl','adminSec-announce'] },
-  { cat:'系統維護',   icon:'🛠', ids:['adminSec-repair','adminSec-confirm'] },
-  { cat:'系統監控',   icon:'📈', ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
-  { cat:'角色與權限管理', icon:'🔐', ids:['adminSec-roles'] },
-  { cat:'使用者回饋', icon:'💬', ids:['adminSec-feedback'] },
+  { cat:'人員管理',   icon:_ic('users',14), ids:['adminSec-wl','adminSec-units','adminSec-temppass'] },
+  { cat:'內容管理',   icon:_ic('folder',14), ids:['adminSec-casetypes','adminSec-schedule','adminSec-correction','adminSec-import','adminSec-changelog'] },
+  { cat:'通知中心',   icon:_ic('bell',14), ids:['adminSec-pushctrl','adminSec-announce'] },
+  { cat:'系統維護',   icon:_ic('wrench',14), ids:['adminSec-repair','adminSec-confirm'] },
+  { cat:'系統監控',   icon:_ic('trendingUp',14), ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
+  { cat:'角色與權限管理', icon:_ic('lock',14), ids:['adminSec-roles'] },
+  { cat:'使用者回饋', icon:_ic('message',14), ids:['adminSec-feedback'] },
 ];
 
 function _buildAdminMenu() {
@@ -12994,23 +13008,23 @@ function _buildAdminMenu() {
   const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
   const isAdmin = usr.isAdmin;
   const items = [
-    { id:'adminSec-wl',         icon:'👤', label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
-    { id:'adminSec-casetypes',  icon:'🏷', label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
-    { id:'adminSec-announce',   icon:'📢', label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b', adminOnly:true },
-    { id:'adminSec-feedback',   icon:'💬', label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
-    { id:'adminSec-correction', icon:'📝', label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
-    { id:'adminSec-schedule',   icon:'📅', label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
-    { id:'adminSec-temppass',   icon:'🔑', label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
-    { id:'adminSec-changelog',  icon:'📋', label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
-    { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1', adminOnly:true },
-    { id:'adminSec-repair',     icon:'🔧', label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c', adminOnly:true },
-    { id:'adminSec-confirm',    icon:'✅', label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
-    { id:'adminSec-pushctrl',   icon:'🔔', label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
-    { id:'adminSec-units',      icon:'🏢', label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
-    { id:'adminSec-loginlog',   icon:'🔐', label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
-    { id:'adminSec-auditlog',   icon:'📜', label:'操作紀錄',   sub:'後台管理動作稽核',   color:'#263238', adminOnly:true },
-    { id:'adminSec-usagetest',  icon:'📡', label:'配額監控',   sub:'今日讀取狀態總覽',   color:'#1565c0', adminOnly:true },
-    { id:'adminSec-roles',      icon:'🔐', label:'角色與權限', sub:'角色檢視與權限對照', color:'#5e35b1', adminOnly:true },
+    { id:'adminSec-wl',         icon:_ic('user',18), label:'成員帳號',   sub:'帳號管理與權限設定', color:'#1565c0' },
+    { id:'adminSec-casetypes',  icon:_ic('tag',18), label:'案由管理',   sub:'新增／刪除案由',     color:'#8b3a1a' },
+    { id:'adminSec-announce',   icon:_ic('megaphone',18), label:'訊息管理',   sub:'系統公告與推播訊息',  color:'#c0392b', adminOnly:true },
+    { id:'adminSec-feedback',   icon:_ic('message',18), label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
+    { id:'adminSec-correction', icon:_ic('note',18), label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
+    { id:'adminSec-schedule',   icon:_ic('calendar',18), label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
+    { id:'adminSec-temppass',   icon:_ic('key',18), label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
+    { id:'adminSec-changelog',  icon:_ic('clipboard',18), label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
+    { id:'adminSec-import',     icon:_ic('download',18), label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1', adminOnly:true },
+    { id:'adminSec-repair',     icon:_ic('wrench',18), label:'資料修復',   sub:'修復服務人次',       color:'#b71c1c', adminOnly:true },
+    { id:'adminSec-confirm',    icon:_ic('checkCircle',18), label:'確認任務',   sub:'上月紀錄確認',       color:'#1b5e20' },
+    { id:'adminSec-pushctrl',   icon:_ic('bell',18), label:'推播控制台', sub:'訂閱狀態管理',       color:'#1e3a5f', adminOnly:true },
+    { id:'adminSec-units',      icon:_ic('building',18), label:'分隊管理',   sub:'分隊新增與刪除',     color:'#1a237e', adminOnly:true },
+    { id:'adminSec-loginlog',   icon:_ic('lock',18), label:'登入紀錄',   sub:'查看登入記錄',       color:'#37474f', adminOnly:true },
+    { id:'adminSec-auditlog',   icon:_ic('scroll',18), label:'操作紀錄',   sub:'後台管理動作稽核',   color:'#263238', adminOnly:true },
+    { id:'adminSec-usagetest',  icon:_ic('antenna',18), label:'配額監控',   sub:'今日讀取狀態總覽',   color:'#1565c0', adminOnly:true },
+    { id:'adminSec-roles',      icon:_ic('lock',18), label:'角色與權限', sub:'角色檢視與權限對照', color:'#5e35b1', adminOnly:true },
   ];
   const itemMap = {};
   items.forEach(i => { itemMap[i.id] = i; });
@@ -15179,14 +15193,14 @@ async function loadAdminAnnouncements() {
       const getT = d => { const t=d._t; if(!t)return 0; if(typeof t.toMillis==='function')return t.toMillis(); if(t.seconds)return t.seconds*1000; return 0; };
       return getT(b) - getT(a);
     });
-    if (!docs.length) { el.innerHTML='<div class="query-empty"><span class="empty-icon">📢</span>尚無公告</div>'; return; }
+    if (!docs.length) { el.innerHTML='<div class="query-empty"><span class="empty-icon">' + _ic('megaphone',13) + '</span>尚無公告</div>'; return; }
     el.innerHTML = '';
     docs.forEach(d => {
       const isActive  = d.active !== false && (d.startDate||'') <= today && (d.endDate||'9999') >= today;
       const isExpired = (d.endDate||'9999') < today;
       const statusClr   = isActive ? '#16a34a' : isExpired ? '#94a3b8' : '#d97706';
       const statusBg    = isActive ? '#f0fdf4' : isExpired ? '#f1f5f9' : '#fffbeb';
-      const statusIcon  = isActive ? '✅' : isExpired ? '⏹' : '⏸';
+      const statusIcon  = isActive ? _ic('checkCircle',11) : isExpired ? _ic('square',11) : _ic('pause',11);
       const statusLabel = isActive ? '進行中' : isExpired ? '已過期' : '未啟用';
 
       const card = document.createElement('div');
@@ -15198,7 +15212,7 @@ async function loadAdminAnnouncements() {
 
       const statusPill = document.createElement('span');
       statusPill.style.cssText = `display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:${statusClr};background:${statusBg};border-radius:20px;padding:3px 10px;white-space:nowrap;`;
-      statusPill.textContent = `${statusIcon} ${statusLabel}`;
+      statusPill.innerHTML = `${statusIcon} ${statusLabel}`;
       head.appendChild(statusPill);
 
       const _ts = d.createdAt;
@@ -15214,7 +15228,7 @@ async function loadAdminAnnouncements() {
       if (sentStr) {
         const sentSpan = document.createElement('span');
         sentSpan.style.cssText = 'font-size:0.68rem;color:#94a3b8;white-space:nowrap;';
-        sentSpan.textContent = `📤 ${sentStr}`;
+        sentSpan.innerHTML = `${_ic('upload',11)} ${sentStr}`;
         head.appendChild(sentSpan);
       }
 
@@ -15235,27 +15249,27 @@ async function loadAdminAnnouncements() {
       // 標籤列：來源 + 對象（全體／管理員） + 緊急／置頂
       const tagRow = document.createElement('div');
       tagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;';
-      const srcMap = { broadcast:'📢 廣播', correction:'📝 修正申請', feedback:'💬 意見回饋', system:'🔔 系統公告', confirm:'📋 確認任務' };
+      const srcMap = { broadcast:`${_ic('megaphone',11)} 廣播`, correction:`${_ic('note',11)} 修正申請`, feedback:`${_ic('message',11)} 意見回饋`, system:`${_ic('bell',11)} 系統公告`, confirm:`${_ic('clipboard',11)} 確認任務` };
       const srcClr = { broadcast:'#c62828', correction:'#1565c0', feedback:'#6a1b9a', system:'#2e7d32', confirm:'#e65100' };
       const srcBg  = { broadcast:'#ffebee', correction:'#e3f2fd', feedback:'#f3e5f5', system:'#e8f5e9', confirm:'#fff3e0' };
       const srcType = d.type || 'system';
       const srcB = document.createElement('span');
       srcB.style.cssText = `font-size:0.68rem;background:${srcBg[srcType]||'#f5f5f5'};color:${srcClr[srcType]||'#555'};border-radius:20px;padding:2px 8px;font-weight:600;`;
-      srcB.textContent = srcMap[srcType] || '🔔 系統公告';
+      srcB.innerHTML = srcMap[srcType] || `${_ic('bell',11)} 系統公告`;
       tagRow.appendChild(srcB);
 
-      const audMap = { all:'👥 全體成員', admin:'🔑 管理員／承辦' };
+      const audMap = { all:`${_ic('users',11)} 全體成員`, admin:`${_ic('key',11)} 管理員／承辦` };
       const audClr = { all:'#1565c0', admin:'#4a148c' };
       const audBg  = { all:'#e3f2fd', admin:'#f3e5f5' };
       const aud = d.audience || 'all';
       if (audMap[aud]) {
         const audB = document.createElement('span');
         audB.style.cssText = `font-size:0.68rem;background:${audBg[aud]};color:${audClr[aud]};border-radius:20px;padding:2px 8px;font-weight:600;`;
-        audB.textContent = audMap[aud];
+        audB.innerHTML = audMap[aud];
         tagRow.appendChild(audB);
       }
-      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.textContent='🚨 緊急'; tagRow.appendChild(b); }
-      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.textContent='📌 置頂'; tagRow.appendChild(b); }
+      if (d.urgent) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#e74c3c;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.innerHTML=`${_ic('siren',11)} 緊急`; tagRow.appendChild(b); }
+      if (d.pinned) { const b=document.createElement('span'); b.style.cssText='font-size:0.68rem;background:#f39c12;color:white;border-radius:20px;padding:2px 8px;font-weight:600;'; b.innerHTML=`${_ic('pin',11)} 置頂`; tagRow.appendChild(b); }
 
       const metaLine = document.createElement('div');
       metaLine.style.cssText = 'font-size:0.7rem;color:#94a3b8;margin-bottom:2px;';
@@ -15442,19 +15456,19 @@ async function sendManualPush() {
       }).catch(() => {});
       loadAnnouncement();
       statusEl.style.color = '#16a34a';
-      statusEl.textContent = `✅ 推播成功傳送（${successCount} 筆）`;
+      statusEl.innerHTML = `${_ic('checkCircle',13)} 推播成功傳送（${successCount} 筆）`;
       setTimeout(() => { hidePushForm(); loadPushLog(); }, 1500);
     } else {
       let errMsg = result.error || result.message || '';
       statusEl.style.color = 'var(--red)';
-      statusEl.textContent = `❌ 推播失敗（HTTP ${res.status}${errMsg ? '：' + errMsg : ''}）`;
+      statusEl.innerHTML = `${_ic('xCircle',13)} 推播失敗（HTTP ${res.status}${errMsg ? '：' + errMsg : ''}）`;
     }
   } catch(e) {
     if (logId) await fbUpdate(COL_PUSH_LOG, logId, { status: 'fail', failCount: targetNames.length || 1, errorMsg: e.message || String(e) }).catch(()=>{});
     statusEl.style.color = 'var(--red)';
-    statusEl.textContent = '❌ 網路錯誤：' + e.message;
+    statusEl.innerHTML = `${_ic('xCircle',13)} 網路錯誤：` + e.message;
   } finally {
-    sendBtn.textContent = '📤 發送推播'; sendBtn.disabled = false;
+    sendBtn.innerHTML = _ic('upload',13) + ' 發送推播'; sendBtn.disabled = false;
   }
 }
 
@@ -16482,12 +16496,12 @@ async function repairHasSig(btn) {
       }
     }
     _C.invalidate(COL_ATTEND);
-    const msg = `✅ 完成：掃描 ${checked} 筆，修復 ${fixed} 筆`;
-    if (log) log.textContent = msg;
-    btn.textContent = '🔑 執行修復';
+    const msg = `${_ic('checkCircle',13)} 完成：掃描 ${checked} 筆，修復 ${fixed} 筆`;
+    if (log) log.innerHTML = msg;
+    btn.innerHTML = _ic('key',13) + ' 執行修復';
   } catch(e) {
-    const msg = '❌ 失敗：' + e.message;
-    if (log) log.textContent = msg;
+    const msg = `${_ic('xCircle',13)} 失敗：` + e.message;
+    if (log) log.innerHTML = msg;
   } finally {
     btn.disabled = false;
   }
@@ -16716,40 +16730,40 @@ function _siToggle(btn) {
 // 系統小知識
 // ════════════════════════════════════════
 const SYS_TIPS = [
-  { cat:'打卡與簽到簽退', icon:'⏰', color:'#c0392b', items:[
-    { icon:'📋', title:'忘記簽退怎麼辦？',   desc:'到「打卡查詢」找到當天紀錄，送出修正申請即可由承辦人補登。' },
-    { icon:'🔒', title:'超過 24 小時會鎖定', desc:'打卡紀錄超過 24 小時系統會鎖定，需送出修正申請才能修改。' },
-    { icon:'✍️', title:'簽到簽退要簽名',     desc:'簽到、簽退、協勤案件都需要簽名才能完成登錄。' },
-    { icon:'🔍', title:'簽名可以放大簽',     desc:'簽名區可以點全螢幕放大簽，手指較大或螢幕較小時更方便。' },
+  { cat:'打卡與簽到簽退', icon:_ic('alarmClock',15), color:'#c0392b', items:[
+    { icon:_ic('clipboard',14), title:'忘記簽退怎麼辦？',   desc:'到「打卡查詢」找到當天紀錄，送出修正申請即可由承辦人補登。' },
+    { icon:_ic('lock',14), title:'超過 24 小時會鎖定', desc:'打卡紀錄超過 24 小時系統會鎖定，需送出修正申請才能修改。' },
+    { icon:_ic('pencil',14), title:'簽到簽退要簽名',     desc:'簽到、簽退、協勤案件都需要簽名才能完成登錄。' },
+    { icon:_ic('search',14), title:'簽名可以放大簽',     desc:'簽名區可以點全螢幕放大簽，手指較大或螢幕較小時更方便。' },
   ]},
-  { cat:'協勤案件登錄', icon:'🚑', color:'#d35400', items:[
-    { icon:'📋', title:'案由要對照值班台',   desc:'案由請依「值班台派遣系統」填寫，點案由旁的對照表按鈕快速核對。' },
-    { icon:'📊', title:'點案由可看明細',     desc:'到「案件統計」頁點任一筆案由列，可展開該類型的完整案件明細。' },
-    { icon:'📝', title:'其他案由記得寫備註', desc:'案由選「其他」時，記得在備註欄填清楚實際狀況，方便之後查詢統計。' },
+  { cat:'協勤案件登錄', icon:_ic('ambulance',15), color:'#d35400', items:[
+    { icon:_ic('clipboard',14), title:'案由要對照值班台',   desc:'案由請依「值班台派遣系統」填寫，點案由旁的對照表按鈕快速核對。' },
+    { icon:_ic('barChart',14), title:'點案由可看明細',     desc:'到「案件統計」頁點任一筆案由列，可展開該類型的完整案件明細。' },
+    { icon:_ic('note',14), title:'其他案由記得寫備註', desc:'案由選「其他」時，記得在備註欄填清楚實際狀況，方便之後查詢統計。' },
   ]},
-  { cat:'排班與定訓', icon:'📅', color:'#2980b9', items:[
-    { icon:'✅', title:'會議記得填寫出席回覆', desc:'收到定訓/會議通知時記得按「填寫出席回覆」選擇出席或請假，方便承辦人統計人數。' },
-    { icon:'🚫', title:'排班衝突自動擋',     desc:'排班時間衝突或時段已滿，系統會直接擋下提示，不用自己對表。' },
-    { icon:'📈', title:'出席統計可篩選年度/分隊', desc:'「出席統計」頁可篩選年度與分隊，依出席次數排名查看自己與全隊的出席狀況。' },
-    { icon:'🏅', title:'公差累積徽章',       desc:'累積公差出勤天數達到門檻會拿到專屬徽章，到「公差統計」查看等級與進度。' },
-    { icon:'🏆', title:'公差統計列出全分隊', desc:'「公差統計」排行榜會列出全分隊成員，沒出勤也會顯示 0，方便看全員概況。' },
+  { cat:'排班與定訓', icon:_ic('calendar',15), color:'#2980b9', items:[
+    { icon:_ic('checkCircle',14), title:'會議記得填寫出席回覆', desc:'收到定訓/會議通知時記得按「填寫出席回覆」選擇出席或請假，方便承辦人統計人數。' },
+    { icon:_ic('ban',14), title:'排班衝突自動擋',     desc:'排班時間衝突或時段已滿，系統會直接擋下提示，不用自己對表。' },
+    { icon:_ic('trendingUp',14), title:'出席統計可篩選年度/分隊', desc:'「出席統計」頁可篩選年度與分隊，依出席次數排名查看自己與全隊的出席狀況。' },
+    { icon:_ic('medal',14), title:'公差累積徽章',       desc:'累積公差出勤天數達到門檻會拿到專屬徽章，到「公差統計」查看等級與進度。' },
+    { icon:_ic('trophy',14), title:'公差統計列出全分隊', desc:'「公差統計」排行榜會列出全分隊成員，沒出勤也會顯示 0，方便看全員概況。' },
   ]},
-  { cat:'物品、申請與通知', icon:'📦', color:'#16a085', items:[
-    { icon:'📦', title:'領用物品先查庫存',   desc:'到「物品領用」頁先查庫存再登記，避免白跑一趟。' },
-    { icon:'🔔', title:'待領物品提醒',       desc:'有人指派物品給你時，首頁待辦事項會出現提醒，記得去確認領取。' },
-    { icon:'🩺', title:'證照效期查詢',       desc:'「更多 > 服務 > 證照效期查詢」可以直接連到衛福部系統查詢效期，也可先填身分證與生日預先帶入。' },
-    { icon:'👤', title:'資料異動記得更新',   desc:'電話、Email 有改記得到「個人資料」更新，不然系統通知可能收不到。' },
-    { icon:'📋', title:'申請進度可追蹤',     desc:'修正申請送出後，到「更多 > 服務 > 我的申請」就能追蹤審核進度。' },
-    { icon:'🚨', title:'緊急公告要看完',     desc:'緊急公告會跳全螢幕提醒，需按「已閱，確認關閉」才能關閉，記得仔細看完。' },
-    { icon:'📥', title:'大量補登用 CSV 匯入', desc:'補登歷史紀錄時可以用 CSV 匯入功能，照範本格式填好上傳，不用一筆一筆 key。' },
-    { icon:'🔕', title:'通知偏好可分類關閉', desc:'到「設定」頁的通知偏好，可分別開關公告、值勤、定訓、修正申請、意見回饋、系統通知等推播類別。' },
+  { cat:'物品、申請與通知', icon:_ic('package',15), color:'#16a085', items:[
+    { icon:_ic('package',14), title:'領用物品先查庫存',   desc:'到「物品領用」頁先查庫存再登記，避免白跑一趟。' },
+    { icon:_ic('bell',14), title:'待領物品提醒',       desc:'有人指派物品給你時，首頁待辦事項會出現提醒，記得去確認領取。' },
+    { icon:_ic('stethoscope',14), title:'證照效期查詢',       desc:'「更多 > 服務 > 證照效期查詢」可以直接連到衛福部系統查詢效期，也可先填身分證與生日預先帶入。' },
+    { icon:_ic('user',14), title:'資料異動記得更新',   desc:'電話、Email 有改記得到「個人資料」更新，不然系統通知可能收不到。' },
+    { icon:_ic('clipboard',14), title:'申請進度可追蹤',     desc:'修正申請送出後，到「更多 > 服務 > 我的申請」就能追蹤審核進度。' },
+    { icon:_ic('siren',14), title:'緊急公告要看完',     desc:'緊急公告會跳全螢幕提醒，需按「已閱，確認關閉」才能關閉，記得仔細看完。' },
+    { icon:_ic('download',14), title:'大量補登用 CSV 匯入', desc:'補登歷史紀錄時可以用 CSV 匯入功能，照範本格式填好上傳，不用一筆一筆 key。' },
+    { icon:_ic('bellOff',14), title:'通知偏好可分類關閉', desc:'到「設定」頁的通知偏好，可分別開關公告、值勤、定訓、修正申請、意見回饋、系統通知等推播類別。' },
   ]},
-  { cat:'學習與成長資源', icon:'🎓', color:'#8e44ad', items:[
-    { icon:'🎮', title:'EMS Academy 學習中心', desc:'到「更多 > 服務 > EMS Academy 學習中心」可遊戲化學習救護知識，闖關升級累積 XP。' },
-    { icon:'📖', title:'速查筆記彙整全章節',   desc:'EMS Academy 內的「速查筆記」彙整全章節記憶口訣與關鍵指標，出勤前花 1-2 分鐘快速複習。' },
-    { icon:'📞', title:'派遣模擬演練練習應變', desc:'「派遣模擬演練」提供分支劇情案例，依現場決策走向不同結果，練習實戰判斷。' },
-    { icon:'📝', title:'訓練模擬站累積題庫',   desc:'「訓練模擬站」可依任務區練習題庫，答錯的題目會自動收進錯題本方便複習。' },
-    { icon:'📚', title:'救護手冊隨身查',       desc:'「更多 > 救護手冊」收錄教科書與法規電子書，外勤也能隨時查閱。' },
+  { cat:'學習與成長資源', icon:_ic('graduationCap',15), color:'#8e44ad', items:[
+    { icon:_ic('gamepad',14), title:'EMS Academy 學習中心', desc:'到「更多 > 服務 > EMS Academy 學習中心」可遊戲化學習救護知識，闖關升級累積 XP。' },
+    { icon:_ic('bookOpen',14), title:'速查筆記彙整全章節',   desc:'EMS Academy 內的「速查筆記」彙整全章節記憶口訣與關鍵指標，出勤前花 1-2 分鐘快速複習。' },
+    { icon:_ic('phone',14), title:'派遣模擬演練練習應變', desc:'「派遣模擬演練」提供分支劇情案例，依現場決策走向不同結果，練習實戰判斷。' },
+    { icon:_ic('note',14), title:'訓練模擬站累積題庫',   desc:'「訓練模擬站」可依任務區練習題庫，答錯的題目會自動收進錯題本方便複習。' },
+    { icon:_ic('book',14), title:'救護手冊隨身查',       desc:'「更多 > 救護手冊」收錄教科書與法規電子書，外勤也能隨時查閱。' },
   ]},
 ];
 
@@ -21500,7 +21514,7 @@ async function createConfirmTask() {
   overlay.innerHTML = `
     <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">📋 確認任務預覽</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text);font-family:'Noto Serif TC',serif;">${_ic('clipboard',14)} 確認任務預覽</div>
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);line-height:1;">✕</button>
       </div>
       <div style="background:#f2f2f7;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
@@ -21530,7 +21544,7 @@ async function createConfirmTask() {
         <button onclick="document.getElementById('broadcastPreviewOverlay').remove()"
           style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:white;font-size:0.9rem;color:var(--text-mid);cursor:pointer;font-family:'Noto Sans TC',sans-serif;">取消</button>
         <button id="bpSendBtn" onclick="_confirmCreateTask('${month}','${unit}','${defNote.replace(/'/g,"\\'")}')"
-          style="flex:2;padding:12px;border:none;border-radius:10px;background:#2e7d32;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">✅ 發起並通知成員</button>
+          style="flex:2;padding:12px;border:none;border-radius:10px;background:#2e7d32;color:white;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">${_ic('checkCircle',14)} 發起並通知成員</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -21564,12 +21578,12 @@ async function _confirmCreateTask(month, unit, note) {
     });
     document.getElementById('broadcastPreviewOverlay')?.remove();
     const statusEl = document.getElementById('confirmCreateStatus');
-    if (statusEl) { statusEl.style.color = '#1a6b35'; statusEl.textContent = '✅ 確認任務已建立，成員將收到通知'; }
+    if (statusEl) { statusEl.style.color = '#1a6b35'; statusEl.innerHTML = `${_ic('checkCircle',13)} 確認任務已建立，成員將收到通知`; }
     const noteEl = document.getElementById('confirmNote');
     if (noteEl) noteEl.value = '';
     await loadAdminConfirmTasks();
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = '✅ 發起並通知成員'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = `${_ic('checkCircle',14)} 發起並通知成員`; }
     alert('建立失敗：' + e.message);
   }
 }
@@ -21641,7 +21655,7 @@ async function _sendRemindPush(pendNames) {
       if (resp.ok) sentCount++;
     }
     document.getElementById('broadcastPreviewOverlay')?.remove();
-    _showToast(`✅ 已對 ${sentCount} 位未回應成員發送催促推播`);
+    _showToast(`${_ic('checkCircle',13)} 已對 ${sentCount} 位未回應成員發送催促推播`);
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '📣 發送催促推播'; }
     alert('發送失敗：' + e.message);
@@ -21659,7 +21673,7 @@ async function loadAdminConfirmTasks() {
     tasks.sort((a, b) => (b.month || '') > (a.month || '') ? 1 : -1);
 
     if (!tasks.length) {
-      el.innerHTML = '<div class="query-empty"><span class="empty-icon">✅</span>尚無確認任務</div>';
+      el.innerHTML = '<div class="query-empty"><span class="empty-icon">' + _ic('checkCircle',13) + '</span>尚無確認任務</div>';
       return;
     }
     el.innerHTML = '';
@@ -21997,7 +22011,7 @@ async function profileReportIssue() {
         note: '成員回報有問題，請管理員協助',
         confirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
-    status.textContent = '✅ 已通知管理員，請等候處理';
+    status.innerHTML = `${_ic('checkCircle',13)} 已通知管理員，請等候處理`;
     // 3 秒後隱藏確認區塊
     setTimeout(() => {
       document.getElementById('profileConfirmSection').style.display = 'none';
@@ -25254,7 +25268,7 @@ function _showToast(msg, duration = 3000) {
     t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.92);color:white;padding:10px 20px;border-radius:20px;font-size:0.88rem;font-family:\'Noto Sans TC\',sans-serif;z-index:99999;pointer-events:none;transition:opacity 0.3s;white-space:nowrap;';
     document.body.appendChild(t);
   }
-  t.textContent = msg;
+  t.innerHTML = msg;
   t.style.opacity = '1';
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, duration);
@@ -25286,7 +25300,7 @@ async function _confirmBroadcast() {
     });
     window._dutyBroadcastUnit = '';
     document.getElementById('broadcastPreviewOverlay')?.remove();
-    _showToast('✅ 廣播已寫入公告管理，推播由系統自動發送');
+    _showToast(`${_ic('checkCircle',13)} 廣播已寫入公告管理，推播由系統自動發送`);
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '🔔 發送推播'; }
     alert('發送失敗：' + e.message);
@@ -27025,7 +27039,7 @@ async function loadAttendStats() {
     <div id="pwaIOSGuide" style="display:none;background:var(--warm);border-radius:8px;padding:12px;">
       <div style="font-size:0.8rem;font-weight:600;color:var(--text);margin-bottom:8px;">iOS 安裝步驟：</div>
       <div style="display:flex;flex-direction:column;gap:6px;font-size:0.8rem;color:var(--text-mid);">
-        <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">1</span>點擊 Safari 底部的 <strong>分享按鈕</strong> 📤</div>
+        <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">1</span>點擊 Safari 底部的 <strong>分享按鈕</strong> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
         <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">2</span>選擇「<strong>加入主畫面</strong>」</div>
         <div style="display:flex;align-items:center;gap:8px;"><span style="background:var(--red);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">3</span>點擊右上角「<strong>新增</strong>」</div>
       </div>
