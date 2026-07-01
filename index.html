@@ -3893,6 +3893,7 @@ function _dlCSV(content, filename) {
           </div>
           <div id="_usageMeterStatus" style="padding:8px 12px;border-radius:8px;font-size:0.82rem;font-weight:600;"></div>
           <div id="_usageMeterCost" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:#fff8e1;border:1px solid #ffe082;"></div>
+          <div id="_usageQuotaCard" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;background:#f3f4f6;border:1px solid #e5e7eb;"></div>
           <div id="_usageMeterUpdated" style="font-size:0.72rem;color:var(--text-light);margin-top:8px;text-align:right;"></div>
         </div>
       </div>
@@ -15657,6 +15658,56 @@ async function _loadUsageMonitor() {
       } else {
         costEl.style.display = pct > 0 ? 'block' : 'none';
         if (pct > 0) costEl.innerHTML = `<div style="font-size:0.78rem;color:#795548;">等待 Cloud Billing 預算警報觸發後顯示費用明細</div>`;
+      }
+    }
+
+    // ── Firestore 用量指標卡（由 scheduleUsageMonitor 每小時更新）
+    const quotaCardEl = document.getElementById('_usageQuotaCard');
+    if (quotaEl) {
+      const r = doc?.readsToday   ?? null;
+      const w = doc?.writesToday  ?? null;
+      const d = doc?.deletesToday ?? null;
+      const bw = doc?.bandwidthBytesMonth ?? null;
+      const uAt = (doc?.usageUpdatedAt)
+        ? new Date(doc.usageUpdatedAt.toDate?.() || doc.usageUpdatedAt)
+            .toLocaleTimeString('zh-TW', { hour12: false, timeZone: 'Asia/Taipei' })
+        : null;
+
+      function _pct(val, limit) {
+        if (val === null) return null;
+        return Math.round(val / limit * 100);
+      }
+      function _barColor(p) {
+        return p >= 90 ? '#c0392b' : p >= 70 ? '#e67e22' : p >= 50 ? '#f1c40f' : '#2ecc71';
+      }
+      function _row(label, val, limit, unit) {
+        if (val === null) return `<div style="display:flex;justify-content:space-between;font-size:0.77rem;color:var(--text-mid);padding:4px 0;border-bottom:1px solid #e5e7eb;"><span>${label}</span><span style="color:#9ca3af;">—</span></div>`;
+        const p = _pct(val, limit);
+        const c = _barColor(p);
+        const valStr = unit === 'GB' ? (val / 1073741824).toFixed(2) + ' GB' : val.toLocaleString();
+        const limStr = unit === 'GB' ? limit + ' GB' : limit.toLocaleString();
+        return `<div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.77rem;color:var(--text-mid);margin-bottom:3px;">
+            <span>${label}</span><span style="color:${c};font-weight:600;">${valStr} <span style="color:var(--text-light);font-weight:400;">/ ${limStr}</span></span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:99px;height:5px;overflow:hidden;">
+            <div style="width:${Math.min(p,100)}%;height:100%;border-radius:99px;background:${c};"></div>
+          </div>
+        </div>`;
+      }
+
+      const hasSomeData = r !== null || w !== null || d !== null || bw !== null;
+      if (hasSomeData) {
+        quotaCardEl.style.display = 'block';
+        quotaCardEl.innerHTML =
+          `<div style="font-size:0.78rem;font-weight:700;color:#374151;margin-bottom:8px;">📊 Firestore 用量指標（Cloud Monitoring）</div>`
+          + _row('今日讀取',  r,  50000, '')
+          + _row('今日寫入',  w,  20000, '')
+          + _row('今日刪除',  d,  20000, '')
+          + _row('本月頻寬',  bw, 10,    'GB')
+          + (uAt ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">每小時更新・上次：${uAt}</div>` : '');
+      } else {
+        quotaCardEl.style.display = 'none';
       }
     }
 

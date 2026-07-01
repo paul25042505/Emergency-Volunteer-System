@@ -757,6 +757,103 @@ exports.scheduleDailyCleanup = onSchedule(
       if (n) console.log(`cleanup pushSubscriptions orphans: deleted ${n}`);
     }
 
+    // 清除 pushLogs 中 status 仍為 pending 且建立時間超過 1 天的卡住紀錄
+    {
+      const stuckCutoff = new Date(Date.now() - 86400000);
+      const snap = await db.collection('pushLogs').where('status', '==', 'pending').get().catch(() => null);
+      if (snap && !snap.empty) {
+        const batch = db.batch();
+        let n = 0;
+        snap.forEach(doc => {
+          const d = doc.data();
+          const ts = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+          if (ts && ts < stuckCutoff) { batch.update(doc.ref, { status: 'fail', errorMsg: '自動清理：超過 24 小時未完成' }); n++; }
+        });
+        if (n) await batch.commit().catch(() => {});
+        if (n) console.log(`cleanup pushLogs stuck-pending: marked fail ${n}`);
+      }
+    }
+
     console.log(`scheduleDailyCleanup: total deleted ${total}`);
+  }
+);
+
+// ── 每小時：查詢 Cloud Monitoring 取得 Firestore 用量指標 ────────────────
+exports.scheduleUsageMonitor = onSchedule(
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+
+    // 台北時間今日日期字串
+    const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
+    const [yr, mo, dy] = todayStr.split('-').map(Number);
+
+    // 台北時間今日 00:00 的 UTC 等效（UTC+8，故減 8 小時）
+    const dayStart   = new Date(Date.UTC(yr, mo - 1, dy, -8));
+    // 本月 1 日 00:00 TW 的 UTC 等效
+    const monthStart = new Date(Date.UTC(yr, mo - 1, 1, -8));
+
+    // 用 GCE Metadata Service 取得 access token（Cloud Function 環境原生支援）
+    async function _getToken() {
+      const r = await fetch(
+        'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
+        { headers: { 'Metadata-Flavor': 'Google' } }
+      );
+      return (await r.json()).access_token;
+    }
+
+    // 查詢 Cloud Monitoring timeSeries，回傳總和（null 代表查詢失敗或無資料）
+    async function _queryMetric(token, metricType, startTime, endTime) {
+      const base = 'https://monitoring.googleapis.com/v3/projects/rescue-volunteer-a33f1/timeSeries';
+      const alignSec = Math.max(3600, Math.ceil((endTime - startTime) / 1000));
+      const params = new URLSearchParams({
+        filter: `metric.type="${metricType}"`,
+        'interval.startTime': startTime.toISOString(),
+        'interval.endTime':   endTime.toISOString(),
+        'aggregation.alignmentPeriod':    `${alignSec}s`,
+        'aggregation.perSeriesAligner':   'ALIGN_SUM',
+        'aggregation.crossSeriesReducer': 'REDUCE_SUM',
+        'aggregation.groupByFields':      'metric.type',
+      });
+      try {
+        const r = await fetch(`${base}?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) { console.warn(`_queryMetric ${metricType} HTTP ${r.status}`); return null; }
+        const j = await r.json();
+        const pts = j.timeSeries?.[0]?.points || [];
+        if (!pts.length) return 0;
+        return pts.reduce((s, p) => {
+          const v = p.value?.int64Value ?? p.value?.doubleValue ?? 0;
+          return s + (typeof v === 'string' ? parseInt(v, 10) : v);
+        }, 0);
+      } catch (e) {
+        console.warn(`_queryMetric ${metricType} error:`, e.message);
+        return null;
+      }
+    }
+
+    try {
+      const token = await _getToken();
+
+      const [reads, writes, deletes, bwBytes] = await Promise.all([
+        _queryMetric(token, 'firestore.googleapis.com/document/read_count',         dayStart,   now),
+        _queryMetric(token, 'firestore.googleapis.com/document/write_count',        dayStart,   now),
+        _queryMetric(token, 'firestore.googleapis.com/document/delete_count',       dayStart,   now),
+        _queryMetric(token, 'firestore.googleapis.com/network/sent_bytes_count',    monthStart, now),
+      ]);
+
+      const update = { usageUpdatedAt: now };
+      if (reads    !== null) update.readsToday          = reads;
+      if (writes   !== null) update.writesToday         = writes;
+      if (deletes  !== null) update.deletesToday        = deletes;
+      if (bwBytes  !== null) update.bandwidthBytesMonth = bwBytes;
+
+      await db.collection('settings').doc('dailyUsage').set(update, { merge: true });
+      console.log(`scheduleUsageMonitor: reads=${reads} writes=${writes} deletes=${deletes} bw=${bwBytes}`);
+    } catch (e) {
+      console.error('scheduleUsageMonitor error:', e.message);
+    }
   }
 );
