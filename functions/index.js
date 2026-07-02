@@ -476,6 +476,65 @@ exports.scheduleDutyTomorrowReminder = onSchedule(
   }
 );
 
+// ── 2b. 每日 20:00：明日公差任務提醒（推給已登記成員）─────────────────
+exports.scheduleGongchaTomorrowReminder = onSchedule(
+  { schedule: '0 20 * * *', timeZone: TZ, region: REGION },
+  async () => {
+    const db   = getFirestore();
+    const type = PUSH_TYPES.REMINDER;
+
+    const now      = new Date();
+    const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
+    const batchKey = `gongcha-tomorrow-${tomorrow}`;
+
+    if (!(await _tryClaim(db, batchKey))) return;
+
+    const snap = await db.collection('gongchaMissions').where('date', '==', tomorrow).get();
+    if (snap.empty) { _log('Finish', { fn: 'scheduleGongchaTomorrowReminder', tomorrow, missions: 0 }); return; }
+
+    const missions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let totalSent  = 0;
+
+    for (const mission of missions) {
+      const registrants = mission.registrants || [];
+      if (!registrants.length) continue;
+
+      const timeStr = mission.time
+        ? `，時間 ${mission.time}${mission.endTime ? '～' + mission.endTime : ''}`
+        : '';
+      const locStr  = mission.location ? `，地點：${mission.location}` : '';
+      const title   = '📋 明日公差提醒';
+
+      for (const reg of registrants) {
+        const memberName = reg.name;
+        if (!memberName) continue;
+
+        const dedupKey = `${batchKey}-${mission.id}-${memberName}`;
+        if (!(await _tryClaim(db, dedupKey))) continue;
+
+        const body   = `您明日（${tomorrow}）有公差任務：${mission.title || '（未命名）'}${timeStr}${locStr}，請準時出席。`;
+        const tokens = await _getMemberTokens(db, memberName, type);
+        const payload = _buildPushPayload(type, title, body, { tag: 'gongcha-tomorrow' });
+        const { results, messageIds } = tokens.length
+          ? await _sendMulticast(tokens, payload)
+          : { results: [], messageIds: [] };
+
+        await _logPush(db, {
+          type, title, body, target: 'members', targetMembers: [memberName],
+          source: 'auto-gongcha-tomorrow', dedupKey,
+          tokenCount: tokens.length,
+          successCount: results.filter(r => r.success).length,
+          failCount:    results.filter(r => !r.success).length,
+          messageIds,
+        });
+        totalSent++;
+      }
+    }
+
+    _log('Finish', { fn: 'scheduleGongchaTomorrowReminder', tomorrow, missions: missions.length, totalSent });
+  }
+);
+
 // ── 3. 每小時：班次結束後 1 小時未簽退者通知 ─────────────────────────
 exports.scheduleNoSignoutReminder = onSchedule(
   { schedule: '0 * * * *', timeZone: TZ, region: REGION },
