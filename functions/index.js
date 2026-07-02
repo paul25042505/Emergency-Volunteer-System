@@ -773,100 +773,22 @@ exports.scheduleDailyCleanup = onSchedule(
       }
     }
 
+    // 清理 30 天前的 usageStats 日期文件
+    const cutoffDate = new Date(Date.now() - 30 * 86400000)
+      .toLocaleDateString('sv-SE', { timeZone: TZ });
+    const usageSnap = await db.collection('usageStats').get().catch(() => null);
+    if (usageSnap) {
+      for (const doc of usageSnap.docs) {
+        if (doc.id < cutoffDate) {
+          await doc.ref.delete().catch(() => {});
+          total++;
+        }
+      }
+    }
+
     console.log(`scheduleDailyCleanup: total deleted ${total}`);
   }
 );
 
-// ── 每小時：查詢 Cloud Monitoring 取得 Firestore 用量指標 ────────────────
-exports.scheduleUsageMonitor = onSchedule(
-  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
-  async () => {
-    const db  = getFirestore();
-    const now = new Date();
-
-    // 台北時間今日日期字串
-    const todayStr = now.toLocaleDateString('sv-SE', { timeZone: TZ });
-    const [yr, mo, dy] = todayStr.split('-').map(Number);
-
-    // 台北時間今日 00:00 的 UTC 等效（UTC+8，故減 8 小時）
-    const dayStart   = new Date(Date.UTC(yr, mo - 1, dy, -8));
-    // 本月 1 日 00:00 TW 的 UTC 等效
-    const monthStart = new Date(Date.UTC(yr, mo - 1, 1, -8));
-
-    // 用 GCE Metadata Service 取得 access token（Cloud Function 環境原生支援）
-    async function _getToken() {
-      const r = await fetch(
-        'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token',
-        { headers: { 'Metadata-Flavor': 'Google' } }
-      );
-      return (await r.json()).access_token;
-    }
-
-    // 查詢 Cloud Monitoring timeSeries，回傳總和；null=API錯誤，0=無資料
-    async function _queryMetric(token, metricType, startTime, endTime) {
-      const base = 'https://monitoring.googleapis.com/v3/projects/rescue-volunteer-a33f1/timeSeries';
-      const alignSec = Math.max(3600, Math.ceil((endTime - startTime) / 1000));
-      const params = new URLSearchParams({
-        filter: `metric.type="${metricType}"`,
-        'interval.startTime': startTime.toISOString(),
-        'interval.endTime':   endTime.toISOString(),
-        'aggregation.alignmentPeriod':    `${alignSec}s`,
-        'aggregation.perSeriesAligner':   'ALIGN_SUM',
-        'aggregation.crossSeriesReducer': 'REDUCE_SUM',
-        'aggregation.groupByFields':      'metric.type',
-      });
-      try {
-        const r = await fetch(`${base}?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) {
-          const body = await r.text().catch(() => '');
-          console.warn(`_queryMetric ${metricType} HTTP ${r.status}: ${body}`);
-          return { error: `HTTP ${r.status}: ${body.slice(0, 120)}` };
-        }
-        const j = await r.json();
-        const pts = j.timeSeries?.[0]?.points || [];
-        if (!pts.length) return 0;
-        return pts.reduce((s, p) => {
-          const v = p.value?.int64Value ?? p.value?.doubleValue ?? 0;
-          return s + (typeof v === 'string' ? parseInt(v, 10) : v);
-        }, 0);
-      } catch (e) {
-        console.warn(`_queryMetric ${metricType} error:`, e.message);
-        return { error: e.message };
-      }
-    }
-
-    try {
-      const token = await _getToken();
-
-      // Note: network/sent_bytes_count is not exposed via Cloud Monitoring;
-      // Firebase bandwidth must be viewed in Firebase Console → Usage.
-      const [reads, writes, deletes] = await Promise.all([
-        _queryMetric(token, 'firestore.googleapis.com/document/read_count',  dayStart, now),
-        _queryMetric(token, 'firestore.googleapis.com/document/write_count', dayStart, now),
-        _queryMetric(token, 'firestore.googleapis.com/document/delete_count',dayStart, now),
-      ]);
-
-      const toNum = v => (v !== null && typeof v === 'object') ? null : v;
-      const rNum = toNum(reads), wNum = toNum(writes), dNum = toNum(deletes);
-      const apiError = [reads, writes, deletes]
-        .map(v => (v !== null && typeof v === 'object') ? v.error : null)
-        .find(e => e) || null;
-
-      const update = { usageUpdatedAt: now, monitoringError: apiError || null };
-      if (rNum !== null) update.readsToday   = rNum;
-      if (wNum !== null) update.writesToday  = wNum;
-      if (dNum !== null) update.deletesToday = dNum;
-
-      await db.collection('settings').doc('dailyUsage').set(update, { merge: true });
-      console.log(`scheduleUsageMonitor: reads=${rNum} writes=${wNum} deletes=${dNum} error=${apiError}`);
-    } catch (e) {
-      console.error('scheduleUsageMonitor error:', e.message);
-      await db.collection('settings').doc('dailyUsage').set(
-        { usageUpdatedAt: now, monitoringError: e.message },
-        { merge: true }
-      ).catch(() => {});
-    }
-  }
-);
+// scheduleUsageMonitor 已移除：改由前端 fb* 函式自計數器累積，
+// 每 5 分鐘 flush 至 usageStats/{date}，與 Firebase Console 數字同源。

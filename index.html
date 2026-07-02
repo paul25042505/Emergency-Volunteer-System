@@ -5663,7 +5663,7 @@ function ensureFirebase() {
 }
 
 async function fbGet(col,id){
-  await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();return d.exists?{id:d.id,...d.data()}:null;
+  await ensureFirebase();const d=await _fbDB.collection(col).doc(id).get();_uR(col);return d.exists?{id:d.id,...d.data()}:null;
 }
 // 進行中的請求（key = col|orderBy|dir），同集合並發呼叫共用同一 Promise
 const _fbInflight = {};
@@ -5702,6 +5702,7 @@ async function fbList(col, orderByField, orderDir) {
     const s = await q.get();
     const data = s.docs.map(d=>({id:d.id,...d.data()}));
     if (!_C_SKIP.has(col)) _C.set(col, data);
+    _uR(col, data.length);
     return data;
   })();
   _fbInflight[key].finally(() => delete _fbInflight[key]).catch(()=>{});
@@ -5714,11 +5715,13 @@ async function fbQuery(col, conditions, orderByField, orderDir) {
   if (orderByField) q = q.orderBy(orderByField, orderDir || 'asc');
   q = q.limit(500);
   const s = await q.get();
-  return s.docs.map(d=>({id:d.id,...d.data()}));
+  const docs = s.docs.map(d=>({id:d.id,...d.data()}));
+  _uR(col, docs.length);
+  return docs;
 }
-async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});_C.invalidate(col);return r.id;}
-async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});_C.invalidate(col);}
-async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);_C.invalidate(col);}
+async function fbAdd(col,data){await ensureFirebase();const r=await _fbDB.collection(col).add({...data,_t:firebase.firestore.FieldValue.serverTimestamp()});_C.invalidate(col);_uW(col);return r.id;}
+async function fbSet(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).set(data,{merge:true});_C.invalidate(col);_uW(col);}
+async function fbUpdate(col,id,data){await ensureFirebase();await _fbDB.collection(col).doc(id).update(data);_C.invalidate(col);_uW(col);}
 
 // ── 操作紀錄（Audit Log）：所有後台管理動作統一寫入，失敗不影響原本操作 ──
 function _logAudit(action, module, opts) {
@@ -6009,7 +6012,39 @@ function _prefetchCaches() {
     }
   }).catch(() => {});
 }
-async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);}
+async function fbDelete(col,id){await ensureFirebase();await _fbDB.collection(col).doc(id).delete();_C.invalidate(col);_uD(col);}
+
+// ── 前端用量自計數器（每 5 分鐘批次寫入，讓配額卡顯示真實數字）───────────
+const COL_USAGE_STATS = 'usageStats';
+const _USAGE_SKIP = new Set([COL_USAGE_STATS, 'dedupKeys', 'autoNotifLog']);
+const _ub = { r: 0, w: 0, d: 0 };
+let _ubFlushing = false;
+function _uR(col, n) { if (!_ubFlushing && !_USAGE_SKIP.has(col)) _ub.r += (n > 0 ? n : 1); }
+function _uW(col)    { if (!_ubFlushing && !_USAGE_SKIP.has(col)) _ub.w += 1; }
+function _uD(col)    { if (!_ubFlushing && !_USAGE_SKIP.has(col)) _ub.d += 1; }
+async function _flushUsage() {
+  if (_ubFlushing) return;
+  const { r, w, d } = _ub;
+  if (r + w + d === 0) return;
+  _ubFlushing = true;
+  try {
+    await ensureFirebase();
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+    await _fbDB.collection(COL_USAGE_STATS).doc(today).set({
+      reads:    firebase.firestore.FieldValue.increment(r),
+      writes:   firebase.firestore.FieldValue.increment(w),
+      deletes:  firebase.firestore.FieldValue.increment(d),
+      lastFlush: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    _ub.r = 0; _ub.w = 0; _ub.d = 0;
+  } catch(e) { console.warn('_flushUsage:', e.message); }
+  finally { _ubFlushing = false; }
+}
+setInterval(_flushUsage, 300000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') _flushUsage();
+});
+
 async function verifyWhitelist(email){
   await ensureFirebase();
   const em = email.toLowerCase().trim();
@@ -15661,34 +15696,27 @@ async function _loadUsageMonitor() {
       }
     }
 
-    // ── Firestore 用量指標卡（由 scheduleUsageMonitor 每小時更新）
+    // ── Firestore 用量指標卡（由前端自計數器每 5 分鐘 flush，與 Firebase Console 同源）
     const quotaCardEl = document.getElementById('_usageQuotaCard');
-    if (quotaEl) {
-      const r = doc?.readsToday   ?? null;
-      const w = doc?.writesToday  ?? null;
-      const d = doc?.deletesToday ?? null;
-      const monErr = doc?.monitoringError ?? null;
-      const uAt = (doc?.usageUpdatedAt)
-        ? new Date(doc.usageUpdatedAt.toDate?.() || doc.usageUpdatedAt)
+    if (quotaCardEl) {
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+      const usageDoc = await fbGet(COL_USAGE_STATS, today);
+      const r  = usageDoc?.reads   ?? null;
+      const w  = usageDoc?.writes  ?? null;
+      const d  = usageDoc?.deletes ?? null;
+      const lf = usageDoc?.lastFlush
+        ? new Date(usageDoc.lastFlush.toDate?.() || usageDoc.lastFlush)
             .toLocaleTimeString('zh-TW', { hour12: false, timeZone: 'Asia/Taipei' })
         : null;
 
-      function _pct(val, limit) {
-        if (val === null) return null;
-        return Math.round(val / limit * 100);
-      }
-      function _barColor(p) {
-        return p >= 90 ? '#c0392b' : p >= 70 ? '#e67e22' : p >= 50 ? '#f1c40f' : '#2ecc71';
-      }
-      function _row(label, val, limit, unit) {
+      function _pct2(val, limit) { return val === null ? null : Math.round(val / limit * 100); }
+      function _barC(p) { return p >= 90 ? '#c0392b' : p >= 70 ? '#e67e22' : p >= 50 ? '#f1c40f' : '#2ecc71'; }
+      function _row2(label, val, limit) {
         if (val === null) return `<div style="display:flex;justify-content:space-between;font-size:0.77rem;color:var(--text-mid);padding:4px 0;border-bottom:1px solid #e5e7eb;"><span>${label}</span><span style="color:#9ca3af;">—</span></div>`;
-        const p = _pct(val, limit);
-        const c = _barColor(p);
-        const valStr = unit === 'GB' ? (val / 1073741824).toFixed(2) + ' GB' : val.toLocaleString();
-        const limStr = unit === 'GB' ? limit + ' GB' : limit.toLocaleString();
+        const p = _pct2(val, limit), c = _barC(p);
         return `<div style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:0.77rem;color:var(--text-mid);margin-bottom:3px;">
-            <span>${label}</span><span style="color:${c};font-weight:600;">${valStr} <span style="color:var(--text-light);font-weight:400;">/ ${limStr}</span></span>
+            <span>${label}</span><span style="color:${c};font-weight:600;">${val.toLocaleString()} <span style="color:var(--text-light);font-weight:400;">/ ${limit.toLocaleString()}</span></span>
           </div>
           <div style="background:#e5e7eb;border-radius:99px;height:5px;overflow:hidden;">
             <div style="width:${Math.min(p,100)}%;height:100%;border-radius:99px;background:${c};"></div>
@@ -15697,23 +15725,19 @@ async function _loadUsageMonitor() {
       }
 
       quotaCardEl.style.display = 'block';
-      const allNull = r === null && w === null && d === null;
       quotaCardEl.innerHTML =
-        `<div style="font-size:0.78rem;font-weight:700;color:#374151;margin-bottom:8px;">📊 Firestore 用量指標（Cloud Monitoring）</div>`
-        + _row('今日讀取',  r,  50000, '')
-        + _row('今日寫入',  w,  20000, '')
-        + _row('今日刪除',  d,  20000, '')
+        `<div style="font-size:0.78rem;font-weight:700;color:#374151;margin-bottom:8px;">📊 Firestore 今日用量（App 自計）</div>`
+        + _row2('今日讀取', r, 50000)
+        + _row2('今日寫入', w, 20000)
+        + _row2('今日刪除', d, 20000)
         + `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.77rem;color:var(--text-mid);padding:4px 0;border-bottom:1px solid #e5e7eb;">
             <span>本月頻寬</span>
             <a href="https://console.firebase.google.com/project/rescue-volunteer-a33f1/usage" target="_blank" rel="noopener"
               style="font-size:0.72rem;color:#3b82f6;text-decoration:none;">Firebase Console 查看 ↗</a>
           </div>`
-        + (monErr
-            ? `<div style="font-size:0.7rem;color:#c0392b;margin-top:4px;word-break:break-all;">⚠️ API 錯誤：${monErr}</div>`
-              + (uAt ? `<div style="font-size:0.68rem;color:#9ca3af;margin-top:2px;">上次嘗試：${uAt}</div>` : '')
-            : allNull
-              ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">⏳ 資料更新中${uAt ? '・上次嘗試：' + uAt : '，每小時整點自動更新'}</div>`
-              : (uAt ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">每小時更新・上次：${uAt}</div>` : ''));
+        + (lf
+            ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">每 5 分鐘更新・上次：${lf}</div>`
+            : `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">⏳ 首次使用後自動記錄，最多 5 分鐘更新</div>`);
     }
 
     if (loading) loading.style.display = 'none';
