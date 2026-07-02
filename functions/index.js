@@ -507,6 +507,29 @@ exports.scheduleTomorrowReminder = onSchedule(
         _log('Finish', { fn: 'scheduleTomorrowReminder/gongcha', tomorrow, missions: missions.length, totalSent });
       }
     }
+
+    // ── 1c. 定訓提醒 ──────────────────────────────────────────────────
+    const trainingDedupKey = `training-tomorrow-${tomorrow}`;
+    if (await _tryClaim(db, trainingDedupKey)) {
+      const tSnap = await db.collection('trainingSchedule').where('date', '==', tomorrow).get();
+      if (!tSnap.empty) {
+        const titles  = tSnap.docs.map(d => d.data().topic || '定訓').join('、');
+        const title   = '🔔 明天有定訓！';
+        const body    = `${tomorrow} ${titles}，請準時出席`;
+        const tokens  = await _getAllTokens(db, PUSH_TYPES.TRAINING);
+        const payload = _buildPushPayload(PUSH_TYPES.TRAINING, title, body, { tag: 'training-tomorrow' });
+        const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+        await _logPush(db, {
+          type: PUSH_TYPES.TRAINING, title, body, target: 'all',
+          source: 'auto-training-tomorrow', dedupKey: trainingDedupKey,
+          tokenCount: tokens.length,
+          successCount: results.filter(r => r.success).length,
+          failCount:    results.filter(r => !r.success).length,
+          messageIds,
+        });
+        _log('Finish', { fn: 'scheduleTomorrowReminder/training', tomorrow, tokenCount: tokens.length });
+      }
+    }
   }
 );
 
@@ -617,64 +640,6 @@ exports.scheduleMonthlyConfirmTask = onSchedule(
       messageIds,
     });
     _log('Finish', { fn: 'scheduleMonthlyConfirmTask', ym, tokenCount: tokens.length });
-  }
-);
-
-// ── 6. 每日 08:00：今明兩天有定訓時提醒所有訂閱者 ────────────────────
-// 取代舊的 .github/workflows/send-push.yml（用 raw web-push，與現有 FCM
-// 訂閱資料格式不相容，且 admin.credential 在新版 firebase-admin 會出錯）
-exports.scheduleTrainingReminder = onSchedule(
-  { schedule: '0 8 * * *', timeZone: TZ, region: REGION },
-  async () => {
-    const db  = getFirestore();
-    const type = PUSH_TYPES.TRAINING;
-    const today    = _dateStr(new Date());
-    const tomorrow = _dateStr(new Date(Date.now() + 86400000));
-
-    const [snapToday, snapTomorrow] = await Promise.all([
-      db.collection('trainingSchedule').where('date', '==', today).get(),
-      db.collection('trainingSchedule').where('date', '==', tomorrow).get(),
-    ]);
-    if (snapToday.empty && snapTomorrow.empty) return;
-
-    const tokens = await _getAllTokens(db, type);
-    if (!tokens.length) return;
-
-    if (!snapToday.empty) {
-      const dedupKey = `training-today-${today}`;
-      if (await _tryClaim(db, dedupKey)) {
-        const titles = snapToday.docs.map(d => d.data().topic || '定訓').join('、');
-        const title  = '🔔 今天有定訓！';
-        const body   = `${today} ${titles}，請準時出席`;
-        const payload = _buildPushPayload(type, title, body, { tag: 'training-today' });
-        const { results, messageIds } = await _sendMulticast(tokens, payload);
-        await _logPush(db, {
-          type, title, body, target: 'all', source: 'auto-training-today', dedupKey,
-          tokenCount: tokens.length,
-          successCount: results.filter(r => r.success).length,
-          failCount: results.filter(r => !r.success).length,
-          messageIds,
-        });
-      }
-    }
-
-    if (!snapTomorrow.empty) {
-      const dedupKey = `training-tomorrow-${tomorrow}`;
-      if (await _tryClaim(db, dedupKey)) {
-        const titles = snapTomorrow.docs.map(d => d.data().topic || '定訓').join('、');
-        const title  = '🔔 明天有定訓！';
-        const body   = `${tomorrow} ${titles}，請準時出席`;
-        const payload = _buildPushPayload(type, title, body, { tag: 'training-tomorrow' });
-        const { results, messageIds } = await _sendMulticast(tokens, payload);
-        await _logPush(db, {
-          type, title, body, target: 'all', source: 'auto-training-tomorrow', dedupKey,
-          tokenCount: tokens.length,
-          successCount: results.filter(r => r.success).length,
-          failCount: results.filter(r => !r.success).length,
-          messageIds,
-        });
-      }
-    }
   }
 );
 
