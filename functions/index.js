@@ -428,110 +428,85 @@ exports.broadcastPush = onRequest({ region: REGION, cors: true, invoker: 'public
 // ── 排程自動通知 ────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════
 
-// ── 1. 每日 20:00：通知明日有排班的人員 ──────────────────────────────
-exports.scheduleDutyTomorrowReminder = onSchedule(
-  { schedule: '0 20 * * *', timeZone: TZ, region: REGION },
-  async () => {
-    const db  = getFirestore();
-    const type = PUSH_TYPES.REMINDER;
-
-    const now = new Date();
-    const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
-    const dedupKey = `duty-tomorrow-${tomorrow}`;
-
-    if (!(await _tryClaim(db, dedupKey))) return;
-
-    const snap = await db.collection('dutySchedule').where('date', '==', tomorrow).get();
-    if (snap.empty) return;
-
-    const memberMap = {};
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (!d.memberName) return;
-      if (!memberMap[d.memberName]) memberMap[d.memberName] = [];
-      memberMap[d.memberName].push(`${d.start || ''}～${d.end || ''}`);
-    });
-
-    const members = Object.keys(memberMap);
-    if (!members.length) return;
-
-    const title = '📅 明日排班提醒';
-    for (const memberName of members) {
-      const shifts = memberMap[memberName].join('、');
-      const body = `您明日（${tomorrow}）有排班：${shifts}，請準時出勤。`;
-      const tokens = await _getMemberTokens(db, memberName, type);
-      const payload = _buildPushPayload(type, title, body, { tag: 'duty-tomorrow' });
-      const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
-      await _logPush(db, {
-        type, title, body, target: 'members', targetMembers: [memberName],
-        source: 'auto-duty-tomorrow', dedupKey: `${dedupKey}-${memberName}`,
-        tokenCount: tokens.length,
-        successCount: results.filter(r => r.success).length,
-        failCount: results.filter(r => !r.success).length,
-        messageIds,
-      });
-    }
-
-    _log('Finish', { fn: 'scheduleDutyTomorrowReminder', tomorrow, memberCount: members.length });
-  }
-);
-
-// ── 2b. 每日 20:00：明日公差任務提醒（推給已登記成員）─────────────────
-exports.scheduleGongchaTomorrowReminder = onSchedule(
+// ── 1. 每日 20:00：明日排班 + 公差提醒（合併為單一排程）────────────────
+exports.scheduleTomorrowReminder = onSchedule(
   { schedule: '0 20 * * *', timeZone: TZ, region: REGION },
   async () => {
     const db   = getFirestore();
     const type = PUSH_TYPES.REMINDER;
-
-    const now      = new Date();
+    const now  = new Date();
     const tomorrow = _dateStr(new Date(now.getTime() + 86400000));
-    const batchKey = `gongcha-tomorrow-${tomorrow}`;
 
-    if (!(await _tryClaim(db, batchKey))) return;
-
-    const snap = await db.collection('gongchaMissions').where('date', '==', tomorrow).get();
-    if (snap.empty) { _log('Finish', { fn: 'scheduleGongchaTomorrowReminder', tomorrow, missions: 0 }); return; }
-
-    const missions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    let totalSent  = 0;
-
-    for (const mission of missions) {
-      const registrants = mission.registrants || [];
-      if (!registrants.length) continue;
-
-      const timeStr = mission.time
-        ? `，時間 ${mission.time}${mission.endTime ? '～' + mission.endTime : ''}`
-        : '';
-      const locStr  = mission.location ? `，地點：${mission.location}` : '';
-      const title   = '📋 明日公差提醒';
-
-      for (const reg of registrants) {
-        const memberName = reg.name;
-        if (!memberName) continue;
-
-        const dedupKey = `${batchKey}-${mission.id}-${memberName}`;
-        if (!(await _tryClaim(db, dedupKey))) continue;
-
-        const body   = `您明日（${tomorrow}）有公差任務：${mission.title || '（未命名）'}${timeStr}${locStr}，請準時出席。`;
-        const tokens = await _getMemberTokens(db, memberName, type);
-        const payload = _buildPushPayload(type, title, body, { tag: 'gongcha-tomorrow' });
-        const { results, messageIds } = tokens.length
-          ? await _sendMulticast(tokens, payload)
-          : { results: [], messageIds: [] };
-
-        await _logPush(db, {
-          type, title, body, target: 'members', targetMembers: [memberName],
-          source: 'auto-gongcha-tomorrow', dedupKey,
-          tokenCount: tokens.length,
-          successCount: results.filter(r => r.success).length,
-          failCount:    results.filter(r => !r.success).length,
-          messageIds,
+    // ── 1a. 排班提醒 ──────────────────────────────────────────────────
+    const dutyDedupKey = `duty-tomorrow-${tomorrow}`;
+    if (await _tryClaim(db, dutyDedupKey)) {
+      const dutySnap = await db.collection('dutySchedule').where('date', '==', tomorrow).get();
+      if (!dutySnap.empty) {
+        const memberMap = {};
+        dutySnap.forEach(doc => {
+          const d = doc.data();
+          if (!d.memberName) return;
+          if (!memberMap[d.memberName]) memberMap[d.memberName] = [];
+          memberMap[d.memberName].push(`${d.start || ''}～${d.end || ''}`);
         });
-        totalSent++;
+        const title = '📅 明日排班提醒';
+        for (const memberName of Object.keys(memberMap)) {
+          const shifts = memberMap[memberName].join('、');
+          const body   = `您明日（${tomorrow}）有排班：${shifts}，請準時出勤。`;
+          const tokens = await _getMemberTokens(db, memberName, type);
+          const payload = _buildPushPayload(type, title, body, { tag: 'duty-tomorrow' });
+          const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+          await _logPush(db, {
+            type, title, body, target: 'members', targetMembers: [memberName],
+            source: 'auto-duty-tomorrow', dedupKey: `${dutyDedupKey}-${memberName}`,
+            tokenCount: tokens.length,
+            successCount: results.filter(r => r.success).length,
+            failCount:    results.filter(r => !r.success).length,
+            messageIds,
+          });
+        }
+        _log('Finish', { fn: 'scheduleTomorrowReminder/duty', tomorrow, memberCount: Object.keys(memberMap).length });
       }
     }
 
-    _log('Finish', { fn: 'scheduleGongchaTomorrowReminder', tomorrow, missions: missions.length, totalSent });
+    // ── 1b. 公差提醒 ──────────────────────────────────────────────────
+    const gongchaBatchKey = `gongcha-tomorrow-${tomorrow}`;
+    if (await _tryClaim(db, gongchaBatchKey)) {
+      const gSnap = await db.collection('gongchaMissions').where('date', '==', tomorrow).get();
+      if (!gSnap.empty) {
+        const missions = gSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        let totalSent  = 0;
+        for (const mission of missions) {
+          const registrants = mission.registrants || [];
+          if (!registrants.length) continue;
+          const timeStr = mission.time
+            ? `，時間 ${mission.time}${mission.endTime ? '～' + mission.endTime : ''}`
+            : '';
+          const locStr = mission.location ? `，地點：${mission.location}` : '';
+          const title  = '📋 明日公差提醒';
+          for (const reg of registrants) {
+            const memberName = reg.name;
+            if (!memberName) continue;
+            const dedupKey = `${gongchaBatchKey}-${mission.id}-${memberName}`;
+            if (!(await _tryClaim(db, dedupKey))) continue;
+            const body   = `您明日（${tomorrow}）有公差任務：${mission.title || '（未命名）'}${timeStr}${locStr}，請準時出席。`;
+            const tokens = await _getMemberTokens(db, memberName, type);
+            const payload = _buildPushPayload(type, title, body, { tag: 'gongcha-tomorrow' });
+            const { results, messageIds } = tokens.length ? await _sendMulticast(tokens, payload) : { results: [], messageIds: [] };
+            await _logPush(db, {
+              type, title, body, target: 'members', targetMembers: [memberName],
+              source: 'auto-gongcha-tomorrow', dedupKey,
+              tokenCount: tokens.length,
+              successCount: results.filter(r => r.success).length,
+              failCount:    results.filter(r => !r.success).length,
+              messageIds,
+            });
+            totalSent++;
+          }
+        }
+        _log('Finish', { fn: 'scheduleTomorrowReminder/gongcha', tomorrow, missions: missions.length, totalSent });
+      }
+    }
   }
 );
 
