@@ -743,7 +743,7 @@ exports.onBudgetAlert = onRequest(
       alertThreshold: threshold,
       alertSource: 'billing',
       updatedAt: now,
-    }, { merge: false });
+    }, { merge: true }); // merge:true 保留 readsToday/writesToday/deletesToday 欄位
 
     console.log(`onBudgetAlert: threshold=${threshold} cost=${costAmount}/${budgetAmount} ${currency} locked=${locked}`);
 
