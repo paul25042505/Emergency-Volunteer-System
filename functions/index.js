@@ -896,21 +896,21 @@ exports.scheduleUsageMonitor = onSchedule(
     try {
       const token = await _getToken();
 
-      const [reads, writes, deletes, bwBytes] = await Promise.all([
-        _queryMetric(token, 'firestore.googleapis.com/document/read_count',         dayStart,   now),
-        _queryMetric(token, 'firestore.googleapis.com/document/write_count',        dayStart,   now),
-        _queryMetric(token, 'firestore.googleapis.com/document/delete_count',       dayStart,   now),
-        _queryMetric(token, 'firestore.googleapis.com/network/sent_bytes_count',    monthStart, now),
+      // Note: network/sent_bytes_count is not exposed via Cloud Monitoring;
+      // Firebase bandwidth must be viewed in Firebase Console → Usage.
+      const [reads, writes, deletes] = await Promise.all([
+        _queryMetric(token, 'firestore.googleapis.com/document/read_count',  dayStart, now),
+        _queryMetric(token, 'firestore.googleapis.com/document/write_count', dayStart, now),
+        _queryMetric(token, 'firestore.googleapis.com/document/delete_count',dayStart, now),
       ]);
 
       const update = { usageUpdatedAt: now };
-      if (reads    !== null) update.readsToday          = reads;
-      if (writes   !== null) update.writesToday         = writes;
-      if (deletes  !== null) update.deletesToday        = deletes;
-      if (bwBytes  !== null) update.bandwidthBytesMonth = bwBytes;
+      if (reads   !== null) update.readsToday   = reads;
+      if (writes  !== null) update.writesToday  = writes;
+      if (deletes !== null) update.deletesToday = deletes;
 
       await db.collection('settings').doc('dailyUsage').set(update, { merge: true });
-      console.log(`scheduleUsageMonitor: reads=${reads} writes=${writes} deletes=${deletes} bw=${bwBytes}`);
+      console.log(`scheduleUsageMonitor: reads=${reads} writes=${writes} deletes=${deletes}`);
     } catch (e) {
       console.error('scheduleUsageMonitor error:', e.message);
     }

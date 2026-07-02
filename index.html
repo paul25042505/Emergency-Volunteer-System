@@ -15667,7 +15667,6 @@ async function _loadUsageMonitor() {
       const r = doc?.readsToday   ?? null;
       const w = doc?.writesToday  ?? null;
       const d = doc?.deletesToday ?? null;
-      const bw = doc?.bandwidthBytesMonth ?? null;
       const uAt = (doc?.usageUpdatedAt)
         ? new Date(doc.usageUpdatedAt.toDate?.() || doc.usageUpdatedAt)
             .toLocaleTimeString('zh-TW', { hour12: false, timeZone: 'Asia/Taipei' })
@@ -15696,7 +15695,7 @@ async function _loadUsageMonitor() {
         </div>`;
       }
 
-      const hasSomeData = r !== null || w !== null || d !== null || bw !== null;
+      const hasSomeData = r !== null || w !== null || d !== null;
       if (hasSomeData) {
         quotaCardEl.style.display = 'block';
         quotaCardEl.innerHTML =
@@ -15704,7 +15703,11 @@ async function _loadUsageMonitor() {
           + _row('今日讀取',  r,  50000, '')
           + _row('今日寫入',  w,  20000, '')
           + _row('今日刪除',  d,  20000, '')
-          + _row('本月頻寬',  bw, 10,    'GB')
+          + `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.77rem;color:var(--text-mid);padding:4px 0;border-bottom:1px solid #e5e7eb;">
+              <span>本月頻寬</span>
+              <a href="https://console.firebase.google.com/project/rescue-volunteer-a33f1/usage" target="_blank" rel="noopener"
+                style="font-size:0.72rem;color:#3b82f6;text-decoration:none;">Firebase Console 查看 ↗</a>
+            </div>`
           + (uAt ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">每小時更新・上次：${uAt}</div>` : '');
       } else {
         quotaCardEl.style.display = 'none';
