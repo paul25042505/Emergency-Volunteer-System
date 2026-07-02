@@ -3963,7 +3963,7 @@ function _dlCSV(content, filename) {
 <!-- ══════ PAGE：個人基本資料 ══════ -->
 <!-- ══════ PAGE：更多選單 ══════ -->
 <div class="page" id="morePage">
-  <div class="form-wrap" style="padding:0;background:#F4F6F9;">
+  <div class="form-wrap" style="padding:0 0 calc(83px + max(env(safe-area-inset-bottom,0px),16px));background:#F4F6F9;">
 
     <!-- 個人資料區塊 -->
     <div id="moreUserCard" style="background:white;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;border-bottom:1px solid #f0f0f0;">
@@ -15699,6 +15699,7 @@ async function _loadUsageMonitor() {
     // ── Firestore 用量指標卡（由前端自計數器每 5 分鐘 flush，與 Firebase Console 同源）
     const quotaCardEl = document.getElementById('_usageQuotaCard');
     if (quotaCardEl) {
+      await _flushUsage(); // 先把當前 session 累積的操作寫入，確保數值即時顯示
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
       const usageDoc = await fbGet(COL_USAGE_STATS, today);
       const r  = usageDoc?.reads   ?? null;
