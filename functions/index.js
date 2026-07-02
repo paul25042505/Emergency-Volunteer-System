@@ -777,9 +777,9 @@ exports.scheduleDailyCleanup = onSchedule(
   }
 );
 
-// ── 每 6 小時：查詢 Cloud Monitoring 取得 Firestore 用量指標 ────────────────
+// ── 每小時：查詢 Cloud Monitoring 取得 Firestore 用量指標 ────────────────
 exports.scheduleUsageMonitor = onSchedule(
-  { schedule: '0 */6 * * *', timeZone: TZ, region: REGION },
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
   async () => {
     const db  = getFirestore();
     const now = new Date();
