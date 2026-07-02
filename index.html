@@ -6049,7 +6049,8 @@ async function verifyWhitelist(email){
   await ensureFirebase();
   const em = email.toLowerCase().trim();
   let s = await _fbDB.collection(COL_WHITELIST).where('email','==',em).get();
-  if (s.empty) s = await _fbDB.collection(COL_WHITELIST).where('extraEmails','array-contains',em).get();
+  _uR(COL_WHITELIST, s.size);
+  if (s.empty) { s = await _fbDB.collection(COL_WHITELIST).where('extraEmails','array-contains',em).get(); _uR(COL_WHITELIST, s.size); }
   if(s.empty)return null;
   const d=s.docs[0].data();
   if (d.status === 'retired') return { allowed:false, retired:true };
@@ -7860,8 +7861,9 @@ async function _renderDashTodo(me, attDocs, todayStr) {
       _fbDB.collection(COL_CORRECTION).where('memberName', '==', me).where('status', '==', 'pending').get(),
       userUnit
         ? _fbDB.collection('confirmTasks').where('unit', '==', userUnit).where('status', '==', 'active').get()
-        : Promise.resolve({ empty: true, docs: [] }),
+        : Promise.resolve({ empty: true, docs: [], size: 0 }),
     ]);
+    _uR(COL_CORRECTION, corrSnap.size); _uR('confirmTasks', taskSnap.size);
     if (!corrSnap.empty)
       items.push({ em: _ic('clipboard',16), bg: '#dbeafe', title: `${corrSnap.size} 筆申請審核中`, sub: '點此查看申請進度', nav: 'myCorrectionsPage', page: '我的申請紀錄' });
     if (!taskSnap.empty) {
@@ -7870,6 +7872,7 @@ async function _renderDashTodo(me, attDocs, todayStr) {
         try {
           const resp = await _fbDB.collection('confirmTasks').doc(doc.id)
             .collection('responses').doc(me).get();
+          _uR('confirmTasks/responses', 1);
           if (!resp.exists) pendingTasks.push(doc.data().month);
         } catch(e) {}
       }
@@ -7904,9 +7907,11 @@ async function _bgSyncTitle(_su) {
   const memberName = _su.memberName || _su.name || '';
   let freshTitle = '';
   const mSnap = await _fbDB.collection(COL_MEMBERS).where('name','==',memberName).get();
+  _uR(COL_MEMBERS, mSnap.size);
   if (!mSnap.empty) freshTitle = mSnap.docs[0].data().title || '';
   if (!freshTitle) {
     const wSnap = await _fbDB.collection(COL_WHITELIST).where('email','==',_su.email.toLowerCase().trim()).get();
+    _uR(COL_WHITELIST, wSnap.size);
     if (!wSnap.empty) freshTitle = wSnap.docs[0].data().title || '';
   }
   if (!freshTitle || freshTitle === _su.title) return;
@@ -13355,7 +13360,7 @@ async function loadAdminPushCtrl() {
   try {
     await loadMembers();
     const [subs, wl, pushLogs] = await Promise.all([
-      firebase.firestore().collection(COL_PUSH_SUBS).get().then(s => s.docs.map(d => ({id:d.id,...d.data()}))),
+      firebase.firestore().collection(COL_PUSH_SUBS).get().then(s => { _uR(COL_PUSH_SUBS, s.size); return s.docs.map(d => ({id:d.id,...d.data()})); }),
       fbList(COL_WHITELIST),
       fbList(COL_PUSH_LOG, 'sentAt', 'desc').catch(() => []),
     ]);
@@ -13608,6 +13613,7 @@ async function loadLoginLog() {
 
     await ensureFirebase();
     const snap = await _fbDB.collection(COL_LOGINLOG).orderBy('loginAt','desc').limit(500).get({ source: 'server' });
+    _uR(COL_LOGINLOG, snap.size);
     let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
     if (dateFrom) docs = docs.filter(d => (d.loginAt||'').substring(0,10) >= dateFrom);
@@ -13673,6 +13679,7 @@ async function _trimLoginLog(maxCount) {
   try {
     await ensureFirebase();
     const snap = await _fbDB.collection(COL_LOGINLOG).orderBy('loginAt','desc').get({ source: 'server' });
+    _uR(COL_LOGINLOG, snap.size);
     if (snap.size <= maxCount) return;
     const toDelete = snap.docs.slice(maxCount);
     const batch = _fbDB.batch();
@@ -13709,6 +13716,7 @@ async function loadAuditLog() {
 
     await ensureFirebase();
     const snap = await _fbDB.collection(COL_AUDITLOG).orderBy('loggedAt','desc').limit(500).get({ source: 'server' });
+    _uR(COL_AUDITLOG, snap.size);
     let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
     // 動態填入模組篩選選單（依實際出現過的模組，避免 hardcode）
@@ -14985,6 +14993,7 @@ async function openNoticePanel() {
     } catch(e) { /* 無快取 */ }
     // 2. 背景從 server 更新，面板仍開著就重新渲染
     _fbDB.collection(COL_ANNOUNCE).limit(200).get({ source: 'server' }).then(snap => {
+      _uR(COL_ANNOUNCE, snap.size);
       if (document.getElementById('noticePanel')?.style.display !== 'none') {
         _applyNoticeDocs(snap.docs.map(d => ({id:d.id,...d.data()})), u);
       }
@@ -15775,7 +15784,7 @@ async function loadAdminDashboard() {
 
   await ensureFirebase();
   const results = await Promise.allSettled([
-    _fbDB.collection(COL_LOGINLOG).orderBy('loginAt', 'desc').limit(500).get(),
+    _fbDB.collection(COL_LOGINLOG).orderBy('loginAt', 'desc').limit(500).get().then(s => { _uR(COL_LOGINLOG, s.size); return s; }),
     fbList(COL_CORRECTION),
     fbList(COL_CONFIRM),
     fbList('pushLogs'),
@@ -16578,10 +16587,12 @@ async function repairHasSig(btn) {
     await ensureFirebase();
     // hasSig != true 可掃到 false、null、欄位不存在三種情況
     const snap = await _fbDB.collection(COL_ATTEND).where('hasSig','!=',true).get();
+    _uR(COL_ATTEND, snap.size);
     let fixed = 0, checked = 0;
     for (const doc of snap.docs) {
       checked++;
       const sd = await _fbDB.collection('attSigs').doc(doc.id).get();
+      _uR('attSigs', 1);
       if (sd.exists && (sd.data().checkinSig || sd.data().checkoutSig)) {
         await _fbDB.collection(COL_ATTEND).doc(doc.id).update({ hasSig: true });
         fixed++;
