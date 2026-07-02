@@ -802,7 +802,7 @@ exports.scheduleUsageMonitor = onSchedule(
       return (await r.json()).access_token;
     }
 
-    // 查詢 Cloud Monitoring timeSeries，回傳總和（null 代表查詢失敗或無資料）
+    // 查詢 Cloud Monitoring timeSeries，回傳總和；null=API錯誤，0=無資料
     async function _queryMetric(token, metricType, startTime, endTime) {
       const base = 'https://monitoring.googleapis.com/v3/projects/rescue-volunteer-a33f1/timeSeries';
       const alignSec = Math.max(3600, Math.ceil((endTime - startTime) / 1000));
@@ -819,7 +819,11 @@ exports.scheduleUsageMonitor = onSchedule(
         const r = await fetch(`${base}?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!r.ok) { console.warn(`_queryMetric ${metricType} HTTP ${r.status}`); return null; }
+        if (!r.ok) {
+          const body = await r.text().catch(() => '');
+          console.warn(`_queryMetric ${metricType} HTTP ${r.status}: ${body}`);
+          return { error: `HTTP ${r.status}: ${body.slice(0, 120)}` };
+        }
         const j = await r.json();
         const pts = j.timeSeries?.[0]?.points || [];
         if (!pts.length) return 0;
@@ -829,7 +833,7 @@ exports.scheduleUsageMonitor = onSchedule(
         }, 0);
       } catch (e) {
         console.warn(`_queryMetric ${metricType} error:`, e.message);
-        return null;
+        return { error: e.message };
       }
     }
 
@@ -844,15 +848,25 @@ exports.scheduleUsageMonitor = onSchedule(
         _queryMetric(token, 'firestore.googleapis.com/document/delete_count',dayStart, now),
       ]);
 
-      const update = { usageUpdatedAt: now };
-      if (reads   !== null) update.readsToday   = reads;
-      if (writes  !== null) update.writesToday  = writes;
-      if (deletes !== null) update.deletesToday = deletes;
+      const toNum = v => (v !== null && typeof v === 'object') ? null : v;
+      const rNum = toNum(reads), wNum = toNum(writes), dNum = toNum(deletes);
+      const apiError = [reads, writes, deletes]
+        .map(v => (v !== null && typeof v === 'object') ? v.error : null)
+        .find(e => e) || null;
+
+      const update = { usageUpdatedAt: now, monitoringError: apiError || null };
+      if (rNum !== null) update.readsToday   = rNum;
+      if (wNum !== null) update.writesToday  = wNum;
+      if (dNum !== null) update.deletesToday = dNum;
 
       await db.collection('settings').doc('dailyUsage').set(update, { merge: true });
-      console.log(`scheduleUsageMonitor: reads=${reads} writes=${writes} deletes=${deletes}`);
+      console.log(`scheduleUsageMonitor: reads=${rNum} writes=${wNum} deletes=${dNum} error=${apiError}`);
     } catch (e) {
       console.error('scheduleUsageMonitor error:', e.message);
+      await db.collection('settings').doc('dailyUsage').set(
+        { usageUpdatedAt: now, monitoringError: e.message },
+        { merge: true }
+      ).catch(() => {});
     }
   }
 );

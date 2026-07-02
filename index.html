@@ -15667,6 +15667,7 @@ async function _loadUsageMonitor() {
       const r = doc?.readsToday   ?? null;
       const w = doc?.writesToday  ?? null;
       const d = doc?.deletesToday ?? null;
+      const monErr = doc?.monitoringError ?? null;
       const uAt = (doc?.usageUpdatedAt)
         ? new Date(doc.usageUpdatedAt.toDate?.() || doc.usageUpdatedAt)
             .toLocaleTimeString('zh-TW', { hour12: false, timeZone: 'Asia/Taipei' })
@@ -15707,9 +15708,12 @@ async function _loadUsageMonitor() {
             <a href="https://console.firebase.google.com/project/rescue-volunteer-a33f1/usage" target="_blank" rel="noopener"
               style="font-size:0.72rem;color:#3b82f6;text-decoration:none;">Firebase Console 查看 ↗</a>
           </div>`
-        + (allNull
-            ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">⏳ 資料更新中，每小時整點自動更新</div>`
-            : (uAt ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">每小時更新・上次：${uAt}</div>` : ''));
+        + (monErr
+            ? `<div style="font-size:0.7rem;color:#c0392b;margin-top:4px;word-break:break-all;">⚠️ API 錯誤：${monErr}</div>`
+              + (uAt ? `<div style="font-size:0.68rem;color:#9ca3af;margin-top:2px;">上次嘗試：${uAt}</div>` : '')
+            : allNull
+              ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">⏳ 資料更新中${uAt ? '・上次嘗試：' + uAt : '，每小時整點自動更新'}</div>`
+              : (uAt ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">每小時更新・上次：${uAt}</div>` : ''));
     }
 
     if (loading) loading.style.display = 'none';
