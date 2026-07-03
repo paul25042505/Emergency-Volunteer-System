@@ -200,6 +200,15 @@ input[type="text"], input[type="email"], input[type="tel"], input[type="date"], 
   appearance: none; -webkit-appearance: none;
   min-height: 44px; line-height: 1.4; vertical-align: middle;
 }
+/* iOS Safari date/time input 強制一致：防止 font-size<16px 觸發頁面縮放跑版 */
+input[type="date"], input[type="time"] {
+  font-size: 16px !important;
+  box-sizing: border-box !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: 44px;
+  display: block;
+}
 select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239c8c80' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
