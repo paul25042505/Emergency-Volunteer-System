@@ -11447,12 +11447,13 @@ async function generateRpt1() {
 async function generateRpt2() {
   const year = document.getElementById('rpt2Year').value;
   const month = document.getElementById('rpt2Month').value;
+  const unit = document.getElementById('rpt2Unit').value;
   const status = document.getElementById('rpt2Status');
   const btn = document.getElementById('rpt2Btn');
   if (!year || !month) { status.style.color='var(--red)'; status.textContent='請選擇年份和月份'; return; }
   btn.disabled = true; status.style.color='var(--text-light)'; status.innerHTML=_ic('hourglass',13)+' 正在產生，請稍候...';
   try {
-    const json = await jsonpRequest(BASE_URL + `?action=generateServiceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`, 'jsonpRpt2Script', status);
+    const json = await jsonpRequest(BASE_URL + `?action=generateServiceReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt2Script', status);
     downloadDocx(json);
     status.style.color='#1a6b35'; status.innerHTML=_ic('checkCircle',13)+` 下載成功！共 ${json.count} 筆`;
   } catch(e) { status.style.color='var(--red)'; status.innerHTML=_ic('xCircle',13)+' '+e.message; }
