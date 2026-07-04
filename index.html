@@ -9591,28 +9591,24 @@ async function doQuery() {
   document.getElementById('resultCard')?.style && (document.getElementById('resultCard').style.display = 'none');
 
   try {
-    try {
-      // 使用者主動查詢時，略過 localStorage 快取直接抓最新 Firestore 資料
-      await ensureFirebase();
-      const snap = await _fbDB.collection(COL_OUTING).orderBy('date','asc').limit(1000).get();
-      const docs = snap.docs.map(d=>({id:d.id,...d.data()}));
-      _C.set(COL_OUTING, docs); // 更新快取讓其他頁面受益
-      allRecords=docs.map(d=>({
-        id:d.id||'',
-        caseId:d.caseId||null,
-        date:d.date||'',timeOut:d.timeOut||'',timeBack:d.timeBack||'',
-        district:(d.district||'').replace(/^台中/,'臺中'),
-        address:d.address||'',caseType:d.caseType||'',services:d.services||'',
-        serviceCount:d.serviceCount,
-        note:d.note||'',
-        memberName:d.memberName||'',
-        signature:d.signature||'',
-        dutyType:d.dutyType||'',
-        _t:d._t||null,
-      }));
-    } catch(e) {
-      allRecords = [];
-    }
+    // 使用者主動查詢時，略過 localStorage 快取直接抓最新 Firestore 資料
+    await ensureFirebase();
+    const snap = await _fbDB.collection(COL_OUTING).orderBy('date','asc').limit(1000).get();
+    const docs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    _C.set(COL_OUTING, docs); // 更新快取讓其他頁面受益
+    allRecords=docs.map(d=>({
+      id:d.id||'',
+      caseId:d.caseId||null,
+      date:d.date||'',timeOut:d.timeOut||'',timeBack:d.timeBack||'',
+      district:(d.district||'').replace(/^台中/,'臺中'),
+      address:d.address||'',caseType:d.caseType||'',services:d.services||'',
+      serviceCount:d.serviceCount,
+      note:d.note||'',
+      memberName:d.memberName||'',
+      signature:d.signature||'',
+      dutyType:d.dutyType||'',
+      _t:d._t||null,
+    }));
   } catch(e) {
     alert('無法取得資料：' + e.message);
     if (btn) { btn.textContent = '查　詢'; btn.disabled = false; }
