@@ -5929,14 +5929,17 @@ function openPhotoCropModal(file) {
   });
 }
 async function loadAndViewSig(col, docId, btn) {
+  const _origHtml = btn.innerHTML;
   btn.disabled = true; btn.textContent = '載入中...';
   try {
     const doc = await fbGetWithSig(col, docId);
-    if (!doc) { btn.textContent = '無簽名'; return; }
+    if (!doc) { btn.textContent = '此紀錄無簽名'; setTimeout(()=>{btn.innerHTML=_origHtml;btn.disabled=false;},2000); return; }
     const sigs = col === COL_ATTEND
       ? [doc.checkinSig && {src: doc.checkinSig, lbl:'簽到'}, doc.checkoutSig && {src: doc.checkoutSig, lbl:'簽退'}].filter(Boolean)
       : [doc.signature && {src: doc.signature, lbl:'義消簽名'}].filter(Boolean);
-    if (!sigs.length) { btn.textContent = '無簽名'; return; }
+    if (!sigs.length) { btn.textContent = '此紀錄無簽名'; setTimeout(()=>{btn.innerHTML=_origHtml;btn.disabled=false;},2000); return; }
+    // 若找到簽名但 hasSig 旗標為 false，自動修復
+    if (!doc.hasSig) fbUpdate(col, docId, { hasSig: true }).catch(()=>{});
     const html = sigs.map(s => `<div style="text-align:center;margin:8px 0;"><img src="${s.src}" style="max-width:100%;border:1px solid #eee;border-radius:6px;"><div style="font-size:0.72rem;color:var(--text-mid);margin-top:4px;">${s.lbl}</div></div>`).join('');
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
@@ -5944,8 +5947,8 @@ async function loadAndViewSig(col, docId, btn) {
     modal.onclick = e => { if(e.target===modal) modal.remove(); };
     document.body.appendChild(modal);
     btn.innerHTML = _ic('pencil',12) + ' 查看簽名';
-  } catch(e) { btn.textContent = '載入失敗'; }
-  finally { btn.disabled = false; }
+  } catch(e) { btn.textContent = '載入失敗'; setTimeout(()=>{btn.innerHTML=_origHtml;btn.disabled=false;},2000); return; }
+  btn.disabled = false;
 }
 
 // ── 本地快取（stale-while-revalidate）──
@@ -9749,7 +9752,7 @@ function renderQueryResults(records) {
         +(tagsHtml ? '<div class="mq-card-tags">'+tagsHtml+'</div>' : '')
         +'<div style="margin-top:7px;font-size:0.78rem;color:var(--text-mid);">義消：'+(r.memberName||'—')+(r.title ? ' <span style="color:var(--text-light);">'+r.title+'</span>' : '')+'</div>'
         +(r.note ? '<div style="margin-top:6px;padding:7px 10px;background:#FFFBEB;border:1.5px solid rgba(217,119,6,0.18);border-radius:8px;font-size:0.75rem;color:#92400E;line-height:1.5;"><span style="font-weight:600;margin-right:4px;">備註</span>'+r.note+'</div>' : '')
-        +((r.signature||r.hasSig) ? '<button onclick="loadAndViewSig(\''+COL_OUTING+'\',\''+r.id+'\',this)" style="margin-top:6px;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;">'+_ic('pencil',12)+' 查看簽名</button>' : '')
+        +'<button onclick="loadAndViewSig(\''+COL_OUTING+'\',\''+r.id+'\',this)" style="margin-top:6px;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:0.72rem;color:var(--text-mid);cursor:pointer;">'+_ic('pencil',12)+' 查看簽名</button>'
       +'</div>'
       +(actions ? '<div class="mq-card-foot">'+actions+'</div>' : '')
     +'</div>';
