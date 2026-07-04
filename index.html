@@ -9411,8 +9411,8 @@ function submitOutingForm() {
     district:data.district,address:data.address,services:data.services,
     serviceCount:parseInt(document.getElementById('serviceCount').value)||0,
     note:data.note||'',memberName:data.memberName,hasSig:!!(data.signature),
-  })).then(docId=>{
-    fbSaveSig(COL_OUTING, docId, { signature: data.signature });
+  })).then(async docId=>{
+    await fbSaveSig(COL_OUTING, docId, { signature: data.signature });
 
     syncAttServiceForDate(data.memberName, data.date);
     document.getElementById('successMsg').classList.add('show');
