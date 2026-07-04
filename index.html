@@ -8795,6 +8795,18 @@ function clearSigFullscreen() {
 function confirmSigFullscreen() {
   const fsCanvas = document.getElementById('sigFullscreenCanvas');
   if (!fsCanvas || !_sfTargetCanvasId) { closeSigFullscreen(); return; }
+  // 檢查是否有實際筆跡（任何非透明像素）
+  if (_sfCtx) {
+    const px = _sfCtx.getImageData(0, 0, fsCanvas.width, fsCanvas.height).data;
+    const hasStroke = px.some((v, i) => i % 4 === 3 && v > 10);
+    if (!hasStroke) {
+      const btn = document.getElementById('sigFullscreenConfirm');
+      const orig = btn ? btn.textContent : '';
+      if (btn) { btn.textContent = '請先完成簽名！'; btn.style.background = '#e67e22'; }
+      setTimeout(() => { if (btn) { btn.textContent = orig; btn.style.background = ''; } }, 1800);
+      return;
+    }
+  }
   const target = document.getElementById(_sfTargetCanvasId);
   if (target) {
     const tc = target.getContext('2d');
