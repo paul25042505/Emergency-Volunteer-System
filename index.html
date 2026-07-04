@@ -11527,13 +11527,15 @@ function jsonpRequest(baseUrl, scriptId, statusEl, _retryCount) {
 }
 
 function downloadDocx(json) {
-  const binary = atob(json.docxBase64);
+  const b64 = (json.fileBase64 || json.docxBase64 || '').replace(/\s+/g, '');
+  if (!b64) throw new Error('GAS 未回傳檔案資料');
+  const binary = atob(b64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = json.fileName;
+  a.download = json.fileName || 'report.docx';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
 }
