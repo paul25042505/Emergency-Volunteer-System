@@ -11474,7 +11474,10 @@ async function generateRpt3() {
   try {
     const json = await jsonpRequest(RPT3_URL + `?action=generateOutingReport&year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}&unit=${encodeURIComponent(unit)}`, 'jsonpRpt3Script', status);
     downloadDocx(json);
-    status.style.color='#1a6b35'; status.innerHTML=_ic('checkCircle',13)+` 下載成功！共 ${json.count} 筆`;
+    let rpt3Msg = `下載成功！共 ${json.count} 筆`;
+    if (json.count === 0 && (json.rawCount > 0)) rpt3Msg += `（資料庫找到 ${json.rawCount} 筆，但分隊「${json.unitFilter}」過濾後為 0，資料的 unit 值：${json.unitSample}）`;
+    else if (json.count === 0 && json.rawCount === 0) rpt3Msg += `（資料庫查無此月份資料，unit 樣本：${json.unitSample||'無'}）`;
+    status.style.color='#1a6b35'; status.innerHTML=_ic('checkCircle',13)+` ${rpt3Msg}`;
   } catch(e) { status.style.color='var(--red)'; status.innerHTML=_ic('xCircle',13)+' '+e.message; }
   finally { btn.disabled = false; }
 }
