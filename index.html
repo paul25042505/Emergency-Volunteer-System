@@ -11042,6 +11042,10 @@ async function initReportPage() {
   const t = new Date();
   const curY = t.getFullYear() - 1911;
   const curM = t.getMonth() + 1;
+  // 報表預設「上個月」（當月才匯出上月報表）
+  const prevM = curM === 1 ? 12 : curM - 1;
+  const prevY = curM === 1 ? curY - 1 : curY;
+
   ['rpt1Year','rpt2Year','rpt3Year','verifyYear'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel || sel.options.length) return;
@@ -11050,12 +11054,14 @@ async function initReportPage() {
       opt.value = y; opt.textContent = y + ' 年';
       sel.appendChild(opt);
     }
-    sel.value = curY;
+    // 報表年份預設上個月所屬年；核對頁仍用當年
+    sel.value = (id === 'verifyYear') ? curY : prevY;
   });
   ['rpt1Month','rpt2Month','rpt3Month'].forEach(id => {
-    document.getElementById(id).value = curM;
+    document.getElementById(id).value = prevM;  // 預設上個月
   });
   document.getElementById('verifyMonth').value = curM;
+
   // 載入分隊選單
   const rptUnitIds = ['rpt1Unit','rpt2Unit','rpt3Unit','verifyUnit'];
   rptUnitIds.forEach(id => {
@@ -11065,6 +11071,21 @@ async function initReportPage() {
   try {
     await loadUnits();
     const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
+
+    // 分隊優先讀 sessionStorage；若空（admin 或部分帳號未寫入），從白名單補查
+    let userUnit = usr.unit || '';
+    if (!userUnit && usr.email) {
+      try {
+        const wlDocs = await fbQuery(COL_WHITELIST, [['email', '==', usr.email]]);
+        if (wlDocs.length && wlDocs[0].unit) {
+          userUnit = wlDocs[0].unit;
+          // 更新 session，避免下次再查
+          sessionStorage.setItem('rescue_user',
+            JSON.stringify(Object.assign({}, usr, { unit: userUnit })));
+        }
+      } catch(e) {}
+    }
+
     if (_unitsList.length === 0) {
       rptUnitIds.forEach(id => {
         const el = document.getElementById(id);
@@ -11077,7 +11098,7 @@ async function initReportPage() {
         const hasAll = id === 'verifyUnit';
         el.innerHTML = (hasAll ? '<option value="">全部分隊</option>' : '<option value="">請選擇分隊</option>') +
           _unitsList.map(u=>`<option value="${u}">${u}</option>`).join('');
-        if (usr.unit) el.value = usr.unit;
+        if (userUnit) el.value = userUnit;
       });
     }
   } catch(e) {
