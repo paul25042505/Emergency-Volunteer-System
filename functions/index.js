@@ -711,6 +711,76 @@ exports.onBudgetAlert = onRequest(
   }
 );
 
+// ── 每小時：主動查詢 Cloud Billing 匯出（BigQuery）取得當月即時費用 ─────
+// onBudgetAlert 只有跨過警報門檻才會觸發，數字可能是很久以前的舊快照；
+// 這支改成定時主動查詢，讓 costAmount 貼近 Firebase Console 顯示的即時金額。
+// budgetAmount / currency 沿用 onBudgetAlert 上次寫入的值（merge，不覆蓋）。
+//
+// 前置設定（GCP Console，一次性，需自行操作）：
+//   1. 帳單 → 帳單匯出 → 詳細使用費用匯出 → 建立 BigQuery 資料集（例如 billing_export）
+//   2. IAM → 把本專案 Cloud Functions 執行服務帳戶
+//      （預設是 <PROJECT_NUMBER>-compute@developer.gserviceaccount.com）
+//      加到該 BigQuery 資料集角色「BigQuery 資料檢視者」，並在專案層級授予「BigQuery 工作使用者」
+//   3. 在 functions/.env 設定 BILLING_BQ_PROJECT / BILLING_BQ_DATASET / BILLING_BQ_TABLE
+//      （BILLING_BQ_TABLE 格式通常是 gcp_billing_export_v1_<BILLING_ACCOUNT_ID>）
+const { BigQuery } = require('@google-cloud/bigquery');
+
+const BILLING_BQ_PROJECT = process.env.BILLING_BQ_PROJECT || '';
+const BILLING_BQ_DATASET = process.env.BILLING_BQ_DATASET || '';
+const BILLING_BQ_TABLE   = process.env.BILLING_BQ_TABLE   || '';
+
+exports.scheduleBillingCostSync = onSchedule(
+  { schedule: '0 * * * *', timeZone: TZ, region: REGION },
+  async () => {
+    if (!BILLING_BQ_PROJECT || !BILLING_BQ_DATASET || !BILLING_BQ_TABLE) {
+      console.warn('scheduleBillingCostSync: BILLING_BQ_* 尚未設定於 functions/.env，略過');
+      return;
+    }
+
+    const db  = getFirestore();
+    const now = new Date();
+    const todayStr = _dateStr(now);
+    const invoiceMonth = now.toLocaleDateString('sv-SE', { timeZone: TZ }).slice(0, 7).replace('-', ''); // YYYYMM
+
+    const bigquery = new BigQuery({ projectId: BILLING_BQ_PROJECT });
+    const query = `
+      SELECT
+        SUM(cost) + IFNULL(SUM((SELECT SUM(c.amount) FROM UNNEST(credits) AS c)), 0) AS total_cost,
+        ANY_VALUE(currency) AS currency
+      FROM \`${BILLING_BQ_PROJECT}.${BILLING_BQ_DATASET}.${BILLING_BQ_TABLE}\`
+      WHERE project.id = @gcpProjectId
+        AND invoice.month = @invoiceMonth
+    `;
+
+    let rows;
+    try {
+      [rows] = await bigquery.query({
+        query,
+        params: { gcpProjectId: process.env.GCLOUD_PROJECT || 'rescue-volunteer-a33f1', invoiceMonth },
+      });
+    } catch (e) {
+      console.error('scheduleBillingCostSync: BigQuery 查詢失敗', e);
+      return;
+    }
+
+    const costAmount = Number(rows?.[0]?.total_cost || 0);
+    const currency   = rows?.[0]?.currency || 'USD';
+
+    const snap = await db.collection('settings').doc('dailyUsage').get();
+    const budgetAmount = snap.exists ? Number(snap.data().budgetAmount || 0) : 0;
+    const pct    = budgetAmount > 0 ? Math.round((costAmount / budgetAmount) * 100) : 0;
+    const locked = pct >= 90;
+
+    await db.collection('settings').doc('dailyUsage').set({
+      date: todayStr, locked, pct, costAmount, currency,
+      alertSource: 'bigquery-scheduled',
+      updatedAt: now,
+    }, { merge: true }); // merge:true 保留 budgetAmount/readsToday 等既有欄位
+
+    _log('Finish', { fn: 'scheduleBillingCostSync', costAmount, currency, pct });
+  }
+);
+
 // ── 每日 03:00：清理舊資料與孤兒訂閱，控制儲存費用 ────────────────────
 exports.scheduleDailyCleanup = onSchedule(
   { schedule: '0 3 * * *', timeZone: TZ, region: REGION },

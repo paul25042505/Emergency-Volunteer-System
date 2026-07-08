@@ -15723,7 +15723,8 @@ async function _loadUsageMonitor() {
     document.getElementById('_usageMeterPct').style.color     = barColor;
     document.getElementById('_usageMeterBar').style.width     = `${Math.min(pct, 100)}%`;
     document.getElementById('_usageMeterBar').style.background = barColor;
-    document.getElementById('_usageMeterUpdated').textContent  = `最後更新：${updAt}（Cloud Billing 警報觸發時更新）`;
+    const _srcLabel = doc?.alertSource === 'bigquery-scheduled' ? '每小時定時同步' : 'Cloud Billing 警報觸發時更新';
+    document.getElementById('_usageMeterUpdated').textContent  = `最後更新：${updAt}（${_srcLabel}）`;
 
     const statusEl = document.getElementById('_usageMeterStatus');
     if (pct >= 90) {
@@ -15749,7 +15750,7 @@ async function _loadUsageMonitor() {
         + `<span>本期費用</span><span style="font-weight:700;">${currency} ${Number(costAmount).toFixed(2)}</span>`
         + `<span>預算上限</span><span style="font-weight:700;">${currency} ${Number(budgetAmount).toFixed(2)}</span>`
         + `<span>剩餘額度</span><span style="font-weight:700;color:${remain < Number(budgetAmount)*0.1 ? '#c0392b':'#2e7d32'};">${currency} ${remain.toFixed(2)}</span>`
-        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">Cloud Billing 資料有數小時延遲</div>`;
+        + `</div><div style="font-size:0.7rem;color:#a1887f;margin-top:5px;">${doc?.alertSource === 'bigquery-scheduled' ? '費用資料每小時同步一次，與 Firebase Console 可能有數小時內誤差' : '此為上次預算警報觸發時的快照，非即時金額'}</div>`;
       } else {
         costEl.style.display = pct > 0 ? 'block' : 'none';
         if (pct > 0) costEl.innerHTML = `<div style="font-size:0.78rem;color:#795548;">等待 Cloud Billing 預算警報觸發後顯示費用明細</div>`;
