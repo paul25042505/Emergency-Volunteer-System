@@ -3704,12 +3704,23 @@ function _dlCSV(content, filename) {
         <div style="font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.1em;margin-bottom:14px;">新增／調整時段人數上限</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
           <div>
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">日期 <span style="color:var(--red);">*</span></div>
-            <input type="date" id="dutyCapDate" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">起始日期 <span style="color:var(--red);">*</span></div>
+            <input type="date" id="dutyCapDateFrom" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
           </div>
           <div>
-            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">時段 <span style="color:var(--red);">*</span></div>
-            <select id="dutyCapHour" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;"></select>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">結束日期</div>
+            <input type="date" id="dutyCapDateTo" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
+            <div style="font-size:0.64rem;color:var(--text-light);margin-top:3px;">留空 = 只設定起始日期當天</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">起始時段 <span style="color:var(--red);">*</span></div>
+            <select id="dutyCapHourFrom" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;"></select>
+          </div>
+          <div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">結束時段 <span style="color:var(--red);">*</span></div>
+            <select id="dutyCapHourTo" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;"></select>
           </div>
         </div>
         <div style="margin-bottom:8px;">
@@ -25053,51 +25064,92 @@ function getDutySlotCount(dateStr, slotHour) {
 // ════════════════════════════════════════
 
 function initDutyCapAdmin() {
-  const sel = document.getElementById('dutyCapHour');
-  if (sel && !sel.options.length) {
-    for (let h = 6; h <= 21; h++) {
-      sel.add(new Option(String(h).padStart(2,'0') + ':00 - ' + String(h+1).padStart(2,'0') + ':00', h));
-    }
+  const selFrom = document.getElementById('dutyCapHourFrom');
+  const selTo   = document.getElementById('dutyCapHourTo');
+  if (selFrom && !selFrom.options.length) {
+    for (let h = 6; h <= 21; h++) selFrom.add(new Option(String(h).padStart(2,'0') + ':00', h));
   }
-  const dateInput = document.getElementById('dutyCapDate');
-  if (dateInput && !dateInput.value) dateInput.value = new Date().toLocaleDateString('sv');
+  if (selTo && !selTo.options.length) {
+    for (let h = 7; h <= 22; h++) selTo.add(new Option(String(h).padStart(2,'0') + ':00', h));
+  }
+  const dateFrom = document.getElementById('dutyCapDateFrom');
+  if (dateFrom && !dateFrom.value) dateFrom.value = new Date().toLocaleDateString('sv');
   _dutyCapUpdateHint();
   loadDutyCapList();
 }
 
-// 顯示目前選取日期時段的預設值／已覆蓋值，協助後台判斷要不要調整
+// 展開起訖日期為逐日陣列（含頭尾）
+function _dutyCapDateRangeArr(dFrom, dTo) {
+  const arr = [];
+  let d = new Date(dFrom + 'T00:00:00');
+  const end = new Date((dTo || dFrom) + 'T00:00:00');
+  if (end < d) return arr;
+  while (d <= end) {
+    arr.push(d.toLocaleDateString('sv'));
+    d.setDate(d.getDate() + 1);
+  }
+  return arr;
+}
+
+// 顯示目前選取的日期／時段範圍將影響幾筆設定，協助後台判斷範圍是否正確
 function _dutyCapUpdateHint() {
-  const dateStr = document.getElementById('dutyCapDate')?.value;
-  const hour    = parseInt(document.getElementById('dutyCapHour')?.value, 10);
-  const hint    = document.getElementById('dutyCapDefaultHint');
-  if (!hint || !dateStr || isNaN(hour)) return;
-  const def = _dutyDefaultCapacity(dateStr, hour);
-  const cur = _dutyCapacityOverrides[dateStr + '_' + hour];
-  hint.textContent = cur !== undefined
-    ? `目前已設定人數上限為 ${cur} 人（預設規則值為 ${def} 人）`
-    : `目前套用預設規則，人數上限為 ${def} 人`;
+  const dFrom = document.getElementById('dutyCapDateFrom')?.value;
+  const dTo   = document.getElementById('dutyCapDateTo')?.value || dFrom;
+  const hFrom = parseInt(document.getElementById('dutyCapHourFrom')?.value, 10);
+  const hTo   = parseInt(document.getElementById('dutyCapHourTo')?.value, 10);
+  const hint  = document.getElementById('dutyCapDefaultHint');
+  if (!hint) return;
+  if (!dFrom || isNaN(hFrom) || isNaN(hTo) || hTo <= hFrom) { hint.textContent = ''; return; }
+  const days = _dutyCapDateRangeArr(dFrom, dTo).length;
+  const slots = hTo - hFrom;
+  hint.textContent = days > 0
+    ? `將套用到 ${days} 天 × ${slots} 個時段，共 ${days * slots} 筆設定`
+    : '結束日期不可早於起始日期';
 }
 
 async function saveDutyCapOverride() {
-  const dateStr = document.getElementById('dutyCapDate')?.value;
-  const hour    = parseInt(document.getElementById('dutyCapHour')?.value, 10);
-  const cap     = parseInt(document.getElementById('dutyCapValue')?.value, 10);
-  if (!dateStr)       { alert('請選擇日期'); return; }
-  if (isNaN(hour))    { alert('請選擇時段'); return; }
-  if (isNaN(cap) || cap < 0) { alert('請輸入有效的人數上限（0 以上整數）'); return; }
+  const dFrom = document.getElementById('dutyCapDateFrom')?.value;
+  const dTo   = document.getElementById('dutyCapDateTo')?.value || dFrom;
+  const hFrom = parseInt(document.getElementById('dutyCapHourFrom')?.value, 10);
+  const hTo   = parseInt(document.getElementById('dutyCapHourTo')?.value, 10);
+  const cap   = parseInt(document.getElementById('dutyCapValue')?.value, 10);
 
-  const usr   = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
-  const docId = dateStr + '_' + hour;
+  if (!dFrom)                     { alert('請選擇起始日期'); return; }
+  if (dTo < dFrom)                { alert('結束日期不可早於起始日期'); return; }
+  if (isNaN(hFrom) || isNaN(hTo) || hTo <= hFrom) { alert('請選擇正確的起訖時段'); return; }
+  if (isNaN(cap) || cap < 0)      { alert('請輸入有效的人數上限（0 以上整數）'); return; }
+
+  const dates = _dutyCapDateRangeArr(dFrom, dTo);
+  const hours = [];
+  for (let h = hFrom; h < hTo; h++) hours.push(h);
+  const pairs = [];
+  dates.forEach(dateStr => hours.forEach(h => pairs.push({ dateStr, h })));
+
+  if (pairs.length > 2000 && !confirm(`即將設定 ${pairs.length} 筆資料，範圍很大，確定要繼續嗎？`)) return;
+
+  const usr = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const now = new Date().toISOString();
   try {
-    await fbSet(COL_DUTY_CAPACITY, docId, {
-      date: dateStr, hour, capacity: cap,
-      updatedAt: new Date().toISOString(),
-      updatedBy: usr.memberName || usr.name || '',
-    });
-    _dutyCapacityOverrides[docId] = cap;
+    await ensureFirebase();
+    for (let i = 0; i < pairs.length; i += 400) {
+      const chunk = pairs.slice(i, i + 400);
+      const batch = _fbDB.batch();
+      chunk.forEach(({ dateStr, h }) => {
+        const docId = dateStr + '_' + h;
+        batch.set(_fbDB.collection(COL_DUTY_CAPACITY).doc(docId), {
+          date: dateStr, hour: h, capacity: cap,
+          updatedAt: now, updatedBy: usr.memberName || usr.name || '',
+        }, { merge: true });
+        _uW(COL_DUTY_CAPACITY);
+      });
+      await batch.commit();
+      chunk.forEach(({ dateStr, h }) => { _dutyCapacityOverrides[dateStr + '_' + h] = cap; });
+    }
+    _C.invalidate(COL_DUTY_CAPACITY);
     document.getElementById('dutyCapValue').value = '';
     _dutyCapUpdateHint();
     loadDutyCapList();
+    alert(`已設定 ${pairs.length} 筆時段`);
   } catch(e) {
     alert('儲存失敗：' + e.message);
   }
