@@ -3695,6 +3695,39 @@ function _dlCSV(content, filename) {
       <div id="adminScheduleList"></div>
     </div>
 
+    <div id="adminSec-dutycap" style="display:none;padding:0 0 20px;">
+      <div style="background:linear-gradient(135deg,#00838f 0%,#006064 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
+        <div style="flex:1;"><div style="font-size:1rem;font-weight:700;color:white;">時段人數調整</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:1px;">調整特定日期時段的人數上限</div></div>
+      </div>
+      <div style="background:white;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);padding:18px;margin-bottom:16px;">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--text-light);letter-spacing:0.1em;margin-bottom:14px;">新增／調整時段人數上限</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">日期 <span style="color:var(--red);">*</span></div>
+            <input type="date" id="dutyCapDate" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
+          </div>
+          <div>
+            <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">時段 <span style="color:var(--red);">*</span></div>
+            <select id="dutyCapHour" onchange="_dutyCapUpdateHint()" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;"></select>
+          </div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:0.68rem;color:var(--text-light);margin-bottom:4px;font-weight:600;">人數上限 <span style="color:var(--red);">*</span> <span style="color:var(--text-light);font-weight:400;">（0 = 該時段封鎖不可排）</span></div>
+          <input type="number" id="dutyCapValue" min="0" max="9" step="1" placeholder="例：3" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:0.85rem;font-family:'Noto Sans TC',sans-serif;background:#fafafa;box-sizing:border-box;">
+        </div>
+        <div id="dutyCapDefaultHint" style="font-size:0.72rem;color:var(--text-light);margin-bottom:14px;"></div>
+        <button onclick="saveDutyCapOverride()" style="width:100%;background:var(--red);color:white;border:none;border-radius:12px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:0.04em;">💾 儲存設定</button>
+      </div>
+      <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 目前已調整的時段</div>
+          <button onclick="loadDutyCapList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+        </div>
+        <div id="dutyCapList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
+      </div>
+    </div>
+
     <div id="adminSec-temppass" style="display:none;padding:0 0 20px;">
       <div style="background:linear-gradient(135deg,#f57c00 0%,#e65100 100%);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
         <button onclick="adminShowSection('menu')" style="background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 10px;color:white;cursor:pointer;font-size:0.82rem;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;">← 返回</button>
@@ -13101,7 +13134,7 @@ function _requireAdmin() {
 // 不用調整 adminShowSection／_buildAdminMenu 的渲染邏輯。
 const ADMIN_MENU_GROUPS = [
   { cat:'人員管理',   icon:'👥', ids:['adminSec-wl','adminSec-units','adminSec-temppass'] },
-  { cat:'內容管理',   icon:'📁', ids:['adminSec-casetypes','adminSec-schedule','adminSec-correction','adminSec-import','adminSec-changelog'] },
+  { cat:'內容管理',   icon:'📁', ids:['adminSec-casetypes','adminSec-schedule','adminSec-dutycap','adminSec-correction','adminSec-import','adminSec-changelog'] },
   { cat:'通知中心',   icon:'🔔', ids:['adminSec-pushctrl','adminSec-announce'] },
   { cat:'系統維護',   icon:'🛠', ids:['adminSec-repair','adminSec-confirm'] },
   { cat:'系統監控',   icon:'📈', ids:['adminSec-loginlog','adminSec-auditlog','adminSec-usagetest'] },
@@ -13121,6 +13154,7 @@ function _buildAdminMenu() {
     { id:'adminSec-feedback',   icon:'💬', label:'意見回饋',   sub:'查看成員意見',       color:'#2e7d32' },
     { id:'adminSec-correction', icon:'📝', label:'修正申請',   sub:'審核資料修正',       color:'#4a148c' },
     { id:'adminSec-schedule',   icon:'📅', label:'定訓行事曆', sub:'管理定訓日程',       color:'#004d40' },
+    { id:'adminSec-dutycap',    icon:'🧮', label:'時段人數調整', sub:'調整排班時段人數上限', color:'#00838f', adminOnly:true },
     { id:'adminSec-temppass',   icon:'🔑', label:'臨時密碼',   sub:'建立登入密碼',       color:'#e65100' },
     { id:'adminSec-changelog',  icon:'📋', label:'版本紀錄',   sub:'維護更新說明',       color:'#455a64' },
     { id:'adminSec-import',     icon:'📥', label:'批次匯入',   sub:'CSV 資料匯入',       color:'#0d47a1', adminOnly:true },
@@ -13193,7 +13227,7 @@ function _setAdminBadge(sectionId, count) {
 }
 
 function adminShowSection(sectionId) {
-  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest','adminSec-auditlog','adminSec-roles'];
+  const allSecs = ['adminSec-units','adminSec-wl','adminSec-casetypes','adminSec-announce','adminSec-feedback','adminSec-correction','adminSec-schedule','adminSec-dutycap','adminSec-temppass','adminSec-changelog','adminSec-loginlog','adminSec-import','adminSec-repair','adminSec-confirm','adminSec-pushctrl','adminSec-usagetest','adminSec-auditlog','adminSec-roles'];
   const menuGrid = document.getElementById('adminMenuGrid');
   const dashboardSec = document.getElementById('adminSec-dashboard');
   if (sectionId === 'dashboard') {
@@ -13225,6 +13259,7 @@ function adminShowSection(sectionId) {
   if (sectionId === 'adminSec-pushctrl') loadAdminPushCtrl();
   if (sectionId === 'adminSec-confirm') initConfirmSection();
   if (sectionId === 'adminSec-usagetest') _loadUsageMonitor();
+  if (sectionId === 'adminSec-dutycap') initDutyCapAdmin();
   if (sectionId === 'adminSec-roles') loadAdminRoles();
   if (sectionId === 'adminSec-loginlog') {
     const df = document.getElementById('loginLogFrom');
@@ -23992,6 +24027,7 @@ async function checkCertExpiry() {
 // ════════════════════════════════════════
 const COL_SCHEDULE = 'trainingSchedule';
 var COL_DUTY = 'dutySchedule';
+const COL_DUTY_CAPACITY = 'dutyCapacityOverrides'; // 特定日期時段的人數上限覆蓋設定
 
 async function initScheduleSection() {
   // 填分隊選單
@@ -24970,13 +25006,36 @@ function isDutyDateAllowed(dateStr) {
   return false;
 }
 
-// 某時段最大容量：假日 08~20 或每日 15~20 可排 2 人，其餘 1 人
+// 特定日期時段的人數上限覆蓋設定（後台「時段人數調整」寫入）
+// 格式：{ '2026-08-15_14': 3, ... }　key = 日期_時段
+let _dutyCapacityOverrides = {};
+
+async function loadDutyCapacityOverrides() {
+  try {
+    const docs = await fbList(COL_DUTY_CAPACITY);
+    _dutyCapacityOverrides = {};
+    docs.forEach(d => {
+      if (d.date != null && d.hour != null) _dutyCapacityOverrides[d.date + '_' + d.hour] = d.capacity;
+    });
+  } catch(e) {
+    console.warn('loadDutyCapacityOverrides 失敗：', e.message);
+  }
+}
+
+// 預設規則：假日 08~20 或每日 15~20 可排 2 人，其餘 1 人
 // 定訓時段（每月20日 18-22）容量為 0（封鎖）
-function getDutySlotCapacity(dateStr, slotHour) {
+function _dutyDefaultCapacity(dateStr, slotHour) {
   if (isDutyTrainingBlock(dateStr, slotHour)) return 0; // 定訓封鎖
   if (isDutyHoliday(dateStr) && slotHour >= 8 && slotHour < 20) return 2;
   if (slotHour >= 15 && slotHour < 20) return 2;
   return 1;
+}
+
+// 某時段最大容量：後台若有針對該日期時段個別設定，優先套用該值
+function getDutySlotCapacity(dateStr, slotHour) {
+  const overrideKey = dateStr + '_' + slotHour;
+  if (overrideKey in _dutyCapacityOverrides) return _dutyCapacityOverrides[overrideKey];
+  return _dutyDefaultCapacity(dateStr, slotHour);
 }
 
 // 某時段已排人數
@@ -24987,6 +25046,101 @@ function getDutySlotCount(dateStr, slotHour) {
     const e = parseInt((doc.end||'0').split(':')[0]);
     return slotHour >= s && slotHour < e;
   }).length;
+}
+
+// ════════════════════════════════════════
+// 時段人數調整（後台）
+// ════════════════════════════════════════
+
+function initDutyCapAdmin() {
+  const sel = document.getElementById('dutyCapHour');
+  if (sel && !sel.options.length) {
+    for (let h = 6; h <= 21; h++) {
+      sel.add(new Option(String(h).padStart(2,'0') + ':00 - ' + String(h+1).padStart(2,'0') + ':00', h));
+    }
+  }
+  const dateInput = document.getElementById('dutyCapDate');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toLocaleDateString('sv');
+  _dutyCapUpdateHint();
+  loadDutyCapList();
+}
+
+// 顯示目前選取日期時段的預設值／已覆蓋值，協助後台判斷要不要調整
+function _dutyCapUpdateHint() {
+  const dateStr = document.getElementById('dutyCapDate')?.value;
+  const hour    = parseInt(document.getElementById('dutyCapHour')?.value, 10);
+  const hint    = document.getElementById('dutyCapDefaultHint');
+  if (!hint || !dateStr || isNaN(hour)) return;
+  const def = _dutyDefaultCapacity(dateStr, hour);
+  const cur = _dutyCapacityOverrides[dateStr + '_' + hour];
+  hint.textContent = cur !== undefined
+    ? `目前已設定人數上限為 ${cur} 人（預設規則值為 ${def} 人）`
+    : `目前套用預設規則，人數上限為 ${def} 人`;
+}
+
+async function saveDutyCapOverride() {
+  const dateStr = document.getElementById('dutyCapDate')?.value;
+  const hour    = parseInt(document.getElementById('dutyCapHour')?.value, 10);
+  const cap     = parseInt(document.getElementById('dutyCapValue')?.value, 10);
+  if (!dateStr)       { alert('請選擇日期'); return; }
+  if (isNaN(hour))    { alert('請選擇時段'); return; }
+  if (isNaN(cap) || cap < 0) { alert('請輸入有效的人數上限（0 以上整數）'); return; }
+
+  const usr   = JSON.parse(sessionStorage.getItem('rescue_user') || '{}');
+  const docId = dateStr + '_' + hour;
+  try {
+    await fbSet(COL_DUTY_CAPACITY, docId, {
+      date: dateStr, hour, capacity: cap,
+      updatedAt: new Date().toISOString(),
+      updatedBy: usr.memberName || usr.name || '',
+    });
+    _dutyCapacityOverrides[docId] = cap;
+    document.getElementById('dutyCapValue').value = '';
+    _dutyCapUpdateHint();
+    loadDutyCapList();
+  } catch(e) {
+    alert('儲存失敗：' + e.message);
+  }
+}
+
+async function loadDutyCapList() {
+  const el = document.getElementById('dutyCapList');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">載入中...</div>';
+  try {
+    const docs  = await fbList(COL_DUTY_CAPACITY);
+    const today = new Date().toLocaleDateString('sv');
+    const rows  = docs
+      .filter(d => d.date >= today)
+      .sort((a,b) => (a.date + String(a.hour).padStart(2,'0')) > (b.date + String(b.hour).padStart(2,'0')) ? 1 : -1);
+    if (!rows.length) {
+      el.innerHTML = '<div style="color:var(--text-light);font-size:0.85rem;">目前沒有調整過的時段</div>';
+      return;
+    }
+    el.innerHTML = rows.map(d => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${d.date}　${String(d.hour).padStart(2,'0')}:00–${String(d.hour+1).padStart(2,'0')}:00</div>
+          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">人數上限：${d.capacity} 人${d.updatedBy ? '　by ' + d.updatedBy : ''}</div>
+        </div>
+        <button onclick="deleteDutyCapOverride('${d.id}')" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">恢復預設</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:0.85rem;">載入失敗：' + e.message + '</div>';
+  }
+}
+
+async function deleteDutyCapOverride(docId) {
+  if (!confirm('確定要恢復這個時段的預設人數上限嗎？')) return;
+  try {
+    await fbDelete(COL_DUTY_CAPACITY, docId);
+    delete _dutyCapacityOverrides[docId];
+    loadDutyCapList();
+    _dutyCapUpdateHint();
+  } catch(e) {
+    alert('刪除失敗：' + e.message);
+  }
 }
 
 // ════════════════════════════════════════
@@ -25022,7 +25176,7 @@ async function initDutyPage() {
   const usr = JSON.parse(sessionStorage.getItem('rescue_user')||'{}');
   const _isAdmin  = usr.isAdmin || false;
   const _userUnit = usr.unit || '';
-  await Promise.all([loadMembers(), loadUnits(), loadTrainingDates()]);
+  await Promise.all([loadMembers(), loadUnits(), loadTrainingDates(), loadDutyCapacityOverrides()]);
   const unitSel = document.getElementById('dutyUnitFilter');
   if (unitSel) {
     if (_isAdmin) {
@@ -25110,6 +25264,7 @@ function filterDutyMembers() {
 async function loadDutyData(scrollDate) {
   try {
     await loadTrainingDates(); // 每次載入時同步最新定訓日期
+    await loadDutyCapacityOverrides();
     const docs = await fbList(COL_DUTY);
     _dutyDocs = docs;
     renderDutyView(scrollDate);
