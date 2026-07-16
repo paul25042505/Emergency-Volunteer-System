@@ -1012,7 +1012,10 @@ tr:hover td { background: #fdfcfb; }
 .notice-card-preview {
   font-size: 0.76rem; color: var(--text-mid); white-space: pre-wrap;
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  line-height: 1.4;
+  line-height: 1.4; cursor: pointer;
+}
+.notice-card-preview.expanded {
+  -webkit-line-clamp: unset; overflow: visible;
 }
 .notice-card-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .notice-tag {
@@ -14999,7 +15002,7 @@ function _buildNoticeCard(d) {
     <div class="notice-card-icon" style="background:${meta.bg};color:${meta.clr};">${_NOTICE_SVG[t]||_NOTICE_SVG.system}</div>
     <div class="notice-card-body">
       <div class="notice-card-title${unread?' unread-title':''}">${title}</div>
-      ${preview ? `<div class="notice-card-preview">${preview}</div>` : ''}
+      ${preview ? `<div class="notice-card-preview" onclick="this.classList.toggle('expanded')">${preview}</div>` : ''}
       <div class="notice-card-meta">
         <span class="notice-tag" style="background:${meta.tagBg};color:${meta.tagClr};">${meta.tag}</span>
         <span style="font-size:0.6rem;color:var(--text-light);">${dateStr}</span>
