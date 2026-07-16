@@ -3733,7 +3733,10 @@ function _dlCSV(content, filename) {
       <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:16px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <div style="font-size:0.85rem;font-weight:600;color:var(--text);">📋 目前已調整的時段</div>
-          <button onclick="loadDutyCapList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+          <div style="display:flex;gap:6px;">
+            <button onclick="batchDelChecked('dutyCapChk',COL_DUTY_CAPACITY,_dutyCapReloadAfterBatch)" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">批次恢復預設</button>
+            <button onclick="loadDutyCapList()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:0.75rem;cursor:pointer;">重新整理</button>
+          </div>
         </div>
         <div id="dutyCapList"><div style="color:var(--text-light);font-size:0.85rem;">載入中...</div></div>
       </div>
@@ -25171,9 +25174,12 @@ async function loadDutyCapList() {
     }
     el.innerHTML = rows.map(d => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${d.date}　${String(d.hour).padStart(2,'0')}:00–${String(d.hour+1).padStart(2,'0')}:00</div>
-          <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">人數上限：${d.capacity} 人${d.updatedBy ? '　by ' + d.updatedBy : ''}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" class="dutyCapChk" data-id="${d.id}" style="flex-shrink:0;">
+          <div>
+            <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${d.date}　${String(d.hour).padStart(2,'0')}:00–${String(d.hour+1).padStart(2,'0')}:00</div>
+            <div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">人數上限：${d.capacity} 人${d.updatedBy ? '　by ' + d.updatedBy : ''}</div>
+          </div>
         </div>
         <button onclick="deleteDutyCapOverride('${d.id}')" style="background:none;border:1px solid #f5c6c6;border-radius:6px;padding:4px 10px;font-size:0.75rem;color:#b94a3a;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">恢復預設</button>
       </div>
@@ -25193,6 +25199,13 @@ async function deleteDutyCapOverride(docId) {
   } catch(e) {
     alert('刪除失敗：' + e.message);
   }
+}
+
+// 批次「恢復預設」後：先同步覆蓋設定快取，再重繪列表與提示文字
+async function _dutyCapReloadAfterBatch() {
+  await loadDutyCapacityOverrides();
+  loadDutyCapList();
+  _dutyCapUpdateHint();
 }
 
 // ════════════════════════════════════════
