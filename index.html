@@ -4688,10 +4688,10 @@ function _dlCSV(content, filename) {
 
 /* ── 底部操作列 ── */
 #ttasPage #ttasActionbar {
-  /* bottom 對齊到固定式 #appTabBar（83px + safe-area）上緣，避免操作列被蓋住 */
-  position: sticky; bottom: calc(83px + max(env(safe-area-inset-bottom, 0px), 8px)); z-index: 5;
-  background: linear-gradient(to top, var(--ttas-bg) 80%, transparent);
-  padding: 12px 16px 10px;
+  /* #appScroll 有 -webkit-overflow-scrolling:touch，內部 position:sticky/fixed 在 iOS 上會失效
+     （退化成跟著內容捲動，見 CLAUDE.md iOS 陷阱#1），所以操作列改成一般文件流，
+     並在 #ttasBody 底部留出足夠 padding，避免最後被固定分頁列遮住 */
+  padding: 12px 16px calc(16px + 83px + max(env(safe-area-inset-bottom, 0px), 8px));
   display: flex; gap: 10px;
 }
 #ttasPage .ttas-btn {
